@@ -7,6 +7,7 @@ export function Logo() {
       width={200}
       height={200}
       alt="Avatar"
+      className="mt-16"
     />
   )
 }

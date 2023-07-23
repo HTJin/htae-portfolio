@@ -11,10 +11,10 @@ export default function App({ Component, pageProps }) {
   return (
     <>
       <Head>
-        <title>Commit - Open-source Git client for macOS minimalists</title>
+        <title>HTae Jin - Web Developer</title>
         <meta
           name="description"
-          content="Commit is a lightweight Git client you can open from anywhere any time you’re ready to commit your work with a single keyboard shortcut. It’s fast, beautiful, and completely unnecessary."
+          content="I am devoted to meticulously delivering clean, practical web applications. I'm a fan of efficient, minimalistic user-centered design and try to make them into a reality. Your imagination is the limit."
         />
       </Head>
       <ThemeProvider attribute="class" disableTransitionOnChange>
