@@ -124,7 +124,7 @@ export function IntroFooter() {
     <p className="flex items-baseline gap-x-2 text-[0.8125rem]/6 text-gray-500">
       Copyright © {new Date().getFullYear()} Hyun-Tae Jin
       <IconLink
-        href="https://drive.google.com/file/d/1YzIhUYMF6L5u3owT1rq74IAeesuJEKga/view?usp=sharing"
+        href="https://drive.google.com/file/d/1pvgo_B2zgQ8FyAsvgk_z44nibqY9tl1_/view?usp=sharing"
         target="_blank"
         rel="noopener noreferrer"
         icon={ResumeIcon}

@@ -13,7 +13,7 @@ function ThemeIcon(props) {
   )
 }
 
-function CursorIcon(props) {
+function CursorIcon() {
   return (
     <svg
       fill="currentColor"
@@ -46,7 +46,7 @@ export function ThemeToggle() {
     <div className="flex flex-col">
       <button
         type="button"
-        className="group absolute right-4 top-4 z-50 -m-2.5 p-2.5"
+        className="group fixed right-2 top-2 z-50 -m-2.5 p-2.5"
         onClick={() => setTheme(otherTheme)}
       >
         <span className="sr-only">Switch to {otherTheme} theme</span>

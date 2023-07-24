@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import clsx from 'clsx'
 
-function ChevronUpIcon() {
+export function ChevronUpIcon() {
   return (
     <svg
       viewBox="0 0 24 24"

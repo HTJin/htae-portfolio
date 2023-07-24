@@ -2,6 +2,7 @@ import { SparkleIcon } from '@/components/SparkleIcon'
 import { generateRssFeed } from '@/lib/generateRssFeed'
 import { FormattedDate } from '@/components/FormattedDate'
 import Drawer from '@/components/Drawer'
+import { IconLink } from '@/components/IconLink'
 import {
   CodeBracket,
   BookOpen,
@@ -10,7 +11,8 @@ import {
   VersionControl,
   GlobeAlt,
   AgileDiscipline,
-  AcademicCap
+  AcademicCap,
+  CheckBadge
 } from '@/components/SkillsIcons'
 
 export { Layout as default } from '@/components/Layout'
@@ -88,55 +90,57 @@ Functional/OOP, UI/UX
 <div data-aos='fade-left'>
   ### <SparkleIcon /> Health and well-being | Incheon, South Korea
 </div>
-
-<Drawer>
-  <div data-aos='fade-left'>
-    <p className='mb-[1ch] mt-[1ch] indent-6 leading-7'>
-      As a first-generation Korean American, my life has been a journey of
-      resilience, adaptation, and personal growth. I moved to the United States
-      in the third grade, a transition that required me to learn a new language
-      and culture. Each subsequent relocation presented its own challenges, but
-      these experiences have shaped me, teaching me the value of friendship and
-      community.
-    </p>
-  </div>
-  <div data-aos='fade-left'>
-    <p className='mb-[1ch] indent-6 leading-7'>
-      In 2020, my career as a software developer was put on pause due to the
-      pandemic. This unforeseen event became a period of self-reflection and
-      personal development. After graduating from University of Pittsburgh, my
-      parents moved back to Korea. After being unable to visit them for a few
-      years, I decided to reconnect with my family, having conversations I
-      couldn't have as a kid growing up in the States and deepening my
-      understanding of my roots.
-    </p>
-  </div>
-  <div data-aos='fade-left'>
-    <p className='mb-[1ch] indent-6 leading-7'>
-      I found joy in unexpected places. I rescued a kitten from the streets.
-      Having never had pets before, I am learning my responsibilities and
-      grateful for a new sense of companionship in my life. I traveled and
-      assisted my aunt and uncle with their restaurant business in Dallas. I
-      also achieved personal milestones such as obtaining my driver's license
-      and being the best man at a wedding. Towards the end of this period, I had
-      the unique opportunity to fly to Korea to interview for a graduate program
-      in cybersecurity at Korea University. Although I didn't get in, it was a
-      valuable experience that allowed me to explore a new academic path.
-    </p>
-  </div>
-  <div data-aos='fade-left'>
-    <p className='mb-[1ch] indent-6 leading-7'>
-      Technology has been a constant companion throughout my life. From using a
-      PC since Windows 95, to building desktop computers for friends and family,
-      to marveling at the vast capabilities of the internet, my fascination with
-      technology has remained steadfast. I am eager to apply the skills I've
-      acquired, the stability I've developed, and the passion I've reignited to
-      contribute to the ever-evolving world of technology. I am ready to embark
-      on this next chapter of my journey and look forward to the opportunities
-      it will bring.
-    </p>
-  </div>
-</Drawer>
+<div data-aos='flip-down'>
+  <Drawer>
+    <div data-aos='fade-left'>
+      <p className='mb-[1ch] mt-[1ch] indent-6 leading-7'>
+        As a first-generation Korean American, my life has been a journey of
+        resilience, adaptation, and personal growth. I moved to the United
+        States in the third grade, a transition that required me to learn a new
+        language and culture. Each subsequent relocation presented its own
+        challenges, but these experiences have shaped me, teaching me the value
+        of friendship and community.
+      </p>
+    </div>
+    <div data-aos='fade-left'>
+      <p className='mb-[1ch] indent-6 leading-7'>
+        In 2020, my career as a software developer was put on pause due to the
+        pandemic. This unforeseen event became a period of self-reflection and
+        personal development. After graduating from University of Pittsburgh, my
+        parents moved back to Korea. After being unable to visit them for a few
+        years, I decided to reconnect with my family, having conversations I
+        couldn't have as a kid growing up in the States and deepening my
+        understanding of my roots.
+      </p>
+    </div>
+    <div data-aos='fade-left'>
+      <p className='mb-[1ch] indent-6 leading-7'>
+        I found joy in unexpected places. I rescued a kitten from the streets.
+        Having never had pets before, I am learning my responsibilities and
+        grateful for a new sense of companionship in my life. I traveled and
+        assisted my aunt and uncle with their restaurant business in Dallas. I
+        also achieved personal milestones such as obtaining my driver's license
+        and being the best man at a wedding. Towards the end of this period, I
+        had the unique opportunity to fly to Korea to interview for a graduate
+        program in cybersecurity at Korea University. Although I didn't get in,
+        it was a valuable experience that allowed me to explore a new academic
+        path.
+      </p>
+    </div>
+    <div data-aos='fade-left'>
+      <p className='mb-[1ch] indent-6 leading-7'>
+        Technology has been a constant companion throughout my life. From using
+        a PC since Windows 95, to building desktop computers for friends and
+        family, to marveling at the vast capabilities of the internet, my
+        fascination with technology has remained steadfast. I am eager to apply
+        the skills I've acquired, the stability I've developed, and the passion
+        I've reignited to contribute to the ever-evolving world of technology. I
+        am ready to embark on this next chapter of my journey and look forward
+        to the opportunities it will bring.
+      </p>
+    </div>
+  </Drawer>
+</div>
 
 ---
 
@@ -207,4 +211,20 @@ Functional/OOP, UI/UX
 
 <div data-aos='fade-left'>
   B.S. in Computer/Information Science, Concentration in Networks and Security
+</div>
+
+<div data-aos='fade-left'>
+  <div className='h-52 w-52'>
+    <IconLink
+      href='https://www.credly.com/users/hyun-tae-jin'
+      target='_blank'
+      rel='noopener noreferrer'
+      icon={CheckBadge}
+    >
+      <span className='whitespace-nowrap text-gray-800 dark:text-white'>
+        Certifications:<br/>
+        Software Engineering
+      </span>
+    </IconLink>
+  </div>
 </div>

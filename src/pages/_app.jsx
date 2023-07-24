@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import Head from 'next/head'
 import { ThemeProvider } from 'next-themes'
 import { MDXProvider } from '@mdx-js/react'
+import ScrollToTop from '@/components/ScrollToTop'
+
 import * as mdxComponents from '@/components/mdx'
 
 import '@/styles/tailwind.css'
@@ -28,6 +30,7 @@ export default function App({ Component, pageProps }) {
       <ThemeProvider attribute="class" disableTransitionOnChange>
         <MDXProvider components={mdxComponents}>
           <Component {...pageProps} />
+          <ScrollToTop />
         </MDXProvider>
       </ThemeProvider>
     </>
