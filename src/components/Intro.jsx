@@ -121,8 +121,11 @@ export function Intro() {
 
 export function IntroFooter() {
   return (
-    <p className="flex items-baseline gap-x-2 text-[0.8125rem]/6 text-gray-500">
-      Copyright © {new Date().getFullYear()} Hyun-Tae Jin
+    <p className="flex items-baseline gap-x-2 text-center text-[0.8125rem]/6 text-gray-500 lg:text-left">
+      <div className="mr-4 flex flex-col lg:flex-row lg:whitespace-nowrap">
+        <div className="mr-[1ch]">Copyright © {new Date().getFullYear()}</div>
+        <div>Hyun-Tae Jin</div>
+      </div>
       <IconLink
         href="https://drive.google.com/file/d/1pvgo_B2zgQ8FyAsvgk_z44nibqY9tl1_/view?usp=sharing"
         target="_blank"
@@ -131,7 +134,10 @@ export function IntroFooter() {
         compact
         large
       >
-        Download Resumé
+        <div className="flex flex-col lg:flex-row lg:whitespace-nowrap">
+          <div className="mr-[1ch]">Download</div>
+          <div>Resumé</div>
+        </div>
       </IconLink>
     </p>
   )

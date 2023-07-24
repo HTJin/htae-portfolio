@@ -62,8 +62,8 @@ export default function Drawer({ children }) {
         className={clsx(
           'overflow-hidden transition-all duration-300 ease-in-out',
           {
-            'h-0': !isOpen,
-            'h-[47.5rem]': isOpen,
+            'max-h-0': !isOpen,
+            'max-h-[47.5rem]': isOpen,
           }
         )}
       >

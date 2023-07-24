@@ -1,5 +1,5 @@
 .typography {
-  --typography-body: theme(colors.gray.600);
+  --typography-body: theme(colors.gray.800);
   --typography-headings: theme(colors.gray.900);
   --typography-quotes: theme(colors.gray.500);
   --typography-quotes-border: theme(colors.gray.200);

@@ -23,7 +23,7 @@ export function SignUpForm() {
         name="email"
         id={id}
         placeholder="Your name / email / number"
-        className="peer w-0 flex-auto bg-transparent px-4 py-2.5 text-base text-white placeholder:text-gray-500 focus:outline-none sm:text-[0.8125rem]/6"
+        className="peer w-0 flex-auto bg-transparent px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none sm:text-[0.8125rem]/6"
         onChange={(e) => setEmail(e.target.value)}
       />
       <Button type="submit" arrow onClick={handleClick}>

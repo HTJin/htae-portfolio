@@ -29,7 +29,7 @@ export default function ScrollToTop() {
       {isVisible && (
         <button
           type="button"
-          className="fixed bottom-2 right-[50%] lg:right-[25%] z-50" // added right-5 and bg-blue-500
+          className="fixed bottom-2 right-[50%] lg:right-[25%] z-50"
           onClick={() => scrollToTop()}
         >
           <ChevronUpIcon className="h-6 w-6 fill-white opacity-50 transition-opacity group-hover:opacity-100 lg:fill-gray-900 lg:dark:fill-white" />
