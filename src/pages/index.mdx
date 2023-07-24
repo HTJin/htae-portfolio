@@ -17,12 +17,12 @@ import {
 
 export { Layout as default } from '@/components/Layout'
 
-export async function getStaticProps() {
-  if (process.env.NODE_ENV === 'production') {
-    await generateRssFeed()
-  }
-  return { props: {} }
-}
+// export async function getStaticProps() {
+//   if (process.env.NODE_ENV === 'production') {
+//     await generateRssFeed()
+//   }
+//   return { props: {} }
+// }
 
 ---
 
