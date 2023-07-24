@@ -1,5 +1,4 @@
 import { SparkleIcon } from '@/components/SparkleIcon'
-import { generateRssFeed } from '@/lib/generateRssFeed'
 import { FormattedDate } from '@/components/FormattedDate'
 import Drawer from '@/components/Drawer'
 import { IconLink } from '@/components/IconLink'
@@ -16,13 +15,6 @@ import {
 } from '@/components/SkillsIcons'
 
 export { Layout as default } from '@/components/Layout'
-
-export async function getStaticProps() {
-  if (process.env.NODE_ENV === 'production') {
-    await generateRssFeed()
-  }
-  return { props: {} }
-}
 
 ---
 
