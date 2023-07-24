@@ -1,13 +1,21 @@
+import { useEffect } from 'react'
 import Head from 'next/head'
 import { ThemeProvider } from 'next-themes'
 import { MDXProvider } from '@mdx-js/react'
-
 import * as mdxComponents from '@/components/mdx'
 
 import '@/styles/tailwind.css'
 import 'focus-visible'
+import 'aos/dist/aos.css'
+import AOS from 'aos'
 
 export default function App({ Component, pageProps }) {
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+    })
+  }, [])
+
   return (
     <>
       <Head>

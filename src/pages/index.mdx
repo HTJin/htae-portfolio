@@ -1,5 +1,17 @@
 import { SparkleIcon } from '@/components/SparkleIcon'
 import { generateRssFeed } from '@/lib/generateRssFeed'
+import { FormattedDate } from '@/components/FormattedDate'
+import Drawer from '@/components/Drawer'
+import {
+  CodeBracket,
+  BookOpen,
+  CircleStack,
+  WrenchScrewdriver,
+  VersionControl,
+  GlobeAlt,
+  AgileDiscipline,
+  AcademicCap
+} from '@/components/SkillsIcons'
 
 export { Layout as default } from '@/components/Layout'
 
@@ -12,56 +24,187 @@ export async function getStaticProps() {
 
 ---
 
-![](@/images/commit-suggestions.png)
+## Skills
 
-## Commit message suggestions {{ date: '2023-04-06T00:00Z' }}
+### <CodeBracket /> Languages
 
-In the latest release, I've added support for commit message and description suggestions via an integration with OpenAI. Commit looks at all of your changes, and feeds that into the machine with a bit of prompt-tuning to get back a commit message that does a surprisingly good job at describing the intent of your changes.
+Javascript, Typescript, Python, Java, PHP, ES6, HTML5, CSS3
 
-It's also been a pretty helpful way to remind myself what the hell I was working on at the end of the day yesterday when I get back to my computer and realize I didn't commit any of my work.
+### <BookOpen /> Libraries / Frameworks
 
-### <SparkleIcon /> Improvements
+React, Next, Redux, Vue, Nuxt, Vuex, Angular 2, TailwindCSS, Bootstrap,
+Material UI, Vuetify, Node, Express, Flask, Jinja
 
-- Added commit message and description suggestions powered by OpenAI
-- Fixed race condition that could sometimes leave you in a broken rebase state
-- Improved active project detection to try and ignore file changes triggered by the system instead of the user
-- Fixed bug that sometimes reported the wrong number of changed files
+### <CircleStack /> Databases
 
----
+MySQL, PostgreSQL, MongoDB, Firebase
 
-![](@/images/configuration-files.png)
+### <WrenchScrewdriver /> Tools
 
-## Project configuration files {{ date: '2023-03-17T00:00Z' }}
+AWS, Postman, Insomnia, VSCode, Terminal, Powershell, Jira, Harvest
 
-I've added support for creating per-project `.commitrc` files that override your global settings for that particular project. Went with YAML for these because personally I'm sick of quoting keys in JSON all the time, or accidentally leaving in a trailing comma.
+### <VersionControl /> Version Control
 
-### <SparkleIcon /> Improvements
+Git, GitHub, GitLab
 
-- Added per-project `.commitrc` configuration files
-- Improved performance when working with projects with large binary files
-- Fixed a bug that could cause Commit to crash when autocommitting after deleting a recently active branch
+### <GlobeAlt /> Deployment
 
----
+Glitch, Render, Firebase Hosting, Vercel, Heroku, Netlify
 
-![](@/images/dark-mode.png)
+### <AgileDiscipline /> Discipline
 
-## Dark mode support {{ date: '2023-03-06T00:00Z' }}
-
-I released this thing last week hoping a couple of people would say "awesome job" and make me feel good about what I'd built but instead I just got a ton of people shaming me on Twitter for being such a horrible person for only shipping a light UI.
-
-### <SparkleIcon /> Improvements
-
-- Added dark mode support
-- Improved input field responsiveness when writing a commit message in a project with a large number of changed files
-- Made keyboard shortcut for opening the Commit window customizable
-- Deleted my Twitter account
+Agile, Scrum, Resolve Merge Conflicts, Code Reviews, Configure API Endpoints,
+Functional/OOP, UI/UX
 
 ---
 
-![](@/images/first-release.png)
+## Full Stack Developer Trainee {{ date: '2023-07T00:00Z' }}
 
-## Commit v0.1.0 {{  date: '2023-03-03T00:00Z' }}
+<div data-aos='fade-left'>
+  ### <SparkleIcon /> Coding Temple | Chicago, IL | Remote
+</div>
 
-Commit is a command palette-style Git client you can pull up from anywhere with a keyboard shortcut that makes it really easy to commit your work. It uses the "last modified" timestamp of the files in all of your projects to automatically know which project you're in the middle of working on, so any time you pull up the UI it's already got the right project selected — you just have to type your commit message, hit <kbd>Cmd</kbd> + <kbd>Enter</kbd> and your changes are captured.
+<div data-aos='fade-left'>
+  - Graduated from a rigorous bootcamp with a focus on Python, Flask, React,
+  Typescript, Javascript, HTML/CSS, and SQL
+</div>
+<div data-aos='fade-left'>
+  - Enhanced programming proficiency by developing diverse personal projects,
+  honing syntax knowledge, and adopting modern coding standards
+</div>
+<div data-aos='fade-left'>
+  - Gained experience integrating third-party APIs and libraries, building
+  full-stack applications with custom endpoints and JWT
+</div>
+<div data-aos='fade-left'>
+  - Oversaw repositories for group projects, directing merge and rebase
+  operations of different codebases
+</div>
 
-I'd be lying if I really thought this was that useful but I was looking for an excuse to learn macOS development and here we are. It's open source at least so maybe you can find something interesting in the code even if the app itself is a total waste of hard drive space.
+---
+
+## Sabbatical / COVID / Family and Personal Reasons {{ date: '2023-03T00:00Z' }}
+
+<div data-aos='fade-left'>
+  ### <SparkleIcon /> Health and well-being | Incheon, South Korea
+</div>
+
+<Drawer>
+  <div data-aos='fade-left'>
+    <p className='mb-[1ch] mt-[1ch] indent-6 leading-7'>
+      As a first-generation Korean American, my life has been a journey of
+      resilience, adaptation, and personal growth. I moved to the United States
+      in the third grade, a transition that required me to learn a new language
+      and culture. Each subsequent relocation presented its own challenges, but
+      these experiences have shaped me, teaching me the value of friendship and
+      community.
+    </p>
+  </div>
+  <div data-aos='fade-left'>
+    <p className='mb-[1ch] indent-6 leading-7'>
+      In 2020, my career as a software developer was put on pause due to the
+      pandemic. This unforeseen event became a period of self-reflection and
+      personal development. After graduating from University of Pittsburgh, my
+      parents moved back to Korea. After being unable to visit them for a few
+      years, I decided to reconnect with my family, having conversations I
+      couldn't have as a kid growing up in the States and deepening my
+      understanding of my roots.
+    </p>
+  </div>
+  <div data-aos='fade-left'>
+    <p className='mb-[1ch] indent-6 leading-7'>
+      I found joy in unexpected places. I rescued a kitten from the streets.
+      Having never had pets before, I am learning my responsibilities and
+      grateful for a new sense of companionship in my life. I traveled and
+      assisted my aunt and uncle with their restaurant business in Dallas. I
+      also achieved personal milestones such as obtaining my driver's license
+      and being the best man at a wedding. Towards the end of this period, I had
+      the unique opportunity to fly to Korea to interview for a graduate program
+      in cybersecurity at Korea University. Although I didn't get in, it was a
+      valuable experience that allowed me to explore a new academic path.
+    </p>
+  </div>
+  <div data-aos='fade-left'>
+    <p className='mb-[1ch] indent-6 leading-7'>
+      Technology has been a constant companion throughout my life. From using a
+      PC since Windows 95, to building desktop computers for friends and family,
+      to marveling at the vast capabilities of the internet, my fascination with
+      technology has remained steadfast. I am eager to apply the skills I've
+      acquired, the stability I've developed, and the passion I've reignited to
+      contribute to the ever-evolving world of technology. I am ready to embark
+      on this next chapter of my journey and look forward to the opportunities
+      it will bring.
+    </p>
+  </div>
+</Drawer>
+
+---
+
+## Application Developer {{ date: '2020-05T00:00Z' }}
+
+<div data-aos='fade-left'>
+  ### <SparkleIcon /> Highmark Health Solutions | Pittsburgh, PA | Hybrid
+</div>
+
+<div data-aos='fade-left'>
+  - Served as lead developer for a web portal project enabling healthcare
+  professionals to search patient data based on UMI
+</div>
+<div data-aos='fade-left'>
+  - Collaborated within a full scrum team, managed story points for sprints, and
+  mentored a fellow developer in Javascript/HTML/CSS to utilize Vue with a Java
+  backend
+</div>
+<div data-aos='fade-left'>
+  - Maintained git-flow with GitLab, configured the Babel Transpiler for IE7
+  compatibility and championed the adoption of Vue as a framework within the
+  company
+</div>
+<div data-aos='fade-left'>
+  - Leveraged the PegaSystems Platform to maintain and develop Highmark's
+  Utilization Management tool for healthcare professionals in Pittsburgh
+</div>
+
+---
+
+## Web Developer {{ date: '2019-01T00:00Z' }}
+
+<div data-aos='fade-left'>
+  Developed operational web apps for other tech startups, translating
+  high-fidelity designs into fully functional digital solutions
+</div>
+
+<div data-aos='fade-left'>
+  ### <SparkleIcon /> Checkmate Digital | New Haven, CT | Remote
+</div>
+
+<div data-aos='fade-left'>
+  - Engaged in end-to-end project development, collaborating with the UX/UI team
+  and providing comprehensive web solutions for tech startup clients under the
+  agency's purview
+</div>
+<div data-aos='fade-left'>
+  - Pioneered a tech stack transition from Angular to React in close partnership
+  with the CTO, enhancing the agency's technological capabilities
+</div>
+<div data-aos='fade-left'>
+  - Expanded technical knowledge by learning various JavaScript frameworks and
+  libraries, adhering to industry-defined coding standards, and implementing
+  effective git-flow practices
+</div>
+<div data-aos='fade-left'>
+  - Cultivated a deep understanding of the product life cycle, contributing to
+  all stages from conceptualization to deployment
+</div>
+
+---
+
+## Education {{  date: '2016-12T00:00Z' }}
+
+<div data-aos='fade-left'>
+  ### <AcademicCap /> University of Pittsburgh | Pittsburgh, PA
+</div>
+
+<div data-aos='fade-left'>
+  B.S. in Computer/Information Science, Concentration in Networks and Security
+</div>

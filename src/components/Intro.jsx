@@ -80,7 +80,7 @@ export function Intro() {
         Hello, my name is <br />{' '}
         <span className="text-sky-300">Hyun-Tae Jin</span>
       </h1>
-      <p className="mt-4 break-words hyphens-auto lg:hyphens-none lg:break-normal text-sm/6 text-gray-300">
+      <p className="mt-4 hyphens-auto break-words text-sm/6 text-gray-300 lg:hyphens-none lg:break-normal">
         I am deeply committed to crafting sleek, pragmatic web applications with
         utmost precision. With an inclination towards user-centered design, I
         strive to transform your imagination into tangible products.
@@ -124,7 +124,7 @@ export function IntroFooter() {
     <p className="flex items-baseline gap-x-2 text-[0.8125rem]/6 text-gray-500">
       Copyright © {new Date().getFullYear()} Hyun-Tae Jin
       <IconLink
-        href="https://drive.google.com/file/d/15OcIzgO7MnHUpAGclSVietSqw6foDjre/view?usp=sharing"
+        href="https://drive.google.com/file/d/1YzIhUYMF6L5u3owT1rq74IAeesuJEKga/view?usp=sharing"
         target="_blank"
         rel="noopener noreferrer"
         icon={ResumeIcon}
