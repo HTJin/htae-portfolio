@@ -1,4 +1,5 @@
 import { SparkleIcon } from '@/components/SparkleIcon'
+import { generateRssFeed } from '@/lib/generateRssFeed'
 import { FormattedDate } from '@/components/FormattedDate'
 import { Drawer } from '@/components/Drawer'
 import { IconLink } from '@/components/IconLink'
@@ -15,6 +16,13 @@ import {
 } from '@/components/SkillsIcons'
 
 export { Layout as default } from '@/components/Layout'
+
+export async function getStaticProps() {
+  if (process.env.NODE_ENV === 'production') {
+    await generateRssFeed()
+  }
+  return { props: {} }
+}
 
 ---
 
@@ -273,7 +281,8 @@ Functional/OOP, UI/UX
         icon={CheckBadge}
       >
         <span className='whitespace-nowrap text-gray-950 dark:text-white'>
-          Certifications:<br />
+          Certifications:
+          <br />
           Software Engineering
         </span>
       </IconLink>
