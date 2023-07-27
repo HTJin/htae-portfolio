@@ -16,6 +16,18 @@ export default function App({ Component, pageProps }) {
     AOS.init({
       duration: 1000,
     })
+
+    const handleLoad = () => {
+      const path = window.location.hash.substr(1)
+      if (path.length > 0) {
+        window.location.replace(path)
+      }
+    }
+    window.addEventListener('DOMContentLoaded', handleLoad)
+
+    return () => {
+      window.removeEventListener('DOMContentLoaded', handleLoad)
+    }
   }, [])
 
   return (

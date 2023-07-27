@@ -21,7 +21,7 @@ const nextConfig = {
   experimental: {
     scrollRestoration: true,
   },
-  basePath: '/',
+  basePath: '/htae-portfolio/',
 }
 
 export default withMDX(nextConfig)
