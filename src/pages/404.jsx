@@ -1,5 +1,5 @@
+import { useEffect } from 'react'
 import Head from 'next/head'
-
 import { IconLink } from '@/components/IconLink'
 import { StarField } from '@/components/StarField'
 
