@@ -81,9 +81,8 @@ export function Intro() {
         <span className="text-sky-300">Hyun-Tae Jin</span>
       </h1>
       <p className="mt-4 hyphens-auto break-words text-sm/6 text-gray-300 lg:hyphens-none lg:break-normal">
-        I am deeply committed to crafting sleek, pragmatic web applications with
-        utmost precision. With an inclination towards user-centered design, I
-        strive to transform your imagination into tangible products.
+        I am a developer deeply committed to crafting sleek, pragmatic web applications with
+        utmost precision.
       </p>
       <SignUpForm />
       <div className="mt-8 flex flex-wrap justify-center gap-x-1 gap-y-3 sm:gap-x-2 lg:justify-start">
@@ -121,7 +120,7 @@ export function Intro() {
 
 export function IntroFooter() {
   return (
-    <p className="flex items-baseline gap-x-2 text-center text-[0.8125rem]/6 text-gray-500 lg:text-left">
+    <div className="flex items-baseline gap-x-2 text-center text-[0.8125rem]/6 text-gray-500 lg:text-left">
       <div className="mr-4 flex flex-col lg:flex-row lg:whitespace-nowrap">
         <div className="mr-[1ch]">Copyright © {new Date().getFullYear()}</div>
         <div>Hyun-Tae Jin</div>
@@ -139,6 +138,6 @@ export function IntroFooter() {
           <div>Resumé</div>
         </div>
       </IconLink>
-    </p>
+    </div>
   )
 }

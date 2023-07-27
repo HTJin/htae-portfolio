@@ -33,7 +33,7 @@ function ChevronDownIcon() {
   )
 }
 
-export default function Drawer({ children }) {
+export function Drawer({ children }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isContentVisible, setContentVisible] = useState(false)
 
