@@ -1,24 +1,8 @@
-import { useEffect } from 'react'
 import Head from 'next/head'
 import { IconLink } from '@/components/IconLink'
 import { StarField } from '@/components/StarField'
 
 export default function NotFound() {
-  useEffect(() => {
-    const handleLoad = () => {
-      const path = window.location.hash.substr(1)
-      if (path.length > 0) {
-        window.location.replace(path)
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', handleLoad)
-
-    return () => {
-      window.removeEventListener('DOMContentLoaded', handleLoad)
-    }
-  }, [])
-
   return (
     <>
       <Head>
