@@ -63,7 +63,7 @@ export function Drawer({ children }) {
           'overflow-hidden transition-all duration-300 ease-in-out',
           {
             'max-h-0': !isOpen,
-            'max-h-[47.5rem]': isOpen,
+            'max-h-fit': isOpen,
           }
         )}
       >
