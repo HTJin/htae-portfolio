@@ -60,10 +60,6 @@ Each changelog entry should be separated by a horizontal rule (`---`) and should
 Your content...
 ```
 
-### Newsletter
-
-You can find the newsletter sign up form in `./src/components/SignUpForm.jsx` — if you have a newsletter you'll want to wire this up with whatever mailing list software you use to get it to actually work.
-
 ### RSS feed
 
 The site will automatically generate an RSS feed at build time based on the content of `./src/pages/index.mdx`.

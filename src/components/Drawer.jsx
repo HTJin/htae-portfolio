@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import clsx from 'clsx'
 
 export function ChevronUpIcon() {
@@ -50,7 +50,7 @@ export function Drawer({ children }) {
   }, [isOpen])
 
   return (
-    <div>
+    <>
       <button
         className="rounded-lg border border-sky-700 px-4 py-2 font-bold text-sky-700 transition-colors duration-300 hover:bg-sky-700 hover:text-white dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-sky-700"
         onClick={() => setIsOpen(!isOpen)}
@@ -69,6 +69,6 @@ export function Drawer({ children }) {
       >
         {isContentVisible && children}
       </div>
-    </div>
+    </>
   )
 }
