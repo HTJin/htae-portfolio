@@ -22,10 +22,10 @@ export function SignUpForm() {
         name="email"
         id={id}
         placeholder="Your name / email / number"
-        className="peer w-0 flex-auto bg-transparent px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:outline-none sm:text-[0.8125rem]/6"
+        className="peer w-0 flex-auto rounded-lg border-transparent bg-transparent px-4 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-transparent focus:outline-none focus:ring-transparent sm:text-[0.8125rem]/6"
         onChange={(e) => setEmail(e.target.value)}
       />
-      <Button type="submit" arrow onClick={handleClick}>
+      <Button className="" type="submit" arrow onClick={handleClick}>
         Let’s Talk
       </Button>
       <div className="absolute inset-0 -z-10 rounded-lg transition peer-focus:ring-4 peer-focus:ring-sky-300/15" />

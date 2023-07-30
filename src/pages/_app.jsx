@@ -3,6 +3,7 @@ import Head from 'next/head'
 import { ThemeProvider } from 'next-themes'
 import { MDXProvider } from '@mdx-js/react'
 import ScrollToTop from '@/components/ScrollToTop'
+import SideNav from '@/components/SideNav'
 import AOS from 'aos'
 import * as mdxComponents from '@/components/mdx'
 import '@/styles/tailwind.css'
@@ -29,6 +30,7 @@ export default function App({ Component, pageProps }) {
         <MDXProvider components={mdxComponents}>
           <Component {...pageProps} />
           <ScrollToTop />
+          <SideNav />
         </MDXProvider>
       </ThemeProvider>
     </>
