@@ -42,7 +42,7 @@ export function ThemeToggle() {
     <div className="flex flex-col">
       <button
         type="button"
-        className="group fixed right-2 top-2 z-50 -m-2.5 p-2.5"
+        className="group fixed right-1 top-2 z-50 -m-2.5 p-2.5"
         onClick={() => setTheme(otherTheme)}
       >
         <span className="sr-only">Switch to {otherTheme} theme</span>

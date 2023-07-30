@@ -30,7 +30,7 @@ function Badge({ tech }) {
 
   return (
     <span
-      className={`${colorClass} mr-2 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset`}
+      className={`${colorClass} mb-2 mr-2 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset`}
     >
       {tech}
     </span>
@@ -98,7 +98,6 @@ function Project({
           />
         </div>
       </div>
-
       <div className="overflow-x-hidden">
         <div data-aos="fade-left">
           {technologies.map((tech) => (
