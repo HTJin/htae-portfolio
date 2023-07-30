@@ -27,7 +27,7 @@ export default function SideNav() {
         : null
       if (
         rect.top < window.innerHeight &&
-        (!nextRect || nextRect.top - 200 >= 0)
+        (!nextRect || nextRect.top - 600 >= 0)
       ) {
         setActiveSection(section)
         return
