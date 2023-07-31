@@ -7,7 +7,7 @@ export default function SideNav() {
 
   const checkActiveSection = useCallback(() => {
     const bottomOfPage =
-      window.innerHeight + window.pageYOffset >= document.body.offsetHeight
+      window.innerHeight + window.scrollY >= document.body.offsetHeight
 
     if (bottomOfPage) {
       setActiveSection('education')
@@ -53,106 +53,40 @@ export default function SideNav() {
 
   return (
     <nav
-      className="fixed -right-[9.2rem] bottom-0 top-0 flex rotate-90"
+      className="fixed -right-[9.2rem] top-[50%] flex h-fit rotate-90"
       aria-label="Breadcrumb"
     >
       <ol className="inline-flex items-center space-x-1 md:space-x-3">
-        <li className="inline-flex items-center">
-          <a
-            onClick={() => goToSection('skills')}
-            className={`ml-1 text-sm font-medium ${
-              activeSection === 'skills'
-                ? 'text-sky-700 dark:text-sky-400'
-                : 'text-gray-700 dark:text-gray-400'
-            } hover:text-sky-700 dark:hover:text-sky-400 md:ml-2`}
-          >
-            Skills
-          </a>
-        </li>
-        <li>
-          <div className="flex items-center">
-            <svg
-              className="mx-1 h-3 w-3 text-gray-400"
-              aria-hidden="true"
-              fill="none"
-              viewBox="0 0 6 10"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="m1 9 4-4-4-4"
-              />
-            </svg>
+        {sections.map((section, index) => (
+          <li className="inline-flex items-center" key={section}>
+            {index !== 0 && (
+              <svg
+                className="mx-1 h-3 w-3 text-gray-400"
+                aria-hidden="true"
+                fill="none"
+                viewBox="0 0 6 10"
+              >
+                <path
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="m1 9 4-4-4-4"
+                />
+              </svg>
+            )}
             <a
-              onClick={() => goToSection('projects')}
-              className={`ml-1 text-sm font-medium ${
-                activeSection === 'projects'
+              onClick={() => goToSection(section)}
+              className={`ml-1 cursor-pointer text-sm font-medium ${
+                activeSection === section
                   ? 'text-sky-700 dark:text-sky-400'
                   : 'text-gray-700 dark:text-gray-400'
               } hover:text-sky-700 dark:hover:text-sky-400 md:ml-2`}
             >
-              Projects
+              {section.charAt(0).toUpperCase() + section.slice(1)}
             </a>
-          </div>
-        </li>
-        <li>
-          <div className="flex items-center">
-            <svg
-              className="mx-1 h-3 w-3 text-gray-400"
-              aria-hidden="true"
-              fill="none"
-              viewBox="0 0 6 10"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="m1 9 4-4-4-4"
-              />
-            </svg>
-            <a
-              onClick={() => goToSection('experience')}
-              className={`ml-1 text-sm font-medium ${
-                activeSection === 'experience'
-                  ? 'text-sky-700 dark:text-sky-400'
-                  : 'text-gray-700 dark:text-gray-400'
-              } hover:text-sky-700 dark:hover:text-sky-400 md:ml-2`}
-            >
-              Experience
-            </a>
-          </div>
-        </li>
-        <li aria-current="page">
-          <div className="flex items-center">
-            <svg
-              className="mx-1 h-3 w-3 text-gray-400"
-              aria-hidden="true"
-              fill="none"
-              viewBox="0 0 6 10"
-            >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="m1 9 4-4-4-4"
-              />
-            </svg>
-            <a
-              onClick={() => goToSection('education')}
-              className={`ml-1 text-sm font-medium ${
-                activeSection === 'education'
-                  ? 'text-sky-700 dark:text-sky-400'
-                  : 'text-gray-700 dark:text-gray-400'
-              } hover:text-sky-700 dark:hover:text-sky-400 md:ml-2`}
-            >
-              Education
-            </a>
-          </div>
-        </li>
+          </li>
+        ))}
       </ol>
     </nav>
   )

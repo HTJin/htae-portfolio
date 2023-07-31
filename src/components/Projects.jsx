@@ -3,6 +3,7 @@ import { projects } from '../lib/projects'
 import { IconLink } from './IconLink'
 import { GitHubIcon } from './Intro'
 import { OpenIcon } from './Icons'
+import { AnimatePresence, motion } from 'framer-motion'
 import Image from 'next/image'
 import styles from '../styles/badges.module.css'
 
@@ -49,6 +50,7 @@ function Project({
   const [currentScreenshot, setCurrentScreenshot] = useState(
     '/images/projects/' + name + screenshots[0]
   )
+  const [nextScreenshot, setNextScreenshot] = useState('')
 
   const handleScreenshotClick = () => {
     const currentImage = currentScreenshot.replace(
@@ -57,6 +59,7 @@ function Project({
     )
     const currentIndex = screenshots.indexOf(currentImage)
     const nextIndex = (currentIndex + 1) % screenshots.length
+    setNextScreenshot('/images/projects/' + name + screenshots[nextIndex])
     setCurrentScreenshot('/images/projects/' + name + screenshots[nextIndex])
   }
 
@@ -85,17 +88,34 @@ function Project({
           </div>
         </div>
       </div>
-      <div className="overflow-x-hidden">
-        <div data-aos="fade-left">
-          <Image
-            src={currentScreenshot}
-            alt={name}
-            width={1896}
-            height={955}
-            sizes="(min-width: 1280px) 36rem, (min-width: 1024px) 45vw, (min-width: 640px) 32rem, 95vw"
+      <div className="relative h-[180px] overflow-hidden lg:h-[295px]">
+        <div data-aos="fade-up">
+          <button
             onClick={handleScreenshotClick}
-            className="cursor-pointer rounded-lg shadow-lg"
-          />
+            className="z-50 p-0 transition-opacity duration-500 ease-in-out focus:outline-none"
+          >
+            <AnimatePresence
+              onExitComplete={() => setCurrentScreenshot(nextScreenshot)}
+            >
+              <motion.div
+                key={currentScreenshot}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                layoutId={`projectImage-${name}`}
+                className="absolute inset-0"
+              >
+                <Image
+                  src={currentScreenshot}
+                  alt={name}
+                  width={1896}
+                  height={955}
+                  sizes="(min-width: 1280px) 36rem, (min-width: 1024px) 45vw, (min-width: 640px) 32rem, 95vw"
+                  className="cursor-pointer rounded-lg shadow-lg"
+                />
+              </motion.div>
+            </AnimatePresence>
+          </button>
         </div>
       </div>
       <div className="overflow-x-hidden">
