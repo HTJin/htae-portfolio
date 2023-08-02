@@ -53,7 +53,7 @@ export default function SideNav() {
 
   return (
     <nav
-      className="fixed -right-[9.2rem] top-[50%] flex h-fit rotate-90"
+      className="fixed -right-[9.2rem] lg:-right-[9.8rem] top-[50%] flex h-fit rotate-90"
       aria-label="Breadcrumb"
     >
       <ol className="inline-flex items-center space-x-1 md:space-x-3">

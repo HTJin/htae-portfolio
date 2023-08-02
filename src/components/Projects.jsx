@@ -88,7 +88,7 @@ function Project({
           </div>
         </div>
       </div>
-      <div className="relative h-[180px] overflow-hidden lg:h-[295px]">
+      <div className="relative h-[230px] overflow-hidden md:h-[260px] lg:h-[295px]">
         <div data-aos="fade-up">
           <button
             onClick={handleScreenshotClick}

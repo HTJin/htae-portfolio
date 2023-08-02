@@ -11,6 +11,7 @@ export const projects = [
       'Jinja',
       'PostgreSQL',
       'HTML',
+      'CSS',
       'Render',
     ],
     github: 'https://github.com/HTJin/virsh-card-shop',
