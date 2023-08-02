@@ -88,7 +88,7 @@ function Project({
           </div>
         </div>
       </div>
-      <div className="relative h-[230px] overflow-hidden md:h-[260px] lg:h-[295px]">
+      <div className="relative aspect-video w-full overflow-hidden">
         <div data-aos="fade-up">
           <button
             onClick={handleScreenshotClick}
@@ -118,7 +118,7 @@ function Project({
           </button>
         </div>
       </div>
-      <div className="overflow-x-hidden">
+      <div className="-mt-1 overflow-x-hidden">
         <div data-aos="fade-left">
           {technologies.map((tech) => (
             <Badge key={tech} tech={tech} />
