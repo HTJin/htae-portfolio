@@ -48,12 +48,16 @@ export default function SideNav() {
 
     if (sectionElement) {
       sectionElement.scrollIntoView({ behavior: 'smooth' })
+      setTimeout(() => {
+        // Re-check active section after the scroll has completed
+        checkActiveSection()
+      }, 1000)
     }
   }
 
   return (
     <nav
-      className="fixed -right-[9.2rem] lg:-right-[9.8rem] top-[50%] flex h-fit rotate-90"
+      className="fixed -right-[9.2rem] top-[50%] flex h-fit rotate-90 lg:-right-[9.8rem]"
       aria-label="Breadcrumb"
     >
       <ol className="inline-flex items-center space-x-1 md:space-x-3">
@@ -76,7 +80,9 @@ export default function SideNav() {
               </svg>
             )}
             <a
-              onClick={() => goToSection(section)}
+              onClick={() => {
+                goToSection(section)
+              }}
               className={`ml-1 cursor-pointer text-sm font-medium ${
                 activeSection === section
                   ? 'text-sky-700 dark:text-sky-400'
