@@ -1,5 +1,15 @@
 export const projects = [
   {
+    name: 'co-lab-portfolio',
+    title: 'Co.Lab Portfolio App',
+    description:
+      'This application was created as a coding assessment for a pilot bootcamp. Uses Wit AI API for speech recognition and viewers can speak the navigation keywords to navigate through different sections of the portfolio.',
+    technologies: ['React', 'Typescript', 'TailwindCSS'],
+    github: 'https://github.com/HTJin/co-lab-portfolio',
+    site: 'https://co-lab-portfolio-htjin.vercel.app/',
+    screenshots: ['/1.png', '/2.png', '/3.png', '/4.png'],
+  },
+  {
     name: 'virshop-flask',
     title: 'Virshop - Backend',
     description:
