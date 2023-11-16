@@ -111,14 +111,14 @@ function Project({
                   width={1896}
                   height={955}
                   sizes="(min-width: 1280px) 36rem, (min-width: 1024px) 45vw, (min-width: 640px) 32rem, 95vw"
-                  className="cursor-pointer rounded-lg shadow-lg"
+                  className="aspect-video cursor-pointer rounded-lg object-cover shadow-lg"
                 />
               </motion.div>
             </AnimatePresence>
           </button>
         </div>
       </div>
-      <div className="-mt-1 overflow-x-hidden">
+      <div className="overflow-x-hidden">
         <div data-aos="fade-left">
           {technologies.map((tech) => (
             <Badge key={tech} tech={tech} />

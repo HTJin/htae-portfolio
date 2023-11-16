@@ -1,5 +1,15 @@
 export const projects = [
   {
+    name: 'matrimoni-react',
+    title: 'Matrimoni - Wedding App',
+    description:
+      "Matrimoni is an innovative web application designed to streamline and simplify the wedding planning process for couples. This project is featured on Colab's highlighted projects page: https://www.joincolab.io/product/matrimoni",
+    technologies: ['React', 'Typescript', 'TailwindCSS', 'Firebase'],
+    github: 'https://github.com/Colab-Team-4/matrimoni-react',
+    site: 'https://matrimoni.vercel.app/',
+    screenshots: ['/1.png', '/2.png', '/3.png', '/4.png', '/5.png'],
+  },
+  {
     name: 'co-lab-portfolio',
     title: 'Co.Lab Portfolio App',
     description:
