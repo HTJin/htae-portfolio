@@ -125,7 +125,7 @@ export function IntroFooter() {
         <div>Hyun-Tae Jin</div>
       </div>
       <IconLink
-        href="https://drive.google.com/file/d/1cQVYZaVGa1x4NlVRbXwszvZiAftDH6XT/view?usp=sharing"
+        href="https://drive.google.com/file/d/1cQVYZaVGa1x4NlVRbXwszvZiAftDH6XT/view"
         target="_blank"
         rel="noopener noreferrer"
         icon={ResumeIcon}

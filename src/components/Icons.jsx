@@ -91,9 +91,9 @@ export function AcademicCap() {
   )
 }
 
-export function CheckBadge() {
+export function CheckBadge(props) {
   return (
-    <svg fill="currentColor" viewBox="0 0 24 24">
+    <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
       <path
         clipRule="evenodd"
         fillRule="evenodd"
