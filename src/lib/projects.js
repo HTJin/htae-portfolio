@@ -4,7 +4,7 @@ export const projects = [
     title: 'Matrimoni - Wedding App',
     description:
       "Matrimoni is an innovative web application designed to streamline and simplify the wedding planning process for couples. This project is featured on Colab's highlighted projects page: https://www.joincolab.io/product/matrimoni",
-    technologies: ['React', 'Typescript', 'TailwindCSS', 'Firebase'],
+    technologies: ['React', 'Typescript', 'TailwindCSS', 'Firebase', 'Vercel'],
     github: 'https://github.com/Colab-Team-4/matrimoni-react',
     site: 'https://matrimoni.vercel.app/',
     screenshots: ['/1.png', '/2.png', '/3.png', '/4.png', '/5.png'],
@@ -14,7 +14,7 @@ export const projects = [
     title: 'Co.Lab Portfolio App',
     description:
       'This application was created as a coding assessment for a pilot bootcamp. Uses Wit AI API for speech recognition and viewers can speak the navigation keywords to navigate through different sections of the portfolio.',
-    technologies: ['React', 'Typescript', 'TailwindCSS'],
+    technologies: ['React', 'Typescript', 'TailwindCSS', 'Vercel'],
     github: 'https://github.com/HTJin/co-lab-portfolio',
     site: 'https://co-lab-portfolio-htjin.vercel.app/',
     screenshots: ['/1.png', '/2.png', '/3.png', '/4.png'],

@@ -26,6 +26,7 @@ function Badge({ tech }) {
     PostgreSQL: styles.bgIndigo,
     Firebase: styles.bgPink,
     'Material-UI': styles.bgViolet,
+    Vercel: styles.bgBlack,
   }
   const colorClass = techToColor[tech]
 
