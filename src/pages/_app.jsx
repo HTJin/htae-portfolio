@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
 import { ThemeProvider } from 'next-themes'
 import { MDXProvider } from '@mdx-js/react'
 import ScrollToTop from '@/components/ScrollToTop'
@@ -11,11 +12,15 @@ import 'focus-visible'
 import 'aos/dist/aos.css'
 
 export default function App({ Component, pageProps }) {
+  const router = useRouter()
+
   useEffect(() => {
     AOS.init({
       duration: 1000,
     })
   }, [])
+
+  const isResumePage = router.pathname === '/resume.pdf'
 
   return (
     <>
@@ -29,8 +34,8 @@ export default function App({ Component, pageProps }) {
       <ThemeProvider attribute="class" disableTransitionOnChange>
         <MDXProvider components={mdxComponents}>
           <Component {...pageProps} />
-          <ScrollToTop />
-          <SideNav />
+          {!isResumePage && <ScrollToTop />}
+          {!isResumePage && <SideNav />}
         </MDXProvider>
       </ThemeProvider>
     </>

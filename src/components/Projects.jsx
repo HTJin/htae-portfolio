@@ -27,6 +27,8 @@ function Badge({ tech }) {
     Firebase: styles.bgPink,
     'Material-UI': styles.bgViolet,
     Vercel: styles.bgBlack,
+    NextJS: styles.bgBlack,
+    Supabase: styles.bgGreen,
   }
   const colorClass = techToColor[tech]
 

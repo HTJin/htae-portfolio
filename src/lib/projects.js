@@ -1,5 +1,15 @@
 export const projects = [
   {
+    name: 'solar-indy',
+    title: 'Solar Power Indy - Sales Qualification App',
+    description:
+      'This project helps qualify potential solar panel customers for Solar Power Indy to determine if they are good candidates for solar installation. The app streamlines the sales process by providing a dashboard based on customer inputs.',
+    technologies: ['NextJS', 'Typescript', 'TailwindCSS', 'Supabase', 'Vercel'],
+    github: 'https://github.com/HTJin/solar-questions',
+    site: 'https://gosolarindy.energy',
+    screenshots: ['/1.png', '/2.png', '/3.png', '/4.png'],
+  },
+  {
     name: 'matrimoni-react',
     title: 'Matrimoni - Wedding App',
     description:

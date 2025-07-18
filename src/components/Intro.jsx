@@ -124,14 +124,12 @@ export function IntroFooter() {
         <div className="mr-[1ch]">Copyright © {new Date().getFullYear()}</div>
         <div>Hyun-Tae Jin</div>
       </div>
-      <IconLink
-        href="https://drive.google.com/file/d/1cQVYZaVGa1x4NlVRbXwszvZiAftDH6XT/view"
-        target="_blank"
-        rel="noopener noreferrer"
-        icon={ResumeIcon}
-        compact
-        large
-      >
+              <IconLink
+          href="/resume.pdf"
+          icon={ResumeIcon}
+          compact
+          large
+        >
         <div className="flex flex-col lg:flex-row lg:whitespace-nowrap">
           <div className="mr-[.5ch]">Download</div>
           <div>Resumé</div>
