@@ -129,6 +129,7 @@ export function IntroFooter() {
           icon={ResumeIcon}
           compact
           large
+          useAnchor
         >
         <div className="flex flex-col lg:flex-row lg:whitespace-nowrap">
           <div className="mr-[.5ch]">Download</div>
