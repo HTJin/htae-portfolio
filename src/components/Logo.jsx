@@ -7,7 +7,7 @@ export function Logo() {
       width={200}
       height={200}
       alt="Avatar"
-      className="mt-16"
+      className="mt-4 h-36 w-36 sm:mt-8 sm:h-44 sm:w-44 lg:mt-16 lg:h-[200px] lg:w-[200px]"
     />
   )
 }

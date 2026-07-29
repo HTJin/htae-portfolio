@@ -6,7 +6,7 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 
 export function FormattedDate({ date, ...props }) {
   if (!date) {
-    return null;
+    return null
   }
 
   date = typeof date === 'string' ? new Date(date) : date

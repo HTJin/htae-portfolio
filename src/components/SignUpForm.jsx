@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
 import { Button } from '@/components/Button'
+import { meta } from '@/content'
 
 export function SignUpForm() {
   let id = useId()
@@ -7,11 +8,13 @@ export function SignUpForm() {
 
   const handleClick = (e) => {
     e.preventDefault()
-    window.location.href = `mailto:hytaej@gmail.com?subject=Let's Talk&body=From: ${email}`
+    window.location.href = `mailto:${meta.email}?subject=${encodeURIComponent(
+      "Let's Talk"
+    )}&body=${encodeURIComponent(`From: ${email}`)}`
   }
 
   return (
-    <form className="relative isolate mt-8 flex items-center pr-1">
+    <form className="relative isolate mt-6 flex items-center pr-1 lg:mt-8">
       <label htmlFor={id} className="sr-only">
         Email address
       </label>

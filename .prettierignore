@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+build
+package-lock.json
+public
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.ico
+*.svg
+.mdx
