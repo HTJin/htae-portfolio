@@ -9,8 +9,8 @@ export default function HomePage() {
   return (
     <Layout>
       <SkillsSection />
-      <ProjectsSection />
       <ExperienceSection />
+      <ProjectsSection />
       <EducationSection />
     </Layout>
   )

@@ -2,10 +2,7 @@ const defaultTheme = require('tailwindcss/defaultTheme')
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    './src/**/*.{js,mjs,jsx}',
-    './node_modules/flowbite/**/*.js',
-  ],
+  content: ['./src/**/*.{js,mjs,jsx}', './node_modules/flowbite/**/*.js'],
   darkMode: 'class',
   theme: {
     extend: {

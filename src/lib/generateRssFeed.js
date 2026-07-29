@@ -17,7 +17,9 @@ function renderBullets(bullets = []) {
     return ''
   }
 
-  return `<ul>${bullets.map((bullet) => `<li>${escapeHtml(bullet)}</li>`).join('')}</ul>`
+  return `<ul>${bullets
+    .map((bullet) => `<li>${escapeHtml(bullet)}</li>`)
+    .join('')}</ul>`
 }
 
 function renderParagraphs(paragraphs = []) {
@@ -50,7 +52,9 @@ function renderExperienceArticle(entry) {
 
 function renderEducationArticle() {
   const title = `${education.school} | ${education.location}`
-  const body = `<h2>${escapeHtml(title)}</h2><p>${escapeHtml(education.degree)}</p>`
+  const body = `<h2>${escapeHtml(title)}</h2><p>${escapeHtml(
+    education.degree
+  )}</p>`
   const metadata = JSON.stringify({
     id: 'university-of-pittsburgh',
     title,
@@ -81,10 +85,15 @@ export async function generateRssFeed() {
     },
   })
 
-  const articles = [...experience.map(renderExperienceArticle), renderEducationArticle()]
+  const articles = [
+    ...experience.map(renderExperienceArticle),
+    renderEducationArticle(),
+  ]
 
   for (const article of articles) {
-    const metaMatch = article.match(/<script type="text\/metadata">(.*?)<\/script>/)
+    const metaMatch = article.match(
+      /<script type="text\/metadata">(.*?)<\/script>/
+    )
     const itemMeta = JSON.parse(metaMatch[1])
     const url = `${siteUrl}/#${itemMeta.id}`
 

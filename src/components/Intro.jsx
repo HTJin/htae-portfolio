@@ -72,19 +72,22 @@ export function Intro() {
   return (
     <>
       <div>
-        <Link className="-mb-16 mt-16 flex justify-center lg:pr-[30%]" href="/">
+        <Link
+          className="-mb-10 mt-4 flex justify-center lg:-mb-16 lg:mt-16 lg:pr-[30%]"
+          href="/"
+        >
           <Logo />
         </Link>
       </div>
-      <h1 className="mt-14 text-center font-display text-3xl/tight font-light text-white lg:text-left lg:text-4xl/tight">
+      <h1 className="mt-8 text-center font-display text-3xl/tight font-light text-white lg:mt-14 lg:text-left lg:text-4xl/tight">
         Hello, my name is <br />{' '}
         <span className="text-sky-300">{meta.name}</span>
       </h1>
-      <p className="mt-4 hyphens-auto break-words text-sm/6 text-gray-300 lg:hyphens-none lg:break-normal">
+      <p className="mt-3 hyphens-auto break-words text-sm/6 text-gray-300 lg:mt-4 lg:hyphens-none lg:break-normal">
         {meta.tagline}
       </p>
       <SignUpForm />
-      <div className="mt-8 flex flex-wrap justify-center gap-x-1 gap-y-3 sm:gap-x-2 lg:justify-start">
+      <div className="mt-6 flex flex-wrap justify-center gap-x-1 gap-y-3 sm:gap-x-2 lg:mt-8 lg:justify-start">
         <IconLink
           href={meta.links.linkedin}
           target="_blank"
@@ -124,7 +127,13 @@ export function IntroFooter() {
         <div className="mr-[1ch]">Copyright © {new Date().getFullYear()}</div>
         <div>Hyun-Tae Jin</div>
       </div>
-      <IconLink href={meta.resumePath} icon={ResumeIcon} compact large useAnchor>
+      <IconLink
+        href={meta.resumePath}
+        icon={ResumeIcon}
+        compact
+        large
+        useAnchor
+      >
         <div className="flex flex-col lg:flex-row lg:whitespace-nowrap">
           <div className="mr-[.5ch]">Download</div>
           <div>Resumé</div>

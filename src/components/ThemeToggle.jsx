@@ -46,7 +46,7 @@ export function ThemeToggle() {
         onClick={() => setTheme(otherTheme)}
       >
         <span className="sr-only">Switch to {otherTheme} theme</span>
-        <ThemeIcon className="h-6 w-6 dark:fill-white opacity-50 transition-opacity group-hover:opacity-100 lg:fill-gray-900 lg:dark:fill-white" />
+        <ThemeIcon className="h-6 w-6 opacity-50 transition-opacity group-hover:opacity-100 dark:fill-white lg:fill-gray-900 lg:dark:fill-white" />
         <CursorIcon className="h-6 w-6 fill-white opacity-50 transition-opacity group-hover:opacity-100 lg:fill-gray-900 lg:dark:fill-white" />
       </button>
     </div>

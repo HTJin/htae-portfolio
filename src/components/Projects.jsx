@@ -94,12 +94,12 @@ function Project({
           </div>
         </div>
       </div>
-      <div className="relative !max-w-xl aspect-video w-full min-w-0 overflow-hidden">
+      <div className="relative aspect-video w-full min-w-0 !max-w-xl overflow-hidden">
         <div className="absolute inset-0 min-w-0 max-w-full" data-aos="fade-up">
           <button
             type="button"
             onClick={handleScreenshotClick}
-            className="relative block h-full w-full max-w-full min-w-0 p-0 transition-opacity duration-500 ease-in-out focus:outline-none"
+            className="relative block h-full w-full min-w-0 max-w-full p-0 transition-opacity duration-500 ease-in-out focus:outline-none"
           >
             <AnimatePresence
               mode="wait"

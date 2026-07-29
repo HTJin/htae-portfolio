@@ -4,14 +4,14 @@ Portfolio site for [htae.dev](https://htae.dev), built with Next.js and Tailwind
 
 Site copy lives in plain JavaScript files under `src/content/` — no MDX required.
 
-| File | What to edit |
-| --- | --- |
-| `src/content/index.js` | Name, tagline, email, links, page title/description |
-| `src/content/skills.js` | Skills groups |
-| `src/content/experience.js` | Work history |
-| `src/content/education.js` | Degree and certifications |
-| `src/lib/projects.js` | Project showcase cards |
-| `public/resume.pdf` | Downloadable resume |
+| File                        | What to edit                                        |
+| --------------------------- | --------------------------------------------------- |
+| `src/content/index.js`      | Name, tagline, email, links, page title/description |
+| `src/content/skills.js`     | Skills groups                                       |
+| `src/content/experience.js` | Work history                                        |
+| `src/content/education.js`  | Degree and certifications                           |
+| `src/lib/projects.js`       | Project showcase cards                              |
+| `public/resume.pdf`         | Downloadable resume                                 |
 
 See `src/content/README.md` for more detail.
 

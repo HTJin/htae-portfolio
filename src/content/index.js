@@ -2,15 +2,15 @@ export const meta = {
   name: 'Hyun-Tae Jin',
   role: 'Senior MES DevOps Engineer',
   tagline:
-    'I am a developer deeply committed to crafting sleek, pragmatic web applications with utmost precision.',
-  email: 'hytaej@gmail.com',
+    'I ship software people actually depend on. Agency products under deadline, healthcare apps in the enterprise, and production systems on a live factory floor. Full stack by trade, hands-on with data, servers, and the hardware around the code.',
+  email: 'hytjin@gmail.com',
   resumePath: '/resume.pdf',
-  pageTitle: '<Htae role="Web Developer" />',
+  pageTitle: '<Htae role="Software Engineer" />',
   pageDescription:
-    "I am devoted to meticulously delivering clean, practical web applications. I'm a fan of efficient, minimalistic user-centered design and try to make them into a reality. Your imagination is the limit.",
+    'Software engineer across agency web, enterprise apps, and production systems. Full stack by trade, hands-on with data, servers, and the hardware around the code.',
   links: {
     linkedin: 'https://www.linkedin.com/in/htjin/',
-    github: 'https://github.com/htjin',
+    github: 'https://github.com/HTJin',
     portfolio: 'https://htae.dev',
   },
 }

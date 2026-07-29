@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 export default function SideNav() {
   const [activeSection, setActiveSection] = useState('')
 
-  const sections = ['skills', 'projects', 'experience', 'education']
+  const sections = ['skills', 'experience', 'projects', 'education']
 
   const checkActiveSection = useCallback(() => {
     const bottomOfPage =

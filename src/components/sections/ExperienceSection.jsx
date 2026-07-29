@@ -3,6 +3,7 @@ import { Drawer } from '@/components/Drawer'
 import {
   AnimatedBlock,
   ContentArticle,
+  SectionIntro,
 } from '@/components/content/ContentArticle'
 import { experience } from '@/content/experience'
 
@@ -54,7 +55,12 @@ function ExperienceEntry({ entry }) {
 }
 
 export function ExperienceSection() {
-  return experience.map((entry) => (
-    <ExperienceEntry key={entry.id} entry={entry} />
-  ))
+  return (
+    <>
+      <SectionIntro id="experience" title="Experience" />
+      {experience.map((entry) => (
+        <ExperienceEntry key={entry.id} entry={entry} />
+      ))}
+    </>
+  )
 }

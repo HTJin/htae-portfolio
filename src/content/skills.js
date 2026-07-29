@@ -4,45 +4,46 @@ export const skills = [
     title: 'Languages',
     icon: 'CodeBracket',
     items:
-      'JavaScript, TypeScript, Python, Java, C#, PHP, Ruby, HTML5, CSS3, SQL',
+      'JavaScript, TypeScript, Python, Java, C#/.NET, SQL, HTML5, CSS3, PHP, Ruby',
   },
   {
     id: 'libraries',
     title: 'Libraries / Frameworks',
     icon: 'BookOpen',
     items:
-      'React, Next, Redux, Vue, Nuxt, Vuex, Angular, .NET, TailwindCSS, Bootstrap, Material UI, Vuetify, Node, Express, Flask, Jinja, Vite, GraphQL, Jekyll, Polymer, React Query',
+      'React, Vite, Next, Redux, Vue, Nuxt, Vuex, Angular, .NET, TailwindCSS, Bootstrap, Material UI, Vuetify, Node, Express, Flask, React Query, REST APIs',
   },
   {
     id: 'databases',
     title: 'Databases',
     icon: 'CircleStack',
-    items: 'MySQL, PostgreSQL, MongoDB, Firebase, Supabase, Oracle',
+    items:
+      'Oracle, PostgreSQL, MySQL, MongoDB, Firebase, Supabase, SQL Developer',
   },
   {
     id: 'tools',
-    title: 'Tools',
+    title: 'Tools / Systems',
     icon: 'WrenchScrewdriver',
     items:
-      'AWS, Postman, Insomnia, VSCode, Cursor, Visual Studio, Terminal, Powershell, Jira, Harvest, TOAD, SQL Developer',
+      'Jenkins, AWS, Visual Studio, VS Code, Cursor, PowerShell, Postman, Insomnia, Jira, Linux log analysis, ERP interfaces, disaster recovery',
   },
   {
     id: 'version-control',
     title: 'Version Control',
     icon: 'VersionControl',
-    items: 'Git, GitHub, GitLab, Bitbucket, Gitea',
+    items: 'Git, GitHub, GitLab, Gitea, Bitbucket',
   },
   {
     id: 'deployment',
     title: 'Deployment',
     icon: 'GlobeAlt',
-    items: 'Glitch, Render, Firebase, Vercel, Netlify',
+    items: 'Jenkins, Vercel, Netlify, Render, Firebase, Glitch',
   },
   {
     id: 'discipline',
     title: 'Discipline',
     icon: 'AgileDiscipline',
     items:
-      'Agile, Scrum, Resolve Merge Conflicts, Code Reviews, Configure API Endpoints, Functional/OOP, UI/UX',
+      'Agile, Scrum, Code Reviews, Merge Conflicts, Change Control, Requirements Gathering, Plant-side MES support, UI/UX, Functional/OOP',
   },
 ]

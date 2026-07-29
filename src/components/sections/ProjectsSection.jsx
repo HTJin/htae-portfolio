@@ -7,17 +7,19 @@ import {
 
 export function ProjectsSection() {
   return (
-    <ContentSection id="few-projects-ive-tinkered-with">
-      <AnimatedBlock>
-        <h2 className="flex flex-col text-3xl dark:text-yellow-200 lg:flex-row lg:whitespace-nowrap">
-          <span id="projects" className="mr-[.5ch]">
-            Few Projects I&apos;ve tinkered with
-          </span>
-          <span>. . .</span>
-        </h2>
-      </AnimatedBlock>
-      <Projects />
-      <SectionIntro id="experience" title="Experience" />
-    </ContentSection>
+    <>
+      <SectionIntro id="projects" title="Projects" />
+      <ContentSection id="few-projects-ive-tinkered-with">
+        <AnimatedBlock>
+          <h2 className="flex flex-col text-3xl dark:text-yellow-200 lg:flex-row lg:whitespace-nowrap">
+            <span className="mr-[.5ch]">
+              Few Projects I&apos;ve tinkered with
+            </span>
+            <span>. . .</span>
+          </h2>
+        </AnimatedBlock>
+        <Projects />
+      </ContentSection>
+    </>
   )
 }
