@@ -1,0 +1,32 @@
+---
+description: Never use em dashes in writing; they read as AI-generated
+alwaysApply: true
+---
+
+# No Em Dashes
+
+Never use the em dash character (`—`) in any output: chat replies, emails, LinkedIn messages, resumes, docs, comments, or commit messages.
+
+It is a common AI tell. Do not use it.
+
+## Use instead
+
+- Commas
+- Periods / separate sentences
+- Colons
+- Parentheses
+- A normal hyphen (`-`) only for compound words or date ranges (e.g. `Dec 2025 - Present`)
+
+## Examples
+
+Bad: `I'm interested — thanks for reaching out.`
+
+Good: `I'm interested. Thanks for reaching out.`
+
+Bad: `Deploy releases — then validate on the floor.`
+
+Good: `Deploy releases, then validate on the floor.`
+
+## Check before sending
+
+Before finishing any user-facing text, scan for `—` and rewrite those spots.

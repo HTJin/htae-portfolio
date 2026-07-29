@@ -1,41 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
+import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
-
-import { useFeed } from '@/components/FeedProvider'
 import { FormattedDate } from '@/components/FormattedDate'
 
-export const a = Link
-
-export const wrapper = function Wrapper({ children }) {
-  return children
-}
-
-export const h2 = function H2(props) {
-  let { isFeed } = useFeed()
-
-  if (isFeed) {
-    return null
-  }
-
-  return <h2 {...props} />
-}
-
-export const img = function Img(props) {
-  return (
-    <div className="relative mt-8 overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-900 [&+*]:mt-8">
-      <Image
-        alt=""
-        sizes="(min-width: 1280px) 36rem, (min-width: 1024px) 45vw, (min-width: 640px) 32rem, 95vw"
-        {...props}
-      />
-      <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-gray-900/10 dark:ring-white/10" />
-    </div>
-  )
-}
-
-function ContentWrapper({ className, children }) {
+export function ContentWrapper({ className, children }) {
   return (
     <div className="mx-auto max-w-7xl px-6 lg:flex lg:px-8">
       <div className="lg:ml-96 lg:flex lg:w-full lg:justify-end lg:pl-32">
@@ -49,6 +17,16 @@ function ContentWrapper({ className, children }) {
         </div>
       </div>
     </div>
+  )
+}
+
+export function ContentSection({ id, children, className }) {
+  return (
+    <article id={id} className="scroll-mt-16">
+      <ContentWrapper className={clsx('typography', className)}>
+        {children}
+      </ContentWrapper>
+    </article>
   )
 }
 
@@ -78,18 +56,22 @@ function ArticleHeader({ id, date }) {
   )
 }
 
-export const article = function Article({ id, title, date, children }) {
-  let { isFeed } = useFeed()
-  let heightRef = useRef()
-  let [heightAdjustment, setHeightAdjustment] = useState(0)
+export function ContentArticle({ id, date, children }) {
+  const heightRef = useRef()
+  const [heightAdjustment, setHeightAdjustment] = useState(0)
+  const hasDate = Boolean(date)
 
   useEffect(() => {
-    let observer = new window.ResizeObserver(() => {
+    if (!hasDate || !heightRef.current) {
+      return
+    }
+
+    const observer = new window.ResizeObserver(() => {
       if (!heightRef.current) {
         return
       }
-      let { height } = heightRef.current.getBoundingClientRect()
-      let nextMultipleOf8 = 8 * Math.ceil(height / 8)
+      const { height } = heightRef.current.getBoundingClientRect()
+      const nextMultipleOf8 = 8 * Math.ceil(height / 8)
       setHeightAdjustment(nextMultipleOf8 - height)
     })
 
@@ -98,42 +80,44 @@ export const article = function Article({ id, title, date, children }) {
     return () => {
       observer.disconnect()
     }
-  }, [])
-
-  if (isFeed) {
-    return (
-      <article>
-        <script
-          type="text/metadata"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({ id, title, date }),
-          }}
-        />
-        {children}
-      </article>
-    )
-  }
+  }, [hasDate])
 
   return (
     <article
       id={id}
       className="scroll-mt-16"
-      style={{ paddingBottom: `${heightAdjustment}px` }}
+      style={hasDate ? { paddingBottom: `${heightAdjustment}px` } : undefined}
     >
-      <div ref={heightRef}>
-        <ArticleHeader id={id} date={date} />
+      <div ref={hasDate ? heightRef : undefined}>
+        {hasDate ? <ArticleHeader id={id} date={date} /> : null}
         <ContentWrapper className="typography">{children}</ContentWrapper>
       </div>
     </article>
   )
 }
 
-export const code = function Code({ highlightedCode, ...props }) {
-  if (highlightedCode) {
-    return (
-      <code {...props} dangerouslySetInnerHTML={{ __html: highlightedCode }} />
-    )
-  }
+export function AnimatedBlock({
+  children,
+  animation = 'fade-left',
+  className,
+}) {
+  return (
+    <div className={clsx('min-w-0 overflow-x-hidden', className)}>
+      <div data-aos={animation}>{children}</div>
+    </div>
+  )
+}
 
-  return <code {...props} />
+export function SectionIntro({ id, title, className }) {
+  return (
+    <div
+      id={id}
+      className={clsx(
+        '-mb-12 mt-28 text-3xl dark:text-yellow-200 lg:-mb-24',
+        className
+      )}
+    >
+      <p>{title}</p>
+    </div>
+  )
 }
