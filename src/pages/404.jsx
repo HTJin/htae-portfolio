@@ -6,7 +6,8 @@ export default function NotFound() {
   return (
     <>
       <Head>
-        <title>Page not found - Commit</title>
+        <title>Page not found | Hyun-Tae Jin</title>
+        <meta name="robots" content="noindex, follow" />
       </Head>
       <div className="relative isolate flex flex-auto flex-col items-center justify-center overflow-hidden bg-gray-950 text-center">
         <svg

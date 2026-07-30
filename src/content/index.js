@@ -5,9 +5,11 @@ export const meta = {
     'I ship software people actually depend on. Agency products under deadline, healthcare apps in the enterprise, and production systems on a live factory floor. Full stack by trade, hands-on with data, servers, and the hardware around the code.',
   email: 'hytjin@gmail.com',
   resumePath: '/resume.pdf',
-  pageTitle: '<Htae role="Software Engineer" />',
+  siteUrl: 'https://htae.dev',
+  ogImagePath: '/images/avatar.png',
+  pageTitle: 'Hyun-Tae Jin | Senior MES DevOps Engineer',
   pageDescription:
-    'Software engineer across agency web, enterprise apps, and production systems. Full stack by trade, hands-on with data, servers, and the hardware around the code.',
+    'Portfolio of Hyun-Tae Jin, Senior MES DevOps Engineer. Full-stack software across manufacturing MES, enterprise healthcare, and agency web products.',
   links: {
     linkedin: 'https://www.linkedin.com/in/htjin/',
     github: 'https://github.com/HTJin',

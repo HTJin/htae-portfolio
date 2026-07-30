@@ -65,19 +65,19 @@ function renderEducationArticle() {
 }
 
 export async function generateRssFeed() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || meta.siteUrl
   const author = {
     name: meta.name,
     email: meta.email,
   }
 
   const feed = new Feed({
-    title: 'Portfolio',
+    title: `${meta.name} | Portfolio`,
     description: meta.pageDescription,
     author,
     id: siteUrl,
     link: siteUrl,
-    image: `${siteUrl}/favicon.ico`,
+    image: `${siteUrl}${meta.ogImagePath}`,
     favicon: `${siteUrl}/favicon.ico`,
     copyright: `All rights reserved ${new Date().getFullYear()}`,
     feedLinks: {
