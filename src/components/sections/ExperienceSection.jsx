@@ -20,9 +20,19 @@ function ExperienceEntry({ entry }) {
         <h2>{entry.title}</h2>
       </AnimatedBlock>
 
+      {/*
+        entry.lead is a date range ("Dec 2025 - Present"), which is not a
+        heading. As an <h4> after the <h2> title it skipped a level nine
+        times over, and then went back up to <h3> for the company line.
+        Rendered as a <p> the outline is h2 -> h3 with no skip; the classes
+        reproduce the typography h4 rules exactly (font-display, 600, 14px,
+        24px line-height, heading colour) plus its 2rem top margin.
+      */}
       {entry.lead ? (
         <AnimatedBlock className="-mb-8">
-          <h4>{entry.lead}</h4>
+          <p className="mt-8 font-display text-sm font-semibold leading-6 text-[color:var(--typography-headings)]">
+            {entry.lead}
+          </p>
         </AnimatedBlock>
       ) : null}
 

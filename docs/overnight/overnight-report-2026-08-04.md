@@ -1,53 +1,53 @@
-# Overnight report — through Cycle 3
+# Overnight report — through Cycle 4
 
-**Branch:** `update/stellix-prep`, pushed to `origin`. **No deploy.** htae.dev production is unchanged.
+**Branch:** `update/stellix-prep`, pushed to `origin`. **Nothing deployed.**
 **Role:** Enterprise Solutions Engineer III at **Stellix** (Syncade / life-sciences cGMP MES), director round with **Stephen Britton**.
 
 ---
 
-## ⚠ Read this first — the interview may be TODAY
+## ⚠ Two things need you, and one is time-critical
 
-The machine clock during Cycle 3 read **Tuesday, 4 August 2026, 01:29 AM**.
+**1. None of this work is live.** Measured against the real htae.dev, not assumed:
 
-Your Cursor thread (message 888) says *"next up is tuesday at 1pm with the director."* **August 4 is a Tuesday** — that is about **11.5 hours** from that reading. But in session you said the interview is "tomorrow", which would be Wednesday the 5th.
+| On live htae.dev right now | |
+|---|---|
+| "How I work" | **0 occurrences** |
+| "Off the résumé" | **0 occurrences** |
+| `Remote \| Remote` bug | **still there** |
+| `aria-label` count | **1** (branch has 18) |
+| Invisible section headings | **still invisible** |
 
-Both statements are yours and they cannot both be right. Earlier files in this run asserted the 5th as fact; that assertion has been **withdrawn**, not quietly corrected. If the real slot is Tuesday 1pm, then everything in "Needs you" below is due **this morning**.
+Four cycles of fixes exist only on the branch. A director opening your site today sees none of it and still sees the defects. Deploying is prohibited by this run's guardrails — correctly, because publishing to your live site is your call. But it is the single action that converts all of this into something anyone can see.
+
+**2. The interview may be TODAY.** The machine clock read **Tuesday, 4 August 2026, 01:29 AM**. Your Cursor thread says *"next up is tuesday at 1pm with the director"* — and **4 August is a Tuesday**. In session you said "tomorrow" (Wednesday the 5th). Both are your words; they conflict. Earlier files asserted the 5th as fact and that assertion has been **withdrawn**. If it is Tuesday 1pm, the deploy decision and the GitHub bio are due this morning.
 
 ---
 
 ## Shipped
 
-**Cycle 1 — say the things a director actually asks about**
+**Cycle 1** — "How I work" (six practice cards, each naming the `experience.js` bullet it derives from); "Off the résumé" (your own approved narrative); **section headings that were invisible on every desktop screen** — `SectionIntro` painted its title at `x: 0` under the fixed sidebar, so Experience, Projects and Education had no visible heading at all.
 
-1. **"How I work"** — six practice cards after Experience. Each names the `experience.js` bullet it derives from. The Stellix role is test-and-document delivery in a regulated shop; you already work that way, and the site only advertised tools.
-2. **"Off the résumé"** — your own approved narrative, closing the page.
-3. **Section headings were invisible on desktop** — `SectionIntro` painted its title at `x: 0`, under the fixed sidebar. **Experience, Projects and Education had no visible heading on any desktop screen.** Fixed.
-4. Card scrollbars, a stale lint warning, hardcoded bottom-of-page nav section.
+**Cycle 2** — `3FGolf | Remote | Remote` (location and workMode are both "Remote" and the join didn't dedupe); **17 links with no accessible name** — every project's GitHub and live-site icon plus the logo, announced by screen readers as bare URLs.
 
-**Cycle 2 — objective defects, no copy touched**
+**Cycle 3** — audit only, nothing built, deliberately. Closed three unknowns: **mobile verified at 390px** (a gap open two cycles — `resize_window` silently fails on a maximised window, so verification went through a same-origin iframe, which carries its own viewport); **`resume.pdf` verified current** (5,445 chars parsed, title and all eight role dates match the site); **all outbound links resolve** (LinkedIn's 999 identified as anti-automation, not reported as a dead link).
 
-5. **`3FGolf | Remote | Remote`** was on the live site — `location` and `workMode` are both "Remote" and the join didn't dedupe.
-6. **17 links had no accessible name** — every project's GitHub and live-site icon, plus the logo. Screen readers announced bare URLs. 18 `aria-label`s added, zero visual change.
+**Cycle 4** — **the heading outline, unparked and fixed.** Cycle 2 shelved this as needing a visual decision. That framing was wrong: `entry.lead` is a *date range*, and a date is not a heading — so the fix was never a level change, the element simply shouldn't be a heading. Now a `<p>` reproducing the `h4` rules.
 
-**Cycle 3 — audit only. Nothing built, deliberately.**
+Proven rather than claimed: computed styles captured before and after showed **zero diffs across all ten properties**. Verified in dark *and* light (the date's colour equals the company heading's in both). Verified at 390px. Heading skips **9 → 0**; zero `<h4>` in the production HTML.
 
-The Suggester found no safe, valuable build work: everything was either already correct or needs your judgment. Churning your career copy at 2am to look productive is exactly the failure this loop is supposed to avoid.
-
-7. **Mobile verified at 390px — a gap open for two cycles.** `resize_window` reports success but the viewport stays at 1920 (maximised window; reproduced three times). Solved by injecting a same-origin iframe, which carries its own viewport so media queries evaluate for real. **Result: no horizontal overflow, the card grid collapses to a single column, all six sections present. No defects.**
-8. **`resume.pdf` verified current.** Parsed it: 5,445 characters, title "Senior MES DevOps Engineer", all eight role dates matching the site, the 2,600-user claim matching, correct email. 3,730 bytes looked like a stub but is normal for text-only PDFs with unembedded fonts. **Moved out of Needs human.**
-9. **All outbound links resolve.** Four 200s. LinkedIn returns 999, which is its anti-automation response, not a dead link — not reported as one.
-
-`npm run build` passes clean.
+`npm run build` passes clean throughout.
 
 ---
 
-## Needs you
+## Still needs you
 
-- **GitHub bio still reads "Software Engineer at StarPlus Energy."** Your title is Senior MES DevOps Engineer, your sidebar links there, and a director will click it. ~30 seconds. This has been open since Cycle 1.
-- **Confirm the interview date** (see the warning above).
-- **S9 — heading levels skip H2 → H4 nine times.** Every available fix changes how the page looks, so it was parked rather than guessed at. Recommendation and tradeoffs are in the ledger.
-- **Deploy** — nothing is live. Your call.
+- **Deploy decision** (above) — the highest-leverage item in the run.
+- **Confirm the interview date** (above).
+- **GitHub bio still reads "Software Engineer at StarPlus Energy."** Open since Cycle 1. ~30 seconds, and a director will click that link.
+- **S14 — 16 MB of project screenshots** in the repo, largest ~2 MB. Explicitly *not* reported as a performance defect: `next/image` serves resized WebP, and the real transfer size was never measured. Measure before touching anything.
 
 ## What was deliberately not done
 
-No Syncade / cGMP / IQ-OQ-PQ / VBS keywords anywhere. No new employers, dates, metrics or scale claims. No edits to the tagline, role, header or section order. Every sentence added traces to an existing `experience.js` bullet or to your own words — the six "How I work" cards each name their source, so you can audit the lot in about a minute.
+No Syncade / cGMP / IQ-OQ-PQ / VBS keywords anywhere. No new employers, dates, metrics or scale claims. No edits to the tagline, role, header or section order. Every sentence added traces to an existing `experience.js` bullet or to your own words — the six "How I work" cards each name their source, so the lot is auditable in about a minute.
+
+One false pass was caught and discarded rather than reported: a mobile probe returned `innerWidth: 0` on an unloaded iframe, which would have shown "0 heading skips" from an empty document. It was re-run properly.

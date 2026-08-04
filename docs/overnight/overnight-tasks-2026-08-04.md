@@ -3,7 +3,7 @@
 **Date:** 2026-08-04
 **Goal of the night (one line):** Make htae.dev carry the parts of Hyun-Tae Jin that a *director* interviews for — judgment, working practice, and the person behind the résumé — without inventing a single claim he can't defend in the room.
 **Phase:** Suggester
-**Cycle:** 4
+**Cycle:** 5
 
 > Files live in `docs/overnight/` rather than the repo root, to keep the portfolio root clean. Deviation from the skill's default path, logged deliberately.
 
@@ -108,7 +108,18 @@ The Suggester found no safe, valuable build work. Everything it surfaced was eit
 - **11. Mobile verified at 390px (S11)** — proven via same-origin iframe probe after `resize_window` failed a third time. No horizontal overflow, single-column grid, all sections present. **The standing two-cycle verification gap is closed.**
 - **12. Interview date conflict surfaced (S12)** — parked as Needs human, time-critical. See below.
 
+### Cycle 4 — S9 unparked and fixed with proof
+
+- **13. Heading outline fixed (S9)** — proven, not asserted. Cycle 2 parked this as needing a visual decision; that framing was wrong. `entry.lead` is a *date range*, so the correct fix was never a heading-level change — the element should not be a heading. Now a `<p>` reproducing the `h4` rules.
+  - Computed styles captured before and after: **zero diffs across all ten properties** (font size, weight, colour, both margins, display, line-height, width, height, x-position). Font family still Mona Sans.
+  - Verified in **dark and light** — the date's colour equals the company heading's colour in both, so the CSS var resolves rather than falling back to body colour.
+  - Verified at **390px** through a validated iframe probe. A first probe returned `innerWidth: 0` on an unloaded iframe; its "0 skips" was a false pass and was discarded, not reported.
+  - Result: heading skips **9 → 0**, `<h4>` elements **9 → 0**. Prerendered production HTML contains zero `<h4>`. Build clean.
+- **14. Live-vs-branch diff (S13)** — proven by fetching the live site: **none of this run's work is deployed**. Details below.
+
 ## Needs human (parked — the loop will NOT guess these)
+
+- [ ] **DEPLOY — the highest-leverage item in the entire run.** Measured against live https://htae.dev: `"How I work"` 0 occurrences, `"Off the résumé"` 0, `"Remote | Remote"` **still present**, `aria-label` count **1** (branch has 18). Four cycles of fixes exist only on the branch. **Needs human because:** deploying is prohibited by this run's Guardrails, correctly — publishing to his live site before an interview is his decision.
 
 - [ ] **DATE CONFLICT — possibly time-critical.** The machine clock read **Tue, Aug 4, 2026, 01:29 AM** during this cycle. Cursor message [888] says *"next up is tuesday at 1pm with the director"*, and **Aug 4 2026 is a Tuesday** — that would be ~11.5 hours after the timestamp. But in-session Hyun-Tae said the interview is "tomorrow" (Wed Aug 5). Both are his own statements and they conflict. These files previously asserted 2026-08-05 as fact; that assertion has been withdrawn. **Needs human because:** only he knows the real slot, and if it is Tuesday 1pm then the GitHub bio, résumé check and deploy decision are due this morning.
 

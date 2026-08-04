@@ -64,7 +64,12 @@ Every idea this run generated, what happened to it, and a box for you to sign of
   - **Why it matters:** `IconLink` renders an icon and an empty text span, so a screen reader announces these as the bare URL. That is a WCAG 2.4.4 / 4.1.2 failure, and it is the section a hiring manager is most likely to click through.
   - **Outcome:** **Shipped.** Added descriptive `aria-label`s (`"<project> — source on GitHub"`, `"<project> — live site"`, `"Hyun-Tae Jin — home"`). Verified in the prerendered HTML: **18** aria-labelled links, zero remaining without an accessible name. No visual change.
 
-- [ ] **S9 — Heading levels skip H2 → H4 nine times** — Status: **Needs human** — Cycle: 2
+- [ ] **S9 — Heading levels skip H2 → H4 nine times** — Status: **Done** — Cycle: 4
+  - **What unblocked it:** Cycle 2 parked this because every fix considered changed how the page looks. That framing was wrong. `entry.lead` is a **date range** ("Dec 2025 - Present") — a date is not a heading at all, so the fix was never a level change: the element simply should not be a heading. Rendered as a `<p>` carrying classes that reproduce the `h4` rules exactly, the outline becomes `h2 → h3` with no skip and nothing moves.
+  - **Proved pixel-identical rather than assumed.** Computed styles captured before the change and compared after: `fontSize 14px`, `fontWeight 600`, `color rgb(255,255,255)`, `marginTop 32px`, `marginBottom 0px`, `display block`, `lineHeight 24px`, `width 576`, `height 24`, `left 1085` — **every property identical, zero diffs**. Font family confirmed still Mona Sans.
+  - **Both themes:** the date's colour matches the company heading's colour exactly in dark (`rgb(255,255,255)`) and light (`rgb(17,24,39)`), confirming `text-[color:var(--typography-headings)]` resolves as the `h4` did rather than falling back to body colour.
+  - **Mobile:** re-verified through the iframe probe at a validated 390px viewport (45 headings found, `innerWidth === 390`) — 0 heading skips, 0 `h4` elements, identical date styling, no horizontal overflow. *(A first probe returned `innerWidth: 0` on an unloaded iframe; its "0 skips" was meaningless rather than a pass, so it was discarded and re-run.)*
+  - **Outcome:** heading skips **9 → 0**, `h4` elements **9 → 0**, sequence now `1,2,3,3,3,3,3,3,3,2,3,2,3,2`. Prerendered production HTML contains zero `<h4>` and still renders the date. Build clean.
   - **Source:** Site audit, measured. Extracted the document's heading-level sequence: `1,2,3,3,3,3,3,3,3,2,4,3,2,4,3,…` — every Experience entry emits `h2` (title) → `h4` (date) → `h3` (company), skipping a level nine times and then going backwards.
   - **Why it is parked rather than fixed:** every available fix changes how the page looks, and which tradeoff to take is a taste call. Promoting the date to `h3` inherits `typography.css`'s `h3` rules (`font-size: base`, `display: flex`) and visibly enlarges the date line on nine entries. Demoting it to `<p>` loses the display font, semibold weight, heading colour and the `2rem` top margin. Reordering the DOM so levels ascend moves the date below the company line. Guardrails for this run prohibit unattended visual churn on shipped sections, and there is no correct answer to guess at.
   - **Recommendation:** promote the date line to `h3` and add a small utility class to hold its current size. Two-line change, but it should be seen before it ships.
@@ -86,5 +91,18 @@ Every idea this run generated, what happened to it, and a box for you to sign of
   - **The conflict:** Cursor message [888] says *"next up is tuesday at 1pm with the director."* **August 4 2026 is a Tuesday** — which puts that interview at roughly **11.5 hours from that timestamp**. But in this session Hyun-Tae said the interview is "tomorrow", which would be Wednesday August 5. Both statements are his; they cannot both be right.
   - **Why it matters:** every tracking file in this run has asserted 2026-08-05. If the real slot is Tuesday 1pm, then the GitHub-bio fix, the résumé check, and any decision to deploy are due **this morning**, not tonight.
   - **The loop will not guess this**, and it has stopped asserting 2026-08-05 as fact. Confirm the date before relying on anything in these files.
+
+- [ ] **S13 — None of this run's work is visible to anyone yet** — Status: **Needs human — highest leverage item in the run** — Cycle: 4
+  - **Source:** fetched the live https://htae.dev and diffed it against the branch, rather than assuming.
+  - **What is live right now:** `"How I work"` → **0** occurrences. `"Off the résumé"` → **0**. `"Remote | Remote"` (the Cycle 2 bug) → **still present, 1 occurrence**. `aria-label` count → **1** (the branch has 18). The invisible section headings are still invisible.
+  - **What this means:** every fix from Cycles 1–4 — the two new sections, the invisible headings, the duplicated location line, the 17 unnamed links, the heading outline — exists only on `update/stellix-prep`. A director opening htae.dev today sees **none of it**, and still sees the defects.
+  - **Why the loop will not resolve this itself:** deploying is explicitly prohibited by the Guardrails block for this run, and that prohibition is correct — publishing to a live personal site before an interview is his call, not the loop's.
+  - **Outcome:** parked. This is the one action that converts four cycles of work into something a hiring manager can actually see.
+
+- [ ] **S14 — 16 MB of project screenshots in the repo** — Status: **Backlog (measure before acting)** — Cycle: 4
+  - **Source:** `public/images/projects` totals **16 MB**; the largest single PNGs are 2,088 KB (car-inventory), 1,904 KB and 1,628 KB (matrimoni-react).
+  - **Important caveat, stated rather than glossed:** these are *source* files. The site renders them through `next/image` with `sizes` set, so Chrome is served resized WebP, not the 2 MB original. **The user-facing transfer has not been measured**, so this is explicitly *not* being reported as a performance defect — only as a repo-weight observation.
+  - **Why not acted on:** `public/` is outside this run's declared scope, and re-encoding source images is exactly the kind of lossy, awkward-to-undo change that should not happen unattended.
+  - **Next step if picked up:** measure the actual `/_next/image` transfer sizes first; only then decide whether anything needs re-encoding.
 
 *(Check the box once you've reviewed the outcome.)*
