@@ -110,14 +110,13 @@ export function AnimatedBlock({
 
 export function SectionIntro({ id, title, className }) {
   return (
-    <div
-      id={id}
-      className={clsx(
-        '-mb-12 mt-28 text-3xl dark:text-yellow-200 lg:-mb-24',
-        className
-      )}
-    >
-      <p>{title}</p>
+    // The title goes through ContentWrapper so it lands in the content
+    // column. Rendered full-width it starts at x=0, which on lg and wider
+    // is underneath the fixed sidebar — the heading is simply not visible.
+    <div id={id} className={clsx('-mb-12 mt-28 lg:-mb-24', className)}>
+      <ContentWrapper>
+        <p className="text-3xl dark:text-yellow-200">{title}</p>
+      </ContentWrapper>
     </div>
   )
 }
