@@ -35,7 +35,11 @@ Every idea this run generated, what happened to it, and a box for you to sign of
   - **Scope:** External — github.com profile settings.
   - **Outcome:** **Needs human.** Requires your credentials, and how you word your own identity is not the loop's call.
 
-- [ ] **S5 — `public/resume.pdf` currency unverified** — Status: **Needs human** — Cycle: 1
+- [ ] **S5 — `public/resume.pdf` currency unverified** — Status: **Done (verified current)** — Cycle: 3
+  - **Cycle 3 resolution:** parsed the PDF directly (no guessing). 1 page, 3 fonts, 5,445 characters of extracted text. 3,730 bytes looked alarmingly small at first glance, but that is consistent with a text-only PDF using unembedded base-14 fonts — it is a complete résumé, not a stub.
+  - **Consistency against the site:** header title reads **"Senior MES DevOps Engineer"**, matching `meta.role`. All eight roles carry dates matching `experience.js` (Dec 2025–Present, Nov 2024–Nov 2025, Jan 2024–Oct 2024, Oct 2023–Present, Sep–Nov 2023, Mar 2019–May 2020, Sep 2017–Jan 2019). The "2,600+ users" claim matches the site's UI/UX entry. Contact email is `hytjin@gmail.com`, matching the corrected address.
+  - **Deliberate differences, not errors:** the PDF omits the Sabbatical entry and the Coding Temple trainee entry that the site carries. That is a normal résumé/portfolio split.
+  - **Outcome:** no action needed. Previously parked as Needs human; now resolved by measurement.
   - **Source:** The site's footer serves `/resume.pdf`. This run could not verify that the PDF's titles and dates match the current site content.
   - **Suggestion:** Open it and confirm it matches before tomorrow, since it is the artifact the recruiter already circulated.
   - **Scope:** External to the codebase.
@@ -64,5 +68,23 @@ Every idea this run generated, what happened to it, and a box for you to sign of
   - **Source:** Site audit, measured. Extracted the document's heading-level sequence: `1,2,3,3,3,3,3,3,3,2,4,3,2,4,3,…` — every Experience entry emits `h2` (title) → `h4` (date) → `h3` (company), skipping a level nine times and then going backwards.
   - **Why it is parked rather than fixed:** every available fix changes how the page looks, and which tradeoff to take is a taste call. Promoting the date to `h3` inherits `typography.css`'s `h3` rules (`font-size: base`, `display: flex`) and visibly enlarges the date line on nine entries. Demoting it to `<p>` loses the display font, semibold weight, heading colour and the `2rem` top margin. Reordering the DOM so levels ascend moves the date below the company line. Guardrails for this run prohibit unattended visual churn on shipped sections, and there is no correct answer to guess at.
   - **Recommendation:** promote the date line to `h3` and add a small utility class to hold its current size. Two-line change, but it should be seen before it ships.
+
+- [ ] **S10 — Every outbound link resolves** — Status: **Done (verified, no action)** — Cycle: 3
+  - **Source:** extracted every `https://` URL from `src/content/*.js` and issued real HTTP requests with redirects followed.
+  - **Result:** `github.com/HTJin` 200 · `htae.dev` 200 · `credly.com/users/hyun-tae-jin` 200 · `joincolab.io/certificate/hyun-tae-jin` 200 · `linkedin.com/in/htjin` **999**.
+  - **On the 999:** that is LinkedIn's standard anti-automation response to non-browser clients, *not* a broken link. Reporting it as dead would be a false positive, so it is not being reported as one.
+  - **Outcome:** no dead links. A director clicking through from the site will not hit a 404.
+
+- [ ] **S11 — Mobile layout verified at 390px (standing gap closed)** — Status: **Done (verified, no defects)** — Cycle: 3
+  - **The problem:** Cycles 1 and 2 could never verify mobile. `resize_window` reports success but `innerWidth` stays 1920 — the Chrome window is maximised and ignores the resize. Three attempts, three failures. Every prior audit was desktop-only at 2545px, and the report said so rather than claiming otherwise.
+  - **How it was solved:** injected a 390×844 same-origin `<iframe>`. An iframe has its own viewport, so CSS media queries evaluate against *its* width — a genuine mobile render rather than a simulation. Confirmed real: `iframe.innerWidth === 390` and `matchMedia('(min-width: 640px)').matches === false`.
+  - **Results:** no horizontal overflow (`scrollWidth` 375 == `clientWidth` 375). The "How I work" grid collapses to a single 327px column, so `sm:grid-cols-2` is correctly inactive. Six cards, 14px body text. About paragraphs 327px. All six section anchors present; both new headings render. Side nav sits at x 272–292, inside the viewport.
+  - **Outcome:** no mobile defects. The elements that extend past 390px are all SVG decoration (StarField, Glow) clipped by `overflow-hidden` parents, which is why the document does not scroll sideways.
+
+- [ ] **S12 — The interview may be TODAY, not tomorrow** — Status: **Needs human — time-critical** — Cycle: 3
+  - **Source:** the machine clock, read during this cycle: **Tue, Aug 4, 2026, 01:29 AM**.
+  - **The conflict:** Cursor message [888] says *"next up is tuesday at 1pm with the director."* **August 4 2026 is a Tuesday** — which puts that interview at roughly **11.5 hours from that timestamp**. But in this session Hyun-Tae said the interview is "tomorrow", which would be Wednesday August 5. Both statements are his; they cannot both be right.
+  - **Why it matters:** every tracking file in this run has asserted 2026-08-05. If the real slot is Tuesday 1pm, then the GitHub-bio fix, the résumé check, and any decision to deploy are due **this morning**, not tonight.
+  - **The loop will not guess this**, and it has stopped asserting 2026-08-05 as fact. Confirm the date before relying on anything in these files.
 
 *(Check the box once you've reviewed the outcome.)*

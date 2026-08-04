@@ -3,7 +3,7 @@
 **Date:** 2026-08-04
 **Goal of the night (one line):** Make htae.dev carry the parts of Hyun-Tae Jin that a *director* interviews for — judgment, working practice, and the person behind the résumé — without inventing a single claim he can't defend in the room.
 **Phase:** Suggester
-**Cycle:** 3
+**Cycle:** 4
 
 > Files live in `docs/overnight/` rather than the repo root, to keep the portfolio root clean. Deviation from the skill's default path, logged deliberately.
 
@@ -99,7 +99,18 @@ Gathered from Cursor conversation `0d447450-9f7a-4db6-b36d-0d0e4cea1859` ("Sr. M
 
 > **Cycle 2 verification note:** the browser renderer became unresponsive partway through (two consecutive `Runtime.evaluate` timeouts), so the final proof was taken from the **prerendered production HTML** emitted by `npm run build` rather than from the live DOM. That is still real execution against real output — but it is a weaker check than driving the page, and it is recorded as such rather than dressed up.
 
+### Cycle 3 — audit only, nothing built (correct outcome)
+
+The Suggester found no safe, valuable build work. Everything it surfaced was either already correct or needs a human decision. Per the operating rules, shipping nothing beats churning his career copy at 2am, so **no code changed this cycle**.
+
+- **9. Outbound link health (S10)** — proven: real HTTP requests to all five content URLs. Four 200s; LinkedIn's 999 identified as anti-automation, not a dead link, and deliberately not reported as one. No action.
+- **10. `resume.pdf` verified current (S11 → resolves S5)** — proven: parsed the PDF, 5,445 chars of text. Title, all eight role dates, the 2,600-user claim and the email all match the site. Moved out of Needs human.
+- **11. Mobile verified at 390px (S11)** — proven via same-origin iframe probe after `resize_window` failed a third time. No horizontal overflow, single-column grid, all sections present. **The standing two-cycle verification gap is closed.**
+- **12. Interview date conflict surfaced (S12)** — parked as Needs human, time-critical. See below.
+
 ## Needs human (parked — the loop will NOT guess these)
+
+- [ ] **DATE CONFLICT — possibly time-critical.** The machine clock read **Tue, Aug 4, 2026, 01:29 AM** during this cycle. Cursor message [888] says *"next up is tuesday at 1pm with the director"*, and **Aug 4 2026 is a Tuesday** — that would be ~11.5 hours after the timestamp. But in-session Hyun-Tae said the interview is "tomorrow" (Wed Aug 5). Both are his own statements and they conflict. These files previously asserted 2026-08-05 as fact; that assertion has been withdrawn. **Needs human because:** only he knows the real slot, and if it is Tuesday 1pm then the GitHub bio, résumé check and deploy decision are due this morning.
 
 - [ ] **GitHub bio is stale** — reads "Software Engineer at StarPlus Energy"; his current title is Senior MES DevOps Engineer. Verified by fetching https://github.com/HTJin. **Needs human because:** it requires his GitHub credentials, and it's his identity surface to word. ~30 seconds to fix; worth doing before tomorrow since a director will look him up.
 - [ ] **`public/resume.pdf` currency unverified** — can't confirm the PDF matches the site's current titles/dates. **Needs human because:** the PDF is the artifact recruiters already circulated; regenerating it is his call.
@@ -111,6 +122,18 @@ Gathered from Cursor conversation `0d447450-9f7a-4db6-b36d-0d0e4cea1859` ("Sr. M
 
 - *(empty)*
 
-## Known verification gap (for the next Suggester pass)
+## Verification gap — CLOSED in Cycle 3
 
-**Mobile has never actually been verified.** `resize_window` reports success but `innerWidth` stays at 1920 — the window is maximised and does not resize, so every audit this run has been desktop-only at 2545px. The new "How I work" card grid and the dashboard-style layouts have therefore *never* been seen at phone width. Do not claim mobile correctness anywhere until this is resolved. Possible routes: un-maximise the window first, launch Chrome with `--window-size`, or verify via CDP device emulation.
+Mobile was unverifiable for two cycles because `resize_window` reports success while `innerWidth` stays at 1920 (maximised window, resize ignored — reproduced three times).
+
+**Solution, for any future shift that needs a viewport it cannot get:** inject a same-origin `<iframe>` at the target size. An iframe carries its own viewport, so CSS media queries evaluate against *its* width — a real render, not a simulation. Confirm it is genuine by asserting `iframe.contentWindow.innerWidth` and that the breakpoint `matchMedia` flips.
+
+```js
+const f = document.createElement('iframe')
+f.style.cssText = 'position:fixed;top:0;left:0;width:390px;height:844px;z-index:2147483647'
+f.src = location.origin + '/'
+document.body.appendChild(f)
+// then measure inside f.contentDocument / f.contentWindow
+```
+
+Result at 390px: no horizontal overflow, single-column card grid, all sections present. No defects.
