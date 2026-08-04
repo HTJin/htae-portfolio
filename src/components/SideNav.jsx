@@ -1,16 +1,24 @@
 import { useState, useEffect, useCallback } from 'react'
 
+// Hoisted so the scroll-spy callback has a stable reference to it.
+const sections = [
+  'skills',
+  'experience',
+  'approach',
+  'projects',
+  'education',
+  'about',
+]
+
 export default function SideNav() {
   const [activeSection, setActiveSection] = useState('')
-
-  const sections = ['skills', 'experience', 'projects', 'education']
 
   const checkActiveSection = useCallback(() => {
     const bottomOfPage =
       window.innerHeight + window.scrollY >= document.body.offsetHeight
 
     if (bottomOfPage) {
-      setActiveSection('education')
+      setActiveSection(sections[sections.length - 1])
       return
     }
 
