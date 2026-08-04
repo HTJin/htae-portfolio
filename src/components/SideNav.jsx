@@ -18,6 +18,7 @@ export default function SideNav() {
       const section = sections[i]
       const nextSection = sections[i + 1]
       const sectionElement = document.getElementById(section)
+      if (!sectionElement) continue
       const nextSectionElement = nextSection
         ? document.getElementById(nextSection)
         : null

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { DriveModeSign } from '@/components/DriveModeSign'
 import { IconLink } from '@/components/IconLink'
 import { Logo } from '@/components/Logo'
 import { SignUpForm } from '@/components/SignUpForm'
@@ -115,6 +116,9 @@ export function Intro() {
         >
           {meta.email}
         </IconLink>
+      </div>
+      <div className="flex justify-center lg:justify-start">
+        <DriveModeSign />
       </div>
     </>
   )

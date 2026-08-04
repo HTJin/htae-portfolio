@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import Head from 'next/head'
+import { useRouter } from 'next/router'
 import { ThemeProvider } from 'next-themes'
 import ScrollToTop from '@/components/ScrollToTop'
 import SideNav from '@/components/SideNav'
@@ -47,6 +48,10 @@ const jsonLd = {
 }
 
 export default function App({ Component, pageProps }) {
+  const router = useRouter()
+  // Drive mode is a full-viewport cockpit: no page scroll, so no scroll chrome.
+  const showScrollChrome = router.pathname !== '/drive'
+
   useEffect(() => {
     AOS.init({
       duration: 1000,
@@ -91,8 +96,12 @@ export default function App({ Component, pageProps }) {
       </Head>
       <ThemeProvider attribute="class" disableTransitionOnChange>
         <Component {...pageProps} />
-        <ScrollToTop />
-        <SideNav />
+        {showScrollChrome ? (
+          <>
+            <ScrollToTop />
+            <SideNav />
+          </>
+        ) : null}
       </ThemeProvider>
     </>
   )
