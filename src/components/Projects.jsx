@@ -76,11 +76,16 @@ function Project({
           <div className="flex min-w-0 items-end gap-2">
             <h2 className="min-w-0">{title}</h2>
             <div className="ml-auto flex shrink-0">
+              {/*
+                These links render an icon and no text, so without an
+                aria-label a screen reader announces only the raw URL.
+              */}
               <IconLink
                 href={github}
                 target="_blank"
                 rel="noopener noreferrer"
                 icon={GitHubIcon}
+                aria-label={`${title} — source on GitHub`}
                 className="flex flex-col justify-center"
               />
               <IconLink
@@ -88,6 +93,7 @@ function Project({
                 target="_blank"
                 rel="noopener noreferrer"
                 icon={OpenIcon}
+                aria-label={`${title} — live site`}
                 className="flex flex-col justify-center"
               />
             </div>

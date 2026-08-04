@@ -2,8 +2,8 @@
 
 **Date:** 2026-08-04
 **Goal of the night (one line):** Make htae.dev carry the parts of Hyun-Tae Jin that a *director* interviews for — judgment, working practice, and the person behind the résumé — without inventing a single claim he can't defend in the room.
-**Phase:** Planner
-**Cycle:** 2
+**Phase:** Suggester
+**Cycle:** 3
 
 > Files live in `docs/overnight/` rather than the repo root, to keep the portfolio root clean. Deviation from the skill's default path, logged deliberately.
 
@@ -90,6 +90,15 @@ Gathered from Cursor conversation `0d447450-9f7a-4db6-b36d-0d0e4cea1859` ("Sr. M
 - **3. Nav wiring** — proven: side nav lists six sections and scroll-spy highlighted `Approach` and `About` correctly on jump-scroll. Bottom-of-page active section no longer hardcodes `education`. Commit `61c4aa5`.
 - **4. SectionIntro heading occlusion (was S3)** — proven by measurement, not inspection: before, title box left edge = 0 with the sidebar panel covering up to x=913/1241 (`elementFromPoint` returned the sidebar at x=10..1200); after, `Experience`/`Projects`/`Education` titles measure `left: 977`, clear of the sidebar, and render visibly in a screenshot. Commit on `update/stellix-prep` following `61c4aa5`. **This fixed three previously invisible headings on every desktop screen.**
 
+### Cycle 2
+
+- **5. "3FGolf | Remote | Remote" (S7)** — proven: prerendered production HTML now contains `3FGolf | Remote`, and `Remote | Remote` occurs 0 times. `ExperienceSection.jsx` now dedupes the segments.
+- **6. 17 links with no accessible name (S8)** — proven: prerendered production HTML contains 18 `aria-label` attributes on anchors; the audit query for anchors lacking both text and `aria-label` returns empty. No visual change.
+- **7. Ledger/tasks disagreement corrected** — S3 was recorded `Needs human` in the ledger although it shipped in `06da2b8`. Ledger corrected so the two files agree.
+- **8. S6 resolved to Discarded** — measured in a real browser rather than assumed, and the won't-fix reasoning recorded with its evidence.
+
+> **Cycle 2 verification note:** the browser renderer became unresponsive partway through (two consecutive `Runtime.evaluate` timeouts), so the final proof was taken from the **prerendered production HTML** emitted by `npm run build` rather than from the live DOM. That is still real execution against real output — but it is a weaker check than driving the page, and it is recorded as such rather than dressed up.
+
 ## Needs human (parked — the loop will NOT guess these)
 
 - [ ] **GitHub bio is stale** — reads "Software Engineer at StarPlus Energy"; his current title is Senior MES DevOps Engineer. Verified by fetching https://github.com/HTJin. **Needs human because:** it requires his GitHub credentials, and it's his identity surface to word. ~30 seconds to fix; worth doing before tomorrow since a director will look him up.
@@ -98,5 +107,10 @@ Gathered from Cursor conversation `0d447450-9f7a-4db6-b36d-0d0e4cea1859` ("Sr. M
 
 ## Backlog (mined by the Planner next cycle)
 
-- Contact form input is `type="email"` + `required` while the placeholder invites "Your name / email / number" (`src/components/SignUpForm.jsx:23-30`). Mismatch is cosmetic — the submit handler calls `preventDefault()` before validation runs, so it does still fire the mailto. Deferred: low value, and not worth touching the one conversion path the night before an interview.
-- Education section could carry the Pitt community-leadership item on its own; folded into the About narrative this cycle instead to avoid a second edit to the same idea.
+*(Cycle 2 emptied this. Both carried items were resolved rather than re-deferred: S6 measured and Discarded with evidence; the Education/Pitt item Discarded as a duplicate of content already shipped in the About narrative. The controller therefore hands to a fresh **Suggester** pass for Cycle 3 — that is the loop working as designed, not a stall.)*
+
+- *(empty)*
+
+## Known verification gap (for the next Suggester pass)
+
+**Mobile has never actually been verified.** `resize_window` reports success but `innerWidth` stays at 1920 — the window is maximised and does not resize, so every audit this run has been desktop-only at 2545px. The new "How I work" card grid and the dashboard-style layouts have therefore *never* been seen at phone width. Do not claim mobile correctness anywhere until this is resolved. Possible routes: un-maximise the window first, launch Chrome with `--window-size`, or verify via CDP device emulation.

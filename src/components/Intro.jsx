@@ -75,6 +75,7 @@ export function Intro() {
         <Link
           className="-mb-10 mt-4 flex justify-center lg:-mb-16 lg:mt-16 lg:pr-[30%]"
           href="/"
+          aria-label={`${meta.name} — home`}
         >
           <Logo />
         </Link>

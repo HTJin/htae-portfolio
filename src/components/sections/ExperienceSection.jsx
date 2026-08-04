@@ -8,9 +8,11 @@ import {
 import { experience } from '@/content/experience'
 
 function ExperienceEntry({ entry }) {
-  const locationLine = [entry.company, entry.location, entry.workMode]
-    .filter(Boolean)
-    .join(' | ')
+  // Deduped: a remote role has location and workMode both set to "Remote",
+  // which rendered as "3FGolf | Remote | Remote" on the live site.
+  const locationLine = [
+    ...new Set([entry.company, entry.location, entry.workMode].filter(Boolean)),
+  ].join(' | ')
 
   return (
     <ContentArticle id={entry.id} date={entry.date}>
