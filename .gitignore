@@ -34,3 +34,7 @@ yarn-error.log*
 # generated files
 /public/rss
 .qodo
+
+# Claude Code local permission overrides
+.claude/settings.local.json
+.claude/settings.json
