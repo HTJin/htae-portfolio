@@ -2,8 +2,8 @@
 
 **Date:** 2026-08-04
 **Goal of the night (one line):** Make htae.dev carry the parts of Hyun-Tae Jin that a *director* interviews for — judgment, working practice, and the person behind the résumé — without inventing a single claim he can't defend in the room.
-**Phase:** Reviewer
-**Cycle:** 1
+**Phase:** Planner
+**Cycle:** 2
 
 > Files live in `docs/overnight/` rather than the repo root, to keep the portfolio root clean. Deviation from the skill's default path, logged deliberately.
 
@@ -38,8 +38,10 @@ Gathered from Cursor conversation `0d447450-9f7a-4db6-b36d-0d0e4cea1859` ("Sr. M
 
 **Authorized actions:** read the repo and local Cursor history; create/modify files under `src/content/`, `src/components/`, `src/pages/`, `docs/overnight/`; run `npm run build` / `npm run dev` / `npx prettier`; commit locally to branch `update/stellix-prep`.
 
+**Authorized as of Cycle 1 close (user decision, this session):** `git push` to branch `update/stellix-prep` only.
+
 **Prohibited actions:**
-- **No `git push`, no deploy, no Vercel promotion.** htae.dev is live and public and a director may look at it tomorrow; publishing is the user's call, not the loop's.
+- **No deploy, no Vercel production promotion, no merge that reaches htae.dev.** The user chose "push the branch only, no deploy." Production stays on `dev`.
 - No merging to `main` or `dev`. No touching branch `feat/drive-mode`.
 - No editing `public/resume.pdf` — the PDF is the artifact recruiters already hold.
 - No edits to external identity surfaces (GitHub bio, LinkedIn) — no credentials, and not the loop's to change.
@@ -83,13 +85,16 @@ Gathered from Cursor conversation `0d447450-9f7a-4db6-b36d-0d0e4cea1859` ("Sr. M
 
 ## Done (proven by the autonomous Reviewer)
 
-*(Reviewer fills this in — see the Reviewer pass below.)*
+- **1. "Off the résumé" narrative section** — proven: rendered at `http://localhost:3112/`, heading + all five paragraphs visible; DOM check confirmed all `[data-aos]` children at `opacity: 1` and in-viewport. Commit `61c4aa5`.
+- **2. "How I work" section** — proven: heading, lead, and six cards render; scrollbar defect found during verification and fixed (cards no longer wrapped in `AnimatedBlock`). Commit `61c4aa5`.
+- **3. Nav wiring** — proven: side nav lists six sections and scroll-spy highlighted `Approach` and `About` correctly on jump-scroll. Bottom-of-page active section no longer hardcodes `education`. Commit `61c4aa5`.
+- **4. SectionIntro heading occlusion (was S3)** — proven by measurement, not inspection: before, title box left edge = 0 with the sidebar panel covering up to x=913/1241 (`elementFromPoint` returned the sidebar at x=10..1200); after, `Experience`/`Projects`/`Education` titles measure `left: 977`, clear of the sidebar, and render visibly in a screenshot. Commit on `update/stellix-prep` following `61c4aa5`. **This fixed three previously invisible headings on every desktop screen.**
 
 ## Needs human (parked — the loop will NOT guess these)
 
 - [ ] **GitHub bio is stale** — reads "Software Engineer at StarPlus Energy"; his current title is Senior MES DevOps Engineer. Verified by fetching https://github.com/HTJin. **Needs human because:** it requires his GitHub credentials, and it's his identity surface to word. ~30 seconds to fix; worth doing before tomorrow since a director will look him up.
 - [ ] **`public/resume.pdf` currency unverified** — can't confirm the PDF matches the site's current titles/dates. **Needs human because:** the PDF is the artifact recruiters already circulated; regenerating it is his call.
-- [ ] **Publish decision** — these changes are committed locally only. **Needs human because:** pushing updates the live htae.dev that Stephen Britton may open tomorrow.
+- [x] **Publish decision** — RESOLVED this session: user chose "push the branch only, no deploy." `update/stellix-prep` is on `origin`; htae.dev production is untouched. Any future deploy remains a human decision.
 
 ## Backlog (mined by the Planner next cycle)
 
