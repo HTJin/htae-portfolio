@@ -148,6 +148,18 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                           type="button"
                           ref={stop.index === currentIndex ? currentRef : null}
                           onClick={() => onSelect(stop.index)}
+                          // Where you are was said in colour alone — a border
+                          // and a tint — so a screen reader met twenty-one
+                          // near-identical buttons with nothing to separate
+                          // them. "driven" below is real text and always did
+                          // announce; only the current position was silent.
+                          // `location` is the ARIA token for the current place
+                          // within an environment, which is exactly what a
+                          // route map is; anything a reader does not know
+                          // degrades to "true" per spec.
+                          aria-current={
+                            stop.index === currentIndex ? 'location' : undefined
+                          }
                           className={clsx(
                             'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
                             stop.index === currentIndex
