@@ -87,7 +87,7 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** small-medium.
   - **Outcome:** **Shipped** in `94eea90`, and it earned its keep twice over. The readout counts 2016 -> 2025 across school and the nine roles, ticking over *between* exits (2021 and 2022 pass while crossing the sabbatical), then reads `NOW` for the side builds, the toolbox and the destination — which have no dates, so they never get a fabricated one. Verifying it also **uncovered a live data bug**: `new Date('YYYY-MM-DD').getFullYear()` reads UTC midnight in local time, so the StarPlus UI/UX role (`2024-01-01`, labelled "Jan 2024 - Oct 2024") was reporting **2023**. Fixed.
 
-- [ ] **S13 — Weather and traffic that belong to the light** — Status: Done (traffic half; haze returns to Backlog) — Cycle: 7
+- [ ] **S13 — Weather and traffic that belong to the light** — Status: **REVERTED at the owner's request** — Cycle: 13
   - **Source:** site audit after the daylight work — the road is completely empty; nothing else is ever on it.
   - **Suggestion:** a thin drifting haze layer and occasional oncoming headlights on the far carriageway, tinted by the current palette.
   - **Why / expected impact:** makes the road feel inhabited rather than a treadmill, and sells the dusk-to-night transition further.
@@ -164,5 +164,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
 - [ ] **S26 - Focus visibility in drive mode** - Status: Done (no defect) - Cycle: 12
   - **Source:** drive mode defines no focus styles of its own.
   - **Outcome:** **No defect.** Every control computed `outline-style: none`, but from programmatic `.focus()`, which does not match `:focus-visible`. No author rule removing outlines exists anywhere in the stylesheets, so the browser default ring applies to real keyboard focus. Closed without a change.
+
+- [ ] **S27 - Oncoming traffic removed at the owner's request** - Status: Done - Cycle: 13
+  - **Source:** direct owner feedback: *"you've put unnecessary opposing traffic in a portfolio site that should represent me."*
+  - **Outcome:** **Removed** in `d76e0bd`, along with the `reducedMotion` prop that existed only to suppress it. Recorded as standing law in the Guardrails block; S13b (haze) closed as unwanted for the same reason. **Do not re-propose invented traffic, weather or other road "life".**
+
+- [ ] **S28 - The car drives in a lane, not down the centre line** - Status: Done - Cycle: 13
+  - **Source:** direct owner feedback, twice: *"i dislike how the car starts in the middle of the road"* and *"you also make me steer right back into the middle of the road instead of the middle of the lane of traffic im supposed to be in."*
+  - **Why / expected impact:** the camera sat at lateral 0, which is the centre line, and `sim.x` decays to 0 - so the game actively steered you back onto the centre line whenever you let go.
+  - **Outcome:** **Shipped** in `d76e0bd`. `cameraX(sim) = LANE_OFFSET + sim.x`, `LANE_OFFSET = 2.7` (midpoint of the right-hand lane); `sim.x` is now drift within the lane. Steering clamp tightened to keep the car between the centre line and the edge line. Verified: the centre line now runs down the left of the view.
 
 *(Check the box once you've reviewed the outcome.)*

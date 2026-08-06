@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 12 · branch `feat/drive-mode` · 23 commits, nothing pushed
+**Last updated:** end of cycle 13 · branch `feat/drive-mode` · 24 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,27 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 13 — your two corrections, both applied
+
+**The oncoming traffic is gone.** You were right that it doesn't belong. I'd added it in cycle 7 reasoning that an
+empty road felt like a treadmill — but manufactured incident on the far carriageway is set-dressing for a driving game,
+not for a page whose job is to represent your work. Removed completely, along with the reduced-motion plumbing that
+existed only to suppress it. I've written it into the run's standing rules so no later cycle re-proposes traffic,
+weather or other invented road "life", and closed the drifting-haze idea for the same reason.
+
+**The car now drives in a lane.** Your second message named the cause exactly. The camera sat at lateral **0** — which
+*is* the centre line — so you straddled it. And because the steering drift decays back to 0, the game was actively
+steering you onto the centre line every time you let go. Now the camera sits at the **midpoint of the right-hand lane**
+(2.7m of a lane that runs 0–5.5m), and the steering drift is measured *within* that lane, so releasing the keys returns
+you to the middle of your lane instead. I also tightened the steering range so full-left leaves you just inside the
+centre line and full-right on the edge line — you can't wander onto the oncoming side or off the shoulder any more.
+
+You can see it immediately: the yellow centre line now runs down the **left** of the view with the white edge line to
+the right, and the road's vanishing point sits slightly left of screen centre — which is where it belongs when you're
+sitting right of the road's centreline, and which finally makes the left-of-centre steering wheel read correctly.
 
 ---
 
@@ -65,7 +86,7 @@ into the standing brief:
 
 a driver's-POV cockpit with working instruments · an arrival panel with auto-cycling full-bleed screenshots ·
 dusk-to-dawn light that advances with your career · real interstate guide signs · per-leg roadside character ·
-a trip computer counting the actual years · deep links to any exit · oncoming traffic · mile markers ·
+a trip computer counting the actual years · deep links to any exit · mile markers ·
 resume-where-you-left-off · opt-in engine sound · a keyboard-accessible route map · a reduced-motion path that holds
 together · and a cockpit that now fits a landscape phone.
 

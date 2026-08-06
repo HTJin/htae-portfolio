@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 13
+**Cycle:** 14
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -41,6 +41,18 @@
 **Hard floors (always on):** (1) never trigger an interactive permission/approval prompt — park such tasks as **Needs human**. (2) never take an irreversible/unrecoverable action unless explicitly authorized above.
 **Scope — only touch:** `src/components/drive/**`, `src/styles/drive.module.css`, `src/pages/drive.jsx`, and (read-only) `src/lib/projects.js` / `src/content/**`. New drive-only components may be added under `src/components/drive/`.
 **Do NOT touch:** the classic site sections (`src/components/sections/**`), `src/content/**` copy, `next.config.mjs`, `tailwind.config.js`, `package.json`. NOTE: the working tree already had uncommitted modifications to `src/components/sections/*` and `src/content/*` **before this run started** — leave them alone, and never `git add -A`; stage only the drive-mode files this run touches.
+
+**OWNER'S DIRECT INSTRUCTIONS (given 2026-08-06, cycle 13 — these outrank anything the loop decided for itself):**
+- **No traffic, and no other invented "life" on the road.** Oncoming vehicles were removed at the owner's request:
+  *"you've put unnecessary opposing traffic in a portfolio site that should represent me."* Do **not** re-add oncoming
+  cars, tail lights, other drivers, pedestrians or similar. The Suggester must not re-propose them, and S13b
+  (drifting haze) is now **closed as unwanted** for the same reason — the road is meant to be the owner's road, not a
+  simulation of a busy highway. If a future cycle thinks the road feels empty, that is the intended feeling.
+- **The car drives in a lane.** *"i dislike how the car starts in the middle of the road"* and *"you also make me
+  steer right back into the middle of the road instead of the middle of the lane of traffic im supposed to be in."*
+  The camera sits at `cameraX(sim) = LANE_OFFSET + sim.x` (`world.js`), `LANE_OFFSET = 2.7` — the midpoint of the
+  right-hand lane. `sim.x` is drift **within the lane**, so steering re-centres to the lane, never to the centre line.
+  Any future change touching camera lateral position must go through `cameraX()` and preserve this.
 
 **Pre-mortem guardrails (prevent likely failure modes):**
 1. *Failure: hydration mismatch.* The gauges already round coordinates to keep SSR and client byte-identical (`Dashboard.jsx:11-17`). Any new SVG geometry computed with `Math.*` must be rounded the same way, and nothing may branch on `window`/`Date` during render. **Guardrail:** after every visual change, check the browser console for a hydration warning before calling the task built.
@@ -500,6 +512,9 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C13-1. Oncoming traffic removed** — at the owner's direct request: *"you've put unnecessary opposing traffic in a portfolio site that should represent me."* Removed the constants, the per-frame car state, `drawOncoming`, and the `reducedMotion` prop that existed only to suppress it. Recorded at the top of the Guardrails block as standing law so no future Suggester pass re-proposes it; S13b (drifting haze) closed as unwanted for the same reason. Commit `d76e0bd`.
+- **C13-2. The car now drives in a lane, not down the centre line** — also at the owner's request, twice: *"i dislike how the car starts in the middle of the road"* and *"you also make me steer right back into the middle of the road instead of the middle of the lane of traffic im supposed to be in."* Both symptoms had one cause: the camera sat at lateral **0**, which **is** the centre line, and `sim.x` decays to 0 — so releasing the steering keys actively walked you back onto it. The camera now sits at `cameraX(sim) = LANE_OFFSET + sim.x` with `LANE_OFFSET = 2.7`, the midpoint of the right-hand lane (road spans -5.5..5.5, centre line at 0, so the right lane's midpoint is 2.75). `sim.x` is now drift *within* the lane, so re-centring returns you to your lane. Steering clamp tightened ±3.4 -> ±2.3 so full-left is 0.4m (just inside the centre line) and full-right is 5.0m (on the edge line) — you can no longer stray onto the oncoming side or the shoulder. Expressed once in `world.js` and consumed by all four camera-relative call sites (road ribbon, roadside furniture, exit signs, `project()`). Commit `d76e0bd`.
+  - **Verified against a production build:** the yellow centre line now runs down the **left** of the view with the white edge line on the right, and the vanishing point sits slightly left of screen centre — exactly where it belongs when seated right of the road's centreline.
 - **C12-1. Arrival panel no longer hides behind the cockpit on short viewports** — on a landscape phone the panel ran **71px underneath** the dash, hiding the bottom of the résumé content. Root cause found arithmetically: the dash height was written twice in different units — `Dashboard` `h-[36%] min-h-[210px]` vs `DriveScene` `bottom-[36%]`. At 386px tall, 36% = 139px so the **min-height won at 210px** while the panel reserved only 139px; 210 - 139 = **71px**, exactly the measured overlap. Both now consume a single expression, `clamp(190px,36%,48%)`, so they cannot drift apart (guardrail 43). Measured before/after at 840x386: overlap **71px -> 0**, and it survived the guardrail-36 frozen-transform check both times. Commit `c71b624`.
 - **C12-2. Cockpit no longer eats more than half a landscape screen** — the same change brought the drivable glass from **45.6% -> 50.8%**, back over guardrail 3's 50% floor. No regression at other sizes: 1916x946 unchanged at 36% dash / 64% glass with 32px of panel clearance; 386x840 unchanged at 36% / 64%.
 - **C12-3. Focus visibility - investigated, no defect** — every control computed `outline-style: none`, but from **programmatic** `.focus()`, which does not match `:focus-visible`, so it proved nothing (guardrail 45). A grep across `tailwind.css`, `base.css`, `components.css`, `utilities.css` and every drive component found **no author rule removing outlines**, so the browser default ring applies to real keyboard focus. No change made.
@@ -684,7 +699,7 @@ biggest lever available: making the drive pass **time**, not just distance.
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
-- **S13b — Drifting haze** *(the unbuilt half of S13; traffic shipped in cycle 7)* — a thin drifting weather layer near the horizon. Deferred deliberately, not for lack of time: the existing horizon haze already blends the tarmac into the sky, and a second moving layer risks muddying it. Would need careful A/B against the current look.
+- **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
 
 ---
 
