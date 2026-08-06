@@ -10,7 +10,30 @@
  * that asks about what comes next.
  */
 
+import { route, routeLength } from './route'
+
 const rgb = (r, g, b) => [r, g, b]
+
+/**
+ * Where a named stop falls along the route, as a fraction.
+ *
+ * The full-night keyframe used to be a hand-typed `0.92` labelled "the
+ * toolbox" — but the toolbox is EXIT 19 of 20, which is **0.95**. `0.92` is
+ * exit 18.4: mid-leg, where nobody parks. Measured, that left the toolbox
+ * already 37.5% of the way into dawn (`starOpacity` 0.850 against a peak of
+ * 1.0), so the darkest moment of the drive happened between two stops and the
+ * one designed to *be* full night was brightening. Deriving it means adding a
+ * role or a build cannot pull the two apart again.
+ *
+ * Falls back to the literal if the content ever loses that stop, rather than
+ * producing `undefined` and a NaN palette.
+ */
+function progressOfStop(id, fallback) {
+  const stop = route.find((entry) => entry.id === id)
+  if (!stop || !routeLength) return fallback
+  const at = stop.s / routeLength
+  return Number.isFinite(at) ? at : fallback
+}
 
 /**
  * Keyframes along the route. `at` is the fraction of the route travelled;
@@ -43,7 +66,11 @@ const KEYFRAMES = [
     signFace: rgb(22, 96, 62),
   },
   {
-    at: 0.38, // civil twilight — the middle of the career highway
+    // Civil twilight, somewhere around the middle of the career highway. This
+    // one is a judgement call, not an anchor: "the middle of the highway" is a
+    // range of stops, not a stop, so there is nothing to derive it from. As
+    // written it lands near EXIT 08.
+    at: 0.38,
     skyTop: rgb(10, 18, 44),
     skyUpper: rgb(26, 36, 78),
     skyLower: rgb(72, 58, 110),
@@ -68,7 +95,10 @@ const KEYFRAMES = [
     signFace: rgb(20, 92, 60),
   },
   {
-    at: 0.68, // deep twilight — the side builds
+    // Deep twilight, in among the side builds. Also a judgement call rather
+    // than an anchor — the builds run EXIT 11 to EXIT 18, so this sits inside
+    // that stretch (near EXIT 14) without belonging to any one of them.
+    at: 0.68,
     skyTop: rgb(4, 8, 20),
     skyUpper: rgb(10, 20, 48),
     skyLower: rgb(20, 44, 84),
@@ -93,7 +123,10 @@ const KEYFRAMES = [
     signFace: rgb(18, 96, 60),
   },
   {
-    at: 0.92, // full night — the toolbox. This is the original palette.
+    // Full night, at the toolbox — derived from that stop, not typed, so the
+    // darkest point of the drive lands where you actually park. This is the
+    // original palette.
+    at: progressOfStop('skills', 0.92),
     skyTop: rgb(3, 6, 13),
     skyUpper: rgb(6, 18, 36),
     skyLower: rgb(11, 36, 64),
@@ -143,6 +176,20 @@ const KEYFRAMES = [
     signFace: rgb(20, 100, 64),
   },
 ]
+
+/**
+ * `paletteAt` walks the keyframes assuming they ascend, so a derived `at` that
+ * landed out of sequence would silently break the interpolation for a whole
+ * stretch of road rather than failing loudly. Nudge any stray value back
+ * between its neighbours instead of trusting the arithmetic.
+ */
+for (let i = 1; i < KEYFRAMES.length - 1; i += 1) {
+  const low = KEYFRAMES[i - 1].at
+  const high = KEYFRAMES[i + 1].at
+  if (!(KEYFRAMES[i].at > low && KEYFRAMES[i].at < high)) {
+    KEYFRAMES[i].at = (low + high) / 2
+  }
+}
 
 const COLOR_KEYS = [
   'skyTop',
