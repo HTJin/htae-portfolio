@@ -643,3 +643,33 @@ The control matters as much as the measurement: without it, "the panel used no t
 **Outcome: no defect, and nothing changed.** Worth stating plainly rather than dressing up as work: eight cycles of layout and paint changes left the accessibility contract intact. The probe itself is now written into the tasks file so a future cycle can re-run it without rediscovering the navigation trap.
 
 **Exit.** No commit to `src/` — there was nothing to fix. -> `Cycle: 30 / Phase: Planner`.
+
+## Cycle 30
+
+**Suggester.** Backlog dry. `ExitSign.jsx` was one of three drive files never audited in this run, and after the cockpit it is the roadside element the owner's priority (a) leans on hardest.
+
+**Reading it first, then measuring.** The component is well built — it goes through the shared `project()` (cycle 15), hides itself when parked and when past the exit, and drives its flare off distance. The problem is one number. Driving a leg from EXIT 05 and sampling the wrapper, `opacity` came back **1 on the very first sample after departure** and stayed there.
+
+**The arithmetic behind it.** `VISIBLE_FROM = 420` is a literal; `LEG_LENGTH = 220` is exported two files away and was never used here. So the sign's window is **1.91× the furthest you can ever be from it**:
+- `opacity = min(1, (420 — z) / 160)` evaluates to **1.000** at z = 220. It would only have finished at z = 260 — past the start of the leg. The fade-in was dead code.
+- `near = 1 — z/420` starts at **0.227**, so the retroreflective flare — which the comment above it calls *"most of why an approach reads as an approach rather than a sprite getting bigger"* — was already a quarter spent before the car moved, and only ever reached 0.967.
+
+What a visitor saw: the sign did not fade in on approach; it **popped into existence at full opacity, already partly lit**, the moment you pulled away from a stop.
+
+**This is the shape this run keeps finding** — a constant chosen independently of the geometry it has to agree with (guardrail 43's family: the dash height written twice, the camera lateral written four times, the interior furniture pinned in percentages against a clamp). The fix is the same in kind: derive it. `VISIBLE_FROM = LEG_LENGTH`, `FADE_OVER = LEG_LENGTH * 0.35`.
+
+**Verified on the production build, driving a real leg:**
+
+| | before | after |
+|---|---|---|
+| opacity at departure | **1.000** | **0.004** |
+| opacity ramp | none — dead code | 0.004 -> 0.42 -> full at **4.8s** of a ~9.9s leg |
+| flare at departure | 0.227 | **0.000**, sweeping to 0.46 |
+| parked / past the exit | hidden | hidden (unchanged) |
+| scale curve | monotonic | monotonic, transform untouched |
+
+The sign is fully opaque roughly halfway along the leg, so nothing is lost as wayfinding — and the "Next exit" banner covers the first seconds regardless (guardrail 102).
+
+**One thing not obtained, stated rather than glossed:** a screenshot of the sign mid-approach. By the time a capture could be timed the car had arrived and the arrival panel occludes that region. The numeric series above is the evidence; there is no visual for this one.
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.1 kB). One commit: `f299914`. -> `Cycle: 31 / Phase: Planner`.

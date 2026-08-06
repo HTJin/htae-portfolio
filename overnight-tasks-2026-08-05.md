@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 30
+**Cycle:** 31
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -284,6 +284,20 @@
 100. **A short stop must not look broken.** Two columns with three bullets can read as a mistake. Look at exit 02 in a
     screenshot before calling this done, and narrow the rule if it reads badly.
 
+### Cycle 30 pre-mortem (guardrails for this cycle's tasks)
+
+101. **Derive it, do not retune it.** The fix is to read `LEG_LENGTH` from `route.js`, not to swap 420 for another
+     literal. If a future cycle changes the leg length the sign must follow it without anyone remembering to.
+102. **A fade-in must not become a disappearance.** The sign is wayfinding. Verify it is fully opaque well before the
+     stop, not only at the last moment — and note that the "Next exit" banner already covers the first seconds, so
+     starting from transparent costs no information.
+103. **The flare and the fade share the same window.** Both read `VISIBLE_FROM`; changing it moves both. Measure both,
+     not just the one being fixed.
+104. **Do not touch the projection.** `project()` placement was proven pixel-identical in cycle 15 and re-measured in
+     cycle 24. This task changes opacity and brightness only — the sign's position and scale curve must be unchanged.
+105. **Check the parked and past-the-exit states explicitly.** `z < VISIBLE_UNTIL` and `z > VISIBLE_FROM` are the two
+     hide branches; narrowing the window changes the second one, so re-verify the sign is hidden when parked.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -299,9 +313,39 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 30
+## Tonight's tasks (in order) — CYCLE 31
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 30's list (resolved — kept for context)</summary>
+
+### CYCLE 30
+
+Backlog dry, so a **Suggester** pass on `ExitSign.jsx` — one of the three drive files never audited in this run, and
+the roadside element the owner's priority (a) leans on hardest after the cockpit itself.
+
+- [x] **1. The exit sign's approach is scaled to a road twice as long as the real one** — **DONE**
+  - **Evidence (measured, then confirmed arithmetically):** driving a leg from EXIT 05, the sign's wrapper reported
+    `opacity: 1` on the **very first sample after departure** and stayed there. The reason is in the constants:
+    `VISIBLE_FROM = 420` while `LEG_LENGTH = 220` (`route.js:4`), so the sign's window is **1.91× the longest distance
+    you can ever be from it.
+    - opacity is `min(1, (420 — z) / 160)`, so at departure (`z = 220`) it is already **1.000**. The ramp would only
+      finish at `z = 260`, which is **beyond the leg entirely** — the fade-in is dead code.
+    - the retroreflective flare is `near = 1 — z/420`, so it starts at **0.227** instead of ~0 and only sweeps to
+      0.967. The comment above it says that flare is *"most of why an approach reads as an approach rather than a
+      sprite getting bigger"* — and a quarter of it is spent before you have moved.
+  - **What a visitor sees:** the sign does not fade in on approach. It **pops into existence at full opacity** the
+    instant you pull away from a stop, already partly lit.
+  - **This is the same defect shape this run keeps finding** (guardrail 43's family): a number chosen independently of
+    the geometry it has to agree with. `LEG_LENGTH` is exported and was simply not used here.
+  - **Files:** `src/components/drive/ExitSign.jsx`.
+  - **Done when:** the window is derived from `LEG_LENGTH` rather than a literal; measured on a real leg, opacity
+    starts at **~0** at departure and reaches 1 partway along; the flare sweeps from **~0** to ~0.94 instead of
+    starting at 0.227; the sign still hides while parked and while past the exit; scale still grows monotonically
+    through the approach; and a deep link to a mid-route exit still shows nothing until you depart.
+
+</details>
 
 <details>
 <summary>Cycle 29's list (resolved — kept for context)</summary>
@@ -1223,6 +1267,20 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C30.1 — The exit sign's approach is scaled to the real leg** *(cycle 30, commit `f299914`)* — `ExitSign` used a
+  literal `VISIBLE_FROM = 420` against `LEG_LENGTH = 220` (`route.js:4`), a window **1.91× the furthest you can ever be
+  from the sign. Measured on a real leg from EXIT 05, the wrapper reported `opacity: 1` on the **very first sample
+  after departure** and never moved: `min(1, (420 - z) / 160)` is already **1.000** at z = 220 and would only have
+  finished at z = 260, beyond the leg entirely — the fade-in was dead code, and the sign popped into existence at
+  full opacity the instant you pulled away. The retroreflective flare was pre-charged for the same reason:
+  `near = 1 - z/420` starts at **0.227**, so a quarter of the sweep the code calls *"most of why an approach reads as
+  an approach"* was spent before the car had moved. Both now derive from `LEG_LENGTH` (guardrail 101 — derived, not
+  retuned), so neither can drift again if the route spacing changes. **Verified driving a real leg:** parked -> hidden
+  at opacity 0; first visible sample **0.004** (was 1.000); ramp **0.004 -> 0.42 -> full at 4.8s of a ~9.9s leg**, so
+  it is solid long before the stop (guardrail 102); flare **starts 0.000** (was 0.227) and sweeps to 0.46 (guardrail
+  103); **scale still monotonic** through the approach and the transform untouched (guardrail 104); hidden again past
+  the exit (guardrail 105).
 
 - **C29.1 — The reduced-motion contract still holds, eight cycles on** *(cycle 29 — verification only, no code
   changed)* — last exercised in cycle 11; the paint loop, dash, ignition splash, route map and stop card have all

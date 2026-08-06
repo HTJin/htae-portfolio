@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 29 · branch `feat/drive-mode` · 43 commits, nothing pushed
+**Last updated:** end of cycle 30 · branch `feat/drive-mode` · 44 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,34 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 30 — the exit signs weren't fading in — they were popping
+
+The green highway sign for the next exit is supposed to fade up out of the dark as you approach it, and its face is
+supposed to catch your headlights more and more as you get closer. That flare is the thing that makes it feel like
+you're driving toward something rather than watching a picture get bigger.
+
+It wasn't doing the first part at all. The sign was written to become visible from 420 metres away and fade in over
+160 of those — but the gap between your exits is **220 metres**. You are never further than 220m from the next sign,
+which means the fade had already finished before you started. Measured on a real leg: the sign reported **full
+opacity on the very first frame after pulling away**. It popped into existence, already lit.
+
+Same cause, second symptom: the headlight flare was scaled to that same 420m, so it started about a quarter of the way
+through its sweep rather than at nothing.
+
+Both numbers now come from the actual distance between your exits, so if that spacing ever changes they follow it
+instead of drifting apart again. On a real leg the sign now starts at **0.4% opacity**, fades up, and is fully solid
+about halfway along — well before you need to read it — while the flare builds from nothing to its brightest just as
+you arrive.
+
+This is the fourth time this run has found the same *kind* of bug: a number typed in one file that had to agree with a
+number in another, and quietly didn't. The dashboard height, the car's sideways position, the bonnet, and now the
+sign. Each fix replaces the guess with the real value.
+
+**One honest note:** I could not get you a screenshot of the sign mid-approach — by the time a capture is timed the car
+has arrived and the panel covers that part of the screen. The measurements are the evidence here, not a picture.
 
 ---
 
