@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 47
+**Cycle:** 48
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -479,9 +479,38 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 47
+## Tonight's tasks (in order) — CYCLE 48
 
-_Not yet planned — the backlog is still dry, so cycle 47 opens at **Suggester**._
+_Not yet planned — backlog still dry, so cycle 48 opens at **Suggester**._
+
+> **Two cycles running with nothing shipped (46, 47).** Not a reason to stop — but the honest read is that drive mode
+> is now well covered, and the highest-value work left is **parked in Needs human**, not in the backlog. A future
+> Suggester should widen the angle rather than re-probe: **already excluded** are the ignition splash, the MILE 0
+> mirror, reduced motion, wide/short viewport geometry, the carousel's pause behaviour, browser history, the CSS
+> module, and itinerary completeness.
+
+<details>
+<summary>Cycle 47's list (a verification-only cycle — nothing shipped, kept for context)</summary>
+
+### CYCLE 47
+
+Backlog dry. **Five angles probed, no defect found** — recorded so a later pass does not spend its budget here:
+
+- **The carousel's pause behaviour (priority (c)).** A screenshot strip that keeps flipping while you are trying to
+  look at one would be a real fault. It does not: `ProjectShots.jsx:59-62` pauses on `onPointerEnter`/`onFocus` and
+  resumes on leave/blur, and the interval is torn down while paused (`:48-52`). Already correct.
+- **Browser history.** Deep-linked to `?exit=5` and drove one leg: the URL became `?exit=6` with `history.length`
+  **unchanged at 50**, so `router.replace` is doing its job and 21 exits cannot bury the visitor's Back button. Back
+  from there lands on **`/`**, the page they came from — what a visitor expects.
+- **Reload.** A reload carries `?exit=N`, which is the deep-link path already proven in cycle 45.
+- **The stylesheet.** `drive.module.css` defines **25** classes and the drive components reference **25** — every
+  definition used, every reference defined. No dead rules (the `world.project()` kind of finding from cycle 15) and no
+  dangling `styles.x` resolving to `undefined`.
+- **Itinerary completeness.** The served HTML carries **21 `<h3>`** headings for the **21** stops, inside **6**
+  labelled leg sections (Start line, School zone, Career highway, Scenic overlook, Pit stop, Destination). Nothing on
+  the route is missing from what a screen reader or a crawler receives.
+
+</details>
 
 <details>
 <summary>Cycle 46's list (a verification-only cycle — nothing shipped, kept for context)</summary>
@@ -1925,6 +1954,14 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C47.0 — Five more angles, all clean** *(cycle 47 — verification only)* — **the carousel** already pauses on
+  hover and on focus and tears the timer down while paused, so it never flips away from a screenshot someone is
+  reading (priority (c)); **browser history** is not polluted — driving a leg left `history.length` at **50** and Back
+  returned to `/`, the referring page; **the stylesheet** is exactly in sync at **25 classes defined / 25 referenced**,
+  with no dead rules and no `styles.x` resolving to `undefined`; **the itinerary** in the served HTML carries **21
+  `<h3>` for 21 stops** across **6** labelled legs, so nothing on the route is hidden from a screen reader or a
+  crawler.
 
 - **C46.0 — Reduced motion still holds after the pedal changed** *(cycle 46 — verification)* — cycle 45 was the
   first change to `Pedal` in many cycles, and reduced motion is the contract this run has broken and repaired most

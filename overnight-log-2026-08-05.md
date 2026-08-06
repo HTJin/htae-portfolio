@@ -1118,3 +1118,21 @@ So the guard earns its place. The only free band is **1040-1119px** — 10-30px 
 **Also clean:** geometry at **2560×1080** and **1920×900** — dash 36% of height, panel/dash overlap **0**, six controls in the dash, smallest control **25px**, nothing off-screen, no horizontal scroll.
 
 **Exit.** No commit to `src/`. -> `Cycle: 47 / Phase: Suggester` (backlog still dry).
+
+## Cycle 47
+
+**Suggester — five angles, nothing to ship.** Second cycle running without a commit to `src/`. Recorded in full, because a pass that finds nothing is only worth anything if it says exactly where it looked.
+
+**1. The carousel's pause behaviour — the one I expected to be a defect.** Priority (c) is auto-cycling screenshots, and the classic failure of an auto-advancing carousel is that it flips away while you are reading. Checked before assuming: `ProjectShots.jsx:59-62` pauses on `onPointerEnter` and `onFocus`, resumes on leave/blur, and `:48-52` tears the interval down entirely while paused rather than letting it run and skip. Already correct, including for the keyboard — React's `onFocus` bubbles, so focusing a dot pauses the strip.
+
+**2. Browser history.** Never tested, and pressing Back is something real visitors do. Deep-linked to `?exit=5` and drove one leg: URL became `?exit=6` and **`history.length` stayed at 50**, so `router.replace` really is replacing — 21 exits cannot bury someone's Back button under 21 entries. Back from there lands on **`/`**, the page they came from. Correct on both counts.
+
+**3. Reload.** Falls out of the same design: the URL always carries `?exit=N`, which is the deep-link path cycle 45 already proved (including junk and out-of-range values).
+
+**4. The stylesheet, audited the way cycle 15 audited `world.js`.** `drive.module.css` defines **25** classes; the drive components reference **25**. Both directions checked: **no class defined and never used** (dead rules), and **no `styles.x` referenced that the stylesheet does not define** (which would silently render `class="undefined"`). Exactly in sync.
+
+**5. Itinerary completeness.** The served HTML carries **21 `<h3>` headings for the 21 stops**, inside **6** labelled leg sections — Start line, School zone, Career highway, Scenic overlook, Pit stop, Destination. Nothing on the route is missing from what a screen reader or a crawler receives.
+
+**The honest read.** Two cycles in a row with nothing shipped is not a reason to stop, and I have not stopped — but it is a signal worth writing down rather than papering over with invented work. Drive mode is now covered from several directions: geometry at eight viewport sizes, reduced motion, no-JavaScript, zoom, theme, focus order, the route boundaries, image bytes and quality, and now history, CSS and markup completeness. **The highest-value work left is parked in Needs human**, chiefly the classic site's `Projects.jsx` — which is the *other half of the owner's own priority (c)* and sits outside this run's write scope. The next Suggester should widen the angle rather than re-probe anything in the exclusion list now at the top of the task file.
+
+**Exit.** No commit to `src/`. -> `Cycle: 48 / Phase: Suggester` (backlog still dry).

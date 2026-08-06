@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 46 · branch `feat/drive-mode` · 57 commits, nothing pushed
+**Last updated:** end of cycle 47 · branch `feat/drive-mode` · 58 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,33 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 47 — five more checks, nothing broken — and where the real remaining work is
+
+Another pass with nothing to ship. Where I looked:
+
+- **Do your screenshots flip away while someone is reading one?** No — the strip already stops the moment a pointer
+  is over it or the keyboard lands inside it, and starts again when you leave. This was the check I most expected to
+  fail, since it is the usual fault of a carousel that advances by itself.
+- **Does driving 21 exits bury the Back button?** No. The address bar updates as you drive — so any stop can be
+  copied and shared — but it replaces the entry rather than stacking a new one, so Back still takes a visitor
+  straight back where they came from instead of needing 21 presses.
+- **Dead rules in the stylesheet?** None. All 25 style rules are used, and nothing refers to a rule that does not
+  exist.
+- **Is anything on the route invisible to screen readers or Google?** No — all 21 stops are present in the page's
+  markup, grouped into the six legs.
+
+**The part worth your attention.** That is two cycles running with nothing shipped, which is a signal rather than a
+problem. Drive mode has now been checked from a lot of directions: eight screen sizes, reduced motion, no JavaScript,
+browser zoom, light theme, keyboard order, the start and end of the route, image size and quality, history, CSS and
+markup. It is in good shape, and I would rather tell you that plainly than invent work to look busy.
+
+**The most valuable thing left is not something I can do.** It is the item still parked for you: on your **main
+site**, project screenshots are still cropped and still only advance when clicked. That is the other half of the
+original brief — the drive-mode half is done — and the file it lives in is outside what this run is allowed to
+edit. The patch is written and re-verified against the current code; it needs your go-ahead, nothing more.
 
 ---
 

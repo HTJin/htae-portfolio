@@ -423,4 +423,17 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** on a 2560x1080 screen a text stop stretches to 1216px while a project stop stays at 928px with a 451x225 screenshot. Same screen - and it is the screenshots, your stated priority, that stay small. It looks exactly like an oversight.
   - **Outcome:** **It is not one, and I left it alone.** The rule differs because the content does: widening a text stop makes it **shorter** (340px tall with nothing hidden, at every height from 1200 down to 800) because the extra width buys a third column. Widening a picture stop makes it **taller**, because the screenshot grows too - forcing it costs 10px of hidden content at 1080, 75px at 950 and 150px at 800. The height requirement added in an earlier cycle is therefore doing real work. The only genuinely free band is 1040-1119px tall, and a 1080p monitor's usable height usually falls below it once browser chrome is subtracted. Changing a deliberate rule that measures correctly, to buy that narrow band, was not a good trade.
 
+- [ ] **S78 - Does the screenshot strip flip away while you are reading it?** - Status: Done (no defect) - Cycle: 47
+  - **Source:** priority (c) is auto-cycling screenshots, and the classic failure of an auto-advancing carousel is that it moves on while you are still looking.
+  - **Outcome:** **Already correct.** It pauses when the pointer is over it and when anything inside it takes keyboard focus, and the timer is torn down while paused rather than left running to skip a frame. Nothing to change.
+
+- [ ] **S79 - Does driving 21 exits bury your Back button?** - Status: Done (no defect) - Cycle: 47
+  - **Source:** never tested, and pressing Back is something real visitors do.
+  - **Why / expected impact:** the address bar updates as you drive so a stop can be copied and shared. Done carelessly that adds a history entry per exit, and Back would then need 21 presses to escape the page.
+  - **Outcome:** **Clean.** Driving a leg left the history length unchanged, and Back returned to the page the visitor came from.
+
+- [ ] **S80 - Dead rules in the drive stylesheet, and markup completeness** - Status: Done (no defect) - Cycle: 47
+  - **Source:** an earlier cycle found a function that was dead code carrying false documentation, so the same audit was run against the stylesheet and the server-rendered markup.
+  - **Outcome:** **Both clean.** The stylesheet defines 25 classes and the components use 25 - no orphaned rules, and no reference to a class that does not exist (which would silently render a broken `class="undefined"`). The served HTML carries a heading for every one of the 21 stops, grouped into the 6 legs, so nothing on the route is missing from what a screen reader or a search engine sees.
+
 *(Check the box once you've reviewed the outcome.)*
