@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import clsx from 'clsx'
-import { formatMiles, route, routeLength } from './route'
+import { formatMiles, route, routeLength, yearAt } from './route'
 import { clamp } from './world'
 import styles from '@/styles/drive.module.css'
 
@@ -555,6 +555,7 @@ function TripComputer({ drive, stop }) {
   const odoRef = useRef(null)
   const nextRef = useRef(null)
   const barRef = useRef(null)
+  const yearRef = useRef(null)
 
   useEffect(
     () =>
@@ -571,6 +572,12 @@ function TripComputer({ drive, stop }) {
           const remaining = Math.max(0, stop.s - sim.travel)
           nextRef.current.textContent =
             remaining < 1 ? 'ARRIVED' : `${formatMiles(remaining)} MI`
+        }
+        if (yearRef.current) {
+          // Only the stops with a real date in the content have a year. Past
+          // the last of them this reads NOW — it never invents one.
+          const year = yearAt(sim.travel)
+          yearRef.current.textContent = year === null ? 'NOW' : String(year)
         }
       }),
     [drive, stop]
@@ -609,10 +616,20 @@ function TripComputer({ drive, stop }) {
         ))}
       </div>
 
-      <div className="mt-1.5 flex items-baseline justify-between font-mono text-[0.5625rem] uppercase tracking-[0.14em] text-emerald-300/40">
-        <span>odo</span>
+      {/* The road is the résumé, so the hero number is the year — not the
+          mileage. It counts the career out and then simply says NOW. */}
+      <div className="mt-1.5 flex items-baseline justify-between gap-2 font-mono text-[0.5625rem] uppercase tracking-[0.14em] text-emerald-300/40">
+        <span className="flex items-baseline gap-1.5">
+          <span>yr</span>
+          <span
+            ref={yearRef}
+            className="font-display text-[0.9375rem] font-semibold leading-none tracking-normal text-emerald-100"
+          >
+            {route[1]?.year ?? 'NOW'}
+          </span>
+        </span>
         <span className="font-semibold tabular-nums text-emerald-200/80">
-          <span ref={odoRef}>0.0</span> mi
+          odo <span ref={odoRef}>0.0</span> mi
         </span>
       </div>
     </div>

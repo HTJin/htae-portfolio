@@ -6,8 +6,28 @@ export const METERS_PER_MILE = 1609.34
 
 const byDateAscending = (a, b) => new Date(a.date) - new Date(b.date)
 
+/**
+ * The calendar year a content date belongs to.
+ *
+ * Deliberately not `new Date(date).getFullYear()`. The content dates are plain
+ * `YYYY-MM-DD` strings, which `Date` parses as UTC midnight and `getFullYear`
+ * then reads back in local time — so in any timezone behind UTC a January 1st
+ * date reports the *previous* year. That silently moved the StarPlus UI/UX role
+ * ('2024-01-01', whose own label reads "Jan 2024 - Oct 2024") to 2023. Putting
+ * a wrong year on someone's résumé is the worst bug this page could ship, so
+ * the year is read straight off the string.
+ */
+function yearNumber(date) {
+  if (!date) return null
+  const iso = /^(\d{4})-\d{2}-\d{2}/.exec(String(date))
+  if (iso) return Number(iso[1])
+  const parsed = new Date(date).getUTCFullYear()
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 function yearOf(date) {
-  return date ? String(new Date(date).getFullYear()) : ''
+  const year = yearNumber(date)
+  return year === null ? '' : String(year)
 }
 
 function originStop() {
@@ -34,6 +54,7 @@ function educationStop() {
     id: 'education',
     kind: 'education',
     leg: 'School zone',
+    year: yearNumber(education.date),
     signTitle: education.school,
     signSub: yearOf(education.date),
     title: education.school,
@@ -55,6 +76,7 @@ function experienceStops() {
     id: `experience-${entry.id}`,
     kind: 'experience',
     leg: 'Career highway',
+    year: yearNumber(entry.date),
     signTitle: entry.company,
     signSub: entry.lead ?? yearOf(entry.date),
     title: entry.title,
@@ -173,4 +195,38 @@ export function legsOf(stops) {
 
 export function formatMiles(meters) {
   return (meters / METERS_PER_MILE).toFixed(1)
+}
+
+/**
+ * The stops that carry a real date, in route order. Education and the nine
+ * roles have one; the side builds, the toolbox and the destination do not, and
+ * nothing here invents one for them.
+ */
+const DATED = route
+  .filter((stop) => typeof stop.year === 'number')
+  .map((stop) => ({ s: stop.s, year: stop.year }))
+
+const LAST_DATED_S = DATED.length ? DATED[DATED.length - 1].s : 0
+
+/**
+ * What year you are driving through. Interpolates between dated stops so the
+ * readout ticks over as you travel, and returns null past the last dated stop —
+ * the caller shows "NOW" there rather than a fabricated year.
+ */
+export function yearAt(travel) {
+  if (!DATED.length) return null
+  if (travel >= LAST_DATED_S) return null
+  if (travel <= DATED[0].s) return DATED[0].year
+
+  for (let i = 0; i < DATED.length - 1; i += 1) {
+    const from = DATED[i]
+    const to = DATED[i + 1]
+    if (travel < to.s) {
+      const span = to.s - from.s
+      const t = span <= 0 ? 0 : (travel - from.s) / span
+      return Math.round(from.year + (to.year - from.year) * t)
+    }
+  }
+
+  return null
 }
