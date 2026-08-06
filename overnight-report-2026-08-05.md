@@ -3,91 +3,79 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 1 · branch `feat/drive-mode` · commits `8883aaa`, `646b717`
+**Last updated:** end of cycle 2 · branch `feat/drive-mode` · commits `8883aaa`, `646b717`, `dd4b28b`, `86d0174`, `0d3e493`
 
 ---
 
-## ⚠️ One thing needs you (30 seconds)
+## Nothing needs you right now
 
-**Bring the Chrome window to the front and leave it visible.** As of 21:00 ET every tab reports
-`document.visibilityState === 'hidden'`, which means Chrome has unrendered them — screenshots come back solid black and
-every element measures 0×0. That is environmental, not a bug: the dev server returns 200, `npm run build` compiles and
-`next lint` is clean, and the same pages rendered correctly minutes earlier in the same session. Until Chrome is
-foregrounded the loop can still build, lint and reason about code, but it cannot *see* the site, so the remaining
-visual checks stay parked. Everything else can run unattended.
+The blocker from cycle 1 cleared itself — Chrome came back to the foreground at 20:31, so all three parked checks got
+done. Nothing is waiting on you. Keep the machine awake, the Claude app open, and the dev server alive on
+**http://localhost:3001** and the loop will keep going.
 
-Also worth keeping true overnight: computer awake (no sleep), Claude app open, dev server alive on
-**http://localhost:3001** (port 3000 was already taken by something of yours).
+One courtesy note: you appear to be using Chrome yourself. At one point a check read the wrong page because the tab was
+showing your **Virsh.shop Operator Console** rather than this app — I spotted it from the document title, threw the
+reading away rather than reporting a phantom bug, and stopped competing for your tabs. If you'd rather the loop had a
+window to itself, leave a spare Chrome window open on the drive page.
 
 ---
 
-## Shipped and verified (cycle 1)
+## Cycle 2 — the drive now passes *time*
 
-All three things you asked for are done and were seen working in a real browser before the window went dark.
+Your three original asks all shipped in cycle 1. Cycle 2 went after the standing brief — *get creative, capture my
+identity and the purpose of this portfolio* — starting with the biggest lever there was.
 
-**1. Project photos no longer get cut off, and they cycle themselves.**
-The captures were being squeezed into a ~7rem strip with `object-cover`, so only the top quarter of each one showed —
-and only ever the *first* screenshot, because the route only carried `screenshots[0]`. Now every project carries all
-its captures. I measured all 28 PNGs on disk first: they are all almost exactly 2:1, so they now sit in a 2:1 frame
-with `object-contain` and you see the whole page. They cross-fade every 4.2 seconds, with dots to jump, hover to
-pause, and a static fallback for reduced-motion visitors. Verified live: EXIT 11 stepped 4/4 → 1/4 → 2/4 → 3/4 on its
-own, EXIT 12 reached 5/5.
+**The light changes as you drive.** The route is your career in chronological order, but every frame looked identical,
+so it read as a loop rather than a journey. Now it's **golden-hour dusk at MILE 0**, deepening twilight across the
+career highway, **full night by the toolbox** — and the destination carries the **first hint of dawn**, because that's
+the stop that asks what comes next. Sky, stars, moon, skyline, tarmac, verge, lane paint, haze and the street lamps all
+follow it; the lamps warm up as night falls and dim again at first light.
 
-**2. The arrival panel is rebuilt.**
-It now opens with a green interstate exit shield, the leg name and a position counter, and on wide screens it splits
-into screenshot-left / text-right so the two stop fighting for the same column. It projects up from the dash rather
-than fading in place. It also no longer renders over the rear-view mirror, which it did before.
+Deliberately *not* a full day cycle: the art is night-tuned (stars, moon, sodium glow, neon HUD) and a washed-out
+midday would have wrecked it. Dusk-to-night keeps the aesthetic and still gives you real change.
 
-**3. The cockpit reads as a real car from the driver's seat.**
-This was the big one. The old dash had the steering wheel at ~33% of the screen width while the road's vanishing point
-was at 50% — the wheel simply wasn't in front of the driver — and the gauges floated beside it rather than behind it.
-Now: the wheel sits on the driver's axis with a **hooded instrument binnacle behind it**, so you read the cluster over
-the top of the rim the way you actually do in a car. Added the car's **bonnet** at the base of the glass, a lit **cowl
-lip** where the dash meets the windshield, moulded dash grain, **slatted air vents**, and the dash smeared back at you
-by the glass.
+**The exit signs read like real guide signs.** The exit number moved onto a plaque bolted above the right corner the
+way it is on an interstate, freeing the header row for the leg name and a live distance countdown. Twin supports — a
+sign that size never stands on one post. And the face is retroreflective: dull at distance, flaring as your headlights
+reach it, with a sheen sweeping across the sheeting. That flare is most of why an approach now feels like *arriving*
+rather than a sprite scaling up. The green comes from the route palette, so it sits right at golden hour and at
+midnight.
 
-The developer identity is in the details rather than pasted on top:
-- **tell-tales that actually mean something** — the turn arrows follow your steering, `CRUISE` lights when autopilot is
-  driving you to the next exit, `BRAKE` follows the brake — plus one amber `{ }` lamp that is not from any car and
-  stays lit as long as the engine is running.
-- **the centre screen is a terminal**: `~/route $ drive --to`, green on black, counting down the miles to the next exit.
-- **PRND** with the live gear, an `HT` horn boss, and ribbed pedal pads tilted into a footwell instead of flat buttons.
+**You can link straight to one exit.** `/drive?exit=11` opens parked at Solar Power Indy with the panel up and the
+engine already running — someone following a shared link asked for the exit, not the ignition screen. The URL tracks
+the exit as you travel, so it's always copyable. Send a recruiter to the role that matters instead of to MILE 0.
 
-**Phones get their own cockpit.** The side-by-side dash overflowed badly at 390px — the cluster ran off the left edge
-and PRND rendered on top of the screen. Small widths now get a stacked layout: cluster strip across the cowl, terminal
-under it, then Back / Next / Map and both pedals in one thumb-reachable row. Verified at 386×840 with no horizontal
-overflow.
+**The three checks parked overnight all came back clean:** no hydration errors on a cold load; the phone title clamps
+to exactly two lines (verified by injecting a 113-character title, not just by looking at a short one); and the
+reduced-motion path really does suppress autoplay while leaving the dots working.
 
-**Two real bugs found and fixed while building**, both the kind that would have quietly stayed wrong:
-- the per-frame `style.transform` that rotates the wheel was overwriting Tailwind's centring translate, throwing the
-  wheel ~180px off its own axis;
-- a `display: flex` in the CSS module out-ordered Tailwind's `.hidden`, so vents meant to be desktop-only leaked onto
-  the phone layout.
+### Two real faults found on the way
+
+Worth knowing about, because both produced *convincing fake defects*:
+
+- **A corrupted `.next` webpack cache was silently serving CSS with newly-added Tailwind classes missing.**
+  `line-clamp-2` and `lg:truncate` generated zero rules. It looked exactly like a Tailwind config problem. It wasn't —
+  `npm run dev:fresh` fixed it. Later the same cache dropped `/drive` from the build manifest and the page rendered
+  with no module CSS and a dead canvas. If the site ever looks broken in dev for no reason, wipe `.next` first.
+- **A performance number that would have been wrong to trust.** The daylight system measured 34fps, which looks bad
+  until you measure the baseline: 26fps without it. I stashed just the cycle-2 files, re-measured the same way, and
+  confirmed the change is not a regression — the sub-60fps is the dev server plus browser instrumentation.
 
 ---
 
 ## Parked
 
-**Needs testing** (the loop will clear these itself once Chrome is visible)
-- Title clamping at 390px — the two-line clamp compiles and applies, but a probe resolved to `display: flow-root`
-  rather than `-webkit-box`, which would defeat it. Needs one look at EXIT 11's long title on a phone width.
-- The reduced-motion path through the carousel — written, never exercised.
-- A hydration check on a cold load of `/drive` — console tracking was only attached mid-session.
-
-**Awaiting scenario**
-- All remaining browser verification, until Chrome is foregrounded (see the box at the top).
-
-**Needs human** — nothing. **Blocked** — nothing.
+**Needs testing** — nothing. **Awaiting scenario** — nothing. **Blocked** — nothing. **Needs human** — nothing.
 
 ---
 
-## Queued for the next cycles
+## Queued next
 
-Ranked roughly by payoff: time-of-day lighting that advances along the route (dawn at MILE 0 → night at the
-destination, so the drive visibly passes time as it passes years); a realism pass on the exit signage; deep-links to a
-specific exit so you can send a recruiter straight to one role; resuming where a visitor left off; and opt-in ambient
-audio tied to engine revs. Full detail, with why each was suggested, is in
-`overnight-suggestions-2026-08-05.md` — every idea has a checkbox for you to sign off.
+Six ideas in the backlog, three of them new from tonight's audit: give each leg its own roadside character so you can
+tell where you are at a glance; make the odometer read in **years** as well as miles (the route is chronological and
+most stops already carry dates — a recruiter reads "2019" faster than "1.4 MI"); put some weather and oncoming
+headlights on the road so it feels inhabited; plus mile markers between exits, resuming where a visitor left off, and
+opt-in engine audio. Full detail and reasoning in `overnight-suggestions-2026-08-05.md`, every idea with a checkbox.
 
 ---
 
@@ -97,7 +85,7 @@ audio tied to engine revs. Full detail, with why each was suggested, is in
 | --- | --- |
 | `overnight-suggestions-2026-08-05.md` | Every idea, its source, and what happened to it — with checkboxes |
 | `overnight-tasks-2026-08-05.md` | Source of truth: phase/cycle, guardrails, task states |
-| `overnight-log-2026-08-05.md` | Blow-by-blow, including both bugs and the two environment gotchas |
+| `overnight-log-2026-08-05.md` | Blow-by-blow, including every fault and environment gotcha |
 | `overnight-journal-2026-08-05.md` | One line per task, with its commit |
 
 Nothing has been pushed; everything is local commits on `feat/drive-mode`.

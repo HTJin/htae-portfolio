@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 2
+**Cycle:** 3
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -48,9 +48,13 @@
 3. *Failure: the cockpit eats the road.* Making the dash taller/denser can crowd the windshield until there is nothing to look at. **Guardrail:** the drivable glass area must stay >= ~50% of viewport height at 900px tall, and the dash must not exceed ~38% height; verify visually at 1440x900 AND 390x844.
 4. *Failure: a redesigned StopCard becomes unreadable or unscrollable on mobile.* **Guardrail:** verify the panel at 390x844 — content must scroll, no horizontal overflow, and the close/next affordances must stay reachable.
 5. *Failure: the screenshot carousel autoplays over reduced-motion users, or leaks timers between stops.* **Guardrail:** honor `useReducedMotion()` (show a static first frame + manual dots), and clear the interval on unmount/stop-change; verify by switching stops repeatedly and watching for stacked timers.
-6. *Failure: running `npm run build` while `npm run dev` is live.* They share `.next`, and the build clobbers the dev server's route manifest — `/drive` starts returning 404 to new requests while the already-open tab keeps working off HMR, which looks exactly like a code regression. **Guardrail:** after any `npm run build`, restart the dev server before browsing, and never diagnose a 404 without checking whether a build just ran.
+6. *Failure: running `npm run build` while `npm run dev` is live, or trusting a poisoned `.next` cache.* They share `.next`; the build clobbers the dev server's route manifest (`/drive` starts 404ing for new requests while the open tab keeps working off HMR). Worse, the webpack cache can go stale and **silently serve CSS that is missing newly-added Tailwind classes** — observed in cycle 2, where `line-clamp-2` and `lg:truncate` produced zero CSS rules until a clean restart. **Guardrail:** after any `npm run build`, restart the dev server; and if a class looks inert, run `npm run dev:fresh` (wipes `.next`) and re-check *before* concluding the class or the config is at fault.
 7. *Failure: mistaking a hidden Chrome window for a broken page.* A backgrounded tab reports `document.visibilityState === 'hidden'`; Chrome then unrenders it, so screenshots come back solid black and every `getBoundingClientRect()` returns 0. **Guardrail:** before reporting any visual defect, check `document.hidden` first — if true, the finding is worthless, and verification must fall back to build/lint until a person foregrounds Chrome.
 8. *Failure: `object-contain` fixes cropping but leaves ugly letterbox bars.* **Guardrail:** the frame must have an intentional backing (browser-chrome mock) so unused space reads as design, not as a bug.
+9. *Failure (cycle 2): the time-of-day palette allocates per frame and drags the 60fps loop down.* `paletteAt()` would run inside the canvas paint, building fresh objects and gradient strings 60x a second. **Guardrail:** mutate one module-level palette object in place, quantise progress before rebuilding any gradient string, and re-check that driving still feels smooth afterwards.
+10. *Failure (cycle 2): `Sky` starts re-rendering React per frame.* It is currently pure static markup. **Guardrail:** it must stay a `drive.subscribe` + refs component exactly like `Dashboard`; no `useState` may be driven by the sim.
+11. *Failure (cycle 2): hydration mismatch from a progress-dependent sky.* Server markup must match the client's first paint. **Guardrail:** the server renders the palette at progress = 0, with no `Math.random`/`Date` at render time; all motion happens in effects afterwards.
+12. *Failure (cycle 2): a brighter dusk sky washes out the HUD or the exit signs.* **Guardrail:** check `StopCard` legibility and exit-sign contrast at the brightest point of the cycle (MILE 0), not only at night.
 
 ## Decisions & assumptions locked in
 
@@ -69,7 +73,53 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 1's list is fully resolved — see Done / Needs testing below. The Planner fills this for cycle 2.)*
+*(cycle 2's list is fully resolved — see Done. The Planner fills this for cycle 3 from the Backlog below.)*
+
+<details>
+<summary>Cycle 2's list (resolved — kept for context)</summary>
+
+### CYCLE 2
+
+The user's three stated priorities all shipped in cycle 1. Cycle 2 spends its budget on the standing brief — *"get
+creative, capture my identity as a software developer and the purpose of this portfolio"* — starting with the single
+biggest lever available: making the drive pass **time**, not just distance.
+
+- [ ] **1. Time-of-day lighting that advances along the route** (backlog S6)
+  - **Why:** the route is a career in chronological order — school, nine roles, the side builds, the destination — but
+    every frame currently looks identical, so the drive reads as a loop rather than a journey. Changing the light as
+    you travel is the one change that touches every pixel and makes the metaphor land: you can *see* time passing.
+  - **Direction (decided, so later cycles stay coherent):** do **not** do a full day cycle — the existing art is
+    night-tuned (stars, moon, sodium lamp glow, neon HUD) and a washed-out midday would destroy it. Instead run a
+    narrow, rich band: **golden-hour dusk at MILE 0 -> deepening twilight across the career highway -> full night by
+    the toolbox**, then let the *destination* carry the first hint of dawn on the horizon. Dusk-to-night keeps the
+    aesthetic; the dawn hint at "You have arrived" earns the "next chapter" note without being heavy-handed.
+  - **Files:** new `src/components/drive/daylight.js` (keyframe palette + `paletteAt(progress)`), `RoadCanvas.jsx`
+    (replace the frozen `COLORS` table), `Sky.jsx` (becomes subscription-driven), `DriveScene.jsx` (pass `drive` to
+    `Sky`), possibly `drive.module.css`.
+  - **Evidence it is currently static:** `RoadCanvas.jsx:17-27` is a module-level `COLORS` constant used directly in
+    `draw()`; `Sky.jsx:24-90` renders a fixed `linear-gradient(#03060d -> #14405f)`, a fixed moon at `left:14% top:9%`
+    and 110 deterministic stars — nothing in either file reads the sim.
+  - **Done when:** driving from MILE 0 to the destination visibly changes sky, tarmac, verge and lamp warmth; stars and
+    moon fade in as night falls; the destination shows the dawn hint; the paint loop still runs smoothly (guardrail 9);
+    `Sky` uses subscribe+refs, not state (guardrail 10); and a cold load has no hydration warning (guardrail 11).
+- [ ] **2. Exit-sign realism pass** (backlog S9)
+  - **Why:** the signs anchor the whole road-trip conceit and are what you read at every stop, but they are a plain
+    green box on a single post. Real interstate guide signs have an exit-number plaque, twin supports, and a
+    retroreflective face that lights up as headlights reach it — which also makes each approach feel like arriving.
+  - **Files:** `src/components/drive/ExitSign.jsx`, `drive.module.css`.
+  - **Evidence:** `ExitSign.jsx:78-91` — one rounded green panel (`bg-[#12603c]`, `border-white/90`) plus a single
+    12px post; no exit plaque, no retroreflection, and a fixed colour that will not sit correctly against the new dusk
+    palette from task 1.
+  - **Done when:** the sign carries an exit-number plaque, twin posts, and a face that brightens as it nears the
+    camera, and it reads correctly at both the dusk and night ends of the task-1 palette.
+- [ ] **3. Deep-link a specific exit — `/drive?exit=11`** (backlog S10) *(stretch; returns to Backlog if cycle 2 runs long)*
+  - **Why:** drive mode has one URL for 21 stops, so the owner cannot send a recruiter straight to the role or build
+    that matters — the main practical use of this page.
+  - **Files:** `src/pages/drive.jsx`, `DriveScene.jsx` (read the query on mount, jump via the existing `goTo`).
+  - **Done when:** `/drive?exit=11` starts parked at EXIT 11 with its panel open, junk/out-of-range values fall back to
+    MILE 0 without throwing, and the URL tracks the current exit so it can be copied.
+
+</details>
 
 ## Done (proven by the autonomous Reviewer)
 
@@ -78,16 +128,20 @@
 - **3. Rebuilt arrival panel** — proven working: exit shield + leg + counter header and the media|prose split rendered at 1920x895; the panel's top edge sits at y=118 with the rear-view mirror ending at y=100, so the overlap reported in the audit is gone. Commit `8883aaa`.
 - **4. Cockpit rebuilt around driver geometry** — proven working: at 1920x895 the wheel is centred on the binnacle on the driver's axis with the cluster read over the rim, and a live driving frame showed 35 MPH with the tach up, `P R N D 3` with D lit, the CRUISE tell-tale lit under autopilot, and the terminal screen counting down `EXIT 12 · Matrimoni  0.1 MI`. Commit `646b717`.
 - **4b. Phone cockpit** — proven working: at 386x840 the stacked layout (cluster strip / terminal / controls+pedals) rendered correctly with `scrollWidth === innerWidth` (no horizontal overflow) and every control inside the viewport. Commit `646b717`.
+- **5a. Cold-load hydration check** *(cleared cycle 2)* — proven clean: console tracking attached and cleared **before** navigating, then `/drive` loaded cold. Zero messages matched `hydrat|did not match|Warning|Error|Uncaught|mismatch`.
+- **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
+- **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
+- **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C2-3. Deep-link an exit** — proven working: `/drive?exit=11` opens parked on Solar Power Indy with the panel up and the carousel at 1/4; driving on moved the URL to `?exit=12`; `?exit=999` falls back to the ignition screen at MILE 0 without throwing. The accept predicate was additionally exercised across `11/0/20/21/999/-3/banana/11abc/" 11 "/1.5/""/1e3/null/0x5` — only in-range integers accepted. Commit `0d3e493`.
+- **5c. Reduced-motion path through the carousel** *(cleared cycle 2)* — proven by real execution: `matchMedia('(prefers-reduced-motion: reduce)')` was patched to report `matches: true` inside a 390px probe frame before hydration, then EXIT 11 was opened. The frame counter held at `1/4` across 11 seconds (autoplay would have advanced 2-3 times at the 4.2s interval), clicking the third dot still moved it `1/4 -> 3/4`, and the `@media (prefers-reduced-motion: reduce) { .shot { transition: none } }` rule is present in the served stylesheet.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
-- [ ] **Title clamping on phones** — `StopCard` h2 is `line-clamp-2 lg:truncate`. Confirmed the utility compiles and applies (`-webkit-line-clamp: 2`, `overflow: hidden` on a probe element), but **not** confirmed visually on a long title at 390px — a probe div resolved to `display: flow-root` rather than `-webkit-box`, which would defeat the clamp. Test: load `/drive` at 390px, jump to EXIT 11 (the longest title, "Solar Power Indy - Sales Qualification App") and confirm it wraps to exactly two lines with an ellipsis rather than one truncated line or three full lines.
-- [ ] **Reduced-motion path through the carousel** — the code disables autoplay and the CSS transition under `prefers-reduced-motion`, but this was never exercised. Test: set the OS/Chrome reduced-motion preference, load a project stop, confirm the first frame is static, the dots still switch frames, and no interval is running.
-- [ ] **Hydration check on a cold load of `/drive`** — console tracking was only started mid-session, so a page-load hydration warning would have been missed. Test: hard-reload `/drive` with the console tool attached first and confirm no hydration or React errors.
+*(empty — all three cycle-1 items were cleared at the top of cycle 2; see Done 5a/5b/5c.)*
 
 ## Awaiting scenario (can't test until a specific scenario occurs)
 
-- [ ] **All remaining browser verification** — Awaiting scenario: a foregrounded Chrome window. As of 21:00 ET every tab reports `document.visibilityState === 'hidden'`, so Chrome has unrendered them — screenshots return solid black and all `getBoundingClientRect()` calls return 0. This is environmental, not a code fault (dev server 200s, build compiles, lint clean, and the same page rendered correctly minutes earlier in the same session). Each cycle: re-check `document.hidden` first; if false, clear the Needs-testing items above.
+*(empty — the "foregrounded Chrome" condition arrived at 20:31 local on 2026-08-05 (`hidden=false`, `visibilityState=visible`, dash measured 322px) and the item was cleared.)*
 
 ## Blocked (couldn't be implemented — missing dependency the loop can't supply)
 
@@ -99,9 +153,9 @@
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
-- **S5 — Ambient drive audio (engine note, turn-signal tick), default muted with a dash toggle** — deferred: needs authored audio assets and a mute-by-default UX decision; revisit once the visual work lands.
-- **S6 — Day/dusk/night lighting that advances along the route** — deferred: touches `Sky.jsx` + `RoadCanvas.jsx` colour tables; larger than one cycle, schedule after the cockpit lands.
-- **S7 — Touch/mobile driving controls (thumb throttle + tilt-free steering)** — deferred: pedals exist as buttons but ergonomics at 390px are untested; schedule after task 4 settles the dash layout.
-- **S8 — Persist progress (visited stops / furthest exit) to `localStorage` so a returning visitor resumes** — deferred: needs a reset affordance so it can't trap someone mid-route.
-- **S9 — Exit-sign realism pass (retroreflective green MUTCD-style shields, mile markers counting down)** — deferred: `ExitSign.jsx` not yet read in this cycle.
-- **S10 — Share/deep-link a specific exit (`/drive?exit=11`)** — deferred: needs router wiring in `src/pages/drive.jsx`.
+- **S5 — Ambient drive audio (engine note, turn-signal tick), default muted with a dash toggle** — still deferred: Web Audio only (no new deps allowed), must be opt-in so it never autoplays, and needs a speaker toggle somewhere on the dash that does not crowd the console.
+- **S8 — Persist progress (visited stops / furthest exit) to `localStorage` so a returning visitor resumes** — still deferred: needs a reset affordance so it can't trap someone mid-route. Now interacts with the `?exit=` deep link shipped in cycle 2 — an explicit deep link must win over a stored position.
+- **S9b — Mile markers counting down between exits** — carved out of S9: the sign itself shipped in `86d0174`, but small roadside mile markers would need new drawing in `RoadCanvas.drawRoadside`, which is a separate piece of work.
+- **S11 — Give each leg its own roadside character** *(new, cycle 2)* — the route already has named legs (School zone, Career highway, Scenic overlook, Pit stop, Destination) but every mile of roadside is identical: the same lamps and delineators. Varying the furniture per leg — e.g. denser lighting through the "city" legs, a guardrail on the overlook, none out in the open — would make position on the route legible at a glance. Touches `RoadCanvas.drawRoadside` only.
+- **S12 — Let the odometer read in years, not just miles** *(new, cycle 2)* — the trip computer counts miles, but the route is chronological and every stop already carries a date. Showing the year you are "driving through" next to the odometer would tie the metaphor to the résumé far more directly than distance does. Needs a date on each stop in `route.js` (education/experience already have one; projects do not).
+- **S13 — Weather that belongs to the light** *(new, cycle 2)* — with the dusk-to-night palette in, a thin layer of drifting haze or a few passing headlights on the opposite carriageway would make the road feel inhabited rather than empty. Canvas-only, must respect the per-frame allocation guardrail.

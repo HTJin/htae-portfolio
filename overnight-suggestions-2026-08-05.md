@@ -42,35 +42,61 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** medium; Web Audio only, no new deps. Deferred to Backlog this cycle.
   - **Outcome:** *(deferred)*
 
-- [ ] **S6 — Time-of-day lighting that advances along the route** — Status: Proposed — Cycle: 1
+- [ ] **S6 — Time-of-day lighting that advances along the route** — Status: Done — Cycle: 2
   - **Source:** site audit — the scene is permanently night (`RoadCanvas.jsx:17-27` fixed colour table, `Sky.jsx` stars).
   - **Suggestion:** interpolate sky/tarmac/lamp colours from dawn at MILE 0 to night at the destination, so the drive visibly passes time as it passes years.
   - **Why / expected impact:** makes the route feel like a journey rather than a loop of the same frame.
   - **Scope:** medium-large; touches the canvas colour tables. Deferred to Backlog.
-  - **Outcome:** *(deferred)*
+  - **Outcome:** **Shipped** in `dd4b28b`. Chose a narrow dusk-to-night band rather than a full day cycle, so the night-tuned art survives; the destination gets the first hint of dawn because it is the stop that asks what comes next. Evidence: star opacity read live at 0 / 0.23 / 0.95 / 0.6 across four points on the route, with screenshots confirming golden hour, full night and first light. Performance measured both ways — 34.2fps with the palette vs 26.6fps at baseline, so no regression.
 
-- [ ] **S7 — Mobile driving ergonomics pass** — Status: Proposed — Cycle: 1
+- [ ] **S7 — Mobile driving ergonomics pass** — Status: Done (superseded by the cycle-1 phone cockpit) — Cycle: 2
   - **Source:** site audit — pedals are 62-72px buttons pinned to the right of the dash grid (`Dashboard.jsx:404-423`); untested at 390px where the dash also has to hold the trip computer and three console buttons.
   - **Suggestion:** a thumb-reachable control layout at small widths.
   - **Why / expected impact:** drive mode is unusable on a phone if the controls don't fall under a thumb.
   - **Scope:** medium. Deferred until task 4 settles the dash layout.
-  - **Outcome:** *(deferred)*
+  - **Outcome:** **Resolved** by the phone cockpit in `646b717`: at small widths the dash stacks (cluster strip / terminal / controls and both pedals in one thumb-reachable row) instead of laying out side by side, which is what was overflowing. Verified at 386x840 with no horizontal overflow and every control inside the viewport. Closing this rather than carrying it — reopen only if real thumb testing on a device finds a problem.
 
 - [ ] **S8 — Persist route progress to `localStorage`** — Status: Proposed — Cycle: 1
   - **Source:** market research — long interactive narratives normally let you resume; here every visit restarts at MILE 0 (`useDrive.js` initialises fresh).
   - **Suggestion:** remember the furthest exit reached and offer "resume from EXIT n" on the ignition screen, with a reset.
   - **Scope:** small-medium. Deferred to Backlog.
-  - **Outcome:** *(deferred)*
+  - **Outcome:** **Shipped** in `86d0174`. Exit number moved to a plaque above the right corner, twin supports, a retroreflective face that flares as the headlights reach it, and a green taken from the route palette so it sits right at both dusk and midnight. Verified mid-approach at dusk and, with the brake held to freeze it, at night. The *mile markers* half was carved out as backlog item S9b — it needs new drawing in the canvas roadside pass.
 
-- [ ] **S9 — Exit-sign realism pass (MUTCD-style shields, counting-down mile markers)** — Status: Proposed — Cycle: 1
+- [ ] **S9 — Exit-sign realism pass (MUTCD-style shields, counting-down mile markers)** — Status: Done (mile markers split to S9b) — Cycle: 2
   - **Source:** site audit — signage is the metaphor's anchor but `ExitSign.jsx` was not yet read in this cycle, so this is proposed on the strength of the concept, not a code reading.
   - **Scope:** small-medium. Deferred to Backlog.
-  - **Outcome:** *(deferred)*
+  - **Outcome:** **Shipped** in `86d0174`. Exit number moved to a plaque above the right corner, twin supports, a retroreflective face that flares as the headlights reach it, and a green taken from the route palette so it sits right at both dusk and midnight. Verified mid-approach at dusk and, with the brake held to freeze it, at night. The *mile markers* half was carved out as backlog item S9b — it needs new drawing in the canvas roadside pass.
 
-- [ ] **S10 — Deep-link a specific exit (`/drive?exit=11`)** — Status: Proposed — Cycle: 1
+- [ ] **S10 — Deep-link a specific exit (`/drive?exit=11`)** — Status: Done — Cycle: 2
   - **Source:** market research — shareable deep links are table stakes for portfolio set-pieces; drive mode currently has one URL for 21 stops.
   - **Why / expected impact:** lets the owner link a recruiter straight to a relevant role or build.
   - **Scope:** small-medium; router wiring in `src/pages/drive.jsx`. Deferred to Backlog.
-  - **Outcome:** *(deferred)*
+  - **Outcome:** **Shipped** in `0d3e493`. `/drive?exit=11` opens parked at that exit with the engine already running, and the URL tracks the exit as you travel so it is always copyable. Verified end to end for `?exit=11` and `?exit=999`, with the accept predicate exercised across fourteen junk and boundary inputs.
+
+- [ ] **S11 — Give each leg its own roadside character** — Status: Proposed — Cycle: 2
+  - **Source:** site audit after the daylight work — the route has five named legs but `RoadCanvas.drawRoadside` paints identical lamps and delineators for all 21 stops, so position on the route is invisible from the roadside.
+  - **Suggestion:** vary the furniture per leg — denser lighting through the city legs, a guardrail on the scenic overlook, sparse open road elsewhere.
+  - **Why / expected impact:** makes where-you-are legible at a glance and stops the middle of the drive feeling repetitive.
+  - **Scope:** medium; canvas only, subject to the per-frame allocation guardrail.
+  - **Outcome:** *(proposed)*
+
+- [ ] **S12 — Odometer that reads in years, not just miles** — Status: Proposed — Cycle: 2
+  - **Source:** site audit — the trip computer counts miles, but the route is chronological and education/experience stops already carry dates.
+  - **Suggestion:** show the year you are driving through beside the odometer.
+  - **Why / expected impact:** ties the metaphor to the résumé far more directly than distance; a recruiter reads "2019" faster than "1.4 MI". Needs a date added to project stops in `route.js`, which currently have none.
+  - **Scope:** small-medium.
+  - **Outcome:** *(proposed)*
+
+- [ ] **S13 — Weather and traffic that belong to the light** — Status: Proposed — Cycle: 2
+  - **Source:** site audit after the daylight work — the road is completely empty; nothing else is ever on it.
+  - **Suggestion:** a thin drifting haze layer and occasional oncoming headlights on the far carriageway, tinted by the current palette.
+  - **Why / expected impact:** makes the road feel inhabited rather than a treadmill, and sells the dusk-to-night transition further.
+  - **Scope:** medium; canvas only, must not allocate per frame.
+  - **Outcome:** *(proposed)*
+
+- [ ] **S9b — Mile markers counting down between exits** — Status: Proposed — Cycle: 2
+  - **Source:** carved out of S9 when the sign itself shipped; the markers need new drawing in the canvas roadside pass rather than DOM work.
+  - **Scope:** small-medium.
+  - **Outcome:** *(proposed)*
 
 *(Check the box once you've reviewed the outcome.)*
