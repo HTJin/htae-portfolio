@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 45 · branch `feat/drive-mode` · 56 commits, nothing pushed
+**Last updated:** end of cycle 46 · branch `feat/drive-mode` · 57 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,33 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 46 — a cycle that changed nothing, and why that is the right answer
+
+Four things checked, nothing shipped. Two were routine and clean: the opening screen (Start engine, the resume
+shortcut, the control legend, the way back to your main site), and the start of the road — at MILE 0 the mirror reads
+*"Open road"* rather than sitting blank, which is the sort of small authored detail that is easy to leave undone.
+
+The third was a deliberate re-check of last cycle's work. Changing the accelerator meant touching the component that
+also serves visitors who ask their system for reduced animation — a promise this project has broken and repaired more
+than any other. With that preference forced on, pressing Go still jumps straight to the next exit without animating;
+with it off, the same press drives the car normally. Intact.
+
+**The fourth is the one worth your attention, because it looks like a bug and is not.** On a 2560×1080 ultrawide, a
+text panel stretches to 1216 pixels while a project panel stays at 928 with a small screenshot — on the same screen.
+Since your screenshots are the thing you asked me to fix, that looked like an obvious miss.
+
+It is not, and the numbers are the reason. Widening a **text** panel makes it *shorter*, because the extra width buys
+a third column — 340 pixels tall at every screen height I tried, with nothing hidden. Widening a **picture** panel
+makes it *taller*, because the screenshot grows with it. I forced the wide layout on anyway and measured the cost: at
+a tall screen only 10 pixels of content fall below the fold, but at a shorter one it is 75, and at a laptop height
+150. So the height requirement an earlier cycle attached to picture panels is doing real work, and the narrow band
+where relaxing it would be free is mostly below the usable height of a 1080p monitor once browser chrome is taken off.
+
+I left it alone. Changing a rule that was set deliberately and still measures correctly, to chase something that
+merely looked inconsistent, is how working things get broken.
 
 ---
 

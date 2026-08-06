@@ -1083,3 +1083,38 @@ A mean error of **1.73 out of 255** is below anything an eye resolves, and the 1
 - `ArrowUp` and `W` remain no-ops at the destination; console clean, no hydration warnings
 
 **Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.3 kB). One commit: `c2338c8`. -> `Cycle: 46 / Phase: Planner`.
+
+## Cycle 46
+
+**Suggester — four angles, no defect.** Backlog dry (S15 blocked, S13b closed), so this was an idea hunt. It found nothing to ship, which is worth recording as carefully as a fix.
+
+**1. The ignition splash.** Clean: START ENGINE, a **RESUME · EXIT 20** offer, FORGET MY PROGRESS, the six-key control legend, and a way back to the classic site. One false alarm on the way — my first probe reported the splash missing, because it tested `includes('Start engine')` against text that CSS uppercases. The probe was wrong, not the page.
+
+**2. The origin boundary.** Cycle 45 tested the end of the road, so this tested the start. At MILE 0 the mirror reads **BEHIND YOU / "Open road"** — the empty case is authored, not left blank.
+
+**3. Reduced motion, re-verified against cycle 45's pedal.** Cycle 45 was the first change to `Pedal` in many cycles, and reduced motion is the contract this run has broken and repaired more than any other. Patched at `readyState: "loading"` with `matchMedia` reporting `matches: true`: GO at EXIT 10 **jumps straight to EXIT 11 at 0 MPH**; the control with motion allowed **drives** it — 5 MPH at 0.7s, 25 MPH at 3.2s. Different exactly as designed, and the control is what makes "no animation" mean something.
+
+**4. The wide-screen rule — the one that looked like a bug and was not.** On a **2560×1080** ultrawide a *text* stop widens to **1216px** while a *project* stop stays at **928px** with a 451×225 screenshot. Same screen, and it is the screenshots — the owner's priority (c) — that stay small. The cause is cycle 39: picture stops need `(min-width:1536px) and (min-height:1120px)`, text stops only a width-only `2xl:`.
+
+That asymmetry reads as an oversight. It is not, and the measurement is the reason:
+
+| | 1200 | 1080 | 950 | 800 |
+|---|---|---|---|---|
+| **text stop** card height | 340 | 340 | 340 | 340 |
+| **text stop** hidden scroll | 0 | 0 | 0 | 0 |
+
+A text stop gets **shorter** when it widens — three columns spend the width instead of the height — so it can never overflow, and needs no height guard. A picture stop gets **taller**, because the screenshot grows with it. Forcing the wide layout onto a picture stop at 1920 wide:
+
+| viewport height | card height | screenshot frame | hidden below the fold |
+|---|---|---|---|
+| 1080 | 540 | **707×354** | **10px** |
+| 1000 | 500 | 707×354 | 50px |
+| 950 | 475 | 707×354 | 75px |
+| 900 | 450 | 707×354 | 100px |
+| 800 | 400 | 707×354 | 150px |
+
+So the guard earns its place. The only free band is **1040-1119px** — 10-30px of scroll in a container that already scrolls, in exchange for **2.5× the screenshot area** — and once browser chrome is subtracted a 1080p monitor usually lands below it (**inference**, not measured: this window's chrome was not compared with a typical one). Reopening a deliberate, correctly-measuring rule to buy that band was not worth it. **Left alone.**
+
+**Also clean:** geometry at **2560×1080** and **1920×900** — dash 36% of height, panel/dash overlap **0**, six controls in the dash, smallest control **25px**, nothing off-screen, no horizontal scroll.
+
+**Exit.** No commit to `src/`. -> `Cycle: 47 / Phase: Suggester` (backlog still dry).

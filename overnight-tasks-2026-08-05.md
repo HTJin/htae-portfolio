@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 46
+**Cycle:** 47
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -479,17 +479,30 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 46
+## Tonight's tasks (in order) — CYCLE 47
 
-_Not yet planned. **A Suggester pass is in progress** — the backlog is dry (S15 blocked behind the Needs-human
-canonical fix, S13b closed as unwanted), so cycle 46 opened at Suggester rather than Planner. Probed so far, both
-**clean, do not re-probe**:_
+_Not yet planned — the backlog is still dry, so cycle 47 opens at **Suggester**._
 
-- _**The ignition splash.** Renders START ENGINE, a **RESUME · EXIT 20** offer, FORGET MY PROGRESS, the six-key
-  control legend and a way back to the classic site. (An early reading called the splash missing — that was a
-  case-sensitive `includes('Start engine')` against text uppercased in CSS, not a defect.)_
-- _**The origin boundary.** At MILE 0 the mirror reads **BEHIND YOU / "Open road"** — the empty case is authored
-  deliberately rather than left blank._
+<details>
+<summary>Cycle 46's list (a verification-only cycle — nothing shipped, kept for context)</summary>
+
+### CYCLE 46
+
+Backlog dry, so this was a Suggester pass. **Four angles probed, no defect found in any of them** — recorded here so a
+later pass does not spend its budget re-probing them:
+
+- **The ignition splash.** Renders START ENGINE, a **RESUME · EXIT 20** offer, FORGET MY PROGRESS, the six-key control
+  legend and a way back to the classic site. (An early reading called the splash missing — that was a case-sensitive
+  `includes('Start engine')` against text uppercased in CSS. The probe was wrong, not the page.)
+- **The origin boundary.** At MILE 0 the mirror reads **BEHIND YOU / "Open road"** — the empty case is authored
+  deliberately rather than left blank.
+- **Reduced motion, re-verified against cycle 45's new pedal.** Patched at `readyState: "loading"` with
+  `matchMedia` reporting `matches: true`: pressing GO at EXIT 10 **jumps straight to EXIT 11 at 0 MPH**, while the
+  control with motion allowed drives it (**5 MPH at 0.7s, 25 MPH at 3.2s**). The contract holds and the harness is
+  proven by the control.
+- **Wide and short viewports — measured, deliberately not changed.** See C46.1.
+
+</details>
 
 <details>
 <summary>Cycle 45's list (resolved — kept for context)</summary>
@@ -1912,6 +1925,31 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C46.0 — Reduced motion still holds after the pedal changed** *(cycle 46 — verification)* — cycle 45 was the
+  first change to `Pedal` in many cycles, and reduced motion is the contract this run has broken and repaired most
+  often. Patched at `readyState: "loading"` (the only window that works — navigation replaces the one you patch
+  first), `matchMedia` confirming `matches: true`: GO at EXIT 10 **teleports to EXIT 11 at 0 MPH**; the control with
+  motion allowed **drives** it, 5 MPH at 0.7s and 25 MPH at 3.2s. Different exactly as designed, and the control
+  proves the probe was live.
+- **C46.1 — The panel's wide-screen rule is right as written** *(cycle 46 — measured, deliberately not changed)* —
+  on a **2560×1080** ultrawide a *text* stop widens to **1216px** while a *project* stop stays at **928px** with a
+  451×225 screenshot, because cycle 39 gave picture stops `(min-width:1536px) and (min-height:1120px)` and text stops
+  a width-only `2xl:`. That asymmetry looks like an oversight and is not: measured at 1920 wide, the wide layout makes
+  a **text** stop *shorter* — **340px tall with 0 hidden scroll at 1200, 1080, 950 and 800** — because three columns
+  use the width instead of the height, so it can never overflow. A **picture** stop gets *taller*, because the
+  screenshot grows with it:
+  | viewport height | card height | screenshot frame | content hidden below the fold |
+  |---|---|---|---|
+  | 1080 | 540 | 707×354 | **10px** |
+  | 1000 | 500 | 707×354 | 50px |
+  | 950 | 475 | 707×354 | 75px |
+  | 900 | 450 | 707×354 | 100px |
+  | 800 | 400 | 707×354 | 150px |
+  So the height guard is real and earns its place; only the band **1040-1119px** is a free win (10-30px of scroll for
+  **2.5× the screenshot area**), and once browser chrome is subtracted a 1080p monitor's viewport is usually below
+  it. *(That last step is inference — this window's chrome was not measured against a typical one.)* Lowering the
+  threshold to buy that band was judged not worth reopening a rule that was set deliberately and measures correctly.
 
 - **C45.0 — The boundaries of the drive are sound** *(cycle 45 — verification)* — every earlier cycle tested the
   middle of the route, so this one tested its edges. **Deep links:** `?exit=99` and `?exit=21` (one past the last

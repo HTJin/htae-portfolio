@@ -409,4 +409,18 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** it did, and it was already live. Driving the last leg with the keyboard on the Next button: at the instant the car arrived, Next disabled itself and the browser dropped focus to the top of the document. The next Tab then restarted from the beginning of the page - back through the entire screen-reader copy of your resume that an earlier cycle worked specifically to let the keyboard skip.
   - **Outcome:** **Shipped** in the same commit. Focus now moves deliberately into the cockpit, and only when that is demonstrably what happened - a visitor who never touched the controls is left alone. Verified with real clicks and keys, after discovering that this window reports `document.hasFocus()` as false, which makes programmatic focus fire no events at all and had made the first test report a false failure.
 
+- [ ] **S75 - Does reduced motion still hold after the accelerator changed?** - Status: Done (no defect) - Cycle: 46
+  - **Source:** cycle 45 was the first change to the pedal component in many cycles, and reduced motion is the promise this run has broken and repaired more often than any other.
+  - **Why / expected impact:** visitors who ask their system for less animation must still be able to travel the whole route; the pedal is how they do it.
+  - **Outcome:** **Intact.** With the preference forced on, pressing GO jumps straight to the next exit at 0 MPH; with motion allowed the identical press drives the car (5 MPH after 0.7s, 25 MPH after 3.2s). The control is what makes the result meaningful - without it, "no animation" is indistinguishable from a dead test.
+
+- [ ] **S76 - The ignition splash and the start of the road** - Status: Done (no defect) - Cycle: 46
+  - **Source:** cycle 45 tested the end of the route, so this tested the beginning.
+  - **Outcome:** **Both clean.** The splash offers Start engine, a Resume - Exit 20 shortcut, Forget my progress, the six-key control legend and a way back to the classic site. At MILE 0 the mirror reads "Open road" rather than sitting empty - the no-previous-stop case is written, not overlooked.
+
+- [ ] **S77 - On an ultrawide monitor your screenshots stay small while text panels go full width** - Status: Done (measured, deliberately not changed) - Cycle: 46
+  - **Source:** probing viewport sizes no cycle had tried - 2560x1080 and 1920x900.
+  - **Why / expected impact:** on a 2560x1080 screen a text stop stretches to 1216px while a project stop stays at 928px with a 451x225 screenshot. Same screen - and it is the screenshots, your stated priority, that stay small. It looks exactly like an oversight.
+  - **Outcome:** **It is not one, and I left it alone.** The rule differs because the content does: widening a text stop makes it **shorter** (340px tall with nothing hidden, at every height from 1200 down to 800) because the extra width buys a third column. Widening a picture stop makes it **taller**, because the screenshot grows too - forcing it costs 10px of hidden content at 1080, 75px at 950 and 150px at 800. The height requirement added in an earlier cycle is therefore doing real work. The only genuinely free band is 1040-1119px tall, and a 1080p monitor's usable height usually falls below it once browser chrome is subtracted. Changing a deliberate rule that measures correctly, to buy that narrow band, was not a good trade.
+
 *(Check the box once you've reviewed the outcome.)*
