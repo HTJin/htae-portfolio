@@ -1083,6 +1083,13 @@ biggest lever available: making the drive pass **time**, not just distance.
   is a resize, which must bypass any such check because setting `canvas.width` clears the backing store. Shipping an
   unmeasurable optimisation into a hot path is how guardrail 9 gets broken quietly. **Pick this up when a foregrounded
   window is available** — then the dirty-check and its frame-count evidence can land together.
+  > **UNBLOCKED in cycle 20.** The window is foregrounded and `requestAnimationFrame` genuinely runs, and cycle 20
+  > built a working frame sampler (`__sample`/`__stats`, alternating parked-vs-driving medians). So the win is now
+  > measurable and this is the **next actionable Backlog item** for the Planner. One caveat cycle 20 turned up that
+  > must shape the measurement: while parked the page currently samples **17–22 fps** against **30 fps** while
+  > driving, i.e. an idle page is being served *fewer* frames, not more. So "parked fps went up" is the wrong success
+  > metric — measure the *work per frame* (skipped draws), and if the dirty-check produces no observable difference,
+  > guardrail 9 still says do not ship it into the paint loop.
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
 
