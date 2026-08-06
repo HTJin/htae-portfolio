@@ -3,78 +3,69 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 4 · branch `feat/drive-mode` · 9 commits, nothing pushed
+**Last updated:** end of cycle 5 · branch `feat/drive-mode` · 11 commits, nothing pushed
 
 ---
 
-## ⚠️ One thing for you — a real SEO bug I'm not allowed to fix
+## ⚠️ Two things for you — both out of my reach, both about being findable
 
-**`/drive` ships two `<link rel="canonical">` tags, and the first one points at your homepage.** Measured straight out
-of the served HTML:
+These compound. Drive mode is currently invisible to search **from both directions at once**, and fixing only one of
+them will not surface it.
+
+**1. `/drive` ships two `<link rel="canonical">` tags and the first points at your homepage.** So the copy that *is*
+reachable disowns itself.
 
 ```html
 <link rel="canonical" href="https://htae.dev"/>        <!-- _app.jsx:69 -->
 <link rel="canonical" href="https://htae.dev/drive"/>  <!-- drive.jsx:17 -->
 ```
 
-`og:url` and `og:title` are duplicated the same way. A crawler that takes the first canonical is told drive mode is a
-duplicate of your homepage and drops it from the index; a social scraper that takes the first `og:title` previews a
-shared drive link as the homepage — which defeats the `?exit=` deep links entirely.
+`og:url` and `og:title` duplicate the same way, so sharing a drive-mode link previews as your homepage — which defeats
+the `?exit=` deep links.
 
-The cause is that `next/head` only deduplicates tags carrying a matching `key`, and neither side sets one. The fix is
-six lines, but it belongs in `_app.jsx`, which is outside what this run is allowed to edit — so I've written the exact
-patch into the **Needs human** section of `overnight-tasks-2026-08-05.md` rather than touching it. I deliberately did
-*not* add a key to `drive.jsx` alone: without the `_app` side it changes nothing and would have looked fixed.
+**2. `/drive` is not in your sitemap.** `public/sitemap.xml` lists only `https://htae.dev/`, and `robots.txt` points
+crawlers at that file. So the page is never advertised in the first place.
 
-Verify after applying: `curl -s http://localhost:3007/drive | grep -c 'rel="canonical"'` should print `1`.
-
----
-
-## Good news on the date bug
-
-Cycle 3 found that a January 1st date was reporting the previous year, which had put your StarPlus UI/UX role in 2023.
-The obvious worry was that your **main résumé page** had the same fault. It doesn't. `FormattedDate.jsx` already pins
-`timeZone: 'UTC'`, which is exactly the right defence — I proved it by running that exact formatter config against all
-ten of your content dates in a timezone behind UTC, where it renders "Jan 2024" correctly while the buggy pattern
-returns 2023 in the same process. All eight date call sites in `src/` were checked individually. The drive page was the
-only one affected, and it's fixed.
+Both fixes are a handful of lines, and both live in files this run isn't allowed to edit (`_app.jsx` and
+`public/sitemap.xml`). The **exact patches** and one-line verification commands are in the **Needs human** section of
+`overnight-tasks-2026-08-05.md`. I deliberately didn't half-fix the canonical from `drive.jsx` alone — without the
+`_app` side it changes nothing and would have looked fixed.
 
 ---
 
-## Cycle 4 — the version of your résumé that machines read
+## Cycle 5 — the cockpit is now usable without eyes
 
-Chrome still can't reach the dev server (that's unchanged from cycle 3 — see below), so this cycle deliberately took on
-work that `curl` can prove rather than shipping more canvas work blind.
+The backlog had run dry of anything I could verify without a browser, so the loop did what it's designed to do and
+generated fresh work: an audit of the one surface still available to me, the served HTML. It found three real defects.
 
-**The crawlable itinerary now carries the years and a real structure.** The `sr-only` block in drive mode is the only
-version of this résumé a search engine or a screen reader can actually consume — everything else is a canvas and a
-cockpit. It used to be a flat run of headings with no dates, so "Web Developer" had nothing placing it in time. Now
-stops are grouped under their leg with a proper hierarchy (route → leg → stop), and every stop with a date carries its
-year in a `<time>` element. Verified by reading the HTML back: six leg headings, 21 stop headings, and exactly ten years
-— `2016 2017 2019 2020 2023 2023 2023 2024 2024 2025` — matching your education and nine roles. The eleven stops with no
-date in your content carry no year at all.
+**Drive mode was close to unusable with a screen reader.** Measured, not guessed: **none of the 11 buttons had an
+accessible name** — "Next ▸" announced as "Next right-pointing small triangle", the accelerator as "GO up-arrow slash
+W". Meanwhile the *decorative* instruments were all being read aloud: `x1000 0 mph P R N D gear ~/route $ drive --to yr
+2016 odo 0.0 mi`, which is noise, and which badly duplicated content the hidden itinerary already presents properly.
 
----
+Now every control has a real name that keeps the word you can see — "Back to the previous exit", "Drive on to the next
+exit", "Open the route map", "Brake", "Go — hold to accelerate" — so voice control still works on what's visible. The
+gauges, gear selector and trip-computer screen are out of the accessibility tree: a speedometer tells you nothing if
+you can't see the road. Verified from the HTML: 10 of 11 buttons labelled (the 11th is "Start engine", which already
+names itself), `aria-hidden` up from 12 to 19, and the itinerary still fully exposed with all ten years.
 
-## Still blocked (not a fault in the site)
-
-Chrome returns `chrome-error://chromewebdata/` for the dev server while `curl` on the identical URL returns the page.
-Re-checked at the top of this cycle, as I will every cycle. Nothing about the site is broken; Chrome's networking is
-isolated from the shell's, and I can't change that from here without touching your browser or proxy settings.
-
-**Parked because of it:** the visual pass on cycle 3's roadside work (guardrail seams, lamp thinning). Its *logic* is
-already proven by server-side probe, build and lint — only the pixels are unseen. I've also kept the mile-markers and
-weather ideas in the backlog rather than shipping more canvas I can't look at.
-
-If you want that unblocked, a Chrome window that can load `http://localhost:3007/drive` is all it takes.
+**`/drive` was also serving two `<h1>`s** — the itinerary's and the ignition splash's — competing to describe the page.
+The splash is now an `<h2>`; exactly one `<h1>` is served.
 
 ---
 
-## Queued next
+## Still blocked, and one false alarm
 
-Structured data for `/drive` (blocked behind the canonical fix above); mile markers between exits; weather and oncoming
-headlights; resuming where a visitor left off; opt-in engine audio. Full reasoning in
-`overnight-suggestions-2026-08-05.md`, every idea with a checkbox.
+Chrome still can't reach the dev server (third cycle) — `curl` serves the page, the browser gets
+`chrome-error://chromewebdata/`. Nothing about the site is broken; Chrome's networking is isolated from the shell's.
+The visual pass on cycle 3's roadside work stays parked, and I'm still keeping the mile-markers and weather ideas in the
+backlog rather than shipping canvas I can't look at. A Chrome window that can load `http://localhost:3007/drive`
+unblocks all of it.
+
+Mid-cycle the dev server hung and `/drive` stopped responding — which looked exactly like I'd broken something. Instead
+of assuming, I killed the server and ran the linter and a full production build, both independent of it: clean, and
+`/drive` compiled fine. It was the `.next` cache again. That's the third distinct way that cache has faked a defect
+tonight.
 
 ---
 
@@ -82,7 +73,7 @@ headlights; resuming where a visitor left off; opt-in engine audio. Full reasoni
 
 | File | What it holds |
 | --- | --- |
-| `overnight-tasks-2026-08-05.md` | Source of truth: phase/cycle, guardrails, task states — **and the canonical patch** |
+| `overnight-tasks-2026-08-05.md` | Source of truth — **and both Needs-human patches** |
 | `overnight-suggestions-2026-08-05.md` | Every idea, its source, and what happened to it — with checkboxes |
 | `overnight-log-2026-08-05.md` | Blow-by-blow, including every fault and environment gotcha |
 | `overnight-journal-2026-08-05.md` | One line per task, with its commit |

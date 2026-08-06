@@ -21,3 +21,7 @@ One line per task as it completes.
 - **Cycle 4 · T1** — Swept every date call site in `src/`. The classic site is clean: `FormattedDate` already pins `timeZone: 'UTC'`. `route.js` was the only affected place and it was fixed in cycle 3. No change needed.
 - **Cycle 4 · T2** — Found `/drive` shipping **two** canonical tags, the first pointing at the homepage, plus duplicate `og:url`/`og:title`. Fix belongs in `_app.jsx`, outside write scope → parked as Needs human with an exact patch.
 - **Cycle 4 · T3** — The crawlable itinerary now groups stops by leg (h1→h2→h3) and carries a `<time>` year for each of the ten dated stops; the eleven undated ones carry none. — `e799e92`
+- **Cycle 5 · T1** — Cockpit now reads properly to screen readers: 10/11 controls named (the 11th self-names), and the gauges, gear selector and trip screen removed from the accessibility tree. — `5fcf996`
+- **Cycle 5 · T2** — `/drive` was serving two `<h1>`s; the transient ignition splash is now an `<h2>`. — `5fcf996`
+- **Cycle 5 · T3** — `/drive` is absent from `public/sitemap.xml`. Out of write scope → Needs human with an exact patch; it compounds with the cycle-4 canonical defect.
+- **Cycle 5 · env** — Chrome still unreachable (3rd cycle). Dev server also hung mid-cycle on a poisoned `.next`; `dev:fresh` cleared it.

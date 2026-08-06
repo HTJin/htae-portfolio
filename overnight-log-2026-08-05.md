@@ -122,3 +122,28 @@ Running progress, phase transitions, decisions and assumptions. Append-only.
 - Verified by reading the served HTML back: six `<h2>` leg headings, 21 `<h3>` stop headings, exactly ten `<time>` elements reading `2016 2017 2019 2020 2023 2023 2023 2024 2024 2025`. That matches education plus the nine roles and includes the January-2024 role the cycle-3 fix corrected. The eleven undated stops carry no year.
 
 **21:53 — Builder exit.** `next lint` clean, one commit `e799e92`; task 1 closed with no code change, task 2 parked as Needs human. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 5 / Phase: Planner`.
+
+---
+
+## Cycle 5
+
+**22:03 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 5`.
+
+**22:04 — Blocker re-check: still blocked (third cycle).** `curl` serves `/drive`; the browser lands on `chrome-error://chromewebdata/`.
+
+**22:05 — Backlog ran dry of browser-free work, so the loop went to Suggester.** Every remaining backlog item needs pixels (S9b, S13), needs a browser to verify (S5, S8), or is blocked behind the Needs-human canonical fix (S15). Per the controller that is the Suggester's cue. Ran a fresh audit over the one surface still available — the served HTML — and it surfaced three defects, each measured rather than guessed:
+1. **0 of 11 buttons had an `aria-label`.** They announced as their symbol text: `◂ Back` reads as "left-pointing small triangle Back", `GO↑ / W` as "GO up-arrow slash W".
+2. **The decorative instruments were in the accessibility tree.** `drive_screen__…` rendered with no `aria-hidden`, the gauge faces (`<svg viewBox="0 0 100 100">`) with none, the gear selector's `P` span with none — so `x1000 0 mph P R N D gear ~/route $ drive --to yr 2016 odo 0.0 mi` was all announced, badly duplicating what the itinerary already says properly.
+3. **Two `<h1>` elements** competed to describe the page — the itinerary's (the real content) and the ignition splash's.
+Also found, but out of scope: **`/drive` is missing from `public/sitemap.xml`**, which lists only the site root.
+
+**22:06 — Critic.** Added guardrails 21-22: hide only decoration, never a control or the arrival panel, and re-read the HTML afterwards to prove content is still exposed; and never write an `aria-label` that contradicts the visible text, or voice-control users cannot say what they see.
+
+**22:07-22:20 — Builder, tasks 1 and 2.** Labels keep the visible word and expand it ("Back to the previous exit", "Drive on to the next exit", "Open the route map", "Brake", "Go — hold to accelerate"), applied across *both* cockpit layouts. Gauges, gear selectors and trip-computer screens marked `aria-hidden`. Ignition heading demoted to `<h2>`.
+- **Verified against the served HTML:** exactly one `<h1>`; 10 of 11 buttons labelled, and the single unlabelled one enumerated explicitly to confirm it is "Start engine", whose visible text is already a correct accessible name; `aria-hidden` count 12 → 19 (3 gauges + 2 trip screens + 2 gear selectors); itinerary still exposed with all ten `<time>` years.
+
+**Mid-cycle incident — the dev server hung, the code was fine.** After the edits, `curl` on `/drive` timed out at 10s with `status=000` while the dev log sat on `wait compiling /drive…`. Rather than assume my change caused it, I killed the server and ran `next lint` (clean) and `npm run build` (compiled successfully, `/drive` 17.2 kB) — both of which are independent of the dev server. That exonerated the code; `dev:fresh` then cleared it. Third distinct way the `.next` cache has produced a convincing fake defect tonight, and the reason guardrail 6 exists.
+
+**22:21 — Task 3 parked as Needs human.** `public/sitemap.xml` is outside the write scope (`public/images/` only). Documented with the exact `<url>` entry to add and a one-line verification. Noted explicitly that it **compounds** with the cycle-4 canonical defect: drive mode is currently unlisted in the sitemap *and* disowned by its own canonical, so fixing only one will not surface the page.
+
+**22:22 — Builder exit.** Lint clean, build clean, one commit `5fcf996`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 6 / Phase: Planner`.

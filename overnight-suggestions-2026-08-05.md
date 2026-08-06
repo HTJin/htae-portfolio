@@ -119,4 +119,21 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** small. **Blocked behind S16** — adding page-level head content while two canonicals disagree just adds noise.
   - **Outcome:** *(proposed)*
 
+- [ ] **S18 — The cockpit was unusable with a screen reader** — Status: Done — Cycle: 5
+  - **Source:** site audit of the served HTML, run because the backlog had no browser-free work left. Measured: 0 of 11 buttons carried an `aria-label`, and the gauges, gear selector and trip-computer screen had no `aria-hidden`.
+  - **Suggestion:** name every control while keeping its visible word, and take the decorative instruments out of the accessibility tree.
+  - **Why / expected impact:** drive mode is a canvas and an instrument panel; without this a screen-reader user got unlabelled buttons plus a stream of meaningless numerals that duplicated the itinerary badly.
+  - **Scope:** small, in scope, fully verifiable from the served HTML.
+  - **Outcome:** **Shipped** in `5fcf996`. 10 of 11 buttons named (the 11th is "Start engine", already self-naming); `aria-hidden` 12 -> 19; itinerary and arrival panel confirmed still exposed.
+
+- [ ] **S19 — `/drive` served two `<h1>` elements** — Status: Done — Cycle: 5
+  - **Source:** same HTML audit — the itinerary's heading and the ignition splash's were both `<h1>`.
+  - **Outcome:** **Shipped** in `5fcf996`. The splash is now an `<h2>`; exactly one `<h1>` is served.
+
+- [ ] **S20 — `/drive` is missing from the sitemap** — Status: **Needs human** — Cycle: 5
+  - **Source:** `curl /sitemap.xml` returns a single `<loc>` for the site root; `robots.txt` points at that file.
+  - **Why / expected impact:** compounds with S16 — drive mode is both unlisted *and* disowned by its own canonical, so fixing either alone will not surface it in search.
+  - **Scope:** one `<url>` block in `public/sitemap.xml`, which is outside this run's write scope (it covers `public/images/` only). Exact patch is in the **Needs human** section of `overnight-tasks-2026-08-05.md`.
+  - **Outcome:** *(awaiting a human)*
+
 *(Check the box once you've reviewed the outcome.)*

@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 5
+**Cycle:** 6
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -59,6 +59,8 @@
 14. *Failure (cycle 3): the roadside leg lookup allocates per frame.* `drawRoadside` runs inside the 60fps paint and iterates every lamp and post. **Guardrail:** precompute the leg/style table once at module load; the paint loop may only index into it — no `.map`/`.filter`/object literals per lamp.
 15. *Failure (cycle 3): new roadside ribbons reintroduce anti-aliasing seams.* `stripes()` exists precisely because filling each segment separately leaves visible seams (`RoadCanvas.jsx` comment on the stripes helper). **Guardrail:** any new continuous roadside element (guardrail rail, kerb) must be painted with the same run-length approach, never per-segment fills.
 16. *Failure (cycle 3): the year readout re-renders React 60 times a second.* **Guardrail:** it must follow the existing `drive.subscribe` + `ref.textContent` pattern used by every other live readout in `TripComputer`.
+21. *Failure (cycle 5): hiding something from assistive tech that a non-visual user actually needs.* `aria-hidden` on the instruments is right only because the `sr-only` itinerary and the `aria-live` arrival panel already carry the real content. **Guardrail:** hide only decoration — never a control, never the `StopCard`, never the itinerary — and re-read the served HTML afterwards to confirm the controls and panel are still exposed.
+22. *Failure (cycle 5): an `aria-label` that contradicts the visible text.* A sighted keyboard user reads "Next ▸" while the label says something else; if they disagree, voice-control users cannot say what they see. **Guardrail:** every label must contain the visible word ("Back", "Next", "Map", "Brake", "Go"), just expanded — not renamed.
 18. *Failure (cycle 4): "fixing" the canonical tag by editing a file outside the write scope.* The real fix is in `_app.jsx`, which this run may not touch. **Guardrail:** measure it, write the exact patch out, park it as **Needs human** — do not edit `_app.jsx`, and do not bodge a half-fix into `drive.jsx` that only appears to work.
 19. *Failure (cycle 4): the enriched itinerary changes what the page claims.* The `sr-only` block is the crawlable résumé; adding years there repeats the guardrail-13 risk. **Guardrail:** render `stop.year` only where it exists, never a fallback, and diff the rendered text against the previous output rather than eyeballing it.
 20. *Failure (cycle 4): calling the timezone sweep "clean" without reading each site.* **Guardrail:** enumerate every date-formatting call in the repo and record a verdict per call site with the line reference, rather than concluding from one file.
@@ -81,7 +83,53 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 4's list is fully resolved — see Done / Needs human. The Planner fills this for cycle 5 from the Backlog.)*
+*(cycle 5's list is fully resolved — see Done / Needs human. The Planner fills this for cycle 6.)*
+
+<details>
+<summary>Cycle 5's list (resolved — kept for context)</summary>
+
+### CYCLE 5
+
+Chrome is still unreachable (re-checked: `curl` serves the page, the browser lands on `chrome-error://chromewebdata/`),
+and **the backlog ran dry of browser-free work** — everything left in it needs pixels (S9b, S13), a browser to verify
+(S5, S8), or is blocked behind the Needs-human canonical fix (S15). So this cycle ran a fresh **Suggester** pass over
+what can still be examined: the served HTML. That surfaced three defects, all measured rather than guessed.
+
+- [ ] **1. Make the cockpit read properly to assistive technology** *(new, cycle 5 — in scope, SSR-verifiable)*
+  - **Why:** drive mode is a canvas and an instrument panel, so the only usable non-visual version of it is the
+    `sr-only` itinerary plus the `aria-live` arrival panel. But the decorative instruments are also in the
+    accessibility tree, and none of the controls have accessible names — so a screen-reader user gets a stream of
+    meaningless numerals *and* unlabelled buttons.
+  - **Evidence (measured from the served HTML):**
+    - **0 of 11 `<button>` elements carry an `aria-label`.** They announce as their symbol text: `◂ Back`,
+      `Next ▸`, `BRAKE↓ / S`, `GO↑ / W` — i.e. "left-pointing small triangle Back", "BRAKE down-arrow slash S".
+    - The trip-computer screen renders as `<div class="flex h-full flex-col justify-between drive_screen__geG90">`
+      with **no** `aria-hidden`; the gauge faces render as `<svg viewBox="0 0 100 100" class="h-full w-full">` with
+      none either; the gear selector's `P` span has none. So `x1000`, `0`, `mph`, `P R N D`, `gear`,
+      `~/route $ drive --to`, `yr 2016`, `odo 0.0 mi` are all announced — duplicating, badly, what the itinerary
+      already says properly.
+  - **Files:** `src/components/drive/Dashboard.jsx` (in scope).
+  - **Done when:** every control has a real accessible name while its visible text is unchanged, the decorative
+    instruments are out of the accessibility tree, and both facts are proven by reading the served HTML back.
+- [ ] **2. Fix the duplicate `<h1>` on `/drive`** *(new, cycle 5 — in scope)*
+  - **Why:** two `<h1>` elements compete to describe the page, which muddles the document outline for assistive tech
+    and for crawlers.
+  - **Evidence:** the served HTML contains `<h1>Drive mode — the résumé of Hyun-Tae Jin as a road trip</h1>` (the
+    `sr-only` itinerary, which is the real content) **and** `<h1>The résumé, from the driver's seat</h1>` (the ignition
+    overlay, which is a transient splash).
+  - **Files:** `src/components/drive/DriveScene.jsx` (in scope).
+  - **Done when:** exactly one `<h1>` is served, the itinerary keeps it, and the ignition splash sits below it in the
+    outline.
+- [ ] **3. `/drive` is missing from the sitemap** *(new, cycle 5 — OUT of scope, park as Needs human)*
+  - **Why:** `public/sitemap.xml` lists only `https://htae.dev/`. Combined with the canonical defect already parked
+    from cycle 4 — which tells crawlers `/drive` duplicates the homepage — drive mode is effectively invisible to
+    search: not linked from the sitemap, and disowned by its own canonical.
+  - **Evidence:** `curl http://127.0.0.1:3007/sitemap.xml` returns a single `<url>` entry for the site root;
+    `public/robots.txt` points at that sitemap.
+  - **Scope constraint:** the write scope covers `public/images/` only, not `public/sitemap.xml`.
+  - **Done when:** the gap is proven and an exact patch is written out under **Needs human**, not applied.
+
+</details>
 
 <details>
 <summary>Cycle 4's list (resolved — kept for context)</summary>
@@ -230,6 +278,8 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C5-1. Cockpit reads properly to assistive technology** — proven working against the served HTML. Before: **0 of 11** buttons had an `aria-label`, and the gauge faces, gear selector and trip-computer screen had no `aria-hidden`, so the instrument noise was announced. After: **10 of 11** buttons carry a name that keeps the visible word (the 11th is "Start engine", which already names itself — confirmed by listing every unlabelled button); `aria-hidden` count went **12 → 19**, covering 3 gauge wrappers, 2 trip-computer screens and 2 gear selectors. Guardrail 21 re-checked: the itinerary is still exposed with all ten `<time>` years, and the `aria-live` arrival panel is untouched (absent from cold SSR only because it renders solely while parked). Commit `5fcf996`.
+- **C5-2. Duplicate `<h1>` on `/drive`** — proven fixed: the served HTML now contains exactly **one** `<h1>` ("Drive mode — the résumé of Hyun-Tae Jin as a road trip"), and the transient ignition splash sits below it as an `<h2>`. Commit `5fcf996`.
 - **C4-1. Timezone year bug — audit of the rest of the site** — investigated and **closed clean**: the classic site is *not* affected. Every date call site in `src/` was read and classified: `FormattedDate.jsx:1-5` builds its formatter with `Intl.DateTimeFormat('en-US', { …, timeZone: 'UTC' })`, which is exactly the right defence, and `:15` writes the `dateTime` attribute from `toISOString()` (always UTC). Proven by running that exact formatter config in Node against all ten content dates in a timezone behind UTC: it renders **Jan 2024** correctly, while `getFullYear()` on the same date returns 2023 in the same process — so the test conditions were valid and self-checking. `route.js:7` (`byDateAscending`) compares instants and is timezone-independent; `Intro.jsx:131` and `generateRssFeed.js:82` read the *current* year for a copyright line, where local time is the wanted semantic; `generateRssFeed.js:107` hands a `Date` to the feed library, which serialises UTC. Conclusion: `route.js` was the only affected site and it was fixed in `94eea90`. No code change needed, no Needs-human item.
 - **C4-3. Years and leg structure in the crawlable itinerary** — proven working by reading the served HTML back: six `<h2>` leg headings, 21 `<h3>` stop headings, and exactly ten `<time>` elements reading `2016 2017 2019 2020 2023 2023 2023 2024 2024 2025` — matching education and the nine roles, including the January-2024 role the cycle-3 fix corrected. The eleven stops with no date in the content carry no year at all (guardrail 13 / 19). Commit `e799e92`.
 - **C3-1. Trip computer reads in years** — proven working by server-rendering `yearAt` across all 21 stops plus quarter-leg midpoints. Sequence: 2016 at school, 2017 / 2019 / 2020 across the early roles, **2021 and 2022 while crossing the sabbatical**, 2023 / 2024 / 2025 through StarPlus, then `NOW` from the last dated role onward — and `NOW` at every project, toolbox and destination stop, never a fabricated number (guardrail 13 satisfied). SSR HTML confirms the readout renders `2016` initially. Commit `94eea90`.
@@ -253,6 +303,37 @@ biggest lever available: making the drive pass **time**, not just distance.
 *(empty)*
 
 ## Needs human (parked — requires a person; the loop will NOT guess these)
+
+- [ ] **`/drive` is missing from the sitemap** — Needs human because `public/sitemap.xml` is outside this run's write
+  scope (the scope covers `public/images/` only).
+
+  **Measured:** `curl http://127.0.0.1:3007/sitemap.xml` returns exactly one entry:
+
+  ```xml
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url><loc>https://htae.dev/</loc><changefreq>monthly</changefreq><priority>1.0</priority></url>
+  </urlset>
+  ```
+
+  `public/robots.txt` points crawlers at that file, so this is the authoritative list.
+
+  **Why it matters — and why it compounds.** Taken together with the canonical defect parked below, drive mode is
+  invisible to search from both directions at once: it is **not listed** in the sitemap, and the copy that *is*
+  reachable **disowns itself** via a canonical pointing at the homepage. Fixing only one of the two will not surface
+  the page.
+
+  **Exact patch — add a second entry to `public/sitemap.xml`:**
+
+  ```xml
+  <url>
+    <loc>https://htae.dev/drive</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  ```
+
+  **Verify after applying:** `curl -s https://htae.dev/sitemap.xml | grep -c '<loc>'` should print `2`.
+
 
 - [ ] **`/drive` ships two canonical tags, and the first one points at the homepage** — Needs human because the fix
   belongs in `src/pages/_app.jsx`, which is **outside this run's write scope** (guardrail 18).
