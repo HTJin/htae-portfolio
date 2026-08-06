@@ -179,4 +179,9 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** it is the conversion moment. All four actions rendered identically, so the email and "back to the classic site" were visually indistinguishable; the eye had nothing to land on after twenty-one exits.
   - **Outcome:** **Shipped** in `b6f444f`. Email primary, classic-site link demoted to quiet text, and a trip summary above them whose every figure is derived from the content (rendered 2016 / 9 / 8 / 2.7, matching 9 roles, 8 builds, education 2016, 21 stops x 220m). Owner's prose untouched; EXIT 11 confirmed unchanged.
 
+- [ ] **S30 - `world.project()` was dead code with false documentation** - Status: Done - Cycle: 15
+  - **Source:** a Suggester pass aimed at duplication rather than features, prompted by the owner's steer against unnecessary additions.
+  - **Why / expected impact:** the module claimed `project()` kept the canvas and DOM overlays in agreement, but nothing called it and three sites duplicated the maths. This branch had already been bitten twice by the same shape - the dash height written twice (71px overlap) and the camera lateral written four times (the centre-line complaint).
+  - **Outcome:** **Shipped** in `e23a9db`. `ExitSign` and `RoadCanvas.place` now call `project()`; `buildPoints` stays inlined on purpose (131 iterations/frame into pre-allocated objects) with a comment explaining the trade, so the remaining duplication is deliberate. Proven pixel-identical by a stash/rebuild A/B: **0 of 1,992,704 pixels differ**.
+
 *(Check the box once you've reviewed the outcome.)*

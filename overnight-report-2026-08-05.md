@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 14 · branch `feat/drive-mode` · 26 commits, nothing pushed
+**Last updated:** end of cycle 15 · branch `feat/drive-mode` · 28 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,33 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 15 — removing something rather than adding it
+
+You said you didn't want unnecessary things added, so this pass went looking for the opposite: code that duplicates
+itself, and code that lies about what it does.
+
+`world.js` — the file that defines how a point in the world maps to a point on screen — carried this comment:
+*"Everything on screen is placed with `project()` so the canvas and the DOM overlays always agree."*
+
+**Nothing called `project()`.** Three separate places wrote out the same maths by hand instead. So the comment
+described an architecture that didn't exist, and anyone changing the projection later — including me on a future pass —
+would have had to find and update three files in lockstep without being told.
+
+That's not hypothetical tidiness. It's the exact shape of the two worst bugs on this branch: the dashboard height
+written twice in different units (which hid the bottom of your résumé on a landscape phone), and the car's sideways
+position written four times (which is why you were driving down the centre line).
+
+Two of the three now call the shared function. The third — the road surface itself — **deliberately keeps its own
+copy**, because it runs 131 times per frame and routing it through the shared function would add 131 object
+allocations and 131 redundant trig calls every frame. That would be trading real performance for neatness. It now
+carries a comment saying exactly that, so the remaining duplication is a decision rather than an accident.
+
+**How I checked I hadn't changed anything:** this is a pure refactor, so the only acceptable result is that the page
+looks *identical*. I built the old code, captured the rendered frame, rebuilt with the new code, and compared:
+**0 of 1,992,704 pixels differ.**
 
 ---
 

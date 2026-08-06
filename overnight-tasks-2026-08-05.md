@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 15
+**Cycle:** 16
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -61,6 +61,8 @@
 4. *Failure: a redesigned StopCard becomes unreadable or unscrollable on mobile.* **Guardrail:** verify the panel at 390x844 — content must scroll, no horizontal overflow, and the close/next affordances must stay reachable.
 5. *Failure: the screenshot carousel autoplays over reduced-motion users, or leaks timers between stops.* **Guardrail:** honor `useReducedMotion()` (show a static first frame + manual dots), and clear the interval on unmount/stop-change; verify by switching stops repeatedly and watching for stacked timers.
 6. *Failure: running `npm run build` while `npm run dev` is live, or trusting a poisoned `.next` cache.* They share `.next`; the build clobbers the dev server's route manifest (`/drive` starts 404ing for new requests while the open tab keeps working off HMR). Worse, the webpack cache can go stale and **silently serve CSS that is missing newly-added Tailwind classes** — observed in cycle 2, where `line-clamp-2` and `lg:truncate` produced zero CSS rules until a clean restart. **Guardrail:** after any `npm run build`, restart the dev server; and if a class looks inert, run `npm run dev:fresh` (wipes `.next`) and re-check *before* concluding the class or the config is at fault.
+46. *Failure (cycle 15): a "tidying" refactor that changes what is on screen.* This is a pure refactor — identical maths, fewer copies. **Guardrail:** capture a canvas frame *before* touching anything and require the after-frame to differ by **zero** pixels. Any non-zero diff means the refactor is wrong, not that the threshold needs relaxing.
+47. *Failure (cycle 15): DRY-ing the hot loop and paying for it every frame.* `buildPoints` deliberately mutates pre-allocated objects and hoists its base trig out of the loop. **Guardrail:** do not route it through a function that returns a new object or recomputes `curveAt(sim.travel)`/`hillAt(sim.travel)` per point; leave it inlined and say why in a comment.
 43. *Failure (cycle 12): fixing the overlap by nudging one number.* The dash height and the panel's bottom offset are **the same quantity written twice**. Adjusting either alone leaves them able to drift apart again at some other viewport. **Guardrail:** express it once and have both sides consume that single expression.
 44. *Failure (cycle 12): reclaiming glass by shrinking the dash until the controls stop working.* The 210px floor exists because the phone cockpit stacks a cluster strip, a screen and a control row. **Guardrail:** after any height change, measure at 840x386 that the controls still fit inside the dash and nothing overflows — do not trade a visible bug for an unusable one.
 45. *Failure (cycle 12): concluding "no focus ring" from programmatic focus.* `.focus()` does not match `:focus-visible`, so a computed `outline-style: none` after a scripted focus is meaningless. **Guardrail:** to claim a focus-visibility defect, find an author rule that removes the outline — not a computed style from synthetic focus.
@@ -118,7 +120,38 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 14's list is fully resolved — see Done. The Planner fills this for cycle 15.)*
+*(cycle 15's list is fully resolved — see Done. The Planner fills this for cycle 16.)*
+
+<details>
+<summary>Cycle 15's list (resolved — kept for context)</summary>
+
+### CYCLE 15
+
+Backlog dry (S15 blocked, S13b closed by the owner). The owner's cycle-13 steer was explicitly *against* unnecessary
+additions, so this **Suggester** pass looked for the opposite: duplication and code that lies about itself.
+
+- [ ] **1. `world.project()` is dead, and its documentation is false** *(new, cycle 15)*
+  - **Why it matters:** the module doc for `world.js` states *"Everything on screen — tarmac, poles, exit signs — is
+    placed with `project()` so the canvas and the DOM overlays always agree."* **Nothing calls `project()`.** Three
+    places hand-roll the same projection independently, so a future change to `CAM_HEIGHT`, the horizon or the curve
+    model must be made in three files in lockstep. This run has already been bitten by exactly this pattern **twice**:
+    the dash height written twice (cycle 12, 71px overlap) and the camera lateral written four times (cycle 13, the
+    owner's lane complaint). A comment that claims a single source of truth which does not exist is worse than no
+    comment.
+  - **Evidence:** `grep` for `project(` across `src/components/drive/` outside `world.js` returns **nothing**. The three
+    implementations are `RoadCanvas.buildPoints`, `RoadCanvas.place`, and `ExitSign.paint`, and all three are
+    algebraically identical to `project(camera, sim, z, x, y)`.
+  - **Decision — not a blind DRY sweep.** `buildPoints` runs 131 times a frame against **pre-allocated** point objects
+    and hoists `curveAt(sim.travel)`/`hillAt(sim.travel)` out of its loop. Routing it through `project()` would add 131
+    allocations *and* 131 redundant trig pairs per frame, regressing guardrail 9 to satisfy tidiness. So: adopt
+    `project()` where it is free (`ExitSign`, once per frame) and allocation-neutral (`place`, which already returns a
+    fresh object), and leave `buildPoints` inlined **with a comment saying why**, so the remaining duplication is
+    deliberate and documented rather than accidental. Fix the module doc to describe what is actually true.
+  - **Files:** `src/components/drive/world.js`, `src/components/drive/RoadCanvas.jsx`, `src/components/drive/ExitSign.jsx`.
+  - **Done when:** the rendering is **pixel-identical** — this is a pure refactor, so anything else is a bug — and the
+    exit sign's projected position is unchanged.
+
+</details>
 
 <details>
 <summary>Cycle 14's list (resolved — kept for context)</summary>
@@ -551,6 +584,8 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C15-1. `world.project()` made true instead of dead** — the module documented itself as the single source of truth for placing everything on screen, but **nothing called it**; three sites hand-rolled the same projection. That is the exact shape that has already cost this branch twice (dash height written twice -> 71px overlap; camera lateral written four times -> the owner's centre-line complaint). `ExitSign` and `RoadCanvas.place` now go through `project()`; `buildPoints` stays inlined **on purpose**, with a comment explaining that routing a 131-iteration-per-frame loop through it would add 131 allocations and 131 redundant `curveAt`/`hillAt` pairs each frame (guardrails 46-47). The module doc now describes reality and names the exception. Commit `e23a9db`.
+  - **Proven as a real A/B, not by inspection:** stashed the refactor, rebuilt, captured a canvas frame from the pre-refactor build; restored, rebuilt, captured again at the same exit. **0 of 1,992,704 pixels differ, max channel delta 0.** The exit sign — a DOM overlay outside that diff — was checked separately and still projects to a finite, correctly-scaled on-screen position (`translate(475px, 234px) scale(0.0508)` at 0.1 MI out).
 - **C14-0. Regression check on cycle 13's camera change** — cycle 13 rewrote camera lateral maths in four places, and `ExitSign` positions itself independently of the canvas, so it was the likeliest casualty. **No regression:** at EXIT 07 the sign's twin posts still meet the ground at the roadside and the lane markings read correctly (yellow centre line left, white edge line right, car between them). The first-run flow was also exercised end to end — Start engine -> hold accelerator -> depart -> arrive at EXIT 01 with the panel open.
 - **C14-1. The destination now reads as an arrival** — priority (b) named this panel and no cycle had examined the destination stop on its own. It was shaped like every other stop: all four actions rendered identically, so **"Email hytjin@gmail.com" carried the same weight as "Back to the classic site"** — goal and exit door indistinguishable. The email is now primary, LinkedIn and the résumé stay secondary, the classic-site link drops to quiet text, and a derived summary of the trip sits above them. Commit `b6f444f`.
   - **Every number is derived, none written down (guardrail 13):** rendered **2016 / 9 / 8 / 2.7**, checked against the content itself — 9 ids in `experience.js`, 8 names in `projects.js`, `education.date` 2016, and 21 stops x 220m = 2.7 mi. Add a role or a build and they follow automatically. The owner's prose was not touched.

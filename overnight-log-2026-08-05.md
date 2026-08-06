@@ -324,3 +324,18 @@ An in-browser measurement was attempted first but was inconclusive — the image
 **Verified against a production build:** rendered **2016 / 9 / 8 / 2.7**, checked independently against the content — 9 ids in `experience.js`, 8 names in `projects.js`, `education.date` 2016, 21 stops x 220m = 2.7 mi. All four match. Link hierarchy reads PRIMARY / secondary / secondary / quiet. EXIT 11 re-checked to confirm no collateral change: no summary, both links still secondary.
 
 **02:30 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.3 kB). One commit: `b6f444f`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 15 / Phase: Planner`.
+
+---
+
+## Cycle 15
+
+**02:33 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 15`. Backlog dry (S15 blocked, S13b closed by the owner). Since the owner's cycle-13 steer was explicitly *against* unnecessary additions, this **Suggester** pass deliberately hunted the opposite: duplication, and code that lies about itself.
+
+**02:36 — The finding: `world.project()` was dead, and its documentation was false.** The module header read *"Everything on screen — tarmac, poles, exit signs — is placed with `project()` so the canvas and the DOM overlays always agree."* A grep for `project(` outside `world.js` returned **nothing**. Three sites hand-rolled the same maths independently: `RoadCanvas.buildPoints`, `RoadCanvas.place`, `ExitSign.paint`. All three are algebraically identical to `project(camera, sim, z, x, y)` — I checked term by term before touching anything.
+- **Why it mattered more than tidiness:** this is precisely the shape that has already cost this branch twice — the dash height written twice in different units (cycle 12, a 71px overlap that hid résumé content on landscape phones) and the camera lateral written four times (cycle 13, which produced the owner's centre-line complaint). A comment asserting a single source of truth that does not exist actively misleads whoever changes the projection next.
+
+**02:42 — Deliberately not a blind DRY sweep.** `buildPoints` runs SEGMENTS+1 = 131 times per frame, writes into **pre-allocated** point objects, and hoists `curveAt(sim.travel)`/`hillAt(sim.travel)` out of its loop. Routing it through `project()` would have added 131 allocations *and* 131 redundant trig pairs every frame — trading guardrail 9 for neatness. So: `ExitSign` (one call per frame, free) and `place` (already allocated per call, so neutral) now go through `project()`; `buildPoints` stays inlined **with a comment stating why**, turning accidental duplication into a documented, justified exception. The module doc was rewritten to describe what is actually true and to name that exception.
+
+**02:50-03:05 — Verified as a genuine A/B rather than by inspection.** A first attempt lost its baseline when the tab navigated between builds, so the comparison was redone properly: `git stash` the refactor -> rebuild -> capture a canvas frame from the **pre-refactor** build into the parent window (which never navigates) -> `git stash pop` -> rebuild -> capture again at the same exit. Result: **0 of 1,992,704 pixels differ, max channel delta 0.** For a pure refactor that is the only acceptable answer. The exit sign sits outside that canvas diff, being a DOM overlay, so it was checked separately: it still projects to a finite, correctly-scaled on-screen position (`translate(475px, 234px) scale(0.0508)` at 0.1 MI out).
+
+**03:07 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.4 kB). One commit: `e23a9db`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 16 / Phase: Planner`.
