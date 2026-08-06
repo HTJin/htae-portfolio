@@ -243,6 +243,10 @@ export function DriveScene() {
   // the server markup.
   const [resume, setResume] = useState(null)
 
+  // The label of whichever itinerary link currently has focus, or null. Drives
+  // the chip below — see the comment beside it.
+  const [outlineFocus, setOutlineFocus] = useState(null)
+
   const { started, start, index, parked, setThrottle, setBrake, setSteer } =
     drive
   const stop = route[index]
@@ -483,7 +487,35 @@ export function DriveScene() {
         Skip to the drive controls
       </a>
 
-      <Itinerary />
+      {/* The itinerary is clipped to nothing but still tabbable, so a sighted
+          keyboard user who declines the skip link walks 25 stops with the
+          focus ring painted where nobody can see it. Revealing the focused
+          link in place is not available: tested, a `position: fixed`
+          descendant does not escape the container's `clip: rect(0,0,0,0)` —
+          it keeps its layout box but `elementFromPoint` at its own centre
+          returns the canvas. So instead of moving the link out, this reports
+          where focus is, from outside the clip.
+
+          `aria-hidden` and deliberately not a live region: a screen reader
+          already announces the link, and saying it twice is worse than not
+          saying it at all. */}
+      <div
+        onFocus={(event) => {
+          const link = event.target.closest?.('a[href]')
+          setOutlineFocus(link ? link.textContent.trim() : null)
+        }}
+        onBlur={() => setOutlineFocus(null)}
+      >
+        <Itinerary />
+      </div>
+      {outlineFocus ? (
+        <p
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-3 z-50 max-w-[min(92vw,26rem)] truncate rounded-md border border-sky-300/70 bg-[#04121a] px-3 py-1.5 text-sm text-sky-100 shadow-lg"
+        >
+          Résumé outline: <span className="font-semibold">{outlineFocus}</span>
+        </p>
+      ) : null}
       <ArrivalAnnouncer started={started} parked={parked} stop={stop} />
 
       <Sky drive={drive} />
