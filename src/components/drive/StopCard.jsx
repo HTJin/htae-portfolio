@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { ProjectShots } from './ProjectShots'
 import styles from '@/styles/drive.module.css'
 
 function CornerBrackets() {
@@ -11,6 +12,23 @@ function CornerBrackets() {
       <span className={`${corner} bottom-0 left-0 border-b border-l`} />
       <span className={`${corner} bottom-0 right-0 border-b border-r`} />
     </>
+  )
+}
+
+/** The green interstate shield, bolted to the top-left of the panel. */
+function ExitShield({ stop }) {
+  const [tag, number] = stop.exitLabel.split(' ')
+  return (
+    <div
+      className={`flex shrink-0 flex-col items-center rounded-md px-2.5 py-1 ${styles.shield}`}
+    >
+      <span className="text-[0.5rem] uppercase leading-none tracking-[0.2em] text-emerald-100/70">
+        {tag}
+      </span>
+      <span className="font-display text-base font-bold leading-none tracking-tight text-white">
+        {number}
+      </span>
+    </div>
   )
 }
 
@@ -44,19 +62,10 @@ function StopLinks({ links }) {
   )
 }
 
-function StopBody({ stop }) {
+/** Everything except the media — the column that always has something in it. */
+function StopProse({ stop }) {
   return (
     <>
-      {stop.image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={stop.image}
-          alt=""
-          className="mt-3 h-28 w-full rounded-md border border-white/10 object-cover object-top opacity-80 sm:h-36"
-          loading="lazy"
-        />
-      ) : null}
-
       {stop.paragraphs?.map((paragraph) => (
         <p
           key={paragraph.slice(0, 40)}
@@ -125,45 +134,83 @@ function StopBody({ stop }) {
   )
 }
 
-/** The windshield heads-up display: shown whenever the car is parked. */
+/**
+ * The windshield heads-up display: shown whenever the car is parked. It
+ * projects up from the dash, so it animates from its bottom edge.
+ */
 export function StopCard({ stop, visible, position, total }) {
+  const reducedMotion = useReducedMotion()
+  const shots = stop.images?.length ? stop.images : null
+
   return (
     <AnimatePresence mode="wait">
       {visible ? (
         <motion.section
           key={stop.id}
-          initial={{ opacity: 0, y: 18, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -12, scale: 0.98 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
+          initial={
+            reducedMotion
+              ? { opacity: 0 }
+              : { opacity: 0, y: 26, rotateX: 10, scale: 0.97 }
+          }
+          animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+          exit={
+            reducedMotion
+              ? { opacity: 0 }
+              : { opacity: 0, y: -14, rotateX: -6, scale: 0.98 }
+          }
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          style={{ transformOrigin: 'bottom center', perspective: 1200 }}
           aria-live="polite"
-          className={`pointer-events-auto relative w-[min(92vw,44rem)] rounded-xl px-5 py-4 sm:px-7 sm:py-6 ${styles.hud}`}
+          className={`pointer-events-auto relative flex max-h-full w-[min(94vw,44rem)] flex-col rounded-xl px-5 py-4 sm:px-7 sm:py-5 ${
+            shots ? 'lg:w-[min(94vw,58rem)]' : ''
+          } ${styles.hud}`}
         >
           <CornerBrackets />
 
-          <div className="flex items-center justify-between gap-3 text-[0.625rem] uppercase tracking-[0.24em] text-sky-300/70">
-            <span>
-              {stop.exitLabel} · {stop.leg}
+          {/* Sign rail: the shield, the leg you are on, and how far along. */}
+          <header className="flex items-center gap-3">
+            <ExitShield stop={stop} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[0.625rem] uppercase tracking-[0.24em] text-emerald-300/70">
+                {stop.leg}
+              </p>
+              <h2 className="mt-0.5 truncate font-display text-lg font-semibold leading-tight text-white sm:text-2xl">
+                {stop.title}
+              </h2>
+            </div>
+            <span className="shrink-0 self-start font-mono text-[0.625rem] tabular-nums text-sky-300/60">
+              {position}/{total}
             </span>
-            <span className="tabular-nums">
-              {position} / {total}
-            </span>
-          </div>
+          </header>
 
-          <h2 className="mt-2 font-display text-xl font-semibold leading-tight text-white sm:text-2xl">
-            {stop.title}
-          </h2>
-          {stop.subtitle ? (
-            <p className="text-sky-200/85 mt-1 text-sm">{stop.subtitle}</p>
-          ) : null}
-          {stop.meta ? (
-            <p className="text-white/45 mt-1 text-[0.75rem]">{stop.meta}</p>
-          ) : null}
+          {(stop.subtitle || stop.meta) && (
+            <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-t border-white/10 pt-1.5">
+              {stop.subtitle ? (
+                <p className="text-sky-200/85 text-sm">{stop.subtitle}</p>
+              ) : null}
+              {stop.meta ? (
+                <p className="text-white/45 text-[0.75rem]">{stop.meta}</p>
+              ) : null}
+            </div>
+          )}
 
           <div
-            className={`mt-1 max-h-[34vh] overflow-y-auto pr-1 sm:max-h-[38vh] ${styles.hudScroll}`}
+            className={`min-h-0 flex-1 overflow-y-auto pr-1 ${styles.hudScroll}`}
           >
-            <StopBody stop={stop} />
+            {shots ? (
+              <div className="gap-x-5 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+                <ProjectShots
+                  images={shots}
+                  title={stop.title}
+                  site={stop.site}
+                />
+                <div className="lg:pt-3">
+                  <StopProse stop={stop} />
+                </div>
+              </div>
+            ) : (
+              <StopProse stop={stop} />
+            )}
           </div>
         </motion.section>
       ) : null}

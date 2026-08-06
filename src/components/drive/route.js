@@ -68,28 +68,35 @@ function experienceStops() {
 }
 
 function projectStops() {
-  return projects.map((project) => ({
-    id: `project-${project.name}`,
-    kind: 'project',
-    leg: 'Scenic overlook',
-    signTitle: project.title.split(' - ')[0],
-    signSub: project.technologies.slice(0, 2).join(' · '),
-    title: project.title,
-    subtitle: 'Side build',
-    paragraphs: [project.description],
-    tags: project.technologies,
-    image: project.screenshots?.length
-      ? `/images/projects/${project.name}${project.screenshots[0]}`
-      : null,
-    links: [
-      project.site
-        ? { label: 'Live site', href: project.site, external: true }
-        : null,
-      project.github
-        ? { label: 'Source', href: project.github, external: true }
-        : null,
-    ].filter(Boolean),
-  }))
+  return projects.map((project) => {
+    // Every capture the project ships, in order — the stop card cycles them.
+    const images = (project.screenshots ?? []).map(
+      (shot) => `/images/projects/${project.name}${shot}`
+    )
+
+    return {
+      id: `project-${project.name}`,
+      kind: 'project',
+      leg: 'Scenic overlook',
+      signTitle: project.title.split(' - ')[0],
+      signSub: project.technologies.slice(0, 2).join(' · '),
+      title: project.title,
+      subtitle: 'Side build',
+      paragraphs: [project.description],
+      tags: project.technologies,
+      images,
+      image: images[0] ?? null,
+      site: project.site ?? null,
+      links: [
+        project.site
+          ? { label: 'Live site', href: project.site, external: true }
+          : null,
+        project.github
+          ? { label: 'Source', href: project.github, external: true }
+          : null,
+      ].filter(Boolean),
+    }
+  })
 }
 
 function skillsStop() {
