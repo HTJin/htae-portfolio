@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 41 · branch `feat/drive-mode` · 53 commits, nothing pushed
+**Last updated:** end of cycle 42 · branch `feat/drive-mode` · 53 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,33 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 42 — checking my own work, and correcting something I told you
+
+Four cycles in a row had changed the same part of the app — the keyboard handling, the panel's width, its column
+layout, and then the entire way images are loaded. That is exactly the situation where something breaks quietly, so
+this cycle drove the whole route again rather than starting anything new.
+
+**Everything holds.** All twenty-one stops render, all **28 screenshots load** and every one goes through the optimiser,
+the screen-reader behaviour survived the image swap, nothing overflows sideways, and there is not a single console
+error on the whole route. I also weighed the page for the first time: `/drive` costs **208 KB** to load cold, which is
+lean for what it does.
+
+**Now the correction.** A few cycles ago I told you that one missing detail in `_app.jsx` was blocking **four** separate
+improvements. That was too broad, and since it shapes what you would actually have to do, it is worth putting right.
+
+Checking every tag against the HTML your server sends: Next.js **does** automatically replace ordinary meta tags, but
+**not** the Open Graph ones or the canonical link. Concretely — **your drive page's search-result description is
+already correct**. I had implied it was not. What genuinely needs the fix is the canonical link, the Open Graph tags,
+and the search-engine markup.
+
+**And one thing I could have built and deliberately did not.** The Twitter card settings *are* in the group that works,
+so I could have switched the drive page to a wide share card today. The only image available is your **square 612×612
+portrait** — dropping that into a wide frame makes the preview worse, not better. And because the Open Graph image
+genuinely is blocked, doing it would leave Twitter showing one thing and LinkedIn showing another. A drive-mode share
+image is a decision about how you present yourself, not a gap for me to fill without asking.
 
 ---
 

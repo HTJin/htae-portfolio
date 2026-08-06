@@ -986,3 +986,29 @@ About **40× smaller**, and the derivative is sized to the frame rather than the
 - reduced motion still holds frame 1 for nine seconds
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.5 kB). One commit: `1f9c323`. -> `Cycle: 42 / Phase: Planner`.
+
+## Cycle 42
+
+**Suggester — look back before looking further.** Backlog dry, and cycles 38—41 had changed the global key handler, the arrival panel's width, its column count and the entire image pipeline. Four consecutive cycles of change to the same surface is exactly when a regression hides, so this pass re-ran the whole route instead of opening new ground.
+
+**The sweep is clean.** All 21 stops render; **28 images, 0 broken, all 28 served through the optimiser**; **exactly one frame exposed** to assistive tech at every project stop (cycle 22's fix surviving the `next/image` swap); no horizontal scroll anywhere; and **zero console errors or warnings**. The only non-zero number is EXIT 04 hiding 94px at 1440×900, which is expected — its three-column fix is gated at `2xl`.
+
+**Cold-load weight, measured for the first time:** `/drive` is **208 KB** total — 21 KB document, 168 KB across 11 script chunks, 18 KB CSS. The largest chunks are React's framework bundle (44 KB) and a shared vendor chunk (36 KB). Nothing worth chasing, and worth knowing rather than guessing at.
+
+**Then a correction, which is the real output of this cycle.** Cycle 38 told the owner that the missing `key` props in `_app.jsx` block **four** improvements. Checking tag by tag against the served HTML shows that is too broad, and the difference matters to what they actually have to do.
+
+`next/head` **auto-dedupes `<meta name="...">` by its name**, but does **not** dedupe `<meta property="...">` or `<link>`:
+
+| tag | served on `/drive` | set by `drive.jsx`? |
+|---|---|---|
+| `name="description"` | **1** | yes — overrides correctly |
+| `name="twitter:title"` | **1** | yes — overrides correctly |
+| `property="og:title"` | **2** | yes — **duplicated** |
+| `property="og:url"` | **2** | yes — **duplicated** |
+| `rel="canonical"` | **2** | yes — **duplicated** |
+
+Every tag `drive.jsx` sets with `name` appears once; every one it sets with `property` or as a `link` appears twice. So **the drive page's search-result description is already correct** — I had implied otherwise. What genuinely needs `key` is the canonical, the `og:` tags, and S15's JSON-LD.
+
+**And one thing I could have shipped and chose not to.** `twitter:card` and `twitter:image` are `name`-based, so `drive.jsx` could override them today, in scope, to get a wide share card. The only image available is `avatar.png`, a **612×612 square portrait** — putting that in a `summary_large_image` frame makes the card worse, not better. And since `og:image` genuinely is blocked, doing it would leave Twitter showing one card while LinkedIn and Slack show another. A wide drive-mode card image is a decision about the owner's own branding, not a gap for the loop to fill unasked.
+
+**Exit.** No commit to `src/` — the sweep found nothing to fix and the finding is a correction to the notes, not to the code. -> `Cycle: 43 / Phase: Planner`.

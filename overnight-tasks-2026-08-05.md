@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 42
+**Cycle:** 43
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -444,9 +444,22 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 42
+## Tonight's tasks (in order) — CYCLE 43
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 42's list (resolved — kept for context)</summary>
+
+### CYCLE 42
+
+Backlog dry. Cycles 38—41 changed the key handler, the panel width, the column count and the whole image pipeline, so
+this pass re-ran the full route rather than opening new ground — and then corrected a claim I had made to the owner.
+
+- [x] **1. Regression sweep of all 21 exits after four cycles of change** — **DONE (clean)**
+- [x] **2. Correct cycle 38's "four things are blocked" finding** — **DONE (it is narrower than I said)**
+
+</details>
 
 <details>
 <summary>Cycle 41's list (resolved — kept for context)</summary>
@@ -1751,6 +1764,31 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Done (proven by the autonomous Reviewer)
 
+- **C42.0 — All 21 exits still clean after cycles 38—41** *(cycle 42 — verification only)* — four cycles had changed the
+  global key handler, the panel width, the column count and the image pipeline. Re-ran the cycle-28 sweep: every stop
+  renders, **28 images, 0 broken, all 28 served through the optimiser**, **exactly one frame exposed** to assistive
+  tech at every project stop, no horizontal scroll anywhere, and **zero console errors or warnings**. Only EXIT 04
+  reports 94px hidden at 1440×900, which is expected — its three-column fix is gated at `2xl` (cycles 39/40).
+  Cold-load weight of `/drive` also measured for the first time: **208 KB** total (21 KB document, 168 KB across 11
+  script chunks, 18 KB CSS). Nothing to chase.
+- **C42.1 — Correction: the `key` blocker is narrower than cycle 38 reported** *(cycle 42 — finding)* — cycle 38 told
+  the owner the missing `key` props in `_app.jsx` block **four** improvements. Measured tag-by-tag against the served
+  HTML, that is too broad. `next/head` **auto-dedupes `<meta name="...">` by name**, but **not** `<meta property="...">`
+  and **not `<link>`**:
+  | tag | served on `/drive` | set by `drive.jsx`? |
+  |---|---|---|
+  | `name="description"` | **1** | yes — overrides correctly |
+  | `name="twitter:title"` | **1** | yes — overrides correctly |
+  | `property="og:title"` | **2** | yes — **duplicated** |
+  | `property="og:url"` | **2** | yes — **duplicated** |
+  | `rel="canonical"` | **2** | yes — **duplicated** |
+  So the drive page's **search-result description is already correct today** — that one never needed fixing. What
+  genuinely needs `key` is the **canonical**, the **`og:` tags**, and the JSON-LD of backlog **S15**. `twitter:card`
+  and `twitter:image` are `name`-based and *could* be overridden from `drive.jsx` today — but deliberately were not:
+  the only image available is `avatar.png`, a **612×612 square portrait**, so switching to `summary_large_image`
+  would put a portrait in a wide frame, and since `og:image` really is blocked it would leave Twitter showing one card
+  and LinkedIn/Slack another. Recorded rather than shipped.
+
 - **C41.1 — Project screenshots go through the image optimiser** *(cycle 41, commit `1f9c323`)* — the 28 files total
   **15.6 MB** on disk and were served as raw PNG with `cache-control: max-age=0`. Arriving at **EXIT 12** requested
   **all five** frames — `loading="lazy"` cannot help when every frame is stacked inside the visible panel — for
@@ -2246,6 +2284,9 @@ biggest lever available: making the drive pass **time**, not just distance.
 >   `AnimatePresence` still at `:104`. Every line reference in the patch below is confirmed. The crop was recomputed
 >   from the PNG headers: **28 of 28** files are wider than 16:9, average width lost **10.2%**, worst **14.2%**
 >   (`rift/2.png`) — the recorded 10.1% was a rounding difference and has been corrected above.
+> - **Corrected in cycle 42:** `next/head` auto-dedupes `<meta name="...">`, so the drive page's `description`
+>   and `twitter:title` are **already correct**. The `key` props are needed for `<meta property="og:...">` and
+>   `<link rel="canonical">` only — that is what is duplicated, measured tag by tag.
 > - **Duplicate canonical** — confirmed from the **served HTML**, not from reasoning about how `next/head` dedupes:
 >   `/drive` ships `<link rel="canonical" href="https://htae.dev"/>` **followed by**
 >   `<link rel="canonical" href="https://htae.dev/drive"/>`. `og:url` and `og:title` are doubled the same way. `/`
