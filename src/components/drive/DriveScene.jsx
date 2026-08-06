@@ -254,6 +254,19 @@ export function DriveScene() {
 
   const toggleMap = useCallback(() => setMapOpen((open) => !open), [])
 
+  /**
+   * Let go of the controls when the map opens. A key held down before opening
+   * would otherwise stay latched: its keyup arrives while the map is up, and
+   * the handler above ignores everything but Escape and M. Same reason the
+   * window `blur` handler exists.
+   */
+  useEffect(() => {
+    if (!mapOpen) return
+    setThrottle(0)
+    setBrake(0)
+    setSteer(0)
+  }, [mapOpen, setThrottle, setBrake, setSteer])
+
   const selectStop = useCallback(
     (stopIndex) => {
       drive.goTo(stopIndex)
@@ -359,6 +372,22 @@ export function DriveScene() {
     const onKeyDown = (event) => {
       if (event.repeat || isTyping(event.target)) return
 
+      // The route map says `aria-modal`, which promises everything behind it
+      // is inert. It was not: with the map open, ArrowUp pulled the car out of
+      // the stop — `parked` went false and the title advanced an exit — while
+      // the dialog stayed up, so the drive happened invisibly behind it. Arrow
+      // keys are also the obvious way to scroll a twenty-one row list, so the
+      // natural gesture for using the map was the one that left the exit you
+      // were reading.
+      //
+      // Only the two keys that get you *out* still act. Everything else falls
+      // through without `preventDefault`, so the list scrolls normally.
+      if (mapOpen) {
+        if (event.key === 'Escape') setMapOpen(false)
+        if (event.key === 'm' || event.key === 'M') toggleMap()
+        return
+      }
+
       switch (event.key) {
         case 'ArrowUp':
         case 'w':
@@ -448,7 +477,7 @@ export function DriveScene() {
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', onBlur)
     }
-  }, [started, setThrottle, setBrake, setSteer, drive, toggleMap])
+  }, [started, mapOpen, setThrottle, setBrake, setSteer, drive, toggleMap])
 
   return (
     <div
