@@ -70,6 +70,22 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     })
   }, [])
 
+  /**
+   * Restore the history behind a resumed position.
+   *
+   * Saved progress only ever advances **on arrival** and only **forwards**, so
+   * a stored index is proof the visitor arrived at every exit before it. Used
+   * by the resume path alone — a `?exit=` deep link must not claim its holder
+   * drove the road, because they followed a link instead.
+   */
+  const markVisitedThrough = useCallback((stopIndex) => {
+    setVisited((previous) => {
+      const next = new Set(previous)
+      for (let i = 0; i <= stopIndex; i += 1) next.add(i)
+      return next
+    })
+  }, [])
+
   const arriveAt = useCallback(
     (stopIndex) => {
       setIndex(stopIndex)
@@ -273,6 +289,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       index,
       parked,
       visited,
+      markVisitedThrough,
       stop: stops[index],
       goTo,
       goBack,
@@ -289,6 +306,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       index,
       parked,
       visited,
+      markVisitedThrough,
       stops,
       goTo,
       goBack,

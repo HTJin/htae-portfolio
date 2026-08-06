@@ -254,6 +254,9 @@ export function DriveScene() {
   const resumeDrive = useCallback(() => {
     if (!resume) return
     drive.goTo(resume.index)
+    // They really did drive every exit up to here — saved progress only
+    // advances on arrival, and only forwards — so the route map should say so.
+    drive.markVisitedThrough(resume.index)
     drive.start()
   }, [drive, resume])
 
