@@ -249,7 +249,41 @@ export function RoadCanvas({ drive, className }) {
       }
     }
 
+    /**
+     * The last state we actually painted, and a flag that forces the next
+     * paint regardless. See `draw()` for why this exists.
+     */
+    let paintedTravel = Number.NaN
+    let paintedX = Number.NaN
+    let forcePaint = true
+
+    // 1e-4 m of movement. At the nearest projected point the scale is roughly
+    // 335 px/m, so this is ~0.03 of a pixel — below anything that can be seen,
+    // and far below the rounding the canvas does anyway.
+    const STILL = 1e-4
+
     function draw(sim) {
+      // Parked, the picture cannot change: `draw` reads `sim.travel` and
+      // `sim.x` (the latter only through `cameraX`) plus `camera`, and nothing
+      // else — no randomness, no clock. So repainting an identical image every
+      // frame is pure cost on a page someone leaves open while reading a stop.
+      //
+      // Two details matter. The comparison is against the last *painted*
+      // state, not the previous frame, so slow continuous motion accumulates
+      // and still triggers a repaint instead of freezing. And `sim.x` decays
+      // asymptotically toward 0 while parked, so this has to be a tolerance
+      // rather than equality or it would never skip anything.
+      if (
+        !forcePaint &&
+        Math.abs(sim.travel - paintedTravel) < STILL &&
+        Math.abs(sim.x - paintedX) < STILL
+      ) {
+        return
+      }
+      forcePaint = false
+      paintedTravel = sim.travel
+      paintedX = sim.x
+
       const { width, height, horizon } = camera
       ctx.clearRect(0, 0, width, height)
 
@@ -321,6 +355,9 @@ export function RoadCanvas({ drive, className }) {
       canvas.height = Math.max(1, Math.round(height * ratio))
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0)
       camera = makeCamera(width, height)
+      // Setting `canvas.width` above wiped the backing store, so this paint
+      // must happen even though the car has not moved.
+      forcePaint = true
       draw(drive.simRef.current)
     }
 
