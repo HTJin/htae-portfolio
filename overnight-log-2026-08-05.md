@@ -274,3 +274,20 @@ An in-browser measurement was attempted first but was inconclusive — the image
 **01:42 — Task 2: swept the whole reduced-motion contract, which no cycle had done together.** All four hold: traffic absent; **throttle jumped `EXIT 06 -> EXIT 07`** with no intermediate driving state and `ARRIVED` on both sides, confirming the jump substitution; the **arrival panel** computed `transform: none`, i.e. the opacity-only variant; and the **carousel** was already proven in cycle 2.
 
 **01:45 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.3 kB). One commit: `eef571b`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 12 / Phase: Planner`.
+
+---
+
+## Cycle 12
+
+**01:33 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 12`. Backlog still held, so another **Suggester** pass over two things nobody had checked: focus visibility, and **landscape phone** — a viewport a driving interface is unusually likely to meet.
+
+**01:36 — Focus visibility: investigated, no defect.** Drive mode defines no focus styles of its own and every control computed `outline-style: none` — damning until you notice the readings came from **programmatic** `.focus()`, and `:focus-visible` deliberately does not match scripted focus. A grep across `tailwind.css`, `base.css`, `components.css`, `utilities.css` and every drive component found **no author rule removing outlines**, so the browser default ring applies for real keyboard focus. Recorded as guardrail 45 and closed without a change.
+
+**01:40 — Landscape phone: a real defect, and its cause was arithmetic.** At 840x386 the arrival panel ran **71px underneath the dashboard**, hiding the bottom of the résumé content, and the drivable glass was down to **45.6%** — under guardrail 3's 50% floor. The overlap survived the guardrail-36 frozen-transform check (neutralising the transform left the settled panel in an identical box), so it was layout, not animation.
+- **Root cause:** the dash height was expressed **twice, in different units** — `Dashboard` as `h-[36%] min-h-[210px]`, `DriveScene` as `bottom-[36%]`. On a 386px-tall viewport 36% is 139px, so the dash's **pixel floor won at 210px** while the panel reserved 139px. 210 - 139 = **71px**, exactly the overlap measured — which is what turned a plausible story into a confirmed one.
+- **Fix:** one expression, `clamp(190px,36%,48%)`, consumed by both sides so they cannot drift apart again (guardrail 43). The 190px floor keeps the stacked phone cockpit usable, 36% is the intended share, and the 48% cap stops the floor eating the road on short screens.
+- **Result:** overlap **71 -> 0**, glass **45.6% -> 50.8%**. No regression elsewhere: 1916x946 unchanged at 36% dash / 64% glass with 32px clearance; 386x840 unchanged at 36% / 64%.
+
+**01:52 — A second alarm, investigated and dismissed.** The guardrail-44 check flagged a control **156px below the viewport**. Rather than shrink anything I measured what it was: the **`sr-only` itinerary's** per-stop "Live site"/"Source" links, marching down the document ~144px apart — visually hidden crawlable content doing exactly what it should. The cockpit's own stack was then measured directly and fits precisely inside the dash (cluster 206-280, trip computer compressed to 20px by `min-h-0 flex-1`, controls 316-378, dash 196-386). Acting on that alarm would have shrunk a cockpit that was already correct.
+
+**01:58 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.3 kB). One commit: `c71b624`. Two of four findings were real and fixed; two were investigated and closed without a change. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 13 / Phase: Planner`.

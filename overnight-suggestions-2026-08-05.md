@@ -156,4 +156,13 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** a regression this branch introduced in cycle 7 — cars advance on a wall clock independent of travel, so a visitor who asked for less motion still got headlights sliding toward them while parked.
   - **Outcome:** **Shipped** in `eef571b`; traffic is not drawn under the preference. Proven by comparing two deterministic single frames of `?exit=6` with `matchMedia` patched: 185 samples changed in a 30x32px box at the vanishing point, every other pixel identical.
 
+- [ ] **S25 - Arrival panel hidden behind the cockpit on short viewports** - Status: Done - Cycle: 12
+  - **Source:** Suggester audit of landscape phone (840x386), a viewport never measured before.
+  - **Why / expected impact:** the panel carries every word of the resume; 71px of it sat under the dashboard. Glass was also down to 45.6%, under the 50% guardrail.
+  - **Outcome:** **Shipped** in `c71b624`. The dash height had been written twice in different units (`h-[36%] min-h-[210px]` vs `bottom-[36%]`); at 386px tall the pixel floor won and the two disagreed by exactly 71px. Both now consume one `clamp(190px,36%,48%)`. Overlap 71px to 0, glass 45.6% to 50.8%, no regression at 1916x946 or 386x840.
+
+- [ ] **S26 - Focus visibility in drive mode** - Status: Done (no defect) - Cycle: 12
+  - **Source:** drive mode defines no focus styles of its own.
+  - **Outcome:** **No defect.** Every control computed `outline-style: none`, but from programmatic `.focus()`, which does not match `:focus-visible`. No author rule removing outlines exists anywhere in the stylesheets, so the browser default ring applies to real keyboard focus. Closed without a change.
+
 *(Check the box once you've reviewed the outcome.)*

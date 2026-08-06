@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 12
+**Cycle:** 13
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -49,6 +49,9 @@
 4. *Failure: a redesigned StopCard becomes unreadable or unscrollable on mobile.* **Guardrail:** verify the panel at 390x844 — content must scroll, no horizontal overflow, and the close/next affordances must stay reachable.
 5. *Failure: the screenshot carousel autoplays over reduced-motion users, or leaks timers between stops.* **Guardrail:** honor `useReducedMotion()` (show a static first frame + manual dots), and clear the interval on unmount/stop-change; verify by switching stops repeatedly and watching for stacked timers.
 6. *Failure: running `npm run build` while `npm run dev` is live, or trusting a poisoned `.next` cache.* They share `.next`; the build clobbers the dev server's route manifest (`/drive` starts 404ing for new requests while the open tab keeps working off HMR). Worse, the webpack cache can go stale and **silently serve CSS that is missing newly-added Tailwind classes** — observed in cycle 2, where `line-clamp-2` and `lg:truncate` produced zero CSS rules until a clean restart. **Guardrail:** after any `npm run build`, restart the dev server; and if a class looks inert, run `npm run dev:fresh` (wipes `.next`) and re-check *before* concluding the class or the config is at fault.
+43. *Failure (cycle 12): fixing the overlap by nudging one number.* The dash height and the panel's bottom offset are **the same quantity written twice**. Adjusting either alone leaves them able to drift apart again at some other viewport. **Guardrail:** express it once and have both sides consume that single expression.
+44. *Failure (cycle 12): reclaiming glass by shrinking the dash until the controls stop working.* The 210px floor exists because the phone cockpit stacks a cluster strip, a screen and a control row. **Guardrail:** after any height change, measure at 840x386 that the controls still fit inside the dash and nothing overflows — do not trade a visible bug for an unusable one.
+45. *Failure (cycle 12): concluding "no focus ring" from programmatic focus.* `.focus()` does not match `:focus-visible`, so a computed `outline-style: none` after a scripted focus is meaningless. **Guardrail:** to claim a focus-visibility defect, find an author rule that removes the outline — not a computed style from synthetic focus.
 40. *Failure (cycle 11): reading the motion preference during render and breaking hydration.* Same trap as guardrail 28 — the server has no `matchMedia`. **Guardrail:** the flag comes from `useReducedMotion()` in `DriveScene`, which framer-motion already resolves safely, and is passed down as a prop; the canvas must never query it itself during render.
 41. *Failure (cycle 11): the canvas effect not re-running when the preference flips.* `RoadCanvas` builds its draw loop inside a `useEffect` keyed on `[drive]`; adding a prop it reads without adding it to the deps would silently keep the old value. **Guardrail:** include the flag in the dependency array and confirm a change actually re-subscribes.
 42. *Failure (cycle 11): "verifying" reduced motion by reading the code.* Every one of these four mechanisms is an assertion until exercised. **Guardrail:** patch `matchMedia` before hydration and prove each one from observable state — pixels for the traffic, the frame counter for the carousel, `travel`/odometer for the throttle.
@@ -103,7 +106,44 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 11's list is fully resolved — see Done. The Planner fills this for cycle 12.)*
+*(cycle 12's list is fully resolved — see Done. The Planner fills this for cycle 13.)*
+
+<details>
+<summary>Cycle 12's list (resolved — kept for context)</summary>
+
+### CYCLE 12
+
+Another **Suggester** pass (backlog still held). It checked two things nobody had: focus visibility, and **landscape
+phone** — a viewport a driving interface is unusually likely to meet, and one that had never been measured.
+
+- [ ] **1. The arrival panel is hidden behind the cockpit on short viewports** *(new, cycle 12)*
+  - **Why:** on a landscape phone the panel — the thing that carries every word of the résumé — runs 71px *underneath*
+    the dashboard, so its bottom is simply not visible.
+  - **Evidence (measured at 840x386, and it survives the guardrail-36 transform check):** the panel container computes
+    to `y 54 → 247` while the dash starts at `y 176`. Neutralising the frozen entry transform leaves the settled panel
+    at exactly the same box, so this is layout, not animation.
+  - **Root cause, confirmed arithmetically:** `Dashboard` is `h-[36%] min-h-[210px]`; `DriveScene`'s panel container is
+    `bottom-[36%]`. On a 386px-tall viewport 36% is 139px, so the dash's **min-height wins at 210px** while the panel
+    still reserves only 139px. 210 − 139 = **71px**, exactly the overlap measured. The two express the same quantity in
+    two places and disagree whenever the floor engages.
+  - **Fix:** express the dash height once, as a value that already accounts for the floor, and have both the dash and
+    the panel container use it — so they cannot drift apart.
+  - **Files:** `src/components/drive/Dashboard.jsx`, `src/components/drive/DriveScene.jsx`.
+  - **Done when:** at 840x386 the panel's settled bottom is at or above the dash's top, and nothing regresses at
+    1920x950 or 390x844.
+- [ ] **2. Cockpit eats more than half the screen in landscape** *(new, cycle 12 — guardrail 3)*
+  - **Why:** guardrail 3 requires the drivable glass to stay >= ~50% of viewport height. Measured at 840x386 the dash
+    is **54.4%**, leaving only **45.6%** of glass — you can barely see the road on a landscape phone.
+  - **Done when:** either the glass share is brought back to >= 50% *without* making the cockpit controls unusable, or
+    — if the controls genuinely cannot fit — the trade-off is measured and recorded rather than silently accepted.
+- [ ] **3. Focus visibility** *(new, cycle 12 — investigated, closed)*
+  - Checked because drive mode defines no focus styles of its own. Every control computed `outline-style: none`, but
+    that reading came from **programmatic** `.focus()`, which does not match `:focus-visible` — so it proves nothing.
+    A grep across `tailwind.css`, `base.css`, `components.css`, `utilities.css` and all drive components found **no
+    author rule removing outlines**, so the browser default ring applies for real keyboard focus. **No defect; no
+    change made.**
+
+</details>
 
 <details>
 <summary>Cycle 11's list (resolved — kept for context)</summary>
@@ -460,6 +500,10 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C12-1. Arrival panel no longer hides behind the cockpit on short viewports** — on a landscape phone the panel ran **71px underneath** the dash, hiding the bottom of the résumé content. Root cause found arithmetically: the dash height was written twice in different units — `Dashboard` `h-[36%] min-h-[210px]` vs `DriveScene` `bottom-[36%]`. At 386px tall, 36% = 139px so the **min-height won at 210px** while the panel reserved only 139px; 210 - 139 = **71px**, exactly the measured overlap. Both now consume a single expression, `clamp(190px,36%,48%)`, so they cannot drift apart (guardrail 43). Measured before/after at 840x386: overlap **71px -> 0**, and it survived the guardrail-36 frozen-transform check both times. Commit `c71b624`.
+- **C12-2. Cockpit no longer eats more than half a landscape screen** — the same change brought the drivable glass from **45.6% -> 50.8%**, back over guardrail 3's 50% floor. No regression at other sizes: 1916x946 unchanged at 36% dash / 64% glass with 32px of panel clearance; 386x840 unchanged at 36% / 64%.
+- **C12-3. Focus visibility - investigated, no defect** — every control computed `outline-style: none`, but from **programmatic** `.focus()`, which does not match `:focus-visible`, so it proved nothing (guardrail 45). A grep across `tailwind.css`, `base.css`, `components.css`, `utilities.css` and every drive component found **no author rule removing outlines**, so the browser default ring applies to real keyboard focus. No change made.
+- **C12-4. "Controls below the viewport" - investigated, no defect** — a sweep flagged a control 156px below the fold at 840x386. It was the **`sr-only` itinerary's** per-stop links, ~144px apart down the document: visually hidden crawlable content behaving as intended. The cockpit's own stack fits precisely inside the dash (cluster 206-280, trip computer compressed to 20px, controls 316-378, dash 196-386). Dismissed rather than "fixed".
 - **C11-1. Oncoming traffic respects `prefers-reduced-motion`** — a regression this branch introduced in cycle 7, found and fixed before any human saw it. `grep -c reducedMotion src/components/drive/RoadCanvas.jsx` returned **0**, while every other mechanism in drive mode honours the preference. Because cars advance from `performance.now()` deltas rather than `sim.travel`, a visitor asking for less motion still got headlights sliding toward them **while parked**. Now not drawn at all under the preference (frozen cars would read as wreckage in a live carriageway; an empty road is the coherent state the page had pre-cycle-7). Commit `eef571b`.
   - **Proven by pixel comparison, not by reading the code.** The scene is fully deterministic at a given exit, so two loads of `?exit=6` — one with `matchMedia` patched to report reduced motion, one without — can differ *only* where traffic is drawn. **185 samples changed, confined to a 30x32px box at the vanishing point**; every other pixel identical, which also validates the method.
 - **C11-2. The whole reduced-motion contract, swept end to end** — four mechanisms claimed it and none had been exercised together. All hold: **traffic** absent (above); **throttle** jumped `EXIT 06 -> EXIT 07` with no intermediate driving state, confirming `useDrive` substitutes a jump for animated travel; the **arrival panel** computed `transform: none`, i.e. the opacity-only variant rather than the projecting one; and the **carousel** was already proven in cycle 2 (counter held `1/4` across 11s while the dots still worked).

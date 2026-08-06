@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 11 · branch `feat/drive-mode` · 21 commits, nothing pushed
+**Last updated:** end of cycle 12 · branch `feat/drive-mode` · 23 commits, nothing pushed
 
 ---
 
@@ -26,50 +26,55 @@ the image. It's starred at the top of the Needs-human section of `overnight-task
 that file is outside the scope you set, and you have uncommitted edits in that area.
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
-sitemap** — these compound, so fixing one alone won't surface the page. Patches are in the same section.
+sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
 
 ---
 
-## Cycle 11 — I broke something in cycle 7 and caught it
+## Cycle 12 — landscape phone was quietly broken
 
-Drive mode honours `prefers-reduced-motion` deliberately: holding the accelerator **jumps** you to the next exit
-instead of animating the road past you, the screenshot carousel doesn't autoplay, the arrival panel fades instead of
-swinging up, and the star twinkle and ignition pulse stop.
+Nobody had ever measured drive mode on a **landscape phone**, which is an odd omission for a driving interface. It was
+broken in two ways at once:
 
-The oncoming traffic I added in cycle 7 respected none of it. Because the cars run on a wall clock rather than on your
-travel, someone who had asked their system for less motion still got **headlights sliding toward them while parked at a
-stop** — exactly what that setting exists to prevent. Now they simply aren't drawn, which restores the empty road the
-page had before cycle 7. Freezing them instead would have left cars sitting in a live carriageway looking like wreckage.
+- The **arrival panel ran 71px underneath the dashboard**, so the bottom of the résumé content was simply invisible.
+- The cockpit ate **54% of the screen**, leaving under half for the road.
 
-**How I proved it, given I can't watch animation here:** the scene is fully deterministic at a given exit — same
-travel, same light, same roadside. So two loads of the same exit, one with the motion preference forced on, can differ
-*only* where traffic is drawn. They differed in **185 pixels, all inside a 30×32px box at the vanishing point**, and
-were otherwise identical. That identity is the control: it confirms nothing else varies, so the difference is the cars.
+The cause turned out to be arithmetic, which is the satisfying kind. The dash height was written **twice, in different
+units** — the dashboard said "36% tall, but never less than 210px", while the panel reserved space assuming a flat 36%.
+On a 386px-tall screen 36% is 139px, so the 210px floor won and the two disagreed by exactly 210 − 139 = **71px** —
+precisely the overlap measured. Both now read from one expression, so they can't drift apart again.
 
-While I was there I swept the **whole** reduced-motion contract, which no cycle had ever tested together. All four hold:
-traffic gone, throttle jumped `EXIT 06 → EXIT 07` with no driving in between, the panel used its plain-fade variant,
-and the carousel stays put (proven back in cycle 2).
+Result: overlap **71px → 0**, road visibility **45.6% → 50.8%**. Desktop and portrait phone are unchanged.
+
+### Two alarms I deliberately didn't act on
+
+Both would have been easy — and wrong — to "fix":
+
+- **"No focus indicator anywhere."** Every control reported no outline. But that reading came from *scripted* focus,
+  which by design doesn't trigger the browser's focus ring. Nothing in your stylesheets removes outlines, so real
+  keyboard users get the normal ring. No change made.
+- **"A control is 156px below the screen."** It was the screen-reader-only résumé block's per-stop links, marching down
+  the document as they should. The actual cockpit fits its space exactly. Acting on it would have shrunk something that
+  was already correct.
 
 ---
 
 ## Where the drive stands
 
-Your three original asks shipped in cycle 1 (with (c) flagged above for the classic site). Ten cycles since went into
-the standing brief:
+Your three original asks shipped in cycle 1 (with (c) flagged above for the classic site). Eleven cycles since went
+into the standing brief:
 
 a driver's-POV cockpit with working instruments · an arrival panel with auto-cycling full-bleed screenshots ·
 dusk-to-dawn light that advances with your career · real interstate guide signs · per-leg roadside character ·
 a trip computer counting the actual years · deep links to any exit · oncoming traffic · mile markers ·
-resume-where-you-left-off · opt-in engine sound · a keyboard-accessible route map · and a reduced-motion path that
-actually holds together.
+resume-where-you-left-off · opt-in engine sound · a keyboard-accessible route map · a reduced-motion path that holds
+together · and a cockpit that now fits a landscape phone.
 
 ---
 
 ## Parked, all needing a foreground browser window
 
-Frame rate while driving; audible engine output; and focus returning to the button when you close the route map. All
-three need a Chrome window that's genuinely in front — animation, timers and focus are all suspended in a backgrounded
-tab. Not something I can arrange from here.
+Frame rate while driving; audible engine output; and focus returning to the button when you close the route map.
+Animation, timers and focus are all suspended in a backgrounded tab, which isn't something I can arrange from here.
 
 ---
 
