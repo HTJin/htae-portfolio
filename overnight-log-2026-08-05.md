@@ -1136,3 +1136,40 @@ So the guard earns its place. The only free band is **1040-1119px** — 10-30px 
 **The honest read.** Two cycles in a row with nothing shipped is not a reason to stop, and I have not stopped — but it is a signal worth writing down rather than papering over with invented work. Drive mode is now covered from several directions: geometry at eight viewport sizes, reduced motion, no-JavaScript, zoom, theme, focus order, the route boundaries, image bytes and quality, and now history, CSS and markup completeness. **The highest-value work left is parked in Needs human**, chiefly the classic site's `Projects.jsx` — which is the *other half of the owner's own priority (c)* and sits outside this run's write scope. The next Suggester should widen the angle rather than re-probe anything in the exclusion list now at the top of the task file.
 
 **Exit.** No commit to `src/`. -> `Cycle: 48 / Phase: Suggester` (backlog still dry).
+
+## Cycle 48
+
+**Suggester — widened from measuring to looking.** Two cycles of condition-probing had found nothing, so this pass went at the panel itself.
+
+**First, a check that could have been ugly.** `StopCard.jsx:258` puts `line-clamp-2 lg:truncate` on the stop title — from `lg` up it is clipped to one line, and a truncated job title is a bad thing to ship on a résumé. Swept **all 21 stops** at **1440×900**, **1280×800** and **1024×800** (the tightest case: `truncate` active while the card is narrowest). **0 of 21 truncated** at every width. Clean.
+
+**Then, looking at EXIT 12, something a measurement would never have flagged.** The description ends:
+
+> ...featured on Colab's highlighted projects page: https://www.joincolab.io/product/matrimoni
+
+A raw URL, rendered as **dead text** — `p.querySelector('a')` returned `null`. To follow it you had to select 43 characters by hand, which on a phone is not a reasonable thing to ask of someone reading a résumé.
+
+**Scoped before fixing.** Grepped the whole content set: this is the **single** bare URL in any stop's prose; the ones in `education.js` are `href` fields already rendered as links. And I checked the obvious wrong diagnosis first — at **390×844** and **360×780** the paragraph's overflow is **0px** and the page has no horizontal scroll, so the URL wraps fine. The fault was that it was **dead**, not that it spilled.
+
+**The copy is not mine to change.** The text lives at `src/lib/projects.js:16`, read-only under the Guardrails. So the words pass through exactly as written and only the link is added — built as **React elements, never `dangerouslySetInnerHTML`** (guardrail 159), because turning content text into markup is how an innocent linkifier becomes an injection.
+
+**The regex was tested against the cases that do *not* ship** (guardrail 160), since the one string that does ship ends with no punctuation and would have proved nothing:
+
+| input | matched |
+|---|---|
+| `https://a.dev/x.` | `https://a.dev/x` — full stop stays out |
+| `https://a.dev/x,` | `https://a.dev/x` |
+| `(https://a.dev/x)` | `https://a.dev/x` |
+| `https://a.dev/x;` | `https://a.dev/x` |
+| `https://a.dev/x?` | `https://a.dev/x` |
+| two URLs in one line | both |
+| `version 1.2.3, a/path, mail@x.dev` | **nothing** |
+
+**Verified:**
+- the paragraph's `textContent` is **character-for-character identical** to the string in `src/lib/projects.js` — compared against the extracted source, not eyeballed (guardrail 158)
+- **exactly one** anchor: `href` === visible text === the URL as written, `target="_blank"`, `rel="noopener noreferrer"`
+- swept all 21 stops: **21/21 render**, exactly **one** prose anchor on the whole route, **zero** added to the other 20 (guardrail 161)
+- the hidden itinerary **deliberately does not linkify** (guardrail 162) — adding a focusable anchor inside the `sr-only` block would put a tab stop back into the very region cycle 33 spent a cycle letting keyboards skip; confirmed it gained no link
+- console clean on a **fresh load** — the first console read was taken on an already-loaded page, which the tool warns proves nothing, so it was re-run after a reload
+
+**Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.4 kB). One commit: `4a54a2e`. -> `Cycle: 49 / Phase: Planner`.

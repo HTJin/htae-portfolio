@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 47 · branch `feat/drive-mode` · 58 commits, nothing pushed
+**Last updated:** end of cycle 48 · branch `feat/drive-mode` · 60 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,35 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 48 — a link that was not a link
+
+After two cycles of measuring conditions and finding nothing, this one went back to simply **looking** at the panel —
+and found something no measurement would have flagged.
+
+The **Matrimoni** description ends with a web address: *"...featured on Colab's highlighted projects page:
+https://www.joincolab.io/product/matrimoni"*. It was plain text. Not a link. To follow it, a visitor had to select
+43 characters by hand — awkward on a desktop, genuinely annoying on a phone, and it reads as unfinished on a page
+whose whole job is to present you as someone careful.
+
+It is now a link. **Your words are untouched** — that description lives in a file this run treats as read-only, so the
+sentence is passed through exactly as you wrote it and only the link was added. I checked that by comparing the
+rendered paragraph against the source text character for character, rather than reading it and deciding it looked
+the same.
+
+The part that needed care is that a change like this can quietly rewrite text it was never meant to touch. So the
+pattern was tested against sentences ending in a full stop, a comma, a bracket, a semicolon and a question mark —
+none of which end up inside the link — and against a line containing a version number, a file path and an email
+address, which it correctly leaves alone. All 21 stops still render, and no link was added to any of the other 20.
+
+**One thing you might want to change yourself:** the sentence quotes a bare web address mid-paragraph. It works now,
+but if you would rather it read *"featured on Colab's highlighted projects page"* with the link on those words, that
+is an edit to your own copy — yours to make, not mine.
+
+Also checked this cycle: your stop titles are clipped to a single line on desktop, so I swept all 21 at three widths
+to be sure none is cut off. None is.
 
 ---
 

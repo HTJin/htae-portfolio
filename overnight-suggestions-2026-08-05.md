@@ -436,4 +436,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Source:** an earlier cycle found a function that was dead code carrying false documentation, so the same audit was run against the stylesheet and the server-rendered markup.
   - **Outcome:** **Both clean.** The stylesheet defines 25 classes and the components use 25 - no orphaned rules, and no reference to a class that does not exist (which would silently render a broken `class="undefined"`). The served HTML carries a heading for every one of the 21 stops, grouped into the 6 legs, so nothing on the route is missing from what a screen reader or a search engine sees.
 
+- [ ] **S81 - Is any stop's title being cut off?** - Status: Done (no defect) - Cycle: 48
+  - **Source:** the panel clips stop titles to a single line on desktop, and a truncated job title would be a bad thing to ship on a resume.
+  - **Outcome:** **Clean.** All 21 stops checked at three widths including the tightest case, where the clipping is active and the panel is at its narrowest. Nothing is cut off anywhere.
+
+- [ ] **S82 - A raw URL sat in a project description as dead text** - Status: Done - Cycle: 48
+  - **Source:** looking at the panel rather than measuring it, after two cycles of condition-probing found nothing.
+  - **Why / expected impact:** the Matrimoni description ends "...featured on Colab's highlighted projects page: https://www.joincolab.io/product/matrimoni" and that URL was plain text, not a link. To follow it a visitor had to select 43 characters by hand - awkward on a desktop, genuinely annoying on a phone, and it reads as unfinished on a page whose job is to present you as someone careful.
+  - **Outcome:** **Shipped** in `4a54a2e`. The URL is now a link. **Your words are untouched** - the description lives in a file this run treats as read-only, so the text is passed through character-for-character and only the link was added; I verified that by comparing the rendered paragraph against the source string rather than reading it and deciding it looked the same. It also cannot run away with your copy: the pattern was tested against sentences ending in a full stop, a comma, a bracket, a semicolon and a question mark (none of which end up inside the link), and against a line containing a version number, a file path and an email address, which it correctly leaves alone. All 21 stops still render, with no link added to any of the other 20.
+  - **One thing you may want to change yourself:** the sentence quotes a bare URL mid-paragraph. It is now clickable, but if you would rather it read as *"featured on Colab's highlighted projects page"* with the link on those words instead, that is an edit to your own copy - which is yours to make, not mine.
+
 *(Check the box once you've reviewed the outcome.)*

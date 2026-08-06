@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Suggester
-**Cycle:** 48
+**Phase:** Planner
+**Cycle:** 49
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -464,6 +464,23 @@
      an intermediate exit that GO is still enabled **and still accelerates the car** — a regression here would break
      the primary control of the whole page.
 
+### Cycle 48 pre-mortem (guardrails for this cycle's tasks)
+
+158. **Do not touch a character of the owner's copy.** The paragraph is read-only content. The rendered text must be
+     **identical** to the source string — same words, same punctuation, same spacing. Prove it by comparing the
+     paragraph's `textContent` against the string in `src/lib/projects.js`, not by reading it and deciding it looks
+     right.
+159. **React elements, never `dangerouslySetInnerHTML`.** Building HTML from content text is how an innocent
+     linkifier becomes an injection. Split the string and return an array of strings and `<a>` elements.
+160. **Do not swallow trailing punctuation.** A URL that ends a sentence must not take the full stop, the closing
+     bracket or the comma into its `href`. This one ends the paragraph with no trailing punctuation, so the regex
+     must be tested against a case that *does* have it rather than only against the string that happens to ship.
+161. **Every other stop must be untouched.** 20 of the 21 stops have no URL in their prose. Verify they render with
+     **zero** anchors added — a greedy pattern that matches something else (a version number, a path, an email)
+     would quietly rewrite the résumé.
+162. **The hidden itinerary renders the same paragraphs** (`DriveScene.jsx:110`). Decide deliberately whether it
+     changes, and say which — do not leave it as an accident.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -479,16 +496,45 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 48
+## Tonight's tasks (in order) — CYCLE 49
 
-_Not yet planned — backlog still dry, so cycle 48 opens at **Suggester**._
+_Not yet planned — the Planner writes this list next._
 
-> **Two cycles running with nothing shipped (46, 47).** Not a reason to stop — but the honest read is that drive mode
-> is now well covered, and the highest-value work left is **parked in Needs human**, not in the backlog. A future
-> Suggester should widen the angle rather than re-probe: **already excluded** are the ignition splash, the MILE 0
-> mirror, reduced motion, wide/short viewport geometry, the carousel's pause behaviour, browser history, the CSS
-> module, and itinerary completeness.
+<details>
+<summary>Cycle 48's list (resolved — kept for context)</summary>
 
+### CYCLE 48
+
+Backlog dry, so this was a Suggester pass — and after two cycles of condition-probing it deliberately widened to
+**looking at the panel** rather than measuring it again.
+
+**Clean — stop titles are never truncated.** `StopCard.jsx:258` puts `line-clamp-2 lg:truncate` on the stop title,
+which clips it to a single line from `lg` up — a cut-off job title would be a bad fault on a résumé. Swept **all 21
+stops** at **1440×900**, **1280×800** and **1024×800** (the tightest case: `truncate` is active while the card is at
+its narrowest): **0 of 21 truncated** at every width.
+
+- [x] **1. A raw URL sits in the panel as dead text** — **DONE**
+  - **Evidence:** EXIT 12's description ends *"...featured on Colab's highlighted projects page:
+    https://www.joincolab.io/product/matrimoni"*. Measured in the rendered panel: the paragraph contains that URL and
+    `p.querySelector('a')` is **null** — it is plain text. A visitor who wants it has to select a 43-character URL by
+    hand, and on a phone that is a genuinely awkward thing to ask.
+  - **It is the only one.** Grepped the whole content set: this is the **single** bare URL in any stop's prose. The
+    other URLs in `education.js` are `href` fields, already rendered as proper links.
+  - **Not a layout bug (checked before assuming).** At **390×844** and **360×780** the paragraph's overflow is **0px**
+    and the page has no horizontal scroll — the URL wraps. This is about it being dead, not about it spilling.
+  - **The copy is not mine to change.** The text lives at `src/lib/projects.js:16`, which the Guardrails make
+    **read-only**. So the fix is presentational: render the owner's exact words, with the URL inside them as a link.
+  - **Files:** `src/components/drive/StopCard.jsx` (`StopProse`, `:110-120`).
+  - **Done when:** EXIT 12's paragraph renders **exactly one** `<a>` whose `href` and visible text both equal the URL
+    as written; the surrounding words are **character-for-character unchanged**; every other stop's prose renders with
+    **no** anchor added; and all 21 stops still render.
+
+</details>
+
+<details>
+<summary>Cycle 47's list (resolved — kept for context)</summary>
+
+### CYCLE 47
 <details>
 <summary>Cycle 47's list (a verification-only cycle — nothing shipped, kept for context)</summary>
 
@@ -1954,6 +2000,25 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C48.0 — No stop title is truncated** *(cycle 48 — verification)* — `StopCard.jsx:258` clips the title to a
+  single line from `lg` up (`line-clamp-2 lg:truncate`), and a cut-off job title would be a bad thing to ship on a
+  résumé. Swept **all 21 stops** at **1440×900**, **1280×800** and **1024×800** — the tightest case, where `truncate`
+  is active while the card is at its narrowest: **0 of 21 truncated** at every width.
+- **C48.1 — The URL in EXIT 12's description is a link now** *(cycle 48, commit `4a54a2e`)* — the description ends
+  *"...featured on Colab's highlighted projects page: https://www.joincolab.io/product/matrimoni"* and rendered as
+  **dead text** (`p.querySelector('a')` was `null`), so following it meant selecting 43 characters by hand. It is the
+  **only** bare URL in any stop's prose — the ones in `education.js` are `href` fields and were already links. **Not
+  a layout bug** (checked first): at 390×844 and 360×780 the paragraph's overflow is **0px** with no horizontal page
+  scroll. The copy is **read-only** (`src/lib/projects.js`), so the words pass through untouched and only the link is
+  added, as **React elements rather than HTML** (guardrail 159). **Verified:** the paragraph's `textContent` is
+  **character-for-character identical** to the source string (guardrail 158); **exactly one** anchor with
+  `href === visible text === the URL`, `target="_blank"`, `rel="noopener noreferrer"`; the trailing-punctuation class
+  tested against cases that *do not ship* (guardrail 160) — full stop, comma, bracket, semicolon, question mark all
+  stay **outside** the href, two URLs in a line both match, and `version 1.2.3, a/path, mail@x.dev` matches **nothing**;
+  **all 21 stops render** with **zero** anchors added to the other 20 (guardrail 161); and the hidden itinerary
+  **deliberately does not linkify** (guardrail 162) — a focusable anchor there would put a tab stop back inside the
+  `sr-only` block cycle 33 worked to let keyboards skip. Console clean on a fresh load.
 
 - **C47.0 — Five more angles, all clean** *(cycle 47 — verification only)* — **the carousel** already pauses on
   hover and on focus and tears the timer down while paused, so it never flips away from a screenshot someone is
