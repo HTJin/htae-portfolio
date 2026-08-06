@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 28
+**Cycle:** 29
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -270,6 +270,20 @@
 95. **MILE 0 must stay put.** At index 0 the correct scroll position is 0; a fix that always centres would push the
     top of the list under the header for the one case that was already right.
 
+### Cycle 28 pre-mortem (guardrails for this cycle's tasks)
+
+96. **The destination is out of scope.** Cycles 14 and 23 composed that panel deliberately — email as the primary
+    action, the derived trip summary, the phone fit. It overflows by 0. Columns must not touch it.
+97. **Never nest columns inside the project stops' grid.** Those already split media from prose; adding a second
+    column context inside would produce a layout nobody designed. Apply only where there are no screenshots.
+98. **Phones stay one column.** Everything here is `lg` and up. Re-measure 390×844 and 844×390 to prove the rule did
+    not leak down, the same way cycles 25 and 26 proved their height breakpoints did not leak up.
+99. **Check horizontal overflow explicitly.** Multi-column inside a scrolling box can overflow in the inline
+    direction instead of the block direction. It measured 0 in trials, but the built version must be re-measured — a
+    trial is not the shipped code.
+100. **A short stop must not look broken.** Two columns with three bullets can read as a mistake. Look at exit 02 in a
+    screenshot before calling this done, and narrow the rule if it reads badly.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -285,9 +299,53 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 28
+## Tonight's tasks (in order) — CYCLE 29
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 28's list (resolved — kept for context)</summary>
+
+### CYCLE 28
+
+Backlog dry, so a **Suggester** pass — this one an exhaustive sweep of **all 21 exits**, which had never been done:
+only about seven had ever been opened individually across 27 cycles.
+
+**The sweep itself came back clean** and that is worth recording: every stop renders its card, the counters run 1/21
+through 21/21 correctly, all **28 screenshots across the 8 project stops load** (0 broken), links are present where the
+content has them, the arrival announcer names the right exit every time, and there were **zero console errors or
+warnings** across the whole route. What it did surface is a layout asymmetry.
+
+- [x] **1. The stops with the most to say get the least room** — **DONE**
+  - **Evidence (measured at 1440×900, panel band 1440×450):** a stop **with screenshots** widens to **925px**
+    (`lg:w-[min(94vw,58rem)]`). A stop with **only text** stays at **704px** — and three of them overflow:
+    | exit | stop | content | visible | hidden |
+    |---|---|---|---|---|
+    | 04 | Sabbatical / COVID / Family | 552px | 326px | **226px — 40.9%** |
+    | 19 | Pit stop — the toolbox | 410px | 326px | 84px — 20.5% |
+    | 10 | Senior MES DevOps Engineer | 384px | 326px | 58px — 15.1% |
+    So the stop with *pictures* gets the room and the stop with *prose* does not, while **736px of the band sits
+    unused** on either side. On a 1440×900 laptop two fifths of a role's detail is below a fold a recruiter may
+    never scroll.
+  - **Why widening alone is the wrong fix, and how that was established:** at 704px the paragraphs already run ~648px
+    — about **100 characters** a line, past the comfortable range. Widening to 928px measured **exit 10 -> 0 hidden,
+    exit 19 84 -> 44, exit 4 226 -> 106**, but pushes lines to ~135 characters. That trades a fold for a readability
+    regression.
+  - **What was measured instead:** widening **and** flowing the prose in two balanced columns — the same structural
+    idea the project stops already use — gives **exit 10 58 -> 0**, **exit 19 84 -> 0**, **exit 4 226 -> 94**
+    (40.9% -> 22.4%), *and* takes the paragraph measure to **412px, about 63 characters** — better than today on
+    both axes. Horizontal overflow was checked in two separate implementations and measured **0** in both.
+  - **Scope, deliberately narrow:** experience and toolbox stops only. Project stops already have a two-column
+    media/prose layout, and the **destination is excluded** — its summary band and primary call to action were
+    deliberately composed in cycles 14 and 23, it overflows by 0, and splitting it into columns would undo that work.
+  - **Files:** `src/components/drive/StopCard.jsx`.
+  - **Done when:** at 1440×900 exits 10 and 19 hide **0px** and exit 4's hidden share drops from 40.9% to about 22%;
+    the paragraph measure narrows rather than widens; **no horizontal overflow at any viewport**; project stops and the
+    destination are **unchanged**, measured; phones stay single-column below `lg`, measured; and a short experience
+    stop (exit 02, three bullets) is checked in a screenshot so two columns do not read as broken when there is little
+    to put in them.
+
+</details>
 
 <details>
 <summary>Cycle 27's list (resolved — kept for context)</summary>
@@ -1146,6 +1204,28 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C28.0 — All 21 exits swept, and they are clean** *(cycle 28)* — the first exhaustive pass of the route; about
+  seven stops had ever been opened individually across 27 cycles. Every stop renders its card, counters run **1/21
+  through 21/21**, all **28 screenshots across the 8 project stops load (0 broken)**, links are present where the
+  content has them, the arrival announcer names the right exit every time, and there were **zero console errors or
+  warnings** for the whole route. Recorded as a result, not a non-event: it is the first evidence that the content
+  layer is sound end to end.
+- **C28.1 — The text-only stops get the room the picture stops already had** *(cycle 28, commit `6dcdd2e`)* — at
+  1440×900 a stop **with screenshots** widened to 925px while a stop with **only text** stayed at 704px, and three
+  overflowed: EXIT 04 **40.9% hidden**, EXIT 19 20.5%, EXIT 10 15.1% — with **736px of the band unused** either side.
+  The stop with pictures got the room; the stop with prose did not. **Widening alone was measured and rejected:** it
+  fixes the fold but takes lines from ~100 to ~135 characters. Widening **and** flowing the prose in two balanced
+  columns fixes the fold *and* brings the measure to ~63 characters. **Verified:** EXIT 04 **226 -> 94px hidden**
+  (40.9% -> 22.4%) with the paragraph measure **648 -> 412px**; EXIT 19 **84 -> 0**; EXIT 10 **58 -> 0**; the
+  destination untouched at 704px/0 (guardrail 96) and project stops untouched at 928px/0 (guardrail 97); **no
+  horizontal overflow anywhere** (guardrail 99); phones stay single column, computed `column-count: auto` at 390×844
+  and 844×390 versus `2` only at `lg` (guardrail 98); and EXIT 02, a three-bullet stop, reads as two deliberate
+  columns in a screenshot (guardrail 100).
+  **The first build was worse than the trial, and the sweep caught it:** `break-inside-avoid` on *every direct child*
+  stops the big blocks — the whole bullet list, the toolbox grid — from splitting at all, so the columns cannot
+  balance and the content gets **taller**. The toolbox went **84 -> 261px hidden** and the senior role **58 -> 154**.
+  Scoped to list items only, it matches the trial exactly.
 
 - **C27.1 — The route map opens at the exit you are at** *(cycle 27, commit `89803a6`)* — the map highlights the
   current exit and then opened at MILE 0 every time. Measured, `scrollTop` on open was **0** and the highlighted row

@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 27 · branch `feat/drive-mode` · 42 commits, nothing pushed
+**Last updated:** end of cycle 28 · branch `feat/drive-mode` · 43 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,41 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 28 — I opened all 21 exits, and gave your words the same room as your screenshots
+
+Across twenty-seven cycles I had only ever opened about seven of the twenty-one exits individually. So this pass
+opened **every one**. The good news first: it is clean. Every stop renders, the counters run 1/21 to 21/21, **all 28
+of your screenshots load**, the links are where they should be, and there was not a single console error on the whole
+route. That is the first end-to-end proof that the content itself is sound.
+
+**What it did turn up is that your writing was getting less space than your pictures.** On a 1440×900 laptop, a stop
+with screenshots widens to 925 pixels. A stop with only text stayed at 704 — and three of them ran off the bottom:
+
+| exit | stop | hidden below the fold |
+|---|---|---|
+| 04 | Sabbatical / COVID / Family | **40.9%** |
+| 19 | Pit stop — the toolbox | 20.5% |
+| 10 | Senior MES DevOps Engineer | 15.1% |
+
+Two fifths of the sabbatical entry — the one that explains a gap on a résumé, so probably the one you least want
+missed — sat below a fold, while 736 pixels of the panel area went unused on either side.
+
+The obvious fix is "make it wider", and I measured that and turned it down: it fixes the fold but stretches your lines
+to about 135 characters, which is genuinely hard to read. Making it wider **and** letting the text flow in two columns
+fixes the fold *and* brings your lines down to about 63 characters — better on both counts. Two of the three stops now
+hide nothing at all; the sabbatical drops from 40.9% to 22.4%. Your project stops and the final destination panel are
+deliberately untouched, and phones stay single-column.
+
+**One thing I got wrong first, and how it surfaced.** My initial build added a rule to stop blocks splitting across
+columns, which sounded sensible. It made things *worse* — the toolbox went from hiding 84 pixels to 261 — because a
+block that cannot split cannot balance either. I only knew because I re-ran the measurements against the actual build
+rather than trusting the earlier trial. Scoped down to individual list items, it does what the trial promised.
+
+**Still not perfect:** the sabbatical entry hides about a fifth of itself. Closing that gap would mean shortening your
+own words, which is your call and not mine.
 
 ---
 

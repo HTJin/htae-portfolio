@@ -588,3 +588,35 @@ On a landscape phone that is scrolling most of a twenty-one row list to find you
 - screenshot at 844×390 shows EXIT 13 centred with EXIT 12 and EXIT 14 either side
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20 kB). One commit: `89803a6`. -> `Cycle: 28 / Phase: Planner`.
+
+## Cycle 28
+
+**Suggester.** Backlog dry, so this pass did something no cycle had done: opened **all 21 exits** and checked each one. Roughly seven had ever been examined individually.
+
+**The sweep came back clean, and that is a result worth writing down.** Every stop renders its card; the counters run 1/21 through 21/21 correctly; all **28 screenshots across the 8 project stops load**, none broken; links appear wherever the content has them; the arrival announcer names the right exit each time; and there were **zero console errors or warnings** across the whole route. This is the first end-to-end evidence that the content layer is sound.
+
+**What it did surface was an asymmetry.** At 1440×900 the panel band is 1440×450. A stop **with screenshots** widens to 925px; a stop with **only text** stayed at 704px — and three of them overflowed:
+
+| exit | stop | content | visible | hidden |
+|---|---|---|---|---|
+| 04 | Sabbatical / COVID / Family | 552px | 326px | **226px, 40.9%** |
+| 19 | Pit stop — the toolbox | 410px | 326px | 84px, 20.5% |
+| 10 | Senior MES DevOps Engineer | 384px | 326px | 58px, 15.1% |
+
+The stop with *pictures* got the room and the stop with *prose* did not, while **736px of the band sat unused** either side. On a laptop, two fifths of a role's detail sat below a fold a recruiter may never scroll.
+
+**Widening alone was measured and rejected.** At 928px: EXIT 10 -> 0 hidden, EXIT 19 84 -> 44, EXIT 04 226 -> 106. But the paragraphs already run ~100 characters a line at 704px, and widening pushes that to ~135 — trading a fold for a readability regression. Widening **and** flowing the prose in two balanced columns was measured instead: EXIT 10 -> 0, EXIT 19 -> 0, EXIT 04 226 -> 94, **and** the paragraph measure down to 412px, about 63 characters. Better on both axes, so that is what was built.
+
+**The first build was worse than the trial, and the verification caught it.** The trial used a plain two-column rule; the build added `break-inside-avoid` on every direct child, which seemed prudent and was not: it stops the big blocks — the whole bullet list, the toolbox's group grid — from splitting at all, so the columns cannot balance and the content grows **taller**. Measured: the toolbox went **84 -> 261px hidden** and the senior role **58 -> 154**, i.e. worse than before the change. Scoped to list items only, the shipped version matches the trial exactly. The lesson is the one guardrail 99 half-anticipated: *a trial is not the shipped code*, and the sweep has to be re-run against the build.
+
+**Verified on the production build:**
+- EXIT 04 **226 -> 94px hidden** (40.9% -> 22.4%), paragraph measure **648 -> 412px**
+- EXIT 19 **84 -> 0**, EXIT 10 **58 -> 0**
+- destination untouched (704px, 0 hidden) and project stops untouched (928px, 0 hidden)
+- **no horizontal overflow** in the scroller or the document at any viewport
+- phones single column — computed `column-count: auto` at 390×844 and 844×390, `2` only at `lg`
+- screenshot of EXIT 02 (three bullets) shows two deliberate columns, not a broken layout
+
+**Honest residual:** EXIT 04 still hides 22.4%. Closing that would mean cutting the owner's own résumé copy, which is not this loop's call.
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.1 kB). One commit: `6dcdd2e`. -> `Cycle: 29 / Phase: Planner`.
