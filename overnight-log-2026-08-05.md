@@ -461,3 +461,25 @@ The before/after pixel capture used the cycle-19 iframe technique with the host 
 **Verified on the production build at EXIT 13:** exactly **one** image exposed and it is the one at `opacity: 1` (guardrail 67 — a count of one would not have proved the *right* one), still true after the carousel advanced from 3 of 4 to 4 of 4 (guardrail 68); every dot target **24×24**; neighbour overlap **0px**; pills unchanged at 6×6 and 20×6; and a zoomed screenshot confirms the row still reads as three dots and a pill.
 
 **Exit.** `next lint` clean (after a first build failed on a JSX comment placed inside a ternary's expression slot — caught by the build, fixed, rebuilt), `npm run build` compiles (`/drive` 19.7 kB). One commit: `2f62f6d`. -> `Cycle: 23 / Phase: Planner`.
+
+## Cycle 23
+
+**Suggester.** Backlog dry, so a fresh pass aimed at the owner's priority (b) — the destination panel — on a **phone**. Guardrail 4 has demanded a 390×844 check of that panel since cycle 1; cycle 12 measured phone *overlap* but never opened the destination stop there. Both faults below were measured in a sized same-origin iframe (the cycle-19 technique).
+
+**Finding 1.** At EXIT 20 the panel's scroll area is `clientHeight` **316** against `scrollHeight` **328** — 12px hidden, and a screenshot shows those 12px cutting straight through *"Download résumé"* and *"Back to the classic site"*. It scrolls, so nothing is unreachable, but the last frame of the whole drive — the conversion moment — reads as broken. The space had gone somewhere specific: the destination is the only stop carrying `TripSummary`, and on a 316px scroller its `sm:grid-cols-4` collapses to **two 143px columns**, stacking the four figures 2×2 for **112px** of height.
+
+**Finding 2.** Same viewport: the cockpit's control cluster lays out on **four different top offsets** — Back/Next/Map together, then the audio toggle **alone** in the bottom-left corner. The buttons total 235px plus 18px of gaps = **253px** against **242px** available, so it overflows by ~11px and wraps.
+
+**Built.** The summary runs four across at every width (65px tall instead of 112), labels wrapping rather than abbreviated — guardrail 72, the figures are derived from the content and must stay accurate. Panel padding and the links' margin tighten below `sm` only. For the cockpit, the ~11px came from padding, gaps and letter-spacing below `sm`: no visible label changed (guardrail 22/74) and no target dropped below the 24px floor cycle 22 established.
+
+**The intermediate result that changed the work.** After the first build 390×844 was clean but **360×800 still hid 19px** — the same sliced-button symptom on a smaller phone. Rather than declare the narrower done-when out of scope, the extra room came from the panel's own chrome (guardrail 71 forbids buying it from the cockpit, which is where guardrail 44's unusable-controls failure lives). That fixed 360×800 too.
+
+**Verified on the production build:**
+- 390×844 — nothing clipped (was 12px hidden), all four actions fully visible, control cluster **one row**
+- 360×800 — nothing clipped (was 19px hidden), control cluster **one row**
+- 1440×900 — desktop summary and panel padding **unchanged**: 4×148.5px columns, `mt` 16px, `py` 12px, 10px labels at 1.8px tracking, 20px values, panel padding 20/28 (guardrail 73). A first pass had quietly changed desktop's `mt-4` to `mt-3`; caught by that check and given an `sm:mt-4` before commit.
+- screenshot at 390×844 confirms the panel shows everything with no scrollbar and the control row is a single line
+
+**Known limit, recorded rather than hidden.** At **375×667** — a 667px-tall phone — the destination still overflows by 38px and scrolls. Fitting it there would mean cutting real content, and scrolling is precisely what guardrail 4 asks for.
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.8 kB). One commit: `06f6e26`. -> `Cycle: 24 / Phase: Planner`.

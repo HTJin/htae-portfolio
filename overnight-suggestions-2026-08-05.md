@@ -234,4 +234,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** each inactive dot's hit box was 6x6 CSS px (20x6 active) against the WCAG 2.5.8 minimum of 24x24, in a carousel that sits inside the arrival panel on a phone.
   - **Outcome:** **Shipped** in `2f62f6d`. Each dot is a 24x24 box with the same pill centred inside; targets verified at 24x24 with 0px neighbour overlap and pill sizes unchanged. Worth knowing: the plan's own guardrail said the visible dots must not move, and building it showed that to be impossible - 6px dots 6px apart put centres 12px apart, failing both the target rule and its spacing exception. The guardrail was amended with that reasoning rather than quietly ignored, and only the spacing between dots grew.
 
+- [ ] **S40 - The destination's call to action was sliced in half on a phone** - Status: Done - Cycle: 23
+  - **Source:** a Suggester pass aimed at the owner's priority (b) on a phone. Guardrail 4 has asked for a 390x844 check of the arrival panel since cycle 1, and the *destination stop* had never been opened there.
+  - **Why / expected impact:** measured - the panel's scroll area was 316px against 328px of content, and those 12px cut straight through "Download resume" and "Back to the classic site". After twenty-one exits, the moment that asks for a conversation looked broken. The space had gone to the trip summary, whose four figures stacked 2x2 on a narrow scroller for 112px.
+  - **Outcome:** **Shipped** in `06f6e26`. The summary runs four across at every width (65px), labels wrapping rather than abbreviated since the figures are derived from the content; panel padding and the links' margin tighten below `sm` only. Verified: 390x844 and 360x800 clip nothing (was 12px and 19px), desktop at 1440x900 is byte-for-byte the same layout, and a screenshot confirms it. Recorded limit: at 375x667 it still overflows by 38px and scrolls, which is what the guardrail asks for - fitting it there would mean cutting real content.
+
+- [ ] **S41 - The phone control row stranded the audio toggle on its own line** - Status: Done - Cycle: 23
+  - **Source:** the same pass, measuring the cockpit's controls at 390px rather than looking at them.
+  - **Why / expected impact:** the four controls sat on four different top offsets, with the audio toggle alone in the bottom-left corner - the cluster needed 253px against 242px available and wrapped by ~11px. It read as an accident rather than a layout.
+  - **Outcome:** **Shipped** in `06f6e26`. The room came from padding, gaps and letter-spacing below `sm`: one row at both 390px and 360px, smallest control still 25px (above the 24px floor set in cycle 22), and no visible label changed - a voice-control user can still say the word they see.
+
 *(Check the box once you've reviewed the outcome.)*

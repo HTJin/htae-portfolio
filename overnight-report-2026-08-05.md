@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 22 · branch `feat/drive-mode` · 37 commits, nothing pushed
+**Last updated:** end of cycle 23 · branch `feat/drive-mode` · 38 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,35 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 23 — the last thing a recruiter sees, on the device they see it on
+
+This one is your priority (b), and it turned out the destination panel had **never** been opened on a phone in this
+whole run. The rule to check it at phone size has been in my notes since the first cycle; cycle 12 checked other
+panels there and this one slipped through.
+
+**Your call to action was cut in half.** At the final exit on a 390-wide phone, the panel's content ran 12 pixels past
+its scroll edge — and those 12 pixels went straight through the middle of *"Download résumé"* and *"Back to the
+classic site"*. It scrolled, so nothing was unreachable, but the moment the whole drive builds toward — after
+twenty-one exits — looked broken.
+
+The culprit was specific: the destination is the only stop with the trip summary, and on a narrow screen its four
+figures stacked into a 2×2 block 112 pixels tall. They now run **four across** at every width, at 65 pixels, with the
+labels wrapping instead of being abbreviated — those numbers come from your content and I am not going to shorten
+"MILES DRIVEN" into something that could mislead. Everything on the destination now fits with no scrolling at all,
+and your desktop layout is untouched (I measured it column by column before and after).
+
+**And the cockpit was stranding a button.** On the same screen the four controls were laid out across four different
+lines, with the audio toggle sitting alone in the bottom-left corner like it had been dropped there. The row needed
+253 pixels and had 242. That came back from spacing — padding, gaps, letter-spacing — so nothing is renamed and no
+button got smaller than the tap-target minimum. One clean row now, at 390 and at 360.
+
+**One thing I did not fix, and why.** On a 667-pixel-tall phone (an older iPhone SE) the destination still runs 38
+pixels long and scrolls. Fitting it there would mean cutting actual content, and scrolling is the correct behaviour
+for a panel that genuinely has more to say than the screen has room for. I'd rather tell you that than quietly delete
+a sentence.
 
 ---
 

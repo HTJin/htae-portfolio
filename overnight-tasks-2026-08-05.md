@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 23
+**Cycle:** 24
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -192,6 +192,22 @@
 70. **`alt=""` and `aria-hidden` are not interchangeable here.** An empty `alt` still leaves the element in the tree
     as decorative; the goal is that the inactive frames are not announced at all.
 
+### Cycle 23 pre-mortem (guardrails for this cycle's tasks)
+
+71. **Do not buy panel space from the cockpit.** The obvious way to fit the destination content is to shrink the dash,
+    and guardrail 44 exists because that road ends in controls that no longer work. The space must come from the
+    panel's own content, not from `clamp(190px,36%,48%)`.
+72. **The trip figures are derived, and must stay derived.** `tripSummary` is computed in `route.js` from the content
+    (guardrail 13). Making it fit is a layout change only — do not drop a figure, abbreviate a label into something
+    inaccurate, or hardcode anything to save room.
+73. **Desktop must not pay for the phone fix.** Capture the destination panel on desktop before and after; the
+    summary's four-across layout at `sm` and up is not to change.
+74. **Un-wrapping the control row must not shrink a target below 24px or rename a button.** Cycle 22 just established
+    24×24 as the floor for this run, and guardrail 22 requires the visible word to survive in the label. Winning the
+    ~11px from gaps and padding is fine; winning it by turning "Back" into a bare glyph is not.
+75. **Verify at 360 as well as 390.** The overflow is only ~11px, so a fix that clears 390 by a hair will still wrap
+    on a 360px phone. Both widths, measured, or the task is not done.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -207,9 +223,43 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 23
+## Tonight's tasks (in order) — CYCLE 24
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 23's list (resolved — kept for context)</summary>
+
+### CYCLE 23
+
+Backlog dry, so a **Suggester** pass — this one aimed at the owner's priority (b), the destination panel, on a
+**phone**. Guardrail 4 has demanded a 390×844 check of that panel since the first cycle and it had never actually been
+run there; cycle 12 measured phone *overlap* but never opened the destination. Two faults, both measured in a sized
+same-origin iframe at 390×844.
+
+- [x] **1. The destination's call to action is sliced in half on a phone** — **DONE**
+  - **Evidence:** at EXIT 20, the panel's scroll area is `clientHeight` **316** against `scrollHeight` **328** — **12px
+    hidden**, and those 12px cut straight through the last row of actions. A screenshot shows *"Download résumé"* and
+    *"Back to the classic site"* severed through the middle of their text. It scrolls, so nothing is unreachable, but
+    the final frame of the whole drive — the conversion moment, after twenty-one exits — reads as broken.
+  - **Where the space went:** the destination is the only stop carrying `TripSummary`, and on a 316px-wide scroller
+    its `sm:grid-cols-4` collapses to **two 143px columns**, so the four figures stack 2×2 and the block costs
+    **112px** of height.
+  - **Files:** `src/components/drive/StopCard.jsx`.
+  - **Done when:** at 390×844 the destination panel's `scrollHeight` is **<= `clientHeight`** (nothing clipped at all),
+    every action is fully visible without scrolling, a screenshot confirms the summary still reads clearly, and the
+    desktop rendering of the summary is unchanged.
+- [x] **2. The phone control row wraps and strands the audio toggle on its own line** — **DONE**
+  - **Evidence:** measured at 390px, the cockpit's control cluster lays out on **four different top offsets**:
+    Back / Next / Map together at y=769, then the audio toggle **alone** at y=806 in the bottom-left corner, with
+    BRAKE and GO off to the right. The cluster's buttons total 235px plus 18px of gaps = **253px** against **242px**
+    of available width — it overflows by ~11px and wraps.
+  - **Files:** `src/components/drive/Dashboard.jsx`.
+  - **Done when:** at **390px and 360px** the four controls sit on a single row (one shared top offset), nothing
+    overflows the dash or the viewport, the pedals are unmoved, and **no visible label text changes** (guardrail 22 —
+    every `aria-label` must still contain the word a voice-control user can see).
+
+</details>
 
 <details>
 <summary>Cycle 22's list (resolved — kept for context)</summary>
@@ -899,6 +949,25 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C23.1 — The destination's call to action is no longer sliced on a phone** *(cycle 23, commit `06f6e26`)* —
+  guardrail 4 has asked for a 390×844 check of the arrival panel since cycle 1, and the **destination** had never been
+  opened there. Measured: scroll area `clientHeight` **316** against `scrollHeight` **328** — 12px hidden, cutting
+  straight through *"Download résumé"* and *"Back to the classic site"*. The space had gone to `TripSummary`, whose
+  `sm:grid-cols-4` collapsed to two 143px columns on a phone and stacked the figures 2×2 for **112px**. It now runs
+  four across at every width (**65px**), labels wrapping rather than abbreviated (guardrail 72 — the figures are
+  derived and stay accurate), with panel padding and the links' margin tightened below `sm` only.
+  **Verified:** 390×844 nothing clipped (was 12px), all four actions visible; 360×800 nothing clipped (was 19px);
+  **desktop 1440×900 unchanged** — 4×148.5px columns, `mt` 16px, `py` 12px, 10px labels at 1.8px tracking, 20px
+  values, panel padding 20/28, all identical to before (guardrail 73). Screenshot confirms the summary reads clearly.
+  **Known limit, measured not assumed:** at 375×667 the destination still overflows by 38px and scrolls. Fitting it
+  there would mean cutting real content, and scrolling is exactly what guardrail 4 asks for.
+- **C23.2 — The phone control row no longer strands the audio toggle** *(cycle 23, commit `06f6e26`)* — measured at
+  390px, the cockpit's controls sat on **four different top offsets**, with the audio toggle alone in the bottom-left
+  corner: the cluster totalled **253px** against **242px** available and wrapped. The room was taken from padding, gaps
+  and letter-spacing **below `sm` only**. **Verified:** a single row at both **390px and 360px**, smallest control
+  25px (above the 24px floor from cycle 22), no visible label changed (guardrail 22/74), pedals unmoved, no horizontal
+  scroll.
 
 - **C22.1 — Only the screenshot you can see is announced** *(cycle 22, commit `2f62f6d`)* — the carousel stacks
   every capture and cross-fades with `opacity`, which does **not** remove an element from the accessibility tree. At
