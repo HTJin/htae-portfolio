@@ -1205,3 +1205,40 @@ The last row is the diagnosis. Cycle 39 already built the fix — a wider card a
 **And the edges of the change:** **1279px** still renders the old layout (928px, 2 columns) and **1280px** the new one (1203px, 3) — a clean breakpoint. Project stops are untouched at 928px with no columns, since `2xl:columns-3` and the roomy width both live on the text branch only (guardrail 165), and their own height-gated rule was confirmed correct back in C46.1. The destination is not `roomy` and keeps its 704px card (guardrail 166). `xl` was **confirmed** to be 1280px by reading `tailwind.config.js` — it only extends the theme and never overrides `screens` (guardrail 167).
 
 **Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.4 kB). One commit: `9a2a721`. -> `Cycle: 50 / Phase: Planner`.
+
+## Cycle 50
+
+**Suggester — audit the newest change first.** Cycle 49 moved a rule from 1536px to 1280px and verified it at 1440×900 and 1280×800 — never where **wide meets short**. So that is where this pass went.
+
+**Cycle 49 came back clean.** Comparing the shipped layout against the pre-49 layout forced back on at the same size: **1366×768 hides 52px against 136px**; **1280×720 hides 76px against 160px**. Better at both, no regression.
+
+**But standing at those sizes turned up something else.** The panel band's own comment says *"below the mirror, above the dash"*. It was only true on a tall window.
+
+The mirror hangs from the headliner by a drop that **does not shrink**: a 12px stalk and a 38px chip — **50px of pixels**, identical at all 21 stops because the titles never wrap. The band's top was a flat **14%**. Percentage against pixels:
+
+| viewport | gap between mirror and panel |
+|---|---|
+| 1920×1080 | +72px |
+| 1440×900 | +9px |
+| 1366×768 | **0px** |
+| 1280×720 | **-3px** |
+| 844×390 landscape phone | **-25px** |
+
+The model fits every sample — chip bottom = `7.5%×h + 50px`, band top = `14%×h`, crossing below **769px**, which is exactly where the measurements turn negative. And at 1280×720 it is **9 of 21 stops**, not all of them: only cards tall enough to reach the top of the band can touch the mirror.
+
+**Confirmed by eye rather than trusting the arithmetic.** A screenshot at 1280×720 shows the chip's rounded bottom sliced by the panel's bright top border — the HUD drawn *in front of* a mirror bolted to the roof, which is exactly the kind of thing that undoes priority (a).
+
+**One measurement was broken and caught before it misled me.** A first sweep reported every stop overlapping by ~600px with a 720px-tall "mirror" — I had dropped a `children.length` filter and matched the whole scene container instead of the chip. Re-run with a selector that matches only the element whose own text is "Behind you", and a sanity check on the height, it gives a consistent **38px** chip at every stop.
+
+**Which piece should move?** The mirror cannot: the headliner runs 0-58px at 720 and the chip starts at 66, so there is nothing above it but the stalk — raising it would embed it in the roof lining. I checked that before choosing, because "move the small decorative thing" was the tempting answer and it is the wrong one. The panel is the flexible piece, so the floor goes on the panel: `top-[max(14%,calc(7.5%+58px))]` — 7.5% is the mirror's own offset, 58px is its 50px drop plus 8px of daylight, and above ~892px tall the 14% wins and nothing changes.
+
+**Verified:**
+- all 21 stops at 1280×720: **no negative gaps, minimum +8px**
+- **1920×1080 and 1440×900 band tops identical to before** — the `max()` is a no-op where the layout already worked (guardrail 169)
+- 844×390 **-25 -> +8**, 1366×768 **0 -> +8**, 390×844 **+13 -> +16** (guardrail 170)
+- **panel/dash overlap still 0 at every size** — the collision has not simply moved to the other end (guardrail 172)
+- the arbitrary value **actually compiled**: `calc(7.5%` is in the emitted stylesheet, not silently dropped
+
+**The cost, stated rather than buried (guardrail 168):** clearing the mirror pushes the panel down, so a 720-768 tall window hides **8-11px more** of a long entry than it did after cycle 49 — partly against what that cycle just won there. It is the right trade, because a sliced mirror reads as broken and a few pixels of scroll does not. On a landscape phone it costs nothing at all.
+
+**Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.4 kB). One commit: `6544a7a`. -> `Cycle: 51 / Phase: Planner`.

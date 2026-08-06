@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 50
+**Cycle:** 51
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -500,6 +500,23 @@
      (read-only) and confirm the breakpoint before relying on it, then verify at a width just below it that the old
      layout still applies.
 
+### Cycle 50 pre-mortem (guardrails for this cycle's tasks)
+
+168. **This trade costs reading room — say so.** Clearing the mirror pushes the panel down, which means 8-11px more
+     hidden text at 720-768 tall, partly against what cycle 49 just won there. That is the right call because a
+     sliced mirror reads as broken while a few pixels of scroll do not — but it must be **reported as a cost**, not
+     buried.
+169. **`max()` must be a no-op where it already works.** Verify the band top and the mirror gap at 1920×1080 and
+     1440×900 are **identical** before and after. A fix that quietly reflows tall screens is a regression.
+170. **The mirror sits differently below `sm`.** `CarInterior.jsx:27` is `top-[6.5%] sm:top-[7.5%]`, so a
+     narrow-portrait phone uses the smaller offset. The chosen constant uses 7.5%, which only ever pushes the band
+     *down* — confirm on a 390×844 phone that the cost is a few pixels and the gap does not go negative.
+171. **Check the tall cards, not a convenient one.** Only cards tall enough to reach the top of the band can touch the
+     mirror — 9 of 21 at 1280×720. Verify with those stops (EXIT 4 and a project stop), because a short card would
+     show a false pass.
+172. **Do not touch `--dash` or the bottom edge.** This is the top of the band only. Re-measure panel/dash overlap
+     stays 0 everywhere, or the fix has simply moved the collision to the other end.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -515,10 +532,54 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 50
+## Tonight's tasks (in order) — CYCLE 51
 
 _Not yet planned — the Planner writes this list next._
 
+<details>
+<summary>Cycle 50's list (resolved — kept for context)</summary>
+
+### CYCLE 50
+
+Backlog dry. This Suggester pass audited **cycle 49's own change** first — it moved a rule from 1536px to 1280px but
+only ever measured it at 1440×900 and 1280×800, never where wide meets **short**.
+
+**Clean — cycle 49 holds up at the sizes it was not tested at.** Comparing the shipped layout against the pre-49
+layout forced back on, at the same size: **1366×768** (one of the most common laptop panels) hides **52px** against
+**136px** before; **1280×720** hides **76px** against **160px**. Better at both, no regression.
+
+- [x] **1. The arrival panel is cutting the rear-view mirror in half** — **DONE**
+  - **Evidence:** the panel band sits at `top-[14%]` (`DriveScene.jsx:587`) and the mirror hangs at `top-[7.5%]`
+    (`CarInterior.jsx:27`) with a **fixed 50px** drop (12px stalk + a 38px chip, measured identical at all 21 stops —
+    the titles never wrap). One is a percentage and the other is pixels, so they collide as the window gets shorter:
+    | viewport | gap between mirror and panel |
+    |---|---|
+    | 1920×1080 | +72px |
+    | 1440×900 | +9px |
+    | 1366×768 | **0px** |
+    | 1280×720 | **-3px** |
+    | 844×390 (landscape phone) | **-25px** |
+  - **Confirmed by eye, not only by numbers:** at 1280×720 the chip's rounded bottom is visibly sliced by the panel's
+    bright top border, so the HUD appears to sit *in front of* a mirror that is bolted to the roof.
+  - **The model fits every sample:** chip bottom = `7.5%×h + 50px`, band top = `14%×h`, so they cross below **769px** —
+    which is exactly where the measurements turn negative. At 1280×720 **9 of 21 stops** overlap: the tall cards, which
+    are the ones that reach the top of the band.
+  - **The mirror cannot move.** It hangs from the headliner (`inset-x-0 top-0 h-[7%]`, 0-58px at 720) by a 12px stalk,
+    with the chip at 66px. There is no room above it — raising it would embed it in the roof lining. The panel is
+    the flexible piece, so the panel moves.
+  - **Trialled before proposing** — band top `max(14%,calc(7.5%+58px))`: **844×390 -25 -> +8** (no reading room lost at
+    all), **1280×720 -3 -> +8** (11px less card), **1366×768 0 -> +8** (8px less), **390×844 +13 -> +16** (3px),
+    **1920×1080 completely unchanged** — same band top, same 72px gap, still nothing hidden.
+  - **Files:** `src/components/drive/DriveScene.jsx:587`.
+  - **Done when:** no stop overlaps the mirror at any tested size, tall viewports are byte-identical to today, and the
+    reading room given up on short viewports is stated rather than glossed over.
+
+</details>
+
+<details>
+<summary>Cycle 49's list (resolved — kept for context)</summary>
+
+### CYCLE 49
 <details>
 <summary>Cycle 49's list (resolved — kept for context)</summary>
 
@@ -2057,6 +2118,27 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C50.0 — Cycle 49 holds up where it was never tested** *(cycle 50 — verification)* — cycle 49 moved a rule from
+  1536px to 1280px but only measured 1440×900 and 1280×800, never where wide meets **short**. Comparing the shipped
+  layout against the pre-49 layout forced back on at the same size: **1366×768 hides 52px against 136px**, and
+  **1280×720 hides 76px against 160px**. Better at both, no regression.
+- **C50.1 — The arrival panel no longer cuts the rear-view mirror in half** *(cycle 50, commit `6544a7a`)* — the
+  band's own comment promised *"below the mirror, above the dash"*, and that was only true on a tall window. The mirror
+  hangs from the headliner by a drop that **does not shrink** — a 12px stalk plus a 38px chip, **50px**, measured
+  identical at all 21 stops because the titles never wrap — while the band's top was a flat **14%**. Percentage against
+  pixels, so they cross below **769px** tall: gap **+72px** at 1920×1080, **+9** at 1440×900, **0** at 1366×768, **-3**
+  at 1280×720 and **-25** on an **844×390 landscape phone**. **Confirmed by eye**, not only by arithmetic: at 1280×720
+  the chip's rounded bottom was visibly sliced by the panel's bright top border, so the HUD sat *in front of* a mirror
+  bolted to the roof. At that size **9 of 21 stops** overlapped — the tall cards, the ones that reach the top of the
+  band. **The mirror could not move** (headliner 0-58px at 720, chip starts at 66 — nothing above it but stalk), so the
+  floor went on the panel: `top-[max(14%,calc(7.5%+58px))]`. **Verified:** all 21 stops at 1280×720 have **no negative
+  gap, minimum +8px**; **1920×1080 and 1440×900 band tops are identical to before** (guardrail 169 — the `max()` is a
+  no-op where the layout already worked); 844×390 **-25 -> +8**, 1366×768 **0 -> +8**, 390×844 **+13 -> +16**
+  (guardrail 170); **panel/dash overlap is still 0 at every size** (guardrail 172); and the arbitrary value really
+  compiled — `calc(7.5%` is present in the emitted stylesheet rather than silently dropped by Tailwind.
+  **The cost, stated rather than buried (guardrail 168):** a 720-768 tall window now hides **8-11px more** of a long
+  entry than it did after cycle 49. On a landscape phone it costs **nothing**.
 
 - **C49.1 — The longest entry gets its wide layout on a laptop, not only on a big monitor** *(cycle 49, commit
   `9a2a721`)* — swept all 21 panels for how much of each is actually on screen. **EXIT 4** (*Sabbatical / COVID /

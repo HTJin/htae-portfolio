@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 49 · branch `feat/drive-mode` · 62 commits, nothing pushed
+**Last updated:** end of cycle 50 · branch `feat/drive-mode` · 64 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,35 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 50 — the panel was slicing your rear-view mirror in half
+
+I started this cycle by checking my own last change on screen sizes I had not tested — short ones. That change was
+fine. Standing there showed me something else.
+
+**On a short window, the arrival panel cut through the rear-view mirror.** The mirror hangs from the roof lining by a
+fixed amount — a little stalk and a chip about 38 pixels tall. The panel's top edge was set as a *percentage* of the
+window height. Percentages shrink as the window does; pixels do not. Below roughly 769 pixels tall they collide.
+
+On a 1280×720 window the panel drew its bright top border straight through the bottom of the mirror. On a phone held
+sideways it covered 25 pixels of it. The effect was a heads-up display floating **in front of** a mirror that is
+bolted to the roof — precisely the kind of detail that breaks the "real car" illusion you asked for.
+
+It is fixed. The panel now keeps a floor of clearance beneath the mirror, so every one of the 21 stops clears it by at
+least 8 pixels at every size I tested, from a sideways phone to a 1920×1080 monitor. **Large screens are completely
+untouched** — the new rule only does anything once the window is short enough for the problem to exist.
+
+**The trade, plainly.** Pushing the panel down means a 720-768 pixel tall window now hides 8-11 more pixels of a long
+entry than it did after last cycle's improvement. I think that is the right way round — a sliced mirror looks broken,
+a little more scrolling does not — but it is a real cost and you should know it was made deliberately. On a sideways
+phone it costs nothing at all.
+
+**One note on method.** My first measurement of this claimed every stop was overlapping by about 600 pixels, which
+would have been alarming and was simply wrong: my probe had grabbed the whole scene instead of the mirror. I caught it
+because the number was absurd, re-measured properly, and got a consistent answer. That is the third time this run a
+broken measurement, rather than broken code, was the thing at fault.
 
 ---
 

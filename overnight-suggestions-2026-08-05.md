@@ -452,4 +452,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Outcome:** **Shipped** in `9a2a721`. The wide layout now starts at 1280px. At 1440 that entry hides nothing at all, and across all 21 stops **nothing is hidden anywhere** at that size; at 1280 it drops from 144px hidden to 36, and your toolbox stop went from 26px hidden to none. The text also reads better rather than worse - the column width narrows from 412px to about 360, which is a more comfortable line length, not a longer one.
   - **How I made sure nothing else broke:** an earlier cycle learned the hard way that widening a multi-column block can make content *taller*, so I measured every stop before and after at both screen sizes. Nothing got worse anywhere. Your project stops and the arrival screen were deliberately left exactly as they were.
 
+- [ ] **S84 - Did last cycle's change hold up on a short screen?** - Status: Done (no defect) - Cycle: 50
+  - **Source:** the previous cycle moved a layout rule down to 1280px but only ever measured it on two screen sizes, neither of them short.
+  - **Outcome:** **It holds.** On a 1366x768 laptop the sabbatical entry now hides 52px where the old layout hid 136, and at 1280x720 it hides 76 against 160. Better at both, nothing worse.
+
+- [ ] **S85 - The arrival panel was cutting your rear-view mirror in half** - Status: Done - Cycle: 50
+  - **Source:** found while standing at those short screen sizes to check the above.
+  - **Why / expected impact:** the mirror hangs from the roof lining by a fixed amount - a small stalk and a 38-pixel chip - while the panel's top was set as a percentage of the window height. Percentages shrink and pixels do not, so below about 769 pixels tall they collide. On a 1280x720 window the panel drew its bright top border straight through the bottom of the mirror, and on a phone held sideways it covered 25 pixels of it. The result read as the heads-up display floating *in front of* a mirror that is bolted to the roof - exactly the kind of detail that breaks the illusion you asked for.
+  - **Outcome:** **Shipped** in `6544a7a`. The panel now keeps a floor of clearance under the mirror, so all 21 stops clear it by at least 8 pixels at every size I tested, from a sideways phone up to a 1920x1080 monitor. Big screens are completely untouched - the new rule only does anything once the window gets short enough to matter.
+  - **The cost, plainly:** pushing the panel down means a 720-768 pixel tall window now hides 8-11 more pixels of a long entry than it did after last cycle's improvement. I think that is the right way round - a sliced mirror looks broken, a little more scrolling does not - but it is a real trade and you should know it was made. On a sideways phone it costs nothing.
+
 *(Check the box once you've reviewed the outcome.)*
