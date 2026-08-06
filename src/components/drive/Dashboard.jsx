@@ -337,8 +337,10 @@ function Binnacle({ drive }) {
 function ClusterStrip({ drive }) {
   return (
     <div
-      className={`flex shrink-0 items-center justify-between gap-2 px-3 py-1.5 ${styles.binnacleStrip}`}
+      className={`flex shrink-0 items-center justify-between gap-2 px-3 py-1.5 [@media(max-height:430px)]:py-1 ${styles.binnacleStrip}`}
     >
+      {/* Smaller on a landscape phone, but still here: the cockpit keeps its
+          instrument rather than being gutted to make the layout fit. */}
       <Gauge
         drive={drive}
         read={readSpeed}
@@ -347,7 +349,7 @@ function ClusterStrip({ drive }) {
         format={formatSpeed}
         ticks={10}
         redline={1.1}
-        className="h-[62px] w-[62px] shrink-0"
+        className="h-[62px] w-[62px] shrink-0 [@media(max-height:430px)]:h-[44px] [@media(max-height:430px)]:w-[44px]"
       />
       <div className="flex min-w-0 flex-1 justify-center">
         <TellTales drive={drive} />
@@ -608,7 +610,11 @@ function TripComputer({ drive, stop }) {
       className={`flex h-full flex-col justify-between ${styles.screen}`}
       aria-hidden="true"
     >
-      <div className="flex items-baseline justify-between gap-2 font-mono text-[0.5625rem]">
+      {/* The shell prompt is chrome. On a landscape phone the whole dash is
+          190px and this row is the one thing here that carries nothing the
+          exit line, the bar and the year do not already say — so it stands
+          down there rather than squeezing them to zero height. */}
+      <div className="flex items-baseline justify-between gap-2 font-mono text-[0.5625rem] [@media(max-height:430px)]:hidden">
         <span className="truncate text-emerald-300/50">
           <span className="text-emerald-300/80">~/route</span> $ drive --to
         </span>
@@ -755,7 +761,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
       {/* Phone: no room for a wheel, so the cockpit stacks instead of sitting
           side by side. Cluster on the cowl, screen under it, controls in reach
           of a thumb at the bottom. */}
-      <div className="flex h-full flex-col gap-2 px-2.5 pb-2 pt-2.5 lg:hidden">
+      <div className="flex h-full flex-col gap-2 px-2.5 pb-2 pt-2.5 lg:hidden [@media(max-height:430px)]:gap-1 [@media(max-height:430px)]:pt-1.5">
         <ClusterStrip drive={drive} />
         <div className="min-h-0 flex-1">
           <TripComputer drive={drive} stop={stop} />
@@ -790,7 +796,9 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
             </ConsoleButton>
             <AudioToggle drive={drive} />
           </div>
-          <div className="h-[52px] w-[54px] shrink-0">
+          {/* Shorter on a landscape phone — still 42/48px tall, well clear of
+              the 24px target floor this run set in cycle 22. */}
+          <div className="h-[52px] w-[54px] shrink-0 [@media(max-height:430px)]:h-[42px]">
             <Pedal
               label="BRAKE"
               name="Brake"
@@ -800,7 +808,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               onRelease={() => drive.setBrake(0)}
             />
           </div>
-          <div className="h-[62px] w-[54px] shrink-0">
+          <div className="h-[62px] w-[54px] shrink-0 [@media(max-height:430px)]:h-[48px]">
             <Pedal
               label="GO"
               name="Go — hold to accelerate"

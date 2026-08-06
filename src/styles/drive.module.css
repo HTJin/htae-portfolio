@@ -395,3 +395,13 @@
   );
   box-shadow: inset 0 2px 3px -1px rgba(0, 0, 0, 0.95);
 }
+
+/* On a landscape phone the whole dashboard is 190px tall and the terminal has
+   to share it with the instrument strip and the controls. Its own padding is
+   the cheapest thing to give back — the content stays, it just sits closer to
+   the bezel. */
+@media (max-height: 430px) {
+  .screen {
+    padding: 0.25rem 0.5rem;
+  }
+}
