@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 38
+**Cycle:** 39
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -370,6 +370,19 @@
      0.14 miles. Shipping a branch that can never execute is worse than not shipping it (the cycle-30 lesson, where a
      fade that could never run was the whole defect).
 
+### Cycle 38 pre-mortem (guardrails for this cycle's tasks)
+
+129. **Escape and `M` must still close the map.** Guardrail 37 already says the focus trap may only swallow Tab and
+     that Escape must reach the global handler. Suppressing keys while the map is open must not suppress the two that
+     get you out of it — verify both, not just Escape.
+130. **Do not `preventDefault` the arrow keys while the map is open.** The whole point is that the list should scroll
+     normally. Suppressing the *drive* must not suppress the *browser*. Measure `defaultPrevented`, not just that the
+     car stayed put.
+131. **Release anything already held.** A key held before the map opens would otherwise stay latched with no keyup
+     reaching the handler — the same class of bug the existing window `blur` handler exists to prevent.
+132. **Prove the closed-map path is untouched.** This edits the handler every control on the page runs through. With
+     the map closed, every key must behave exactly as it does today, measured rather than assumed.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -385,9 +398,43 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 38
+## Tonight's tasks (in order) — CYCLE 39
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 38's list (resolved — kept for context)</summary>
+
+### CYCLE 38
+
+Backlog dry. Two findings this pass: one shippable defect, and one that reframes a parked item.
+
+- [x] **1. The driving keys stay live while the route map is open, so the car drives behind the dialog** — **DONE**
+  - **Evidence (measured at EXIT 05):** opened the route map, then dispatched `ArrowUp`. The car **left the stop** —
+    `parked` **true -> false**, and the document title advanced **"EXIT 05 · Full Stack Devel..." -> "EXIT 06 ·
+    Software Enginee..."** — while the dialog **stayed open**. The drive happens invisibly behind it.
+  - **Why this is more than an annoyance:** arrow keys are the obvious way to scroll a twenty-one row list, so the
+    natural gesture for using the map is also the gesture that pulls you off the exit you were reading. And the dialog
+    declares `aria-modal="true"` — a promise, written into `RouteMap`'s own comment in cycle 10, that everything
+    behind it is inert. It is not: `DriveScene`'s global `keydown` effect never checks `mapOpen`, and `mapOpen` is not
+    in its dependency array.
+  - **Files:** `src/components/drive/DriveScene.jsx`.
+  - **Done when:** with the map open, `ArrowUp`/`W`, `ArrowDown`/`S`, arrows/`A`/`D`, `N` and `Backspace`/`P` leave the
+    car parked, the title unchanged and the map open; **Escape still closes it** (guardrail 37) and **`M` still
+    toggles**; arrow keys are **not** `preventDefault`ed while the map is open, so the list can still be scrolled; a
+    control held *before* the map opens is released rather than left stuck on; and with the map **closed** every key
+    behaves exactly as it does today, measured, not assumed.
+
+**Finding recorded, not built — the missing `key` props block more than one duplicate tag.** `/drive` inherits its
+whole social surface from `_app.jsx`: `og:image` and `twitter:image` are the **portrait avatar**, and `twitter:card` is
+**`summary`** (the small square card) rather than `summary_large_image`. Giving the drive page its own card, or the
+route-specific structured data of backlog **S15**, or fixing the duplicate canonical, all require `key` props in
+`_app.jsx` — without them a second tag is *added* rather than overriding, which is exactly the state `/drive` is in
+now (two `og:url`, two `og:title`, two canonicals). So the parked Needs-human item is not a tidy-up: it is the single
+blocker in front of **four** separate improvements. Recorded there rather than shipped, because shipping a tag that
+cannot take effect is the defect cycles 30 and 36 already fixed twice.
+
+</details>
 
 <details>
 <summary>Cycle 37's list (resolved — kept for context)</summary>
@@ -1543,6 +1590,30 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C38.1 — The driving keys are inert while the route map is open** *(cycle 38, commit `e06709b`)* — the dialog
+  declares `aria-modal="true"`, which `RouteMap`'s own cycle-10 comment describes as a promise that everything behind
+  it is inert. It was not: `DriveScene`'s global `keydown` effect never checked `mapOpen`, and `mapOpen` was not in its
+  dependency array. **Measured at EXIT 05:** with the map open, `ArrowUp` pulled the car out of the stop — `parked`
+  **true -> false**, title **"EXIT 05 · Full Stack Devel..." -> "EXIT 06 · Software Enginee..."** — while the dialog
+  stayed up, so the drive happened invisibly behind it. Arrow keys being the obvious way to scroll a twenty-one row
+  list made the natural gesture the destructive one. **Verified:** with the map open all nine driving keys leave the
+  car parked, the title unchanged and the map open, and **none is `preventDefault`ed** so the list still scrolls
+  (guardrail 130); **Escape closes and `M` toggles** (guardrail 129); with the map **closed** `ArrowUp` drives exactly
+  as before (guardrail 132); and holding the accelerator then opening the map drops the speed **22 -> 15 mph over six
+  seconds**, proving the throttle is released rather than latched (guardrail 131), with a further press reaching
+  **52 mph** so it is fully recoverable.
+  **One measurement recorded because it happened:** a single early run reported Escape failing to close the map. Two
+  later runs — isolated, and the same combined key sequence at two timings — all closed correctly, so that first
+  result was a flake rather than a defect.
+- **C38.2 — The missing `key` props block four improvements, not one** *(cycle 38 — finding, recorded not built)* —
+  `/drive` inherits its entire social surface from `_app.jsx`: `og:image` and `twitter:image` are the **portrait
+  avatar** and `twitter:card` is **`summary`**, the small square card. Giving the drive page its own card, adding the
+  route-specific structured data of backlog **S15**, and fixing the duplicate canonical all require `key` props in
+  `_app.jsx` — without them a second tag is *added* rather than overriding, which is exactly the state `/drive` is in
+  (two `og:url`, two `og:title`, two canonicals). So the parked Needs-human item is not a tidy-up but the single
+  blocker in front of four separate improvements. Not shipped, because a tag that cannot take effect is the defect
+  cycles 30 and 36 each fixed.
 
 - **C37.0 — Every year on the page matches the content** *(cycle 37 — verification only, no code changed)* — the
   highest-stakes property here, and never checked systematically before. Read the dates straight out of

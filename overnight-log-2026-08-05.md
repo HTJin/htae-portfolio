@@ -857,3 +857,27 @@ EXIT 08 is the one that matters most — that is the January 1st entry cycle 4's
 **Outcome: no defect, and nothing changed.** Recorded as a result rather than a non-event — this is the property the whole page exists to get right, and it is now checked end to end instead of trusted.
 
 **Exit.** No commit to `src/`. -> `Cycle: 38 / Phase: Planner`.
+
+## Cycle 38
+
+**Suggester.** Backlog dry. Two findings: one shippable defect, and one that changes the priority of a parked item.
+
+**The defect — the modal was not modal.** `RouteMap` declares `aria-modal="true"`, and its own comment from cycle 10 spells out what that promises: *"everything behind it is inert — so it has to actually behave that way."* It did not. `DriveScene`'s global `keydown` effect never checked `mapOpen`, and `mapOpen` was not even in its dependency array.
+
+Measured at EXIT 05: with the map open, `ArrowUp` **pulled the car out of the stop** — `parked` went **true -> false** and the document title advanced **EXIT 05 -> EXIT 06** — while the dialog stayed up. The drive happened invisibly behind it. And arrow keys are the obvious way to scroll a twenty-one row list, so the natural gesture for *using* the map was the one that left the exit you were reading.
+
+**Built.** While the map is open only the two keys that get you *out* still act. Everything else returns early **without** `preventDefault`, so the list still scrolls normally — suppressing the drive must not suppress the browser (guardrail 130). Opening the map also releases throttle, brake and steering, for the same reason the window `blur` handler exists: a key held before opening would otherwise stay latched, because its keyup arrives while the map is up and is ignored (guardrail 131).
+
+**Verified on the production build:**
+- map open — `ArrowUp`, `w`, `ArrowDown`, `s`, `ArrowLeft`, `ArrowRight`, `n`, `Backspace`, `p`: car stays parked, title unchanged, map open, **none `preventDefault`ed**
+- map open — **Escape closes**, and **`M` still toggles** it closed
+- map closed — `ArrowUp` drives exactly as before: parked -> false, title advances
+- held key — holding the accelerator then opening the map drops the speed **22 -> 15 mph over six seconds**, so the throttle really is released rather than latched; closing and accelerating again reaches **52 mph**, so it is fully recoverable
+
+*(A single early run reported Escape failing to close. Two later runs — isolated, and the same combined sequence at two timings — all closed correctly, so that was a flake. Recorded because it was measured, not because it stood.)*
+
+**The second finding, recorded rather than built.** `/drive` inherits its whole social surface from `_app.jsx`: `og:image` and `twitter:image` are the **portrait avatar**, and `twitter:card` is **`summary`** — the small square card rather than `summary_large_image`. Giving the drive page its own card, adding backlog **S15**'s route-specific structured data, and fixing the duplicate canonical **all** require `key` props in `_app.jsx`: without them a second tag is *added* rather than overriding, which is exactly why `/drive` currently serves two `og:url`, two `og:title` and two canonicals. That reframes the parked Needs-human item from a tidy-up into the single blocker in front of four separate improvements. Shipping a tag that cannot take effect is the defect cycles 30 and 36 each already fixed, so it stays recorded.
+
+**A note on the shift itself:** the browser extension disconnected mid-verification. Rather than retry blindly, the check was re-run from scratch once it reconnected — which is why the held-key evidence is a speed curve (22 -> 15 -> 52 mph) rather than the weaker "the title did not change" reading the interrupted run had produced.
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.4 kB). One commit: `e06709b`. -> `Cycle: 39 / Phase: Planner`.

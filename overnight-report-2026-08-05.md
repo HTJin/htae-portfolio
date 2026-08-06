@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 37 · branch `feat/drive-mode` · 49 commits, nothing pushed
+**Last updated:** end of cycle 38 · branch `feat/drive-mode` · 50 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,33 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 38 — the route map was letting you drive away by accident
+
+Open the route map, press the down arrow to scroll the list of exits, and the car pulled away from the stop you were
+reading — silently, behind the dialog. I measured it: with the map open, one press of the up arrow took the car out
+of EXIT 05 and the page title changed to EXIT 06 while the map was still covering the screen.
+
+The unlucky part is that arrow keys are the obvious way to scroll a list of twenty-one exits. So the natural gesture
+for *using* the map was the gesture that lost your place.
+
+While the map is open, the driving keys now do nothing — except Escape and M, which still close it. The arrow keys are
+deliberately left alone rather than blocked, so they still scroll the list the way you would expect. And opening the
+map lets go of the controls, so if you were holding the accelerator when you opened it, the car does not keep going
+behind the dialog. Close it and drive on; I checked that it picks up again normally.
+
+**Also worth knowing, and this one is for you rather than something I can fix.** I looked at what actually gets sent
+when someone shares your drive-mode link. The preview image is your **portrait photo**, and the card is the small
+square kind rather than the wide one — both inherited from your homepage, because the drive page cannot override
+them. That is the same underlying cause as the duplicate canonical tag already on your list: without `key` props in
+`_app.jsx`, a page can only *add* tags, never replace them.
+
+So that item is bigger than it looked. It is not one stray tag — it is the single thing standing in front of **four**
+improvements: the canonical, a proper drive-mode share image, a wide share card, and the search-engine markup I parked
+back in cycle 4. I have not built any of them, because a tag that cannot take effect is exactly the kind of dead code
+I have had to remove twice already in this run.
 
 ---
 
