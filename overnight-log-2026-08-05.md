@@ -394,3 +394,19 @@ An in-browser measurement was attempted first but was inconclusive — the image
 **Honest gap.** `resize_window` reported success but `innerWidth` stayed 1920, so narrower widths could not be rendered this session. The phone block was not touched and the `lg` band was reasoned about arithmetically, but that is not a screenshot — parked as **Needs testing** rather than claimed (guardrail 51).
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.6 kB). One commit: `4d24fd9`. -> `Cycle: 19 / Phase: Planner`.
+
+## Cycle 19
+
+**Planner.** No Suggester pass — the controller found actionable work already open: cycle 18 shipped a layout change verified at exactly one viewport, which is what guardrail 51 exists to catch.
+
+**The technique.** `resize_window` reported success last shift but `innerWidth` stayed 1920, so no narrow viewport was ever actually rendered. Instead `/drive` was loaded into a **same-origin iframe** of an explicit size: an iframe is its own viewport, so media queries and `vw` resolve against the frame, and because it is same-origin its `contentDocument` can be measured exactly like a top-level page.
+
+**Proving the technique before trusting it (guardrail 53).** `contentWindow.innerWidth` read **1100** while the host window read **1920**, and the `lg:hidden` phone block computed `display: none` at 1100 and `flex` at 390. The frame is genuinely its own viewport and the Tailwind breakpoints genuinely applied. Hydration was confirmed inside each frame (guardrail 54) and every panel measurement was taken with `transform: none` (guardrail 55 — the trap from cycle 9).
+
+**1100x800.** Console buttons on **one row** (Back 78 + Next 77 + Route map 105 + toggle), trip computer 356px wide, wheel/console overlap **0**, panel/dash overlap **0**, nothing overflowing right or bottom, no horizontal scroll. Screenshot confirms the door card, binnacle, wheel, console and pedals all read correctly. The wheel sits **153px (13.9%)** short of the eyeline — the intended below-`xl` compromise.
+
+**390x844 and 844x390.** Phone block `flex`, desktop grid `display: none` — cycle 18's grid provably does not apply on a phone, which is what "the phone block was not touched" was asserting arithmetically last shift. Overlap 0, all controls inside the viewport, no horizontal scroll. Landscape dash 190px = 48.7% of a 390px-tall screen: the cycle-12 floor behaving as designed, unchanged by cycle 18.
+
+**One thing worth writing down rather than leaving as taste.** The `xl` threshold looked arbitrary. It is not, and now the code says so: centring the wheel forces the door column to equal the console column; the console needs ~310px to keep its buttons on one line (measured); through the flex shares that is a ~461px column; so 2x461 + the 260px wheel column + 40px gaps + 48px padding = **~1270px** before a centred wheel fits. That is `xl`. Below it the door column narrows instead of wrapping the console.
+
+**Exit.** No layout defect found — nothing to fix. `next lint` clean, `npm run build` compiles (`/drive` 19.6 kB). One commit: `72ccf3f` (comment only). Needs-testing item **cleared to Done**. -> `Cycle: 20 / Phase: Planner`.

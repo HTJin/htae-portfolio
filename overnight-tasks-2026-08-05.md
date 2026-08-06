@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 19
+**Cycle:** 20
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -127,6 +127,22 @@
     a measured geometric contradiction — it is not licence to restyle the dash, add instruments, or change what the
     gauges show.
 
+### Cycle 19 pre-mortem (guardrails for this cycle's tasks)
+
+53. **An iframe is only a valid viewport if it really is one.** Before trusting any measurement taken inside it,
+    prove the frame is being treated as its own viewport: read `innerWidth` *from inside the frame* and confirm it is
+    the frame's width, not the host window's, and confirm the expected Tailwind breakpoint actually applied (e.g. the
+    `lg:hidden` phone block is displayed at 390px and not at 1100px). If that check fails the technique is invalid and
+    the item stays parked — do not report a number from a frame that is silently inheriting the host viewport.
+54. **Wait for hydration inside the frame, not the host.** Guardrail 23 applies per document. Confirm
+    `frame.contentDocument.body.style.overflow === 'hidden'` before measuring anything in it.
+55. **A frozen framer-motion transform still lies at every width.** Guardrail 36 caught a phantom 26px overlap once
+    already. Before calling any measured overlap real, read `getComputedStyle(el).transform` and discard the number if
+    it is not identity.
+56. **Do not "fix" the phone layout to make a number look better.** The `lg:hidden` block was not touched by cycle 18.
+    If something looks wrong there it is either pre-existing or an artefact — diagnose which before changing anything,
+    because a change there is out of this task's scope.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -142,9 +158,34 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 19
+## Tonight's tasks (in order) — CYCLE 20
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 19's list (resolved — kept for context)</summary>
+
+### CYCLE 19
+
+No Suggester pass: the controller found actionable work already open. Cycle 18 shipped the re-centred cockpit but
+could only verify it at one viewport, and an unverified layout change is exactly what guardrail 51 exists to catch.
+
+- [x] **1. Clear the cycle-18 Needs-testing item: the re-centred dash at narrow widths** — **DONE**
+  - **Why:** the dash was rebuilt as a three-column grid so the steering wheel sits on the driver's eyeline. That was
+    measured at 1920x895 and nowhere else. `resize_window` reported success last shift but `innerWidth` stayed 1920,
+    so no narrower viewport was ever actually rendered. The `lg`—`xl` band (0.42fr door column) and the phone block were
+    reasoned about arithmetically only.
+  - **The technique that does not depend on the OS window:** load `/drive` in a **same-origin iframe** of an explicit
+    size. An iframe is its own viewport — CSS media queries and `vw` units resolve against the frame, not the host
+    window — and because it is same-origin, `contentDocument` can be measured exactly like the top-level page. This
+    makes 1100x800, 390x844 and 844x390 all reachable from a window that will not resize.
+  - **Files:** `src/components/drive/Dashboard.jsx`, `src/styles/drive.module.css` (only if a defect is found).
+  - **Done when:** at **1100x800** the wheel is on or near the eyeline and the trip computer and console buttons are
+    not squeezed or overflowing; at **390x844** and **844x390** the phone cockpit is unchanged from before cycle 18
+    (it uses the untouched `lg:hidden` block) with no panel/dash overlap and no horizontal scroll; and each result is
+    a measurement, not an impression. If a defect is found it is fixed in this cycle, not re-parked.
+
+</details>
 
 <details>
 <summary>Cycle 18's list (resolved — kept for context)</summary>
@@ -708,6 +749,22 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Done (proven by the autonomous Reviewer)
 
+- **C19.1 — The re-centred dash verified at narrow widths** *(cycle 19, commit `72ccf3f`; clears the cycle-18
+  Needs-testing item)* — the OS window would not resize, so `/drive` was loaded in a **same-origin iframe** of an
+  explicit size instead. Guardrail 53 was satisfied first: `contentWindow.innerWidth` read **1100** while the host read
+  1920, and the `lg:hidden` phone block computed `display: none` at 1100 and `flex` at 390 — so the frame really is its
+  own viewport and the breakpoints really applied. Hydration confirmed per frame (guardrail 54) and every panel
+  measured with an identity transform (guardrail 55).
+  **Results.** *1100×800:* console buttons on **one row**, trip computer 356px, wheel/console overlap **0**,
+  panel/dash overlap **0**, no horizontal scroll, nothing overflowing right or bottom; the wheel sits **153px (13.9%)**
+  short of the eyeline — the deliberate below-`xl` compromise, not a defect. *390×844 and 844×390:* the phone block
+  is `flex` and the desktop grid is `display: none`, so cycle 18's change provably does not apply there; overlap 0,
+  all controls inside the viewport, no horizontal scroll. Landscape dash is 190px = 48.7% of a 390px-tall screen,
+  which is the cycle-12 floor behaving as designed, unchanged by cycle 18.
+  **Also shipped:** the `xl` threshold is no longer an unexplained breakpoint — the code now records the
+  arithmetic behind it (console needs ~310px of button row -> a ~461px column -> ~1270px total before a centred wheel
+  fits).
+
 - **C18.1 — The steering wheel is now in front of the driver** *(cycle 18, commit `4d24fd9`)* — the cockpit and the
   windshield disagreed about where the driver sits. Projecting the road centre through `world.js` under Node gives
   `z=10 -> 759`, `z=100 -> 945`, `z=1e6 -> 960.00` against a screen centre of **960**: the vanishing point converges
@@ -800,12 +857,6 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5c. Reduced-motion path through the carousel** *(cleared cycle 2)* — proven by real execution: `matchMedia('(prefers-reduced-motion: reduce)')` was patched to report `matches: true` inside a 390px probe frame before hydration, then EXIT 11 was opened. The frame counter held at `1/4` across 11 seconds (autoplay would have advanced 2-3 times at the 4.2s interval), clicking the third dot still moved it `1/4 -> 3/4`, and the `@media (prefers-reduced-motion: reduce) { .shot { transition: none } }` rule is present in the served stylesheet.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
-
-- **The re-centred dash at 1024—1280px and on a phone** *(cycle 18)* — verified at 1920x895 only. `resize_window`
-  reported success but `innerWidth` stayed 1920, so narrower widths could not actually be rendered this session. The
-  phone block (`lg:hidden`) was not touched, and the `lg`—`xl` band deliberately keeps a narrowed door column rather
-  than an equal one so the trip computer cannot be squeezed — but that reasoning is arithmetic, not a screenshot.
-  Needs one look in a real window at ~1100px wide, 390x844 and 844x390.
 
 - [ ] **Route map returns focus to its trigger on close** — the trap's cleanup restores whatever was focused when the dialog opened, and that path runs, but it cannot be observed here: `.focus()` on the trigger button does not stick without OS window focus, so `<body>` is what gets captured and restored. Test in a foreground window: Tab to "Route map", press Enter, press Escape — focus should land back on the "Route map" button.
 

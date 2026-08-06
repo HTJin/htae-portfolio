@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 18 · branch `feat/drive-mode` · 33 commits, nothing pushed
+**Last updated:** end of cycle 19 · branch `feat/drive-mode` · 34 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,30 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 19 — checking the thing I said I hadn't checked
+
+Last cycle I moved the steering wheel and told you I'd only verified it on one screen size, because the browser window
+refused to resize. That is the kind of gap that has bitten this branch before — the worst bug of the whole run was a
+dash height that was fine on a desktop and hid the bottom of your résumé on a phone.
+
+So I got the sizes a different way: I loaded `/drive` inside a frame of an exact size on the page. A frame is its own
+window as far as the layout is concerned, so 1100 wide, and a phone at 390×844 and 844×390, all became reachable
+without touching the actual window. I checked that the trick was real before believing anything it told me — the page
+inside genuinely reported itself as 1100 wide, and genuinely switched to the phone layout at 390.
+
+**It holds up.** At 1100 the console buttons stay on one line, the trip computer keeps its width, and nothing overlaps
+or runs off the edge. On both phone orientations the desktop cockpit isn't merely "untouched" by my change — it is
+switched off entirely, which I can now show rather than assert. Nothing needed fixing.
+
+**One honest detail:** between roughly 1024 and 1280 pixels wide, the wheel is still about 150px short of your eyeline
+rather than dead on it. That's deliberate, and now I can tell you exactly why: centring the wheel forces the door side
+to match the console side, and the console needs about 310px to keep its buttons on one row — which works out to
+needing a ~1270px window before a centred wheel fits without wrapping. Below that I'd be trading a small
+misalignment for a cramped control panel, which is a bad trade. That arithmetic is now written into the code, so the
+breakpoint isn't a number someone picked by eye.
 
 ---
 
@@ -237,8 +261,8 @@ reads as an arrival.
 
 ## Parked, all needing a foreground browser window
 
-Frame rate while driving; audible engine output; focus returning to the button when you close the route map; and the
-re-centred dash at narrow desktop and phone widths.
+Frame rate while driving; audible engine output; and focus returning to the button when you close the route map.
+(The re-centred dash at narrow widths came off this list in cycle 19 — it was measurable after all.)
 Animation, timers and focus are all suspended in a backgrounded tab, which isn't something I can arrange from here.
 
 ---
