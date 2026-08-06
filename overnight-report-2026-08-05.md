@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 35 · branch `feat/drive-mode` · 48 commits, nothing pushed
+**Last updated:** end of cycle 36 · branch `feat/drive-mode` · 49 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,32 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 36 — your American highway sign was counting down in metres
+
+Watching what the green exit sign actually displays as you drive toward it:
+
+`0.14 MI -> 0.13 -> 0.12 -> 0.11 -> 0.10 MI -> **159 M** -> 154 M -> 146 M`
+
+It starts in miles and finishes in **metres** — on an interstate guide sign, in a car whose speedometer reads mph and
+whose odometer reads MI. It also disagreed with the sign **you** wrote: the one on your homepage that leads into drive
+mode says *"1/4 mile"*.
+
+It now reads feet the whole way down, from **720 FT** as you pull away to the low hundreds as you roll up. One unit,
+imperial, consistent with everything else on the dash and with your own sign.
+
+**What I deliberately didn't do:** the obvious flourish is a proper sign ladder — *1 MILE, 1/2 MILE, 1/4 MILE* — which
+is how real advance signage works and would have read beautifully. It can never happen here. The gap between your
+exits is 220 metres, which is 0.137 of a mile, so the sign is only ever visible at distances **below** a quarter mile.
+That code would have sat there looking correct and never once run. That is exactly the bug I fixed six cycles ago,
+where the sign's fade-in turned out to be unreachable for the same reason, so this time I checked before writing it
+rather than after.
+
+I also tested something that had never been tried: **resizing the browser window while the car is moving**. It holds
+up — the drive keeps going and arrives, the road redraws at the new size, the dashboard re-proportions itself, and
+the panel that opens at the exit lands fully on screen.
 
 ---
 

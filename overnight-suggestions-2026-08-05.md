@@ -324,4 +324,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** stale line numbers or a figure that has drifted would be discovered only when you sat down to apply them.
   - **Outcome:** **All three still valid, re-verified against the current files and the served HTML.** `Projects.jsx` is still live and still has both faults (`aspect-video` at :97, `object-cover` at :120, no timer anywhere, click-only at :61) with every line reference in the patch confirmed; the crop was recomputed from the PNG headers - 28 of 28 files wider than 16:9, average **10.2%** of width discarded, worst 14.2% (`rift/2.png`) - and the recorded 10.1% corrected. The duplicate canonical was confirmed from the served HTML rather than reasoned about: `/drive` ships the homepage's canonical **first**, then its own, so crawlers currently read it as the homepage. The sitemap holds exactly one URL, and since the site has exactly two indexable routes that is half the site missing.
 
+- [ ] **S58 - Does resizing the window mid-drive break anything?** - Status: Done (no defect) - Cycle: 36
+  - **Source:** every layout measurement in this run had loaded at a fixed size; nothing had tested a resize while the car was actually moving.
+  - **Why / expected impact:** the canvas, the dash height and the arrival panel are all derived from viewport size, and the sim runs on a frame loop that a resize could plausibly disturb.
+  - **Outcome:** **Clean.** Resized 1440x900 -> 900x650 mid-drive: the sim kept running and arrived, the canvas backing store followed 2880x1800 -> 1800x1300, the dash re-laid out to 234px, and the arrival panel appeared fully inside the viewport with zero overlap and no horizontal scroll.
+
+- [ ] **S59 - The exit sign changed units halfway through the approach, into metric** - Status: Done - Cycle: 36
+  - **Source:** sampling what the sign's distance readout actually displays across a full approach.
+  - **Why / expected impact:** measured, it ran `0.14 MI -> 0.10 MI -> 159 M -> 146 M` - two units in one readout, the second metric, on an American interstate guide sign in a cockpit whose speedometer says mph and odometer says MI. It also disagreed with the sign you already wrote: the homepage's `DriveModeSign` reads "1/4 mile".
+  - **Outcome:** **Shipped** in `faf5a43`. Feet throughout, derived from the existing `METERS_PER_MILE` rather than a typed conversion factor. The fraction ladder ("1/4 MILE") was deliberately not added: a leg is 0.137 miles and the sign is only visible below that, so it could never run - and shipping a branch that can never execute is exactly the defect cycle 30 fixed. Verified across two approaches: 720 FT -> 110 FT, monotonic, single unit throughout, with the sign's opacity, flare and scale curves re-measured and unchanged.
+
 *(Check the box once you've reviewed the outcome.)*

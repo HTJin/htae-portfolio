@@ -801,3 +801,27 @@ with `og:url` and `og:title` doubled the same way (homepage values first, drive 
 **Outcome: no code changed, and none should have been.** All three live outside this run's write scope, which is why they were parked in the first place. The deliverable is that the owner's three patches are trustworthy **today**, with confirmed line numbers and one corrected figure, rather than 25 cycles stale.
 
 **Exit.** No commit to `src/`. -> `Cycle: 36 / Phase: Planner`.
+
+## Cycle 36
+
+**Two Suggester probes.** One integration never exercised, and one defect on the owner's priority (a).
+
+**Probe 1 — resizing mid-drive.** Every layout measurement in this run has loaded at a fixed size, so nothing had ever tested what happens when the window changes *while the car is moving*. Departed EXIT 05, resized **1440×900 -> 900×650** under way, then waited for a genuine arrival rather than assuming one: the sim kept running and arrived (*"Arrived at EXIT 06"*), the canvas backing store followed **2880×1800 -> 1800×1300**, the dash re-laid out to 234px, the arrival panel appeared at 704×220 fully inside the viewport, panel/dash overlap **0**, no horizontal scroll. Clean.
+
+*(A first pass on this looked alarming — the arrival panel was `null` after the resize. It was not a defect: the snapshot was taken 7.7s into a ~10s leg, so the car had simply not arrived yet. Waiting for the status region to fill, rather than for a fixed number of seconds, gave the real answer.)*
+
+**Probe 2 — what the exit sign actually says.** Sampled every 450ms across one approach:
+
+`0.14 MI -> 0.13 -> 0.12 -> 0.11 -> 0.10 MI -> **159 M** -> 154 M -> 146 M`
+
+Two units in one readout, and the second is **metres** — on an American interstate guide sign, in a cockpit whose speedometer reads **mph** and whose odometer reads **MI**. And it disagrees with the sign the owner already wrote: `DriveModeSign.jsx:20`, the homepage sign that leads into drive mode, reads **"1/4 mile"**. So drive mode's own sign was inconsistent with the rest of the cockpit *and* with the site's existing sign vocabulary.
+
+**Built — feet, all the way down.** The tempting move is a fraction ladder ("1 MILE / 1/2 MILE / 1/4 MILE"), which reads beautifully and **can never execute**: a leg is `LEG_LENGTH` 220m = 0.137 miles, and the sign is only visible between 220m and 7m, so the whole range sits below a quarter mile. Shipping a branch that can never run is precisely the defect cycle 30 fixed, when the sign's fade turned out to be dead code. Guardrail 128 was written to stop me doing it again. Below a quarter mile, real advance signage is in feet. The conversion derives from `METERS_PER_MILE` × 5280 rather than a typed 3.28084 (guardrail 127) — this run has closed six constants that shadowed a number kept elsewhere.
+
+**Verified across two approaches:**
+- series **720 FT -> 110 FT**, monotonic, **single unit `FT` throughout**; no `M` and no `MI` in any sampled reading
+- 720 FT at departure is exactly 220m through the derivation
+- cycle 30's curves re-measured rather than assumed unaffected (guardrail 125): hidden while parked, opacity starting **0.002** and reaching full, flare starting **0.000**, scale still monotonic
+- the sign hides below ~23 FT by design, so the last stretch is arithmetic (`z=7m -> 20 FT`) rather than sampled — stated rather than implied
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.4 kB). One commit: `faf5a43`. -> `Cycle: 37 / Phase: Planner`.

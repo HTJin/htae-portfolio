@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 36
+**Cycle:** 37
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -358,6 +358,18 @@
 124. **Verify with real keys.** Programmatic focus does not match `:focus-visible` on an unfocused document — the trap
      that made two cycle-33 attempts report a false failure. Use real `Tab` presses and a focused window.
 
+### Cycle 36 pre-mortem (guardrails for this cycle's tasks)
+
+125. **Change the text, nothing else.** Cycle 30 measured the sign's opacity ramp, flare sweep and scale curve. Those
+     must come back identical — re-measure them, do not assume a text change cannot move them.
+126. **One unit, across the whole visible range.** The defect is the switch, not the choice. Verify by sampling a
+     complete approach and asserting a single suffix, not by checking two endpoints.
+127. **Feet derive from `METERS_PER_MILE`.** A typed 3.28084 would be a seventh copy of a number that lives somewhere
+     else. Use miles × 5280, where 5280 is a definition rather than a measurement of this route.
+128. **Do not invent a fraction ladder.** "1/4 MILE" reads well but never applies: the sign is only ever visible below
+     0.14 miles. Shipping a branch that can never execute is worse than not shipping it (the cycle-30 lesson, where a
+     fade that could never run was the whole defect).
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -373,9 +385,45 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 36
+## Tonight's tasks (in order) — CYCLE 37
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 36's list (resolved — kept for context)</summary>
+
+### CYCLE 36
+
+Two Suggester probes. The first — an integration never exercised — came back clean; the second found a real defect on
+the owner's priority (a).
+
+**Probe 1 — resizing the window *mid-drive* is handled.** Every layout check in this run has loaded at a fixed size.
+Departed EXIT 05, resized 1440×900 -> 900×650 while under way, then waited for a real arrival: the sim kept running
+and arrived (status *"Arrived at EXIT 06"*), the canvas backing store followed **2880×1800 -> 1800×1300**, the dash
+re-laid out to 234px (36% of the new height), the arrival panel appeared at 704×220 **fully inside the viewport**,
+panel/dash overlap **0**, no horizontal scroll. Nothing to fix.
+
+- [x] **1. The exit sign changes units halfway through the approach — into metric** — **DONE**
+  - **Evidence (sampled every 450ms across one approach):** the readout runs
+    `0.14 MI -> 0.13 -> 0.12 -> 0.11 -> 0.10 MI -> **159 M** -> 154 M -> 146 M`. Two distinct units in one readout,
+    and the second is **metres** — on an American interstate guide sign, in a cockpit whose speedometer reads **mph**
+    and whose odometer reads **MI**. `ExitSign.jsx:97`: `miles >= 0.1 ? "X.XX MI" : "N M"`.
+  - **The site already has a sign vocabulary, and this disagrees with it.** The owner's own
+    `src/components/DriveModeSign.jsx:20` — the sign on the homepage that leads into drive mode — reads
+    **"1/4 mile"**, the fraction convention of real US guide signage. So drive mode's sign is inconsistent with the
+    rest of the cockpit *and* with the sign the owner already wrote.
+  - **Why feet, not fractions:** a leg is `LEG_LENGTH` 220m = 0.137 mi, and the sign is visible from 220m down to 7m,
+    so the whole range sits **below** a quarter mile — the fraction ladder ("1 MILE / 1/2 / 1/4") never applies. Real
+    advance signage below a quarter mile is given in feet. One unit, imperial, consistent with mph and MI.
+  - **Derive, do not type:** feet must come from the existing `METERS_PER_MILE`, not a hand-typed 3.28084 — this run
+    has closed six instances of a constant shadowing another (guardrail 101's family).
+  - **Files:** `src/components/drive/ExitSign.jsx`.
+  - **Done when:** one unit appears across a whole approach, sampled the same way — **no `M` and no `MI`**; the series
+    decreases monotonically; the endpoints are sane (~720 FT at departure down to ~20 FT before the sign hides); the
+    value derives from `METERS_PER_MILE`; and the sign's position, scale, opacity and flare curves are unchanged from
+    cycle 30, measured, since this touches only the text.
+
+</details>
 
 <details>
 <summary>Cycle 35's list (resolved — kept for context)</summary>
@@ -1479,6 +1527,24 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C36.0 — Resizing the window mid-drive is handled** *(cycle 36 — verification only)* — every layout check in this
+  run had loaded at a fixed size. Departed EXIT 05, resized **1440×900 -> 900×650 while under way**, then waited for a
+  real arrival: the sim kept running and arrived, the canvas backing store followed **2880×1800 -> 1800×1300**, the
+  dash re-laid out to 234px (36% of the new height), the arrival panel appeared at 704×220 **fully inside the
+  viewport**, panel/dash overlap **0**, no horizontal scroll.
+- **C36.1 — The exit sign reads one unit, and it is imperial** *(cycle 36, commit `faf5a43`)* — sampled across an
+  approach, the readout ran `0.14 MI -> 0.13 -> 0.12 -> 0.11 -> 0.10 MI -> **159 M** -> 154 M -> 146 M`: two units in one
+  readout, the second **metric**, on an American guide sign in a cockpit whose speedometer reads **mph** and odometer
+  reads **MI**. It also disagreed with the sign the owner already wrote — `DriveModeSign.jsx:20` reads **"1/4 mile"**.
+  Now feet throughout. The fraction ladder was deliberately **not** added (guardrail 128): a leg is 220m = 0.137 miles
+  and the sign is only visible between 220m and 7m, so "1/4 MILE" could never execute — shipping a dead branch is the
+  exact defect cycle 30 fixed. Feet derive from `METERS_PER_MILE` × 5280, not a typed 3.28084 (guardrail 127).
+  **Verified across two approaches:** series **720 FT -> 110 FT**, monotonic, **single unit `FT` throughout**, no `M`
+  or `MI` in any sampled reading; 720 FT at departure matches 220m through the derivation; and cycle 30's curves came
+  back unchanged (guardrail 125) — hidden while parked, opacity starting **0.002** and reaching full, flare starting
+  **0.000**, scale still monotonic. The sign hides below ~23 FT by design, so the final stretch is arithmetic
+  (`z=7m -> 20 FT`) rather than sampled.
 
 - **C34.0 — Every control does have a focus indicator** *(cycle 34 — closes a question open since cycle 12)* — cycle
   12 dismissed a "no focus indicator anywhere" alarm as an artefact of programmatic focus but could not prove it.
