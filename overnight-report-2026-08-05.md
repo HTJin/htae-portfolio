@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 48 · branch `feat/drive-mode` · 60 commits, nothing pushed
+**Last updated:** end of cycle 49 · branch `feat/drive-mode` · 62 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,32 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 49 — the longest thing you wrote was the one nobody could finish reading
+
+I measured how much of each of the 21 panels is actually on screen. Twenty were fine. The twenty-first was the one
+that matters most.
+
+**EXIT 4 — the sabbatical.** At just over 2,000 characters it is by far the longest entry on the route, and the most
+personal thing on it: family, moving countries, the pandemic, the kitten, Korea. On a 1440-wide laptop **22% of it sat
+below the fold**. At 1280 wide, **34%**. On a 1920 monitor, none of it did.
+
+That last fact is the whole diagnosis. An earlier cycle had already built the fix — a wider panel with three columns —
+but switched it on only at 1536 pixels and above. So the machines most people actually use got the cramped version of
+the single entry that most needed the room, and the layout that solves it sat there unused.
+
+It now starts at 1280. On a 1440 laptop that entry hides nothing — and across all 21 stops, **nothing is hidden
+anywhere** at that size. At 1280 it drops from 144 pixels cut off to 36, and your toolbox stop went from 26 to none.
+
+The text reads better as well as fitting: the column width narrows from about 410 pixels to 360, which is a more
+comfortable line to read, not a longer one.
+
+**The care this needed.** An earlier cycle learned that widening a multi-column block can backfire and make content
+*taller* — it once took your toolbox from 84 pixels hidden to 261. So the test was not "did the sabbatical get
+better" but "did anything get worse": every stop, before and after, at both screen sizes. Nothing regressed. Your
+project stops and the arrival screen were deliberately left untouched.
 
 ---
 

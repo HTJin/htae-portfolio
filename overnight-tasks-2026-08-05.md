@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 49
+**Cycle:** 50
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -481,6 +481,25 @@
 162. **The hidden itinerary renders the same paragraphs** (`DriveScene.jsx:110`). Decide deliberately whether it
      changes, and say which — do not leave it as an accident.
 
+### Cycle 49 pre-mortem (guardrails for this cycle's tasks)
+
+163. **Cycle 28's regression is the hazard to beat.** Widening a multi-column block can make content *taller*, not
+     shorter — that cycle's `break-inside-avoid` change took the toolbox from 84px hidden to **261px**. So measure
+     **every** roomy stop before and after at **both** 1280×800 and 1440×900, and treat *any* stop whose hidden pixels
+     increase as a failure, not just EXIT 4's improvement as a success.
+164. **Width and columns must move together.** Widening the card to 1216px while leaving two columns would push the
+     measure to roughly 590px per column — worse typography than the problem being fixed. Cycle 39 measured this:
+     widening alone left 22px hidden at a 492px measure, while widening *plus* a third column hid nothing at 363px.
+     Move both or neither, and **report the resulting column width**.
+165. **Do not touch the project branch.** `2xl:columns-3` sits on the `roomy` branch only; project stops render
+     through the grid branch with their own height-gated rule (C46.1 confirmed that rule is correct as written). A
+     stray edit that puts three columns into a project stop's narrow text column would be a real regression.
+166. **The destination is not roomy.** `roomy = !shots && stop.kind !== 'destination'`, so EXIT 20 keeps its 704px
+     card. Confirm it is unchanged rather than assuming the flag does what its name says.
+167. **`xl` is 1280px in this project's config.** Do not assume Tailwind defaults — read `tailwind.config.js`
+     (read-only) and confirm the breakpoint before relying on it, then verify at a width just below it that the old
+     layout still applies.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -496,10 +515,48 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 49
+## Tonight's tasks (in order) — CYCLE 50
 
 _Not yet planned — the Planner writes this list next._
 
+<details>
+<summary>Cycle 49's list (resolved — kept for context)</summary>
+
+### CYCLE 49
+
+Backlog dry, so a Suggester pass — continuing cycle 48's angle of **auditing the content as rendered** rather than
+probing conditions. Swept all 21 stops for how much of each panel is actually on screen.
+
+**Clean — 20 of 21 stops.** At 1440×900 every stop except one hides **nothing**; at 1280×800 the project stops hide
+a uniform 19px and the toolbox 26px, which is the scroll container doing its job on a short window.
+
+- [x] **1. The longest entry on the résumé is the one you cannot read without scrolling** — **DONE**
+  - **Evidence:** EXIT 4 (*Sabbatical / COVID / Family*) is by far the biggest stop — **2,023 characters across 7
+    paragraphs**, where every other stop is 224-1,082. It is also the **only** stop with content below the fold:
+    | viewport | card | hidden | share of the entry |
+    |---|---|---|---|
+    | 1440×900 | 928px | **94px** | **22%** |
+    | 1280×800 | 928px | **144px** | **34%** |
+    | 1920×1080 | 1216px | 0px | — |
+  - **Why it happens:** cycle 39 gave text stops a wider card and a third column, but gated both at **`2xl` (1536px)**.
+    From 1280 to 1535 — a very ordinary laptop — the longest entry is still squeezed into 928px and two columns.
+    At 1920 the gate opens and the same entry hides **nothing**, which is the proof that the layout is right and only
+    the breakpoint is wrong.
+  - **Trialled before proposing:** applying cycle 39's own treatment (card `min(94vw,76rem)` + a third column) earlier:
+    **1440×900: 94px —> 0px hidden**; **1280×800: 144px —> 24px** (34% —> 8%). Panel/dash overlap stays **0** in both.
+  - **Scope is narrow by construction:** the width rule and `2xl:columns-3` both live on the **`roomy`** branch
+    (`StopCard.jsx:343-364`), which is text-only, non-destination stops. Project stops use the grid branch and are not
+    touched.
+  - **Files:** `src/components/drive/StopCard.jsx` (roomy width at `:245`, roomy columns at `:362`).
+  - **Done when:** EXIT 4 hides nothing at 1440×900 and substantially less at 1280×800; **no other stop hides more than
+    it does today** at either size; panel/dash overlap stays 0; and the measure (line length) does not get worse.
+
+</details>
+
+<details>
+<summary>Cycle 48's list (resolved — kept for context)</summary>
+
+### CYCLE 48
 <details>
 <summary>Cycle 48's list (resolved — kept for context)</summary>
 
@@ -2000,6 +2057,22 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C49.1 — The longest entry gets its wide layout on a laptop, not only on a big monitor** *(cycle 49, commit
+  `9a2a721`)* — swept all 21 panels for how much of each is actually on screen. **EXIT 4** (*Sabbatical / COVID /
+  Family*) is by far the biggest — **2,023 characters over 7 paragraphs** against 224-1,082 everywhere else — and
+  was the **only** stop with anything below the fold: **94px (22%) hidden at 1440×900** and **144px (34%) at
+  1280×800**, while hiding **nothing** at 1920×1080. Cycle 39 built the fix — wider card plus a third column — but
+  gated it at **`2xl` (1536px)**, leaving 1280-1535 on the narrow layout; that the same entry is fine at 1920 is the
+  proof the layout was right and only the breakpoint was wrong. Moved both to **`xl`**. **Width and columns moved
+  together** (guardrail 164): the measure **narrows** from **412px** (2 columns) to **359-363px** (3), rather than
+  stretching to the ~590px a bare widening would give. **Swept every stop before and after at both sizes**, because
+  the hazard was cycle 28's regression where widening a multi-column block made content *taller*: **zero regressions**
+  at either size; **1440×900 total hidden across all 21 stops is now 0**; at 1280×800 EXIT 4 goes **144 -> 36** and the
+  toolbox **26 -> 0**; overlap **0** everywhere. The breakpoint is clean (**1279px** still renders 928px/2 columns,
+  **1280px** renders 1203px/3), project stops are untouched at 928px (guardrail 165), and the destination keeps its
+  704px card (guardrail 166). `xl` was **confirmed** to be 1280px by reading `tailwind.config.js`, which only extends
+  the theme (guardrail 167).
 
 - **C48.0 — No stop title is truncated** *(cycle 48 — verification)* — `StopCard.jsx:258` clips the title to a
   single line from `lg` up (`line-clamp-2 lg:truncate`), and a cut-off job title would be a bad thing to ship on a

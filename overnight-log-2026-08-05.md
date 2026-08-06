@@ -1173,3 +1173,35 @@ A raw URL, rendered as **dead text** — `p.querySelector('a')` returned `null`.
 - console clean on a **fresh load** — the first console read was taken on an already-loaded page, which the tool warns proves nothing, so it was re-run after a reload
 
 **Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.4 kB). One commit: `4a54a2e`. -> `Cycle: 49 / Phase: Planner`.
+
+## Cycle 49
+
+**Suggester — kept cycle 48's angle: audit the content as rendered.** Swept all 21 stops for how much of each panel is actually on screen, rather than probing another condition.
+
+**20 of 21 were clean.** At 1440×900 every stop but one hides nothing; at 1280×800 the project stops hide a uniform 19px and the toolbox 26px, which is the scroll container doing its job on a short window.
+
+**The one that was not is the one that matters most.** **EXIT 4** — *Sabbatical / COVID / Family and Personal Reasons* — is by far the biggest stop on the route: **2,023 characters across 7 paragraphs**, where every other stop runs 224-1,082. It was also the **only** stop with content below the fold:
+
+| viewport | card | hidden | share of the entry |
+|---|---|---|---|
+| 1440×900 | 928px | **94px** | **22%** |
+| 1280×800 | 928px | **144px** | **34%** |
+| 1920×1080 | 1216px | 0px | — |
+
+The last row is the diagnosis. Cycle 39 already built the fix — a wider card and a third column — and gated both at **`2xl` (1536px)**. So from 1280 to 1535, an entirely ordinary laptop, the longest and most personal entry on the résumé was squeezed into 928px and two columns, while the same entry hides nothing at 1920. The layout was right; the breakpoint was wrong. Moved both to **`xl`**.
+
+**Width and columns had to move together** (guardrail 164) — widening alone would stretch the measure to roughly 590px per column, which is worse typography than the problem being fixed. Measured: the measure **narrows** from **412px** (two columns) to **359-363px** (three). Better on both axes, which is the same trade cycle 39 made.
+
+**The hazard was cycle 28**, where widening a multi-column block made content *taller* and took the toolbox from 84px hidden to **261px**. So the test was not "did EXIT 4 improve" but "did anything get worse" (guardrail 163) — every stop, before and after, at both sizes:
+
+| | 1440×900 | 1280×800 |
+|---|---|---|
+| regressions | **none** | **none** |
+| EXIT 4 | 94 -> **0** | 144 -> **36** |
+| toolbox (EXIT 19) | 0 -> 0 | 26 -> **0** |
+| total hidden, all 21 stops | **0** | 188 (the project stops' unchanged 19px each, plus EXIT 4's 36) |
+| max panel/dash overlap | 0 | 0 |
+
+**And the edges of the change:** **1279px** still renders the old layout (928px, 2 columns) and **1280px** the new one (1203px, 3) — a clean breakpoint. Project stops are untouched at 928px with no columns, since `2xl:columns-3` and the roomy width both live on the text branch only (guardrail 165), and their own height-gated rule was confirmed correct back in C46.1. The destination is not `roomy` and keeps its 704px card (guardrail 166). `xl` was **confirmed** to be 1280px by reading `tailwind.config.js` — it only extends the theme and never overrides `screens` (guardrail 167).
+
+**Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.4 kB). One commit: `9a2a721`. -> `Cycle: 50 / Phase: Planner`.
