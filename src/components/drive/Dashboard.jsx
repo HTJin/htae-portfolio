@@ -744,9 +744,14 @@ function Vent({ className }) {
 export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
   return (
     <div
+      // The skip link's target. `tabIndex={-1}` is what makes an in-page
+      // anchor actually move focus here rather than only scrolling — from
+      // here the next Tab lands on the first real control.
+      id="drive-controls"
+      tabIndex={-1}
       className={clsx(
         // Height comes from `--dash` on the scene root — see DriveScene.
-        'absolute inset-x-0 bottom-0 z-30 h-[var(--dash)]',
+        'absolute inset-x-0 bottom-0 z-30 h-[var(--dash)] outline-none',
         styles.dash
       )}
     >

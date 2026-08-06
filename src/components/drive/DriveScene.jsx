@@ -465,6 +465,24 @@ export function DriveScene() {
         </Head>
       ) : null}
 
+      {/* First in the tab order on purpose.
+
+          The itinerary below is `sr-only` — clipped to nothing, but still in
+          the tab order — and it carries a link for every stop. Measured, that
+          is 25 of the 38 focusable elements on the page, so `Tab` from the top
+          used to spend 25 presses with the focus ring painted on clipped-away
+          content before reaching a control anyone could see. Taking those
+          links out of the tab order would fix the sighted keyboard user by
+          robbing the screen-reader one, for whom that block *is* the résumé.
+          A skip link costs them nothing and gets everyone else to the cockpit
+          in one press. */}
+      <a
+        href="#drive-controls"
+        className="sr-only z-50 rounded-md border border-sky-300/70 bg-[#04121a] px-4 py-2 text-sm font-semibold text-sky-100 focus:not-sr-only focus:absolute focus:left-3 focus:top-3"
+      >
+        Skip to the drive controls
+      </a>
+
       <Itinerary />
       <ArrivalAnnouncer started={started} parked={parked} stop={stop} />
 
