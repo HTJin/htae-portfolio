@@ -14,3 +14,7 @@ One line per task as it completes.
 - **Cycle 2 · T1** — New `daylight.js`: the route now passes time. Golden-hour dusk at MILE 0 → twilight → full night by the toolbox → first light at the destination. Sky, road, verge, haze, lamps and signs all follow it. — `dd4b28b`
 - **Cycle 2 · T2** — Exit signs rebuilt as real guide signs: MUTCD exit plaque, twin posts, retroreflective flare + headlight sheen, palette-aware green. — `86d0174`
 - **Cycle 2 · T3** — `/drive?exit=11` deep-links an exit; the URL tracks the exit as you travel; junk falls back to MILE 0. — `0d3e493`
+- **Cycle 3 · T1** — Trip computer now reads the year, not just miles: 2016 at school through 2025 at StarPlus, then `NOW`. Projects/toolbox/destination have no dates so they never get a fabricated one. — `94eea90`
+- **Cycle 3 · fix** — `new Date('YYYY-MM-DD').getFullYear()` reads UTC midnight in local time, so Jan 1st dates report the previous year. The StarPlus UI/UX role ("Jan 2024 - Oct 2024") was showing 2023. Year is now read off the string. — `94eea90`
+- **Cycle 3 · T2** — Each leg has its own roadside: guardrail + thinned lamps on the scenic overlook, lights thinned further across the sabbatical. Logic proven by SSR probe; pixels parked as Needs testing. — `c209b57`
+- **Cycle 3 · env** — Chrome can no longer reach the dev server on any host/port (curl can). Switched to SSR probes for real-execution verification.

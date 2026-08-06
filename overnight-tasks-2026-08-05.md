@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 3
+**Cycle:** 4
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -55,6 +55,11 @@
 10. *Failure (cycle 2): `Sky` starts re-rendering React per frame.* It is currently pure static markup. **Guardrail:** it must stay a `drive.subscribe` + refs component exactly like `Dashboard`; no `useState` may be driven by the sim.
 11. *Failure (cycle 2): hydration mismatch from a progress-dependent sky.* Server markup must match the client's first paint. **Guardrail:** the server renders the palette at progress = 0, with no `Math.random`/`Date` at render time; all motion happens in effects afterwards.
 12. *Failure (cycle 2): a brighter dusk sky washes out the HUD or the exit signs.* **Guardrail:** check `StopCard` legibility and exit-sign contrast at the brightest point of the cycle (MILE 0), not only at night.
+13. *Failure (cycle 3): the year readout invents career history.* Projects, the toolbox and the destination have **no** date in the content, so interpolating a year across them would put a fabricated date on the owner's résumé — the worst possible bug on this page. **Guardrail:** only stops with a real `date` in `src/content/**` may carry a year; past the last dated stop the readout says `NOW` and never a number. Verify by checking the readout at a project stop specifically.
+14. *Failure (cycle 3): the roadside leg lookup allocates per frame.* `drawRoadside` runs inside the 60fps paint and iterates every lamp and post. **Guardrail:** precompute the leg/style table once at module load; the paint loop may only index into it — no `.map`/`.filter`/object literals per lamp.
+15. *Failure (cycle 3): new roadside ribbons reintroduce anti-aliasing seams.* `stripes()` exists precisely because filling each segment separately leaves visible seams (`RoadCanvas.jsx` comment on the stripes helper). **Guardrail:** any new continuous roadside element (guardrail rail, kerb) must be painted with the same run-length approach, never per-segment fills.
+16. *Failure (cycle 3): the year readout re-renders React 60 times a second.* **Guardrail:** it must follow the existing `drive.subscribe` + `ref.textContent` pattern used by every other live readout in `TripComputer`.
+17. *Failure (cycle 3): per-leg furniture pops as you drive.* If the leg is derived from the **camera** position rather than each object's own world position, furniture will change appearance as you approach it. **Guardrail:** the leg must be a function of the object's `s`, not of `sim.travel`.
 
 ## Decisions & assumptions locked in
 
@@ -73,7 +78,54 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 2's list is fully resolved — see Done. The Planner fills this for cycle 3 from the Backlog below.)*
+*(cycle 3's list is fully resolved — see Done / Needs testing. The Planner fills this for cycle 4 from the Backlog.)*
+
+<details>
+<summary>Cycle 3's list (resolved — kept for context)</summary>
+
+### CYCLE 3
+
+Cycle 2 made the drive pass *time*. Cycle 3 makes that time **readable** — putting the actual years of the career on
+the instruments — and makes *where you are* on the route legible from the roadside instead of only from the signs.
+
+- [ ] **1. The trip computer reads in years, not just miles** (backlog S12)
+  - **Why:** the strongest thing about this page is that the road *is* the résumé, but the only quantity on the dash is
+    distance. A recruiter reads "2019" faster than "1.4 MI". Putting the year on the instrument cluster ties the
+    metaphor to the actual career with one readout.
+  - **Evidence the data supports it:** `src/content/education.js:6` has `date: '2016-12-01'`, and
+    `src/content/experience.js` carries a `date` on all nine roles — `2017-09-01` (Checkmate Digital) through
+    `2025-12-01` (Senior MES DevOps Engineer), already sorted ascending into the route by
+    `route.js:7,54` (`byDateAscending`). So route indices 1-10 have real, monotonic years: 2016 -> 2025.
+  - **Evidence for the limit:** `src/lib/projects.js` has **no** date field on any project, and the skills and
+    destination stops have none either. Route indices 11-20 therefore have no year in the data.
+  - **Direction (decided):** the readout counts the years while there is real data behind it, then switches to
+    **`NOW`** once past the last dated stop. That is honest — the last role is "Dec 2025 - Present" and today is
+    August 2026 — and it reads well: the odometer counts out the career, then simply says NOW for the side builds,
+    the toolbox and the destination.
+  - **Files:** `src/components/drive/route.js` (add a derived `year` per stop + a `yearAt(travel)` lookup),
+    `src/components/drive/Dashboard.jsx` (`TripComputer`).
+  - **Done when:** driving from MILE 0 to the destination shows the year advancing 2016 -> 2025 across the career
+    highway and then reading `NOW`; the readout updates through `drive.subscribe` + a ref, never React state; and no
+    year is ever shown for a stop that has no date in the content.
+- [ ] **2. Give each leg its own roadside character** (backlog S11)
+  - **Why:** the route has five named legs but every mile of roadside is identical — the same lamps and the same
+    delineators from MILE 0 to the destination. You cannot tell the school zone from the scenic overlook without
+    reading a sign, so the middle of the drive feels like a treadmill.
+  - **Evidence:** `RoadCanvas.jsx` draws roadside furniture from two fixed constants, `LAMP_SPACING = 72` and
+    `DELINEATOR_SPACING = 24`, with no reference to which stop or leg a given world position belongs to.
+  - **Direction:** derive the leg from the world position (not the camera), and vary the furniture per leg — a
+    guardrail along the scenic overlook, denser lighting through the pit stop and destination, sparse open road across
+    the sabbatical stretch. The point is that position becomes legible at a glance.
+  - **Files:** `src/components/drive/RoadCanvas.jsx`, possibly a small table in `route.js`.
+  - **Done when:** the roadside visibly differs between at least three legs while driving, the change is driven by
+    world position so furniture keeps its identity as you pass it, and the paint loop still allocates nothing per
+    frame (guardrail 14) with no anti-aliasing seams (guardrail 15).
+- [ ] **3. Mile markers counting down between exits** (backlog S9b) *(stretch; returns to Backlog if the cycle runs long)*
+  - **Why:** completes the signage story started in cycle 2 and gives the long legs a sense of progress between exits.
+  - **Files:** `src/components/drive/RoadCanvas.jsx`.
+  - **Done when:** small markers appear between exits without adding visual noise to the delineator line.
+</details>
+
 
 <details>
 <summary>Cycle 2's list (resolved — kept for context)</summary>
@@ -132,16 +184,21 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C3-1. Trip computer reads in years** — proven working by server-rendering `yearAt` across all 21 stops plus quarter-leg midpoints. Sequence: 2016 at school, 2017 / 2019 / 2020 across the early roles, **2021 and 2022 while crossing the sabbatical**, 2023 / 2024 / 2025 through StarPlus, then `NOW` from the last dated role onward — and `NOW` at every project, toolbox and destination stop, never a fabricated number (guardrail 13 satisfied). SSR HTML confirms the readout renders `2016` initially. Commit `94eea90`.
+- **C3-1b. Timezone year bug (found while verifying C3-1)** — proven fixed. `yearOf()` used `new Date(d).getFullYear()`, which parses `YYYY-MM-DD` as UTC midnight then reads it back in local time, so in any timezone behind UTC a January 1st date reports the previous year. The SSR probe showed **four** stops at 2023 when only three roles are from 2023: the StarPlus UI/UX role (`2024-01-01`, own label "Jan 2024 - Oct 2024") had silently moved to 2023. Confirmed the mechanism in Node across all ten content dates — only the Jan 1st one differed (local 2023 vs UTC/string 2024). The year is now read straight off the string; the re-run probe shows index 8 at 2024. Commit `94eea90`.
 - **C2-3. Deep-link an exit** — proven working: `/drive?exit=11` opens parked on Solar Power Indy with the panel up and the carousel at 1/4; driving on moved the URL to `?exit=12`; `?exit=999` falls back to the ignition screen at MILE 0 without throwing. The accept predicate was additionally exercised across `11/0/20/21/999/-3/banana/11abc/" 11 "/1.5/""/1e3/null/0x5` — only in-range integers accepted. Commit `0d3e493`.
 - **5c. Reduced-motion path through the carousel** *(cleared cycle 2)* — proven by real execution: `matchMedia('(prefers-reduced-motion: reduce)')` was patched to report `matches: true` inside a 390px probe frame before hydration, then EXIT 11 was opened. The frame counter held at `1/4` across 11 seconds (autoplay would have advanced 2-3 times at the 4.2s interval), clicking the third dot still moved it `1/4 -> 3/4`, and the `@media (prefers-reduced-motion: reduce) { .shot { transition: none } }` rule is present in the served stylesheet.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
-*(empty — all three cycle-1 items were cleared at the top of cycle 2; see Done 5a/5b/5c.)*
+- [ ] **C3-2 visual pass: per-leg roadside character** — the *logic* is proven (see below), but the **pixels are unverified**: Chrome in this environment can no longer reach the dev server on any host/port (`ERR_CONNECTION_REFUSED` in the browser while `curl` on the same URL succeeds, and `localhost:3001` returns one of the user's other apps entirely). Test when the browser can reach the server again: drive from EXIT 10 into the Scenic overlook (EXIT 11-18) and confirm (a) a guardrail appears along the right verge and runs continuously with **no anti-aliasing seams** down its length, (b) the lamp line visibly thins there and thins further across the sabbatical (EXIT 04), (c) nothing pops or changes character as you approach it, and (d) driving still feels smooth.
+  - **Already proven without the browser:** `roadsideAt` server-rendered across all 21 stops gives exactly the intended mapping — Start line / School zone / Career highway at `lampEvery 1` with the sabbatical at `lampEvery 3`, the eight Scenic overlook stops at `lampEvery 2` **with the rail**, then Pit stop and Destination back to `lampEvery 1`. `npm run build` compiles and `next lint` is clean.
 
 ## Awaiting scenario (can't test until a specific scenario occurs)
 
-*(empty — the "foregrounded Chrome" condition arrived at 20:31 local on 2026-08-05 (`hidden=false`, `visibilityState=visible`, dash measured 322px) and the item was cleared.)*
+- [ ] **All pixel-level browser verification** — Awaiting scenario: **a Chrome that can reach the local dev server.** From ~21:05 local, Chrome returns `ERR_CONNECTION_REFUSED` for `127.0.0.1:3007` and `localhost:3007` while `curl` on the identical URLs returns the page, and `localhost:3001` renders a *different* application of the user's ("Virsh.shop — Operator Console") even though `netstat` shows this project's `next dev` owning the port and `curl` returns the right HTML. So Chrome's networking is proxied or isolated away from the shell's. This is environmental and cannot be fixed from here without changing the user's browser/proxy configuration.
+  - **Each cycle:** re-check with one `curl` + one browser navigation. If the browser can reach the server, clear the Needs-testing items above.
+  - **Meanwhile:** verify through the channels that still work — `npm run build`, `next lint`, Node execution, and **SSR probes** (temporarily rendering a value into the page's `sr-only` block, reading it with `curl`, then reverting). That last technique proved both cycle-3 tasks and caught the timezone bug; it is real execution of the real modules through the real toolchain.
 
 ## Blocked (couldn't be implemented — missing dependency the loop can't supply)
 
@@ -155,7 +212,6 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 - **S5 — Ambient drive audio (engine note, turn-signal tick), default muted with a dash toggle** — still deferred: Web Audio only (no new deps allowed), must be opt-in so it never autoplays, and needs a speaker toggle somewhere on the dash that does not crowd the console.
 - **S8 — Persist progress (visited stops / furthest exit) to `localStorage` so a returning visitor resumes** — still deferred: needs a reset affordance so it can't trap someone mid-route. Now interacts with the `?exit=` deep link shipped in cycle 2 — an explicit deep link must win over a stored position.
-- **S9b — Mile markers counting down between exits** — carved out of S9: the sign itself shipped in `86d0174`, but small roadside mile markers would need new drawing in `RoadCanvas.drawRoadside`, which is a separate piece of work.
-- **S11 — Give each leg its own roadside character** *(new, cycle 2)* — the route already has named legs (School zone, Career highway, Scenic overlook, Pit stop, Destination) but every mile of roadside is identical: the same lamps and delineators. Varying the furniture per leg — e.g. denser lighting through the "city" legs, a guardrail on the overlook, none out in the open — would make position on the route legible at a glance. Touches `RoadCanvas.drawRoadside` only.
-- **S12 — Let the odometer read in years, not just miles** *(new, cycle 2)* — the trip computer counts miles, but the route is chronological and every stop already carries a date. Showing the year you are "driving through" next to the odometer would tie the metaphor to the résumé far more directly than distance does. Needs a date on each stop in `route.js` (education/experience already have one; projects do not).
+- **S9b — Mile markers counting down between exits** — carved out of S9 and *deferred again from cycle 3*: it was the stretch task and the cycle filled up. Needs new drawing in `RoadCanvas.drawRoadside`. Hold until the browser can verify pixels again — shipping more unverifiable canvas work is how seams get missed.
+- **S14 — Audit the rest of the site for the same timezone year bug** *(new, cycle 3)* — `new Date('YYYY-MM-DD').getFullYear()` silently reports the previous year for January 1st dates in any timezone behind UTC. It was fixed in `route.js`, but the classic site renders the same content and may format dates the same way. **Read-only investigation first** — the classic sections are outside this run's write scope, so if the bug exists there it becomes a **Needs human** item rather than an edit.
 - **S13 — Weather that belongs to the light** *(new, cycle 2)* — with the dusk-to-night palette in, a thin layer of drifting haze or a few passing headlights on the opposite carriageway would make the road feel inhabited rather than empty. Canvas-only, must respect the per-frame allocation guardrail.

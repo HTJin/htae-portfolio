@@ -73,19 +73,19 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** small-medium; router wiring in `src/pages/drive.jsx`. Deferred to Backlog.
   - **Outcome:** **Shipped** in `0d3e493`. `/drive?exit=11` opens parked at that exit with the engine already running, and the URL tracks the exit as you travel so it is always copyable. Verified end to end for `?exit=11` and `?exit=999`, with the accept predicate exercised across fourteen junk and boundary inputs.
 
-- [ ] **S11 — Give each leg its own roadside character** — Status: Proposed — Cycle: 2
+- [ ] **S11 — Give each leg its own roadside character** — Status: Built (pixels Needs testing) — Cycle: 3
   - **Source:** site audit after the daylight work — the route has five named legs but `RoadCanvas.drawRoadside` paints identical lamps and delineators for all 21 stops, so position on the route is invisible from the roadside.
   - **Suggestion:** vary the furniture per leg — denser lighting through the city legs, a guardrail on the scenic overlook, sparse open road elsewhere.
   - **Why / expected impact:** makes where-you-are legible at a glance and stops the middle of the drive feeling repetitive.
   - **Scope:** medium; canvas only, subject to the per-frame allocation guardrail.
-  - **Outcome:** *(proposed)*
+  - **Outcome:** **Built** in `c209b57`. The scenic overlook gets a guardrail and a thinned lamp line; the sabbatical thins further. Style is resolved once at module load and keyed off each object's own world position, so nothing changes character as you approach it. Mapping proven by SSR probe across all 21 stops; build and lint clean. **The pixels are not yet verified** — Chrome cannot currently reach the dev server — so the visual pass sits in Needs testing.
 
-- [ ] **S12 — Odometer that reads in years, not just miles** — Status: Proposed — Cycle: 2
+- [ ] **S12 — Odometer that reads in years, not just miles** — Status: Done — Cycle: 3
   - **Source:** site audit — the trip computer counts miles, but the route is chronological and education/experience stops already carry dates.
   - **Suggestion:** show the year you are driving through beside the odometer.
   - **Why / expected impact:** ties the metaphor to the résumé far more directly than distance; a recruiter reads "2019" faster than "1.4 MI". Needs a date added to project stops in `route.js`, which currently have none.
   - **Scope:** small-medium.
-  - **Outcome:** *(proposed)*
+  - **Outcome:** **Shipped** in `94eea90`, and it earned its keep twice over. The readout counts 2016 -> 2025 across school and the nine roles, ticking over *between* exits (2021 and 2022 pass while crossing the sabbatical), then reads `NOW` for the side builds, the toolbox and the destination — which have no dates, so they never get a fabricated one. Verifying it also **uncovered a live data bug**: `new Date('YYYY-MM-DD').getFullYear()` reads UTC midnight in local time, so the StarPlus UI/UX role (`2024-01-01`, labelled "Jan 2024 - Oct 2024") was reporting **2023**. Fixed.
 
 - [ ] **S13 — Weather and traffic that belong to the light** — Status: Proposed — Cycle: 2
   - **Source:** site audit after the daylight work — the road is completely empty; nothing else is ever on it.
@@ -97,6 +97,13 @@ this before each Suggester pass so it never re-proposes an idea already here.
 - [ ] **S9b — Mile markers counting down between exits** — Status: Proposed — Cycle: 2
   - **Source:** carved out of S9 when the sign itself shipped; the markers need new drawing in the canvas roadside pass rather than DOM work.
   - **Scope:** small-medium.
+  - **Outcome:** *(proposed)*
+
+- [ ] **S14 — Audit the rest of the site for the same timezone year bug** — Status: Proposed — Cycle: 3
+  - **Source:** the bug found while verifying S12. `new Date('YYYY-MM-DD').getFullYear()` reports the previous year for January 1st dates in any timezone behind UTC.
+  - **Suggestion:** check whether the classic site formats the same content dates the same way — the education and experience sections render the same `date` fields.
+  - **Why / expected impact:** if it does, a role's year is wrong on the main résumé page too, which matters more than on the drive page.
+  - **Scope:** small, but **read-only from this run** — `src/components/sections/**` is outside the write scope, so a confirmed hit becomes a **Needs human** item with the evidence attached rather than an edit.
   - **Outcome:** *(proposed)*
 
 *(Check the box once you've reviewed the outcome.)*

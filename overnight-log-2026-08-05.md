@@ -71,3 +71,31 @@ Running progress, phase transitions, decisions and assumptions. Append-only.
 **Note on one inconclusive browser reading.** An in-browser check of `?exit=banana` returned "running", which would have been a defect — but the tab's `document.title` was **"Virsh.shop — Operator Console"**, i.e. Chrome was showing one of the user's own pages, not this app. `curl` on both the IPv4 and IPv6 stacks returned `<title>Hyun-Tae Jin | Drive mode</title>`, and PID 59844 on :3001 is this project's `next dev`. The reading was therefore against the wrong document and was discarded rather than reported; the user appears to be actively using Chrome, so the loop stopped competing for their tabs and verified the predicate in Node instead.
 
 **21:26 — Builder exit.** `npm run build` compiles (`/drive` 16.4 kB), `next lint` clean, three commits: `dd4b28b`, `86d0174`, `0d3e493`. Dev server restarted clean after the build per guardrail 6. -> **Phase: Reviewer**.
+
+---
+
+## Cycle 3
+
+**21:03 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 3`. Dev server healthy, five commits on the branch, backlog holding S5/S8/S9b/S11/S12/S13.
+
+**21:04 — Planner.** Read the content data cold before planning anything that depends on it: `src/content/education.js:6` has `date: '2016-12-01'` and `src/content/experience.js` carries a `date` on all nine roles (`2017-09-01` .. `2025-12-01`), already sorted ascending into the route. `src/lib/projects.js` has **no** date field, and neither do the skills or destination stops. That fact shaped the whole design of task 1 — the year can only be honest for route indices 1-10. Planned S12 (years) + S11 (roadside character) with S9b (mile markers) as a stretch.
+
+**21:05 — Critic.** Added guardrails 13-17. The one that mattered: *the year readout must never invent career history* — projects have no dates, so past the last dated stop the readout says `NOW`, never a number.
+
+**21:06-21:20 — Builder, task 1 (years).**
+- `route.js` gains a derived `year` per stop and `yearAt(travel)`, interpolating between dated stops. `Dashboard.TripComputer` shows it as the hero number beside the odometer via `subscribe` + a ref (guardrail 16).
+- **Verification technique, since the browser was unavailable (see below): an SSR probe.** Temporarily rendered `yearAt` samples into the page's existing `sr-only` block, read them with `curl`, then reverted the file to byte-identical-to-HEAD. That is real execution of the real module through the real toolchain, not a reimplementation.
+- **The probe immediately caught a real bug.** It showed *four* stops reporting 2023 when only three roles are from 2023. Root cause: `yearOf()` used `new Date(date).getFullYear()`, which parses `YYYY-MM-DD` as **UTC midnight** and then reads it back in **local time** — so in any timezone behind UTC a January 1st date reports the previous year. The StarPlus UI/UX role (`2024-01-01`, whose own label reads "Jan 2024 - Oct 2024") had silently moved to **2023**. Confirmed the mechanism in Node across all ten content dates: only the Jan 1st one differs (local 2023 vs UTC/string 2024). Fixed by reading the year straight off the string. This is exactly the class of bug guardrail 13 was written for — a wrong year on someone's résumé — and it would have shipped invisibly.
+- Re-ran the probe after the fix: `0:-:2016 1:2016 2:2017 3:2019 4:2020 5:2023 6:2023 7:2023 8:2024 9:2024 10:NOW 11..20:NOW`. Quarter-leg midpoints confirm the interpolation ticks over between exits, including **2021 and 2022 while crossing the sabbatical** — the gap years are visibly driven through.
+
+**21:21-21:32 — Builder, task 2 (roadside character).** `route.js` resolves a roadside style per stop once at module load and exposes `roadsideAt(s)`, keyed off the object's own world position rather than the camera's (guardrail 17). The scenic overlook gets a guardrail and a thinned lamp line; the sabbatical thins further. Guardrails are painted with a new run-length `rail`/`railRuns` pass — the same technique `stripes()` uses, because filling each segment separately leaves anti-aliasing seams (guardrail 15). Lamp thinning keeps side alternation by deriving the side from `Math.floor(n / every)` rather than `n`.
+- SSR probe confirms the mapping exactly: Start line / School zone / Career highway at `lampEvery 1` with the sabbatical at `lampEvery 3`, the eight Scenic overlook stops at `lampEvery 2` **with RAIL**, then Pit stop and Destination back to `lampEvery 1`.
+
+**ENVIRONMENTAL BLOCKER (new, different from cycle 1's).** From ~21:05 the Chrome extension can no longer reach the dev server **at all**:
+- `localhost:3001/drive` in Chrome renders a *different application of the user's* — "Virsh.shop — Operator Console" — while `curl` on the identical URL returns `<title>Hyun-Tae Jin | Drive mode</title>`, `netstat` shows this project's `next dev` owning the port, and the process command line confirms it.
+- Moving the dev server to a clean port (3007) did not help: Chrome returns `ERR_CONNECTION_REFUSED` for both `127.0.0.1:3007` and `localhost:3007` while `curl` succeeds on both, on both IPv4 and IPv6.
+- Conclusion: **Chrome's networking is proxied or isolated away from the shell's.** Not a code fault and not fixable from here without changing the user's browser/proxy configuration, which is out of scope and would need a prompt.
+- One reading was discarded rather than reported because of this: an in-browser `?exit=banana` check returned "running", which would have looked like a defect — but the document title showed it was the user's Virsh.shop page, not this app. Checked the title before trusting the reading, threw it out, and verified that predicate in Node instead.
+- **Response:** did not stop. Switched verification to `npm run build`, `next lint`, Node, and SSR probes; parked the pixel-level checks as Needs testing / Awaiting scenario; and pulled the S9b stretch task back to the Backlog rather than shipping more unverifiable canvas work.
+
+**21:33 — Builder exit.** `npm run build` compiles (`/drive` 17.1 kB), `next lint` clean, two commits: `94eea90`, `c209b57`. Dev server restarted clean after the build per guardrail 6, now on **port 3007**. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 4 / Phase: Planner`.
