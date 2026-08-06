@@ -817,10 +817,17 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
           was laid out around one at 32% — a 345px disagreement at 1920.
           To the driver's left is the door; the console lives to their right. */}
       <div className="hidden h-full grid-cols-[0.42fr_clamp(260px,24vw,400px)_1fr] items-stretch gap-5 px-6 pb-2 pt-3 lg:grid xl:grid-cols-[1fr_clamp(260px,24vw,400px)_1fr]">
-        {/* The door side. Only from xl up does it take a full column: below
-            that, giving the console an equal share of a narrow dash squeezes
-            the trip computer and wraps the buttons, so the wheel is brought
-            most of the way to the eyeline rather than all of it. */}
+        {/* The door side. Only from xl up does it take a full column, and the
+            threshold is measured rather than chosen: centring the wheel means
+            the door column must equal the console column, and the console
+            needs ~310px for its button row on one line (measured at 1100px:
+            Back 78 + Next 77 + Route map 105 + the audio toggle and gaps).
+            Working back through the flex shares that is a ~461px column, so
+            2 x 461 + the 260px wheel column + 40px of gaps + 48px of padding
+            = ~1270px before it fits — which is xl. Below that the door column
+            narrows to 0.42fr instead, which brings the wheel most of the way
+            to the eyeline (measured: 153px short at 1100) while keeping the
+            console on one row. Verified at 1100x800 in a sized iframe. */}
         <div className={`h-full ${styles.doorCard}`} aria-hidden="true" />
 
         {/* Driver's side: binnacle behind, wheel in front, one locked unit. */}
