@@ -93,6 +93,20 @@
   opacity: 1;
 }
 
+/* Headlights catching the retroreflective sheeting on a guide sign. */
+.signSheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    108deg,
+    rgba(255, 255, 255, 0) 26%,
+    rgba(255, 255, 255, 0.5) 44%,
+    rgba(255, 255, 255, 0.14) 56%,
+    rgba(255, 255, 255, 0) 72%
+  );
+}
+
 /* Exit shield: the green interstate sign bolted to the corner of the panel. */
 .shield {
   background: linear-gradient(180deg, #0f5132 0%, #093a24 100%);
