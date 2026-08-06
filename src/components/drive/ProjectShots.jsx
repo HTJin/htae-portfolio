@@ -79,6 +79,12 @@ export function ProjectShots({ images, title, site }) {
               key={source}
               src={source}
               alt={`${title} — screenshot ${position + 1} of ${count}`}
+              // The frames are stacked and cross-faded with opacity, which
+              // does *not* take an element out of the accessibility tree — so
+              // all of them used to be announced and a screen-reader user met
+              // four screenshots where a sighted one sees a single picture.
+              // Only the frame actually on screen is exposed.
+              aria-hidden={position === index ? undefined : 'true'}
               className={`${styles.shot} ${
                 position === index ? styles.shotOn : ''
               }`}
@@ -89,8 +95,14 @@ export function ProjectShots({ images, title, site }) {
         </div>
       </div>
 
+      {/* The dots stay small — that is the design — but the *targets* do not.
+          Each button is a 24x24 box with the pill centred inside, which is the
+          WCAG 2.5.8 minimum; at the previous 6x6 they were close to unusable on
+          the phone layout, where this carousel sits inside the arrival panel.
+          The row carries no gap because the padding already separates the dots,
+          so the buttons never overlap each other. */}
       {count > 1 ? (
-        <figcaption className="mt-2 flex items-center justify-center gap-1.5">
+        <figcaption className="mt-1 flex items-center justify-center">
           {images.map((source, position) => (
             <button
               key={source}
@@ -98,12 +110,17 @@ export function ProjectShots({ images, title, site }) {
               onClick={() => show(position)}
               aria-label={`Show screenshot ${position + 1}`}
               aria-current={position === index}
-              className={`h-1.5 rounded-full transition-all ${
-                position === index
-                  ? 'w-5 bg-sky-300'
-                  : 'w-1.5 bg-white/25 hover:bg-white/50'
-              }`}
-            />
+              className="group flex h-6 w-6 items-center justify-center"
+            >
+              <span
+                aria-hidden="true"
+                className={`h-1.5 rounded-full transition-all ${
+                  position === index
+                    ? 'w-5 bg-sky-300'
+                    : 'w-1.5 bg-white/25 group-hover:bg-white/50'
+                }`}
+              />
+            </button>
           ))}
         </figcaption>
       ) : null}

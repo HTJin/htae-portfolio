@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
+**Phase:** Builder
 **Cycle:** 22
 
 ## Project orientation (so a fresh agent can start cold)
@@ -173,6 +173,25 @@
 66. **If the measurement does not show a win, do not ship it.** The item was parked for five cycles under guardrail 9
     for exactly this reason. A dirty-check that skips nothing is added complexity in a hot path.
 
+### Cycle 22 pre-mortem (guardrails for this cycle's tasks)
+
+67. **Never hide the *visible* screenshot from assistive tech.** The whole point is that one image carries the
+    content. Hiding all of them would turn an over-announcement into silence, which is worse — verify the exposed
+    one is the one at `opacity: 1`, not merely that the count dropped to one.
+68. **The exposure must follow the cycle, not the first render.** Check after the carousel advances, not only on
+    load — a check that passes once and then goes stale is the same defect in a new place.
+69. **Growing a hit area must not move a pixel.** Verify the *visible* pill's box is unchanged (same width, height
+    and centre) after the change, and confirm neighbouring hit boxes do not overlap.
+    > **AMENDED during the Builder phase, cycle 22 — this rule as written was unsatisfiable, and saying so is better
+    > than quietly breaking it.** The dots are 6px wide with a 6px gap, so centres sit **12px** apart. WCAG 2.5.8 is
+    > met either by a 24×24 target or by its spacing exception (24px circles centred on each target must not
+    > intersect) — and at 12px centres **both** fail. Compliance is therefore impossible without more room, so
+    > "unchanged centre" cannot hold. **Amended rule:** the visible pill's own width and height must be unchanged and
+    > neighbouring hit boxes must not overlap; the *spacing* between dots may grow, and the result must be confirmed
+    > by screenshot rather than assumed to look fine.
+70. **`alt=""` and `aria-hidden` are not interchangeable here.** An empty `alt` still leaves the element in the tree
+    as decorative; the goal is that the inactive frames are not announced at all.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -190,7 +209,29 @@
 
 ## Tonight's tasks (in order) — CYCLE 22
 
-_Not yet planned — the Planner writes this list next._
+Backlog dry (S15 blocked, S13b closed), so a **Suggester** pass — aimed back at the owner's priority (c), the project
+screenshots, which no cycle has re-examined since it was built in cycle 1. The carousel itself is in good shape: the
+captures show whole (browser-chrome frame, `object-contain`, 2:1), they cross-fade on their own, they pause on hover
+and focus, and reduced motion holds frame 1. Two things around it are measurably wrong.
+
+- [ ] **1. Every screenshot is announced, not just the visible one**
+  - **Evidence (measured at EXIT 13, 4 captures):** all four `<img>` elements are in the DOM at once, stacked, with
+    only the current one at `opacity: 1`. `opacity: 0` does **not** remove an element from the accessibility tree, so
+    all four carry live `alt` text — *"Co.Lab Portfolio App — screenshot 1 of 4"*, *"...2 of 4"*, *"...3 of 4"*,
+    *"...4 of 4"*. A screen-reader user hears four screenshots where a sighted user sees one.
+  - **Files:** `src/components/drive/ProjectShots.jsx`.
+  - **Done when:** exactly **one** image is exposed to assistive tech at a time, it is the visible one, and the
+    exposure follows the cross-fade as it cycles.
+- [ ] **2. The carousel dots are 6×6px targets**
+  - **Evidence (measured):** each inactive dot's hit box is **6×6 CSS px** (the active one is 20×6). WCAG 2.2 SC 2.5.8
+    asks for 24×24. This carousel appears inside the arrival panel on a phone, where a 6px target is the difference
+    between "you can browse the screenshots" and "you cannot".
+  - **The constraint that makes it interesting:** the dots are deliberately small *visually* — that is the design, and
+    growing the pill would change the panel. The hit area has to grow without the visible dot changing at all.
+  - **Files:** `src/components/drive/ProjectShots.jsx`.
+  - **Done when:** every dot's hit box is at least 24×24 CSS px, the **visible** pill is unchanged in size and
+    position, and neighbouring hit boxes do not overlap (an enlarged target that swallows its neighbour's clicks is a
+    worse bug than a small one).
 
 <details>
 <summary>Cycle 21's list (resolved — kept for context)</summary>
