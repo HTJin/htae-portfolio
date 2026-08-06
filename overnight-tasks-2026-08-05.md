@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 45
+**Cycle:** 46
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -445,6 +445,25 @@
 152. **Say what was not verified.** If any part of the no-JS experience cannot be exercised here, record that rather
      than implying it was checked.
 
+### Cycle 45 pre-mortem (guardrails for this cycle's tasks)
+
+153. **Do not strand the focus.** `disabled` removes a button from the tab order. A keyboard visitor can be focused on
+     GO *and holding it* when the car arrives (the pedal takes Enter/Space, `Dashboard.jsx:539-547`), so disabling it
+     on arrival would drop `document.activeElement` to `<body>`. Move focus somewhere deliberate and **verify what
+     `activeElement` actually is** after arriving that way — do not reason about it.
+154. **Do not leave the throttle stuck on.** `Pedal` releases via `onPointerUp`/`onKeyUp`/`onBlur`. If the button is
+     disabled mid-press those may never fire, leaving `sim.throttle === 1` — and then **BACK** would pull away the
+     instant it is pressed. Release the throttle explicitly when the pedal goes inert, the same way opening the map
+     already does (`DriveScene.jsx`), and prove `throttle` is 0 by driving BACK and confirming the car stays put.
+155. **The brake must stay live.** A brake pedal that does nothing while stopped is how a real car behaves; a
+     *disabled* brake would be a new lie in place of the old one. Only the accelerator changes.
+156. **Both call sites, both layouts.** `Pedal` is rendered twice — phone (`:817`) and desktop (`:914`). Cycle 39's
+     defect was a change that silently applied to one branch only. Measure the destination at a phone width **and** a
+     desktop width.
+157. **Prove the other 20 exits are untouched.** The condition is `index === route.length - 1 && parked`. Re-measure at
+     an intermediate exit that GO is still enabled **and still accelerates the car** — a regression here would break
+     the primary control of the whole page.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -460,9 +479,66 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 45
+## Tonight's tasks (in order) — CYCLE 46
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 45's list (resolved — kept for context)</summary>
+
+### CYCLE 45
+
+Backlog dry again (S15 is blocked behind the Needs-human canonical fix; S13b is closed as unwanted), so this was a
+fresh Suggester pass. Every previous cycle tested the **middle** of the drive; this one tested its **boundaries** —
+what happens with junk in the URL, with corrupt saved progress, and at the very end of the road.
+
+**Clean — the deep-link parser.** `/drive?exit=99` and `/drive?exit=21` (one past the last index) both fall back to
+the ignition splash at MILE 0 with **Back disabled**, rather than throwing or landing somewhere arbitrary.
+`DriveScene.jsx:300-308` rejects anything that is not an exact integer in range — `String(target) !== String(raw).trim()`
+also rejects `011`, `+11` and `11abc`.
+
+**Clean — saved progress.** `progress.js` wraps every `localStorage` access (it throws outright in Safari private
+mode), returns `null` for anything unparseable or out of range, **and** re-checks that the stored `id` still matches the
+stop at that index, so a content edit cannot land a returning visitor somewhere unrelated. `writeProgress` only ever
+moves forward.
+
+**Clean — the destination itself.** `/drive?exit=20` reads **EXIT 20 / DESTINATION / You have arrived / 21/21**, the
+tab title matches, the trip computer says ARRIVED, and the panel carries the email call to action, the trip summary
+and a way back to the classic site.
+
+- [x] **1. At the end of the road the accelerator is still lit, and it does nothing** — **DONE**
+  - **Evidence (measured at `/drive?exit=20`, the destination):** the console's **NEXT** button correctly reports
+    `disabled: true`, `opacity: 0.3`, `cursor: not-allowed` — it knows there is no next exit. The **GO pedal beside it
+    reports `disabled: false`, `opacity: 1`, `cursor: pointer`**, at **62×76** the largest control in the cockpit, and
+    it is the one control the ignition splash explicitly tells you to use (*"Hold the accelerator to pull onto the
+    highway"*, `route.js:41`). Holding it changes **nothing**: dash readout byte-identical across 2.5s of held
+    `ArrowUp` — still `0 MPH`, still `P`, tachometer unmoved.
+  - **Why it is inert:** `useDrive.js:131-140` only pulls away from a stop while `sim.target < all.length - 1`; at the
+    last stop that is false, so `step()` returns at the `sim.parked` branch (`:145`) and the car cannot move. It is
+    correct that it cannot move — the road ends — but nothing says so.
+  - **It is worse than a no-op:** `Pedal` (`Dashboard.jsx:557`) carries `active:translate-y-[3px]` and
+    `hover:brightness-125`, so the pedal **visibly depresses under the press** and then nothing happens.
+  - **Control (the harness is proven, not assumed):** the identical dispatched `ArrowUp` at `/drive?exit=10` took the
+    car from **0 to 27 MPH** and on to EXIT 11. So "nothing moved" at exit 20 is the page, not a dead probe.
+  - **Files:** `src/components/drive/Dashboard.jsx` (`Pedal` at `:530`, and its two call sites — phone `:817`,
+    desktop `:914`).
+  - **Done when:** at the destination the GO pedal is as visibly unavailable as NEXT already is, and says why to a
+    screen reader; the **brake stays live** (a brake at a standstill is not a lie); `ArrowUp`/`W` remain a no-op there;
+    and at every other exit GO is unchanged and still drives — re-measured, not assumed.
+
+- [x] **2. Arriving at the destination threw a keyboard visitor's focus to the top of the document** — **DONE**
+  *(not planned — found while pre-morteming task 1, and it was already shipped rather than a risk my change would
+  have introduced)*
+  - **Evidence:** guardrail 153 predicted that disabling GO under a visitor's focus would strand them, so I checked
+    whether **NEXT** already did it. Polling every 500ms through an autopilot run from EXIT 19: at **t = 13.0s** the car
+    arrived, `Next` flipped to `disabled: true`, and `document.activeElement` became **`<body>`** in the same instant.
+    The next Tab therefore restarted at the top of the document — back through the whole hidden résumé that cycle 33
+    spent a cycle getting the keyboard *past*.
+  - **Fixed with task 1** rather than after it: the same commit releases the throttle and rescues focus, so the new
+    disabled pedal joins an honest mechanism instead of becoming a third control that strands people.
+
+
+</details>
 
 <details>
 <summary>Cycle 44's list (resolved — kept for context)</summary>
@@ -1828,6 +1904,32 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C45.0 — The boundaries of the drive are sound** *(cycle 45 — verification)* — every earlier cycle tested the
+  middle of the route, so this one tested its edges. **Deep links:** `?exit=99` and `?exit=21` (one past the last
+  index) both fall back to the ignition splash at MILE 0 with Back disabled; `DriveScene.jsx:300-308` also rejects
+  `011`, `+11` and `11abc` via `String(target) !== String(raw).trim()`. **Saved progress:** `progress.js` wraps every
+  `localStorage` access, returns `null` for anything unparseable or out of range, **and** re-checks the stored `id`
+  against the stop at that index so a content edit cannot land a returning visitor somewhere unrelated. **The
+  destination:** `?exit=20` reads EXIT 20 / DESTINATION / **21/21**, matching tab title, ARRIVED on the trip computer.
+- **C45.1 — The accelerator no longer lies at the end of the road** *(cycle 45, commit `c2338c8`)* — at the
+  destination the console's **NEXT** correctly reported `disabled: true`, `opacity: 0.3`, `cursor: not-allowed`, while
+  the **GO pedal** reported `disabled: false`, `opacity: 1`, `cursor: pointer` — at **62×76** the largest control in
+  the cockpit, and the one the splash tells you to use. Holding it left the dash readout **byte-identical across 2.5s**.
+  Worse than a no-op: `Pedal` carries `active:translate-y-[3px]`, so it **visibly depressed** under the press with the
+  car going nowhere. The car genuinely cannot move there (`useDrive.js:131-140`); nothing said so. Now the pedal is as
+  unavailable as NEXT, named **"Go — unavailable, this is the end of the route"**. **Verified:** both layouts
+  (desktop 1568×731, phone 390×844); **brake, back and map stay live** (guardrail 155); **exit 10 unchanged and still
+  drives, 0 -> 27 MPH** (guardrail 157); `ArrowUp`/`W` still no-ops there; console clean, no hydration warnings.
+- **C45.2 — Arriving at the destination no longer strands the keyboard** *(cycle 45, same commit)* — found by
+  checking whether the hazard guardrail 153 predicted for GO **already existed** on NEXT. It did: polling every 500ms
+  through an autopilot run from EXIT 19, at **t = 13.0s** the car arrived, NEXT disabled, and `document.activeElement`
+  became **`<body>`** in the same instant — sending the next Tab back through the whole hidden résumé that cycle 33
+  worked to skip. Focus is now moved deliberately to `#drive-controls`, **and only when that is demonstrably what
+  happened**: arriving with focus never in the cockpit leaves it on `<body>` untouched (no steal). The throttle is
+  released at the same moment, because a pedal disabled mid-press never receives its `pointerup` (guardrail 154) —
+  proven by holding the pedal through arrival, then pressing Back and finding a **single** press drove away
+  (0 -> 26 MPH), which only happens if `throttleLock` was false, i.e. the throttle really read 0.
 
 - **C44.0 — Browser zoom and colour theme both hold** *(cycle 44 — verification)* — WCAG 1.4.4 asks for usability at
   200%, which on a 1440×900 laptop is a **720×450** CSS viewport — a size never tested. At 150% and 200%: panel

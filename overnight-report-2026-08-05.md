@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 44 · branch `feat/drive-mode` · 54 commits, nothing pushed
+**Last updated:** end of cycle 45 · branch `feat/drive-mode` · 56 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,37 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 45 — the last thing a visitor touches was a control that did nothing
+
+Every cycle so far has tested the middle of the drive. This one tested the ends — a shared link with a stale exit
+number, a saved position from before you edited your content, and the moment the road runs out. The first two are
+fine. The third was not, and it happens at the worst possible moment: the screen with your email address on it.
+
+**At the destination the accelerator was still lit, and pressing it did nothing.** The small "Next" button knew the
+road had ended and greyed itself out. The GO pedal — the biggest control in the cockpit, and the one the opening
+screen tells you to hold — stayed fully bright. Worse, it *moved*: the pedal visibly presses down and brightens
+under your finger, so someone at the end of your résumé pressed the main control, watched it respond, and watched the
+car not move. That reads as a broken page rather than a finished journey.
+
+It is correct that the car cannot go anywhere — there is no more road. Nothing said so. Now the pedal dims exactly
+like the Next button beside it, and a screen reader hears *"Go — unavailable, this is the end of the route."* The
+**brake stays live**, because a brake that does nothing while you are stopped is how a real car behaves.
+
+**And looking for one bug found a worse one.** Before making that change I asked whether it might strand someone using
+a keyboard — and discovered the page **already did**. Driving the final stretch with the keyboard on the "Next"
+button, the moment the car arrived, that button switched off and the browser dropped the visitor's place on the page
+right back to the very top. Their next Tab press restarted from the beginning — through the entire invisible copy of
+your résumé that an earlier cycle worked specifically to let them skip. Fixed in the same change: their place now moves
+into the cockpit instead, and someone who never touched the controls is left undisturbed.
+
+**One thing worth telling you about how I check things.** My first test of that fix said it had not worked. It had —
+the *test* was broken: this browser window reports itself as unfocused, and in that state moving focus by code
+silently fires none of the events the page listens for. Re-run with real clicks and real key presses, it works. That
+is the fifth time this run that a measurement, not the code, was the thing at fault, which is exactly why nothing gets
+called fixed here on the strength of reading it.
 
 ---
 

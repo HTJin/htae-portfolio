@@ -1057,3 +1057,29 @@ A mean error of **1.73 out of 255** is below anything an eye resolves, and the 1
 **And with JavaScript on it costs nothing:** **zero console messages and zero hydration warnings** (the `<noscript>` uses `dangerouslySetInnerHTML` so server and client markup are identical — guardrail 149), the element renders a **0×0** box, its heading does not appear among the page's headings, and the drive is unchanged: card 928×214, dash 324px, overlap 0, centre still hitting the arrival panel.
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 21.1 kB). One commit: `a779878`. -> `Cycle: 45 / Phase: Planner`.
+
+## Cycle 45
+
+**Suggester — test the edges, not the middle.** Backlog dry again (S15 blocked behind the Needs-human canonical fix, S13b closed as unwanted). Forty-four cycles had exercised the middle of the drive; this pass went at its boundaries — junk in the URL, corrupt saved progress, and the end of the road.
+
+**Two boundaries came back clean.** `?exit=99` and `?exit=21` both fall back to the splash at MILE 0 with Back disabled, and the parser also rejects `011`, `+11` and `11abc`. `progress.js` wraps every `localStorage` access, returns `null` for anything unparseable or out of range, and re-checks the stored `id` against the stop at that index, so a content edit cannot strand a returning visitor somewhere unrelated. The destination itself reads correctly: EXIT 20 / DESTINATION / 21/21, matching tab title, ARRIVED on the trip computer.
+
+**The third was a real one.** At the destination, `NEXT` correctly reported `disabled: true`, `opacity: 0.3`, `cursor: not-allowed`. The **GO pedal beside it** reported `disabled: false`, `opacity: 1`, `cursor: pointer` — **62×76**, the largest control in the cockpit, and the one the ignition splash explicitly tells you to use. Holding it left the dash readout **byte-identical across 2.5s** of held `ArrowUp`. And it was worse than a no-op: `Pedal` carries `active:translate-y-[3px]` and `hover:brightness-125`, so the pedal **visibly depressed and brightened** under the press while the car went nowhere. The car genuinely cannot move there (`useDrive.js` only pulls away while `target < stops.length - 1`) — nothing said so.
+
+**The control that proved the harness.** "Nothing moved" is worthless without proof the probe works: the identical dispatched `ArrowUp` at `?exit=10` took the car **0 -> 27 MPH** and on to EXIT 11.
+
+**The pre-mortem found a second, bigger defect.** Guardrail 153 predicted that disabling GO under a visitor's focus would strand them — so I checked whether **NEXT already did it**. It did, and it was already shipped: polling every 500ms through an autopilot run from EXIT 19, at **t = 13.0s** the car arrived, NEXT flipped to disabled, and `document.activeElement` became **`<body>`** in the same instant. The next Tab restarted at the top of the document — back through the entire hidden résumé that cycle 33 spent a whole cycle getting the keyboard past. So the fix rescues focus rather than adding a third control that strands people.
+
+**The measurement was broken before the code was — again (the fifth time this run).** My first focus test reported the rescue simply not firing. It was the harness: `document.hasFocus()` is **false** in this window, and programmatic `.focus()` then sets `activeElement` **without firing any `focus`/`focusin` event**, so the app's listener never recorded anything to rescue. Re-run with a **real click**, the rescue works. Two further harness artifacts worth recording: disabling the focused button fires **no `focusout` at all** (measured), and a synthetic `pointerId: 2` makes `setPointerCapture` throw `NotFoundError` **before** `onPress()` runs — which is what made one reading claim the throttle release had failed. Confirmed by calling it directly: id 2 throws, id 1 does not.
+
+**Verified**, all with real input where focus was involved:
+- focus on NEXT at arrival -> lands on `#drive-controls`, not `<body>`
+- focus never in the cockpit -> left on `<body>`, **no steal**
+- destination: GO `disabled`, `opacity 0.3`, `not-allowed`, named *"Go — unavailable, this is the end of the route"*
+- brake, back and the map stay live — a brake at a standstill is not a lie (guardrail 155)
+- **both** layouts: desktop 1568×731 and phone 390×844 (guardrail 156)
+- exit 10 unchanged: pedal enabled, still drives **0 -> 27 MPH** (guardrail 157)
+- throttle really released: held the pedal **through** arrival, then Back plus a **single** press drove away (0 -> 26 MPH), which only happens if `throttleLock` was false (guardrail 154)
+- `ArrowUp` and `W` remain no-ops at the destination; console clean, no hydration warnings
+
+**Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.3 kB). One commit: `c2338c8`. -> `Cycle: 46 / Phase: Planner`.
