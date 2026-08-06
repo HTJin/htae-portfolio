@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Suggester
-**Cycle:** 53
+**Phase:** Planner
+**Cycle:** 54
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -532,6 +532,23 @@
 177. **Do not decorate the "driven" markers.** They already announce as text. Adding `aria-current` to them would make
      several rows claim to be current at once.
 
+### Cycle 53 pre-mortem (guardrails for this cycle's tasks)
+
+178. **Do not claim it was heard.** The audible consequence is inferred from the code path — running oscillators, a
+     master gain of 0.09, nothing suspending — and the browser's own behaviour on a hidden tab could **not** be
+     tested here. Report the code fact and the untested part **separately**, in the commit and in the report.
+179. **Prove the listener actually fires.** The graph lives in a closure, so "it should suspend" is unobservable from
+     outside. Patch `AudioContext.prototype.suspend`/`resume` to record calls, then drive a **real**
+     `visibilitychange` with `document.hidden` overridden — and assert the recorded calls, not the intent.
+180. **Sound must never start by itself.** This is the hardest rule in the file: the context is built inside the click
+     handler so noise can only follow a gesture. The visibility listener must exist **only while sound is on**, and
+     coming back to the tab must **not** resume anything for a visitor who had it off — verify that case explicitly.
+181. **A synthetic click will not do.** Enabling audio needs real user activation; this run has already established
+     that `element.click()` does not grant it. Use a real mouse click at real coordinates, and confirm the toggle
+     reports **on** before testing anything else — otherwise the whole test is measuring a silent no-op.
+182. **Do not break what already works.** The toggle must still tell the truth when the browser refuses to start, and
+     unmount must still close the graph. Re-check both rather than assuming an additive change is safe.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -547,17 +564,42 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 53
+## Tonight's tasks (in order) — CYCLE 54
 
-_Not yet planned — backlog still dry, so cycle 53 opens at **Suggester**._
+_Not yet planned — the Planner writes this list next._
 
-> **Do not try to measure frame rate in this environment.** Cycle 52 established that a **bare blank page** runs at
-> **15.0 fps** here, with the window genuinely foregrounded (`document.hasFocus()` true). Drive mode parked measures
-> **15.2** and driving **16.1** — at or above the empty-page ceiling, so there is no signal in the number at all.
-> Guardrail 24 ("frame timing needs a foregrounded window") is **not sufficient**: foregrounded is not enough here. A
-> future cycle that samples `requestAnimationFrame` and reports a performance regression will be reporting the
-> harness, not the site.
+<details>
+<summary>Cycle 53's list (resolved — kept for context)</summary>
 
+### CYCLE 53
+
+Backlog dry. This pass went at the engine audio, untouched since cycle 20 and absent from the exclusion list.
+
+- [x] **1. The engine keeps running when you leave the tab** — **DONE**
+  - **What the code does (read, not guessed):** `grep -rn visibilitychange src/` returns **nothing**. `disable()`
+    (`engineAudio.js:116-119`) only ramps the master gain to 0 — it never suspends — and the only `ctx.close()` is on
+    unmount (`Dashboard.jsx:685-691`). `update()` is driven by `drive.subscribe`, so when `requestAnimationFrame`
+    pauses on a hidden tab it simply **stops being called**: the oscillators keep running at whatever revs they were
+    last set to, with the master gain still at **0.09**.
+  - **Why it matters:** this file's own comment says sound is *"the one control that is off until you press it"* —
+    deliberate about never making unwanted noise. A hum that follows you into another tab, frozen at the revs you left
+    at, is exactly the noise it set out to avoid, and it costs battery for a page nobody is looking at.
+  - **What I could NOT verify here, and will not claim:** whether Chrome suspends a hidden tab's `AudioContext` by
+    itself. I tried — opening a second tab left the drive tab still reporting `visibilityState: "visible"`, so the
+    experiment never ran and its result is worthless. **The fix is correct either way:** if the browser already
+    suspends, an explicit suspend is a no-op; if it does not, it stops the noise. Nothing here depends on the
+    unverified fact.
+  - **Files:** `src/components/drive/engineAudio.js`, `src/components/drive/Dashboard.jsx` (`AudioToggle`).
+  - **Done when:** with sound on, hiding the page suspends the context and returning resumes it; the listener exists
+    **only** while the user has sound on; returning to the tab never turns sound on for someone who had it off; and
+    the toggle still reports its state truthfully.
+
+</details>
+
+<details>
+<summary>Cycle 52's list (a verification-only cycle — nothing shipped, kept for context)</summary>
+
+### CYCLE 52
 <details>
 <summary>Cycle 52's list (a verification-only cycle — nothing shipped, kept for context)</summary>
 
@@ -2199,6 +2241,24 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C53.1 — The engine goes quiet when you leave the tab** *(cycle 53, commit `78d7f0f`)* —
+  `grep -rn visibilitychange src/` returned **nothing**. `disable()` only ramps the master gain and never suspends;
+  the only `ctx.close()` is on unmount; and `update()` rides on `requestAnimationFrame`, so on a hidden tab it stops
+  being called and the oscillators **hold the revs they were last given** with the master gain still at **0.09**. That
+  is against the component's own stated rule — its comment calls sound *"the one control that is off until you press
+  it"*. Now the context suspends on hide and resumes on show, kept **separate** from enable/disable so the visitor's
+  own choice is never overwritten. **Not verified here, and not claimed:** whether Chrome suspends a hidden tab's
+  context by itself — the attempt failed (opening a second tab left this one reporting `visibilityState: "visible"`),
+  so the audible consequence is read off the code path rather than heard. **The fix is correct either way:** a no-op
+  if the browser already suspends, and it stops the noise if not (guardrail 178). **Verified by real execution**
+  (guardrail 179 — the graph is in a closure, so `AudioContext.prototype` was patched to record calls and a real
+  `visibilitychange` driven with `document.hidden` overridden): a **real click** enables sound (`aria-pressed` true,
+  label flips — guardrail 181, so this is not a silent no-op); hiding records **`suspend`**; showing records
+  **`resume`**; with sound **never turned on**, hiding and showing **twice** creates **zero** contexts and **zero**
+  calls (guardrail 180); after toggling back off, hiding makes **zero** calls, so the listener dies with the state that
+  owns it; **exactly one** AudioContext exists across the session despite repeated toggling; and the toggle still
+  reports truthfully in both directions (guardrail 182).
 
 - **C52.0 — The "state told in colour alone" class is clean everywhere else** *(cycle 52 — verification)* — after
   cycle 51 found the route map marking your position visually only, the whole class was hunted rather than left to

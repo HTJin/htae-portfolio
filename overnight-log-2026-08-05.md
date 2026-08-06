@@ -1291,3 +1291,25 @@ The empty page is the ceiling. Drive mode runs **at or above** it, so the whole 
 **And a look rather than a measurement.** At 390×844 the phone cockpit stacks correctly, the screenshot frame and its dots are legible, the panel shows its scroll affordances, and all six controls sit in one reachable row. Nothing to fix.
 
 **Exit.** No commit to `src/`. -> `Cycle: 53 / Phase: Suggester` (backlog still dry).
+
+## Cycle 53
+
+**Suggester — the engine audio, untouched since cycle 20 and not on the exclusion list.**
+
+**The finding, read off the code rather than guessed:** `grep -rn visibilitychange src/` returns **nothing**. `disable()` (`engineAudio.js:116-119`) ramps the master gain to 0 but **never suspends**; the only `ctx.close()` is on unmount; and `update()` is driven by `drive.subscribe`, which is driven by `requestAnimationFrame`. So when a tab is hidden the loop pauses and `update()` simply **stops being called** — the oscillators keep running at whatever revs they last received, master gain still at **0.09**.
+
+**Why that is a defect and not a detail:** this component's own comment calls sound *"the one control that is off until you press it"*, and builds the AudioContext **inside the click handler** so noise can only follow a deliberate gesture. A hum that follows the visitor into another tab, frozen at the revs they left at, is precisely the noise that design set out to prevent — and it burns battery on a page nobody is looking at.
+
+**What I could not verify, and did not claim.** Whether Chrome suspends a hidden tab's `AudioContext` on its own decides whether this is *heard* or merely *wasteful*. I tried to test it: created a second tab to background this one, and the drive tab still reported `visibilityState: "visible"`, so the experiment never ran. Its result is worthless and is not being reported as one. **The fix does not depend on the answer** — if the browser already suspends, an explicit suspend is a no-op; if it does not, the noise stops.
+
+**The fix.** `suspend()`, not `disable()`: ramping the gain would leave the context running and still doing the work. Deliberately separate from enable/disable so the toggle's own state is never touched — coming back restores what the visitor chose rather than deciding for them. The listener is gated on `on`, so it only exists once sound has been asked for.
+
+**Verified by real execution.** The graph lives in a closure, so "it should suspend" is unobservable from outside — I patched `AudioContext.prototype` to record calls and drove a **real** `visibilitychange` with `document.hidden` overridden:
+- a **real mouse click** enables sound — `aria-pressed` flips to true and the label becomes *"Turn engine sound off"*. This mattered: a synthetic click grants no user activation, and the whole test would have been measuring silence
+- hiding the page records **`suspend`** on the app's own context; showing it again records **`resume`**
+- with sound **never turned on**, hiding and showing **twice** creates **zero** AudioContexts and makes **zero** calls — nothing starts by itself
+- after toggling back **off**, hiding makes **zero** calls: the listener dies with the state that owns it
+- **exactly one** AudioContext exists across the whole session despite repeated toggling
+- the toggle still reports truthfully in both directions
+
+**Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.5 kB). One commit: `78d7f0f`. -> `Cycle: 54 / Phase: Planner`.

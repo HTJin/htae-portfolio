@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 52 · branch `feat/drive-mode` · 67 commits, nothing pushed
+**Last updated:** end of cycle 53 · branch `feat/drive-mode` · 69 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,34 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 53 — the engine kept running after you left the tab
+
+Drive mode had nothing watching for the page being hidden. That matters more than it sounds, because of *how* the
+sound is wired: turning it off only fades the volume — it never stops the audio engine — and the code that makes the
+note follow the revs runs on the browser's animation loop, which pauses when a tab goes to the background.
+
+So if a visitor turned sound on and then switched tabs, the engine note did not wind down with them. It **froze at
+whatever revs they left at** and kept going, with an audio engine running for a page nobody was looking at.
+
+That is squarely against how this part was designed. The audio is deliberately the one control that starts off and
+only ever begins after a real click — the file says so in as many words. A hum that follows you into another tab is
+exactly the noise that care was meant to prevent.
+
+**Fixed:** leaving the tab now suspends the sound, and coming back restores it — restoring *your* setting, rather than
+switching sound on for you.
+
+**One honest limit.** Whether Chrome already silences hidden tabs on its own would decide whether this was actually
+audible to you or merely wasteful. I tried to test it and could not get this automated browser to admit it was
+hidden, so I am not going to tell you that you heard it. **The change is safe either way:** if the browser already
+does this, my change does nothing at all; if it does not, the noise stops.
+
+**What I could check, I checked by really doing it** — the audio engine is sealed inside the code, so I had to
+instrument the browser's own audio machinery to watch it: a real click turns sound on, hiding the page suspends it,
+returning resumes it, and — the important one — with sound never switched on, hiding and showing the page repeatedly
+creates no audio engine at all and does nothing whatsoever. Sound still cannot start by itself.
 
 ---
 
