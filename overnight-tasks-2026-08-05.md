@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 18
+**Cycle:** 19
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -113,6 +113,20 @@
 48. **Do not announce what did not happen.** MILE 0 is where you start, not somewhere you arrived. And do not fire an
     arrival announcement while the car is still moving.
 
+### Cycle 18 pre-mortem (guardrails for this cycle's tasks)
+
+49. **Move the cockpit, not the projection.** The road maths is verified correct and was proven pixel-identical in
+    cycle 15. Do not add a principal-point offset to `project()` to "fix" this — that would shove the road into the
+    left third of the windshield. The defect is in the dash layout.
+50. **Measure the wheel, do not eyeball it.** "Looks centred" is not a result. Verify with
+    `getBoundingClientRect()` against `innerWidth / 2`, the same measurement that found the defect.
+51. **Landscape phone is the one that breaks.** Cycle 12's 71px panel/dash overlap lived there and came from a height
+    written twice in different units. Re-check 844×390 and 390×844 explicitly after any dash layout change, and
+    check the arrival panel does not collide with the moved controls.
+52. **Do not quietly redesign the cockpit.** The owner has twice rejected inventions of mine. This task is correcting
+    a measured geometric contradiction — it is not licence to restyle the dash, add instruments, or change what the
+    gauges show.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -128,9 +142,48 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 18
+## Tonight's tasks (in order) — CYCLE 19
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 18's list (resolved — kept for context)</summary>
+
+### CYCLE 18
+
+Backlog dry. This Suggester pass deliberately went back to the **owner's own priority (a)** — *"the car interior dash
+needs work … think of what a car should look like from driving perspective"* — rather than to more peripheral polish,
+and looked at the rendered cockpit against the geometry the road is actually drawn with.
+
+- [x] **1. The cockpit and the windshield disagree about where the driver is sitting** — **DONE**
+  - **Evidence (both halves measured, nothing inferred):**
+    - *Where the eye is.* Ran `world.js` under Node and projected the road centre at increasing distance:
+      `z=10 -> x=759`, `z=100 -> x=945`, `z=20000 -> x=960.14`, `z=1e6 -> x=960.00`, against a screen centre of
+      **960**. The vanishing point converges **exactly on the screen centre** — it must, because `project()` puts the
+      principal point at `width / 2` and the lateral offset is divided by `z`. The camera *is* the driver's eye, so
+      the driver's eyeline is at 50% of the viewport.
+    - *Where the cockpit says the driver is.* Measured in the browser at 1920px: the steering wheel's `<svg>` is
+      centred at **x=615 (32.0%)**, the binnacle gauges at 27–32%, while the rear-view mirror sits at **960 (50.0%)**
+      and the glass, pillars and headliner are symmetric about 960.
+    - So the wheel is **345px — 18% of the viewport — to the left of the driver's own eyeline.** You are sitting in
+      the passenger seat looking across at the steering wheel.
+  - **The comment that hid it.** `world.js:19-27` justifies the framing by asserting *"the road's vanishing point
+    falls slightly left of screen centre, which is exactly where it belongs when you are sitting to the right of the
+    road's centreline."* The Node probe above shows that is **false**: what falls left of centre is the road's *near*
+    field (−201px at 10m), which is correct and is what makes the centre line run down the left. The vanishing point
+    does not move. That false sentence is the stated reason the cockpit was framed the way it is — exactly the class
+    of defect cycle 15 was about, and it is load-bearing here.
+  - **What "from the driver's seat" actually looks like:** the wheel is directly in front of your eyes, so it is
+    horizontally **centred** in your field of view, and the console sits to its right. Everything else in the cockpit
+    is already symmetric about the eyeline; only the steering column contradicts it.
+  - **Files:** `src/components/drive/world.js` (correct the false comment — no maths change),
+    `src/components/drive/Dashboard.jsx`, and `src/styles/drive.module.css` if the layout needs it.
+  - **Done when:** the steering wheel's measured centre sits on the viewport centre (within a few px) at desktop
+    width; the binnacle sits behind it; the trip computer and controls sit clear of it with no overlap; `world.js`'s
+    comment states what the probe actually shows; and nothing regresses at 390×844 (portrait phone) or 844×390
+    (landscape phone), where cycle 12's overlap bug lived.
+
+</details>
 
 <details>
 <summary>Cycle 17's list (resolved — kept for context)</summary>
@@ -655,6 +708,18 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Done (proven by the autonomous Reviewer)
 
+- **C18.1 — The steering wheel is now in front of the driver** *(cycle 18, commit `4d24fd9`)* — the cockpit and the
+  windshield disagreed about where the driver sits. Projecting the road centre through `world.js` under Node gives
+  `z=10 -> 759`, `z=100 -> 945`, `z=1e6 -> 960.00` against a screen centre of **960**: the vanishing point converges
+  exactly on the middle of the image, so the driver's eyeline is the middle of the viewport. Measured in the browser at
+  1920, the wheel was centred at **615 (32.0%)** while the mirror, glass and pillars were symmetric about 960 — the
+  wheel sat **345px, 18% of the viewport, left of the driver's own eye**. The desktop dash is now a grid whose middle
+  column *is* the steering column, so the wheel is centred by construction; a door card (face, armrest edge, pull)
+  occupies the driver's left, because that is what is beside you. `world.js`'s comment claiming the vanishing point
+  falls left of centre — the stated justification for the old framing — was false and now states what the probe shows.
+  **Verified at 1920x895:** wheel centre 960, offset **0**; no wheel/console overlap; no panel/dash overlap; no
+  horizontal scroll.
+
 - **C17.1 — The tab, the bookmark and the route announcer now name the exit** *(cycle 17, commit `aafb4d9`)* —
   `document.title` was identical at every exit while the URL changed, so twenty-one destinations shared one bookmark
   name and one history entry; and because Next's route announcer reads the title **assertively** on every shallow URL
@@ -735,6 +800,12 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5c. Reduced-motion path through the carousel** *(cleared cycle 2)* — proven by real execution: `matchMedia('(prefers-reduced-motion: reduce)')` was patched to report `matches: true` inside a 390px probe frame before hydration, then EXIT 11 was opened. The frame counter held at `1/4` across 11 seconds (autoplay would have advanced 2-3 times at the 4.2s interval), clicking the third dot still moved it `1/4 -> 3/4`, and the `@media (prefers-reduced-motion: reduce) { .shot { transition: none } }` rule is present in the served stylesheet.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
+
+- **The re-centred dash at 1024—1280px and on a phone** *(cycle 18)* — verified at 1920x895 only. `resize_window`
+  reported success but `innerWidth` stayed 1920, so narrower widths could not actually be rendered this session. The
+  phone block (`lg:hidden`) was not touched, and the `lg`—`xl` band deliberately keeps a narrowed door column rather
+  than an equal one so the trip computer cannot be squeezed — but that reasoning is arithmetic, not a screenshot.
+  Needs one look in a real window at ~1100px wide, 390x844 and 844x390.
 
 - [ ] **Route map returns focus to its trigger on close** — the trap's cleanup restores whatever was focused when the dialog opened, and that path runs, but it cannot be observed here: `.focus()` on the trigger button does not stick without OS window focus, so `<body>` is what gets captured and restored. Test in a foreground window: Tab to "Route map", press Enter, press Escape — focus should land back on the "Route map" button.
 

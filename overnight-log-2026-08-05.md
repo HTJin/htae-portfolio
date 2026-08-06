@@ -374,3 +374,23 @@ An in-browser measurement was attempted first but was inconclusive — the image
 **Verified on the production build at `:3008`:** titles distinct across EXIT 14 / MILE 0 / EXIT 20; `curl` confirms the served HTML still carries the page-level `<title>` (guardrail 46 — the DOM would have lied here, since it shows the client's value); the status region is the **same DOM node** across three arrivals while its text changes (guardrail 47); exactly one status region; no `aria-live` on any remounting node; MILE 0 announces *"At the start line"*, not an arrival (guardrail 48).
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.6 kB). One commit: `aafb4d9`. Both tasks **Done**. -> `Cycle: 18 / Phase: Planner`.
+
+## Cycle 18
+
+**Suggester.** Backlog dry. This pass went deliberately back to the **owner's own priority (a)** — *"the car interior dash needs work ... think of what a car should look like from driving perspective"* — instead of drifting further into peripheral polish, and compared the rendered cockpit against the geometry the road is actually drawn with.
+
+**The finding, measured in two halves.** Ran `world.js` under Node and projected the road centre at increasing distance: `z=10 -> x=759`, `z=100 -> x=945`, `z=20000 -> x=960.14`, `z=1e6 -> x=960.00`, against a screen centre of 960. The vanishing point converges **exactly** on the middle of the image — it has to, because `project()` puts the principal point at `width/2` and divides the lateral offset by `z`. The camera is the driver's eye, so the eyeline is the middle of the viewport. Then measured the cockpit in the browser at 1920: steering wheel centred at **615 (32.0%)**, binnacle at 27—32%, but mirror at **960 (50.0%)** and the glass, pillars and headliner symmetric about 960. The wheel was **345px — 18% of the viewport — left of the driver's own eye**. You were sitting in the passenger seat looking across at the wheel.
+
+**The comment that hid it.** `world.js` justified the framing with *"the road's vanishing point falls slightly left of screen centre, which is exactly where it belongs when you are sitting to the right of the road's centreline."* The probe shows that is false: what falls left of centre is the road's *near* field (-201px at 10m), which is correct and is what makes the centre line run down the left. The vanishing point does not move. A false sentence was the stated reason the cockpit was framed that way — the same defect shape as cycle 15, and load-bearing.
+
+**Built.** The desktop dash became a grid whose **middle column is the steering column**, so the wheel is centred on the eyeline by construction at any width. No maths changed (guardrail 49 — adding a principal-point offset to `project()` would have shoved the road into the left third of the windscreen).
+
+**The consequence I had to then deal with.** Centring the wheel costs a column: the driver's left went blank, and a third of the dash reading as a void would have been a regression on the very priority this task was serving. Filled with a door card — card face angling away, armrest edge catching the cowl light, sunk pull — because that is what is beside you, not more dashboard. Quiet, no controls (guardrail 52).
+
+**And the width risk.** An equal door column at `lg` would squeeze the console: computed, the centre stack drops from ~398px to ~224px at 1024. So the full-width door column is `xl`-and-up; `lg`—`xl` narrows it to `0.42fr`, correcting most of the offset without squeezing anything.
+
+**Verified on the production build at 1920x895:** wheel centre **960**, offset **0** from the eyeline (guardrail 50 — measured with `getBoundingClientRect()`, not eyeballed); wheel/console overlap **0**; panel/dash overlap **0**; no horizontal scroll; screenshot confirms the wheel sits under the driver's eye with the console to its right and the door to its left.
+
+**Honest gap.** `resize_window` reported success but `innerWidth` stayed 1920, so narrower widths could not be rendered this session. The phone block was not touched and the `lg` band was reasoned about arithmetically, but that is not a screenshot — parked as **Needs testing** rather than claimed (guardrail 51).
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.6 kB). One commit: `4d24fd9`. -> `Cycle: 19 / Phase: Planner`.

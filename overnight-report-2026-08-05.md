@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 17 · branch `feat/drive-mode` · 31 commits, nothing pushed
+**Last updated:** end of cycle 18 · branch `feat/drive-mode` · 33 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,38 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 18 — you were sitting in the passenger seat
+
+You asked me to think about what a car should look like from the driving perspective. This one had the steering wheel
+in the wrong place, and I can show you by how much.
+
+The road is drawn from a camera that *is* your eyes. I checked where that camera looks by projecting the road out to a
+million metres: the vanishing point lands on **960px** of a 1920px screen — dead centre, every time. So your eyeline is
+the middle of the window. Then I measured the cockpit: the mirror, the glass and the pillars were all centred on 960
+too — but the **steering wheel was centred on 615**. It sat 345 pixels, eighteen percent of the screen, to the left of
+your own eyes. You were looking at the wheel from the passenger seat.
+
+What made it stick was a comment in the code claiming the road's vanishing point sits left of centre, which was given
+as the reason for that framing. It doesn't. What sits left of centre is the road *near you* — which is correct, and is
+why the centre line runs down your left. The far end doesn't move. So the justification was false and had gone
+unchallenged.
+
+The wheel is now the middle column of the dash, which means it is centred on your eyeline at any window size, by
+construction rather than by a number someone tuned. And centring it opened up the space to your left — so that space
+became a **door**: card face, armrest edge catching the light off the windscreen, and a door pull sunk under it. That
+is what is actually beside you when you drive; it isn't more dashboard. The console and the pedals sit to your right,
+where they belong.
+
+I did not touch the projection maths to achieve this. Shifting the camera sideways would have shoved the road into the
+left third of the windscreen — the dash was what was wrong, not the road.
+
+**One thing I could not check:** the browser window refused to actually resize this session, so this is verified at
+1920x895 and nowhere else. The phone layout is untouched code, and I deliberately kept the door column narrow between
+1024 and 1280 so the trip computer can't get squeezed — but that is arithmetic, not a screenshot. It's listed under
+things needing a look in a real window.
 
 ---
 
@@ -191,7 +223,7 @@ Both would have been easy — and wrong — to "fix":
 
 ## Where the drive stands
 
-Your three original asks shipped in cycle 1 (with (c) flagged above for the classic site). Thirteen cycles since went
+Your three original asks shipped in cycle 1 (with (c) flagged above for the classic site). Fourteen cycles since went
 into the standing brief:
 
 a driver's-POV cockpit with working instruments · an arrival panel with auto-cycling full-bleed screenshots ·
@@ -205,7 +237,8 @@ reads as an arrival.
 
 ## Parked, all needing a foreground browser window
 
-Frame rate while driving; audible engine output; and focus returning to the button when you close the route map.
+Frame rate while driving; audible engine output; focus returning to the button when you close the route map; and the
+re-centred dash at narrow desktop and phone widths.
 Animation, timers and focus are all suspended in a backgrounded tab, which isn't something I can arrange from here.
 
 ---
