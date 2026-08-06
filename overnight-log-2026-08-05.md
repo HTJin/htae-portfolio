@@ -339,3 +339,22 @@ An in-browser measurement was attempted first but was inconclusive — the image
 **02:50-03:05 — Verified as a genuine A/B rather than by inspection.** A first attempt lost its baseline when the tab navigated between builds, so the comparison was redone properly: `git stash` the refactor -> rebuild -> capture a canvas frame from the **pre-refactor** build into the parent window (which never navigates) -> `git stash pop` -> rebuild -> capture again at the same exit. Result: **0 of 1,992,704 pixels differ, max channel delta 0.** For a pure refactor that is the only acceptable answer. The exit sign sits outside that canvas diff, being a DOM overlay, so it was checked separately: it still projects to a finite, correctly-scaled on-screen position (`translate(475px, 234px) scale(0.0508)` at 0.1 MI out).
 
 **03:07 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.4 kB). One commit: `e23a9db`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 16 / Phase: Planner`.
+
+## Cycle 16
+
+**06:2x local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 16`. Backlog dry again, so a **Suggester** pass aimed at the *seams between* features this run built separately, rather than at new surface.
+
+**The finding: resuming makes the route map contradict itself.** Seeded progress at EXIT 13, loaded plain `/drive`, took the offered *"Resume · EXIT 13"*, opened the map — exactly **2 of 21** rows read "driven": `MILE 0` and `EXIT 13`. The app was telling the same visitor, one click apart, both that they had reached exit 13 and that they had never driven exits 01-12. `useDrive.js:56` starts `visited` as `new Set([0])` and only ever adds on `arriveAt`.
+
+**Why the fix is safe to infer:** `progress.js` writes only inside the arrival path and `writeProgress` returns early unless the new index exceeds the stored one — progress is therefore *arrival-only and forward-only*, which makes a stored index of 13 proof of arrival at every exit before it. That is an observed property of the code, not an assumption about the visitor.
+
+**The distinction that was the actual point:** this had to apply to **resume only**. A `?exit=11` deep link is proof of a click, not of a drive, so it must keep marking just the one exit. `markVisitedThrough` therefore lives on the hook but is called from exactly one place — `resumeDrive` — and the JSDoc says why, so a future cycle doesn't "helpfully" wire it into the deep-link effect too.
+
+**Verified on a production build at `:3008`, all three cases, hydration confirmed each time:**
+- resume to EXIT 13 → **14 of 21** driven, `MILE 0` through `EXIT 13`, contiguous;
+- deep link `?exit=13` with the same storage → exactly `MILE 0` + `EXIT 13`;
+- fresh visit, storage cleared → `MILE 0` only, and no resume offer rendered.
+
+**Second item, deliberately not built.** While parked, `RoadCanvas.draw()` still repaints every frame and produces a provably identical image — since traffic was removed (cycle 13) the drawing is a pure function of `travel`, `x` and the camera, all constant while parked. The fix is a cheap dirty-check, but its *benefit* cannot be measured in this environment (rAF suspended in a backgrounded tab; the only forced repaint is a resize, which must bypass the check because setting `canvas.width` clears the backing store). Shipping an unmeasurable optimisation into a hot path is guardrail 9's exact failure mode, so it was written to the Backlog as **S16a** with the reasoning attached instead.
+
+**Builder + Reviewer exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.4 kB). One commit: `f0b7c6c`. Both cycle-16 tasks resolved **Done**. -> controller advanced to `Cycle: 17 / Phase: Planner`.

@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 15 · branch `feat/drive-mode` · 28 commits, nothing pushed
+**Last updated:** end of cycle 16 · branch `feat/drive-mode` · 29 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,35 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 16 — the app was contradicting itself
+
+Two features built on different nights disagreed about the same fact, and a visitor could see both statements one
+click apart.
+
+Come back to the site after reading a few exits and it offers **"Resume · EXIT 13"**. Take it, open the route map —
+and the map said you had **never driven exits 01 through 12**. Two of twenty-one rows were marked "driven". The page
+was simultaneously telling you that you'd got as far as exit 13 and that you'd never passed the ones before it.
+
+The fix rests on something the code already guarantees rather than on an assumption about you: progress is saved
+**only on arrival**, and **only ever moves forward**. So a stored exit 13 is proof of arrival at everything behind it.
+Resuming now restores that history, and the map reads as your own drive.
+
+**The part that took the actual thought:** this had to apply to *resuming only*. If someone sends a colleague a link
+straight to exit 11, that colleague clicked a link — they didn't drive the road, and their map shouldn't pretend
+otherwise. The restore is wired into the resume path and nowhere else, with the reasoning written next to it so a
+later pass doesn't "helpfully" apply it to deep links too.
+
+Checked on a real build, all three ways: resume to exit 13 → 14 rows driven, mile 0 through exit 13; deep link to the
+same exit → just that one; a first-ever visit → just mile 0.
+
+**One thing I found and deliberately left alone.** While the car is parked, the road is still being redrawn sixty
+times a second to produce an identical picture — real battery burn on a page someone leaves open while reading. The
+fix is small, but I can't *measure* that it works from here (animation is suspended in a background tab), and shipping
+an unmeasurable optimisation into code that runs every frame is how this branch has broken before. It's written down
+with its reasoning as backlog item S16a instead of guessed at.
 
 ---
 
@@ -134,14 +163,15 @@ Both would have been easy — and wrong — to "fix":
 
 ## Where the drive stands
 
-Your three original asks shipped in cycle 1 (with (c) flagged above for the classic site). Eleven cycles since went
+Your three original asks shipped in cycle 1 (with (c) flagged above for the classic site). Twelve cycles since went
 into the standing brief:
 
 a driver's-POV cockpit with working instruments · an arrival panel with auto-cycling full-bleed screenshots ·
 dusk-to-dawn light that advances with your career · real interstate guide signs · per-leg roadside character ·
 a trip computer counting the actual years · deep links to any exit · mile markers ·
-resume-where-you-left-off · opt-in engine sound · a keyboard-accessible route map · a reduced-motion path that holds
-together · a cockpit that fits a landscape phone · and a destination that finally reads as an arrival.
+resume-where-you-left-off that now remembers the whole drive · opt-in engine sound · a keyboard-accessible route map ·
+a reduced-motion path that holds together · a cockpit that fits a landscape phone · and a destination that finally
+reads as an arrival.
 
 ---
 

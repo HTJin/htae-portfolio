@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 16
+**Cycle:** 17
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -118,9 +118,43 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order)
+## Tonight's tasks (in order) — CYCLE 17
 
-*(cycle 15's list is fully resolved — see Done. The Planner fills this for cycle 16.)*
+_Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 16's list (resolved — kept for context)</summary>
+
+### CYCLE 16
+
+Backlog dry. A **Suggester** pass aimed at the seams *between* features — where two things this run built separately
+might disagree — rather than at new surface.
+
+- [x] **1. Resuming makes the route map contradict itself** — **DONE** *(new, cycle 16 — a seam from cycle 8)*
+  - **Why:** the app offers *"Resume · EXIT 13"*, and one click later the route map says you have never driven exits
+    01-12. Those are the same visitor's own steps: progress only advances **on arrival** and only **forwards**
+    (`progress.js`), so a stored index of 13 is proof they arrived at every exit before it.
+  - **Evidence (measured):** seeded progress at EXIT 13, loaded plain `/drive`, took the offered resume, opened the
+    map. Exactly **2 of 21** rows were marked "driven" — `MILE 0` and `EXIT 13`. `useDrive.js:56` starts
+    `visited` as `new Set([0])` and only ever adds on `arriveAt`.
+  - **The distinction that matters:** this applies to **resume only**. A `?exit=11` deep link must *not* mark 01-11 as
+    driven — that visitor arrived by following a link, not by driving. Restoring history for one and not the other is
+    the whole point.
+  - **Files:** `src/components/drive/useDrive.js`, `src/components/drive/DriveScene.jsx`.
+  - **Done when:** resuming to EXIT 13 marks MILE 0 through EXIT 13 as driven, a deep link to the same exit marks only
+    that one, and a fresh first visit still marks only MILE 0.
+- [x] **2. Record the idle-repaint finding without building it** — **DONE** *(new, cycle 16)*
+  - **Found this cycle:** while parked at a stop the canvas still repaints every animation frame, producing a
+    provably identical image — since traffic was removed (cycle 13) `draw()` is a pure function of `travel`, `x` and
+    the camera, all of which are constant while parked. That is continuous CPU and battery burn for a static picture,
+    on a page someone may leave open while reading.
+  - **Why it is being recorded rather than built:** the fix is a cheap dirty-check in `RoadCanvas`, but its *benefit*
+    (frames actually skipped) cannot be measured here — `requestAnimationFrame` is suspended in this backgrounded tab,
+    and the only way to force a repaint is a resize, which must legitimately bypass any such check because setting
+    `canvas.width` clears the backing store. Shipping an optimisation whose win cannot be observed, into a hot path,
+    is how guardrail 9 gets broken quietly. It goes to the Backlog with this reasoning attached.
+
+</details>
 
 <details>
 <summary>Cycle 15's list (resolved — kept for context)</summary>
@@ -575,6 +609,17 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Done (proven by the autonomous Reviewer)
 
+- **C16.1 — Resuming restores the history behind the resumed exit** *(cycle 16, commit `f0b7c6c`)* — the route map no
+  longer contradicts the resume offer. `useDrive` gained `markVisitedThrough(index)`, called from `resumeDrive` in
+  `DriveScene.jsx` **and nowhere else**: saved progress is written only on arrival and only forwards, so a stored index
+  is proof of every exit before it, whereas a `?exit=` deep link is proof of nothing but a click. **Verified on a
+  production build at `:3008`, all three cases:** resume to EXIT 13 → 14 of 21 rows driven, `MILE 0` through `EXIT 13`;
+  deep link `?exit=13` → exactly `MILE 0` + `EXIT 13`; fresh visit with storage cleared → `MILE 0` only (and no resume
+  offer shown).
+- **C16.2 — Idle-repaint finding recorded, deliberately not built** *(cycle 16)* — see Backlog **S16a**. The measurement
+  that would justify it is not available in this environment, so it was written down with its reasoning instead of
+  shipped blind (guardrail 9).
+
 - **1. Expose every project screenshot to the route** — proven working: `route.js` project stops carry `images[]`; in Chrome at `/drive` the carousel counter read `1/4` at EXIT 11 (solar-indy, 4 files on disk) and `5/5` at EXIT 12 (matrimoni-react, 5 files on disk). Commit `8883aaa`.
 - **2. Auto-cycling project screenshots that are not cut off** — proven working: the full Solar Power Indy capture rendered edge to edge inside the browser frame (previously only its top ~25% was visible), and successive screenshots showed the counter advance 4/4 -> 1/4 -> 2/4 -> 3/4 unaided, with the active dot tracking it. Commit `8883aaa`.
 - **3. Rebuilt arrival panel** — proven working: exit shield + leg + counter header and the media|prose split rendered at 1920x895; the panel's top edge sits at y=118 with the rear-view mirror ending at y=100, so the overlap reported in the audit is gone. Commit `8883aaa`.
@@ -776,6 +821,15 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
+- **S16a — Skip the canvas repaint while parked** *(new, cycle 16 — recorded, not built)* — while the car is parked
+  `RoadCanvas.draw()` runs every animation frame and produces a **provably identical image**: since traffic was removed
+  (cycle 13) the drawing is a pure function of `sim.travel`, `sim.x` and the camera, all constant while parked. That is
+  continuous CPU and battery burn for a static picture on a page someone may leave open while reading a stop.
+  **Why it was not built:** the fix is a cheap dirty-check, but the *win* (frames actually skipped) cannot be measured
+  here — `requestAnimationFrame` is suspended in a backgrounded tab (guardrail 24), and the one way to force a repaint
+  is a resize, which must bypass any such check because setting `canvas.width` clears the backing store. Shipping an
+  unmeasurable optimisation into a hot path is how guardrail 9 gets broken quietly. **Pick this up when a foregrounded
+  window is available** — then the dirty-check and its frame-count evidence can land together.
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
 

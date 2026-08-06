@@ -184,4 +184,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** the module claimed `project()` kept the canvas and DOM overlays in agreement, but nothing called it and three sites duplicated the maths. This branch had already been bitten twice by the same shape - the dash height written twice (71px overlap) and the camera lateral written four times (the centre-line complaint).
   - **Outcome:** **Shipped** in `e23a9db`. `ExitSign` and `RoadCanvas.place` now call `project()`; `buildPoints` stays inlined on purpose (131 iterations/frame into pre-allocated objects) with a comment explaining the trade, so the remaining duplication is deliberate. Proven pixel-identical by a stash/rebuild A/B: **0 of 1,992,704 pixels differ**.
 
+- [ ] **S31 - Resuming made the route map contradict itself** - Status: Done - Cycle: 16
+  - **Source:** a Suggester pass aimed at the *seams between* features built separately in this run - resume (cycle 8) and the route map's "driven" markers.
+  - **Why / expected impact:** measured, not guessed - seeded progress at EXIT 13, took the offered resume, opened the map: **2 of 21** rows read "driven". The app told the same visitor, one click apart, that they had reached exit 13 and that they had never driven exits 01-12.
+  - **Outcome:** **Shipped** in `f0b7c6c`. `markVisitedThrough()` restores the history behind a resumed exit, justified by an observed property of `progress.js` (writes happen only on arrival, and only forwards). Called from `resumeDrive` **only** - a `?exit=` deep link proves a click, not a drive. Verified on a production build, all three cases: resume → 14 of 21 driven (`MILE 0`..`EXIT 13`); deep link → `MILE 0` + `EXIT 13` only; fresh visit → `MILE 0` only.
+
+- [ ] **S32 - Canvas repaints every frame while parked** - Status: Backlog (recorded, deliberately not built) - Cycle: 16
+  - **Source:** reading `RoadCanvas.draw()` after the cycle-13 traffic removal made it a pure function of `travel`, `x` and the camera.
+  - **Why / expected impact:** parked at a stop, every animation frame redraws a provably identical image - continuous CPU and battery burn on a page someone may leave open while reading.
+  - **Outcome:** **Backlog S16a.** Not built, on purpose: the win (frames skipped) cannot be measured here - rAF is suspended in a backgrounded tab, and the only way to force a repaint is a resize, which must bypass any dirty-check because setting `canvas.width` clears the backing store. Shipping an unmeasurable optimisation into a hot path is guardrail 9's failure mode. Pick it up when a foregrounded window is available, so the check and its evidence land together.
+
 *(Check the box once you've reviewed the outcome.)*
