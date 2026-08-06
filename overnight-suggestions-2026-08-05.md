@@ -374,4 +374,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** that claim shaped what I asked you to do, and it was too broad. Measured tag by tag against the served HTML: `next/head` auto-dedupes `<meta name="...">` but not `<meta property="...">` or `<link>`. Every tag `drive.jsx` sets with `name` appears once; every `property` or `link` one appears twice.
   - **Outcome:** **Your drive page's search-result description is already correct** - that never needed fixing. The `key` props are needed for the canonical, the `og:` tags and the structured data only. Separately: `twitter:card` and `twitter:image` are `name`-based and could be overridden today, but were deliberately not - the only image available is a 612x612 square portrait, so a wide card would look worse, and with `og:image` genuinely blocked it would leave Twitter showing one card and LinkedIn another. A drive-mode share image is your branding decision, not one for the loop to make unasked.
 
+- [ ] **S68 - Did the 40x image saving make the screenshots soft?** - Status: Done (no defect) - Cycle: 43
+  - **Source:** cycle 41 shipped a large optimisation, and the cycle most likely to hide a defect is the one that just shipped. "Serve it at the size it is drawn" is exactly how images end up blurry on a high-DPI screen.
+  - **Why / expected impact:** the first reading looked like a confirmed defect - a 451px slot on a 2x display needs 902px, and `naturalWidth` reported 470.
+  - **Outcome:** **No defect.** `currentSrc` carries `w=1080`, and re-decoding that exact URL in a fresh `Image()` returns 1080x552 - the resource really is 1080px. `naturalWidth` on a srcset image is density-corrected, which is why it reports 470. The screenshots are delivered at about **2.4x** the CSS size. Both the byte saving and the sharpness are real.
+
+- [ ] **S69 - Is the default image quality right for screenshots full of small text?** - Status: Done (deliberately not changed) - Cycle: 43
+  - **Source:** the same audit. WebP at the default q=75 is a plausible place to lose the fine UI text that cycle 40 worked to make readable.
+  - **Why / expected impact:** it would have been easy to raise the quality on the grounds that it probably looks better - which is a guess, not a finding.
+  - **Outcome:** **Measured, and left alone.** Decoding q=75/85/90 against near-lossless q=95 at the delivered 1080px width: q=75 has a mean channel error of **1.73 out of 255** with 1.5% of pixels differing by more than 8; q=90 improves that to 1.25 while costing **+76% bytes** (129 KB -> 227 KB per arrival). Below any perceptual threshold, so the trade is not worth making.
+
 *(Check the box once you've reviewed the outcome.)*

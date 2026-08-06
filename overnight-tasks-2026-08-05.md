@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 43
+**Cycle:** 44
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -444,9 +444,22 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 43
+## Tonight's tasks (in order) — CYCLE 44
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 43's list (resolved — kept for context)</summary>
+
+### CYCLE 43
+
+Backlog dry. Cycle 41 cut the screenshot payload 40×; this pass went looking for what that might have cost, on the
+principle that the cycle most likely to contain a defect is the one that just shipped.
+
+- [x] **1. Did the 40× byte saving make the screenshots soft on a high-DPI display?** — **DONE (no — they are ~2.4×)**
+- [x] **2. Is the default image quality right for screenshots full of small text?** — **DONE (yes — measured, do not change)**
+
+</details>
 
 <details>
 <summary>Cycle 42's list (resolved — kept for context)</summary>
@@ -1763,6 +1776,26 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C43.0 — The optimised screenshots are not soft** *(cycle 43 — verification only)* — cycle 41 cut a project stop
+  from 5,306 KB to 131 KB, and the obvious risk of "serve it at the size it is drawn" is a blurry image on a 2×
+  display. The first reading looked alarming: `devicePixelRatio: 2`, a 451px CSS slot needing 902px, and
+  `img.naturalWidth` reporting **470**. It resolves the other way. `currentSrc` carries **`w=1080`**, and re-decoding
+  that exact URL in a fresh `Image()` returns **1080×552** — the resource really is 1080px. `naturalWidth` on a
+  `srcset` image is **density-corrected** (1080 ÷ the 470px `sizes` value — 2.3 — reports back as 470), which is
+  standard behaviour, not a small file. So a **1080px resource fills a 451px slot at DPR 2 — about 2.4×**. The byte
+  win and the sharpness are both real.
+- **C43.1 — Default image quality is the right setting, measured** *(cycle 43 — deliberately not changed)* — the
+  screenshots are full of small UI text and Next's default `q=75` is a plausible place to lose it, so it was measured
+  rather than adjusted on instinct. Decoding q=75/85/90 against near-lossless **q=95** at the delivered 1080px width:
+  | quality | mean channel error | pixels differing by >8 | worst | bytes per 5-frame arrival |
+  |---|---|---|---|---|
+  | **75 (current)** | **1.73 / 255** | **1.5%** | 40 | **129 KB** |
+  | 85 | 1.39 | 0.48% | 22 | ~190 KB |
+  | 90 | 1.25 | 0.13% | 17 | **227 KB** |
+  A mean error of **1.73 out of 255** is below any perceptual threshold, and moving to q=90 would buy **0.5/255** for
+  **+76% bytes**. Not a trade worth making — and raising it on the grounds that it "probably looks better" is exactly
+  the guess this run refuses. Left at 75.
 
 - **C42.0 — All 21 exits still clean after cycles 38—41** *(cycle 42 — verification only)* — four cycles had changed the
   global key handler, the panel width, the column count and the image pipeline. Re-ran the cycle-28 sweep: every stop

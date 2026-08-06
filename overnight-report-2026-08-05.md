@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 42 · branch `feat/drive-mode` · 53 commits, nothing pushed
+**Last updated:** end of cycle 43 · branch `feat/drive-mode` · 53 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,34 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 43 — making sure last cycle's big win did not cost you anything
+
+Two cycles ago I cut the download for a project stop from **5.3 MB to 131 KB**. A saving that large is worth being
+suspicious of, so this cycle tried to find what it broke. Nothing, as it turns out — but the checking is the point.
+
+**Are the screenshots now blurry on a good monitor?** The first reading said yes, alarmingly: on a 2× display a
+451-pixel slot needs a 902-pixel image, and the browser reported the image as **470** pixels wide. That looks like a
+half-resolution picture.
+
+It is not. The image actually being downloaded is **1080 pixels** wide — I confirmed it by re-downloading that exact
+file and measuring it directly, rather than trusting the first number. The "470" is a quirk of how browsers report
+sizes for responsive images; it divides by the density. Your screenshots are being delivered at roughly **2.4×** the
+size they are displayed at, which is comfortably sharp.
+
+**Is the compression eating the small text?** Your screenshots are pictures of web pages, full of fine type — exactly
+what compression damages first, and exactly what the last cycle worked to make readable. Rather than turn the quality
+up because it "probably looks better", I measured it: I compared the current setting against a near-lossless version,
+pixel by pixel.
+
+The current setting is off by an average of **1.7 shades out of 255**, with 1.5% of pixels differing noticeably — the
+highest-contrast letter edges. Turning quality up would improve that to 1.3 shades while making every project stop
+**76% heavier**. That is not a good trade, so I left it alone.
+
+**Nothing changed this cycle.** Both answers are now measurements instead of hopes: the big saving cost you neither
+sharpness nor legibility.
 
 ---
 

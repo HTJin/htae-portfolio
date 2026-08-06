@@ -1012,3 +1012,25 @@ Every tag `drive.jsx` sets with `name` appears once; every one it sets with `pro
 **And one thing I could have shipped and chose not to.** `twitter:card` and `twitter:image` are `name`-based, so `drive.jsx` could override them today, in scope, to get a wide share card. The only image available is `avatar.png`, a **612×612 square portrait** — putting that in a `summary_large_image` frame makes the card worse, not better. And since `og:image` genuinely is blocked, doing it would leave Twitter showing one card while LinkedIn and Slack show another. A wide drive-mode card image is a decision about the owner's own branding, not a gap for the loop to fill unasked.
 
 **Exit.** No commit to `src/` — the sweep found nothing to fix and the finding is a correction to the notes, not to the code. -> `Cycle: 43 / Phase: Planner`.
+
+## Cycle 43
+
+**Suggester — audit the newest change first.** Backlog dry. Cycle 41 cut a project stop's payload from **5,306 KB to 131 KB**, and the cycle most likely to be hiding a defect is the one that just shipped. Two things could have gone wrong with "serve the image at the size it is drawn": softness on a high-DPI screen, and compression eating the small text those screenshots are full of. Both were measured.
+
+**Softness — the first reading looked like a defect and was not.** `devicePixelRatio: 2`, a **451px** CSS slot (so 902px needed for a crisp 2× render), and `img.naturalWidth` reporting **470**. That looks exactly like a 1× image on a 2× display.
+
+It resolves the other way, and the decisive step was not trusting either number: `currentSrc` carries **`w=1080`**, and re-decoding that exact URL in a fresh `Image()` returns **1080×552**. The resource genuinely is 1080px wide. `naturalWidth` on an image chosen from a `srcset` is **density-corrected** — 1080 divided by the effective density (1080 / the 470px `sizes` value ≈ 2.3) reports back as 470. Standard browser behaviour, not a small file. So the screenshots are delivered at about **2.4×** the CSS size on a 2× display. Byte win and sharpness are both real.
+
+**Quality — measured rather than nudged.** Next's default is `q=75`, and WebP at 75 is a plausible place to lose fine UI text, which is precisely what cycle 40 worked to make readable. Rather than raise it on instinct, I decoded q=75, 85 and 90 against near-lossless **q=95** at the delivered 1080px width and compared every pixel:
+
+| quality | mean channel error | pixels differing by >8/255 | worst | bytes per 5-frame arrival |
+|---|---|---|---|---|
+| **75 (current)** | **1.73 / 255** | **1.5%** | 40 | **129 KB** |
+| 85 | 1.39 | 0.48% | 22 | ~190 KB |
+| 90 | 1.25 | 0.13% | 17 | **227 KB** |
+
+A mean error of **1.73 out of 255** is below anything an eye resolves, and the 1.5% of pixels above the threshold are the highest-contrast text edges. Moving to q=90 would buy **0.5/255** of accuracy for **+76% bytes**. That is not a trade worth making, and shipping it because it "probably looks better" would be the exact guess this run keeps refusing. **Left at 75.**
+
+**Outcome: nothing changed, and both results are worth having.** The 40× saving from cycle 41 costs neither sharpness nor legibility, and that is now a measurement rather than a hope.
+
+**Exit.** No commit to `src/`. -> `Cycle: 44 / Phase: Planner`.
