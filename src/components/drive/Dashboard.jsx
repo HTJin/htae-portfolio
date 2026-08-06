@@ -734,7 +734,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
   return (
     <div
       className={clsx(
-        'absolute inset-x-0 bottom-0 z-30 h-[36%] min-h-[210px]',
+        'absolute inset-x-0 bottom-0 z-30 h-[clamp(190px,36%,48%)]',
         styles.dash
       )}
     >

@@ -395,7 +395,7 @@ export function DriveScene() {
       <CarInterior passedStop={passedStop} />
 
       {/* Heads-up display floats on the glass: below the mirror, above the dash. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[36%] top-[14%] z-30 flex items-center justify-center px-4">
+      <div className="pointer-events-none absolute inset-x-0 bottom-[clamp(190px,36%,48%)] top-[14%] z-30 flex items-center justify-center px-4">
         <StopCard
           stop={stop}
           visible={started && parked && !mapOpen}
