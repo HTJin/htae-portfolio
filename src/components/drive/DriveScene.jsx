@@ -535,6 +535,37 @@ export function DriveScene() {
         }}
         onBlur={() => setOutlineFocus(null)}
       >
+        {/* What is left if the JavaScript never runs.
+
+          Measured from the served HTML: the whole résumé is already in this
+          page — but inside `.sr-only`, which the stylesheet resolves to
+          `clip: rect(0,0,0,0)`. The ignition splash renders too, so without
+          scripting a visitor met "The résumé, from the driver's seat" and a
+          "Start engine" button that does nothing, with every word of the
+          résumé present and invisible. There was no `<noscript>` anywhere in
+          the application.
+
+          Unclipping `.sr-only` here would be the wrong fix: it would dump the
+          résumé behind a `fixed` scene that still covers it, and unclip the
+          arrival announcer too. The classic site renders its content
+          server-side *and visibly*, so the honest answer is to point there.
+
+          `dangerouslySetInnerHTML` because React treats `<noscript>` children
+          differently on the server and the client; this keeps the markup
+          identical on both sides. */}
+        <noscript
+          dangerouslySetInnerHTML={{
+            __html: `<div style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:#03060c;color:#e0f2fe;font-family:system-ui,sans-serif;text-align:center">
+  <div style="max-width:34rem">
+    <p style="margin:0;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#7dd3fc">Hyun-Tae Jin &middot; drive mode</p>
+    <h2 style="margin:12px 0 0;font-size:28px;font-weight:300;line-height:1.2">Drive mode needs JavaScript</h2>
+    <p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:rgba(224,242,254,.65)">This page is a small driving simulation, so it cannot run without it. The same r&eacute;sum&eacute; &mdash; every role, every build and the toolbox &mdash; is on the main site, and that one works fine without scripting.</p>
+    <p style="margin:24px 0 0"><a href="/" style="display:inline-block;padding:12px 24px;border:1px solid rgba(125,211,252,.6);border-radius:999px;color:#e0f2fe;text-decoration:none;font-size:14px">Read the r&eacute;sum&eacute; on the main site</a></p>
+  </div>
+</div>`,
+          }}
+        />
+
         <Itinerary />
       </div>
       {outlineFocus ? (
