@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import clsx from 'clsx'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -5,7 +6,58 @@ import { legsOf, route } from './route'
 
 const LEGS = legsOf(route)
 
+const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])'
+
 export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
+  const panelRef = useRef(null)
+  const returnFocusRef = useRef(null)
+
+  /**
+   * This dialog says `aria-modal`, which promises assistive technology that
+   * everything behind it is inert — so it has to actually behave that way.
+   * Focus moves in on open, cycles inside on Tab, and goes back to whatever
+   * opened it on close. Escape is deliberately left alone: `DriveScene` binds
+   * it globally along with the driving keys, and swallowing it here would stop
+   * the map closing.
+   */
+  useEffect(() => {
+    if (!open) return undefined
+
+    returnFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+
+    const panel = panelRef.current
+    const first = panel?.querySelector(TABBABLE)
+    // Focus the panel itself rather than the first control, so a screen reader
+    // reads the dialog's label before its contents.
+    ;(panel ?? first)?.focus?.()
+
+    const onKeyDown = (event) => {
+      if (event.key !== 'Tab' || !panel) return
+      const items = [...panel.querySelectorAll(TABBABLE)].filter(
+        (node) => node.offsetParent !== null || node === document.activeElement
+      )
+      if (!items.length) return
+
+      const edge = event.shiftKey ? items[0] : items[items.length - 1]
+      if (
+        document.activeElement === edge ||
+        !panel.contains(document.activeElement)
+      ) {
+        event.preventDefault()
+        ;(event.shiftKey ? items[items.length - 1] : items[0]).focus()
+      }
+    }
+
+    document.addEventListener('keydown', onKeyDown, true)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown, true)
+      returnFocusRef.current?.focus?.()
+    }
+  }, [open])
+
   return (
     <AnimatePresence>
       {open ? (
@@ -19,7 +71,11 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
           aria-modal="true"
           aria-label="Route map"
         >
-          <div className="flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-sky-400/25 bg-[#050b14]/90">
+          <div
+            ref={panelRef}
+            tabIndex={-1}
+            className="flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-sky-400/25 bg-[#050b14]/90 outline-none"
+          >
             <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
               <div>
                 <h2 className="font-display text-lg font-semibold text-white">
