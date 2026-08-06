@@ -234,7 +234,13 @@ SCALAR_KEYS.forEach((key) => {
 
 // Progress is quantised before the strings are rebuilt: the eye cannot see a
 // 1/360th step of a dusk-to-night fade, but the allocator can feel it.
-const STEPS = 360
+/**
+ * Exported because `Sky` needs the *same* number for its repaint guard. It used
+ * to type its own `360`: make this finer and the sky would have kept repainting
+ * on the old step, lagging and banding while the road — which reads this
+ * palette every frame with no guard — kept up.
+ */
+export const STEPS = 360
 let builtStep = -1
 
 function lerp(a, b, t) {

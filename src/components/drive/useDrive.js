@@ -9,7 +9,10 @@ const AIR_DRAG = 0.018
 const CREEP_SPEED = 2.4
 const ARRIVAL_WINDOW = 0.6
 
-const GEAR_RATIOS = [0, 7, 13, 20, 28, 36, 42]
+// Top gear ends at MAX_SPEED by construction. It used to be typed as `42`
+// beside a `MAX_SPEED` of 42: raise one alone and the tachometer pegs for the
+// whole of top gear, because `inGear` would run past 1 and clamp.
+const GEAR_RATIOS = [0, 7, 13, 20, 28, 36, MAX_SPEED]
 
 function gearFor(speed) {
   for (let gear = 1; gear < GEAR_RATIOS.length; gear += 1) {

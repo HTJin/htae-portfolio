@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { paletteAt, withAlpha } from './daylight'
-import { roadsideAt, routeLength } from './route'
+import { LEG_LENGTH, roadsideAt, routeLength } from './route'
 import {
   CAM_HEIGHT,
   ROAD_HALF,
@@ -19,8 +19,10 @@ const DELINEATOR_SPACING = 24
 const LAMP_SPACING = 72
 
 // Mile markers sit at half a leg, far sparser than the 24m delineator line so
-// they read as progress rather than clutter.
-const MARKER_SPACING = 110
+// they read as progress rather than clutter. Derived rather than typed: this
+// was `110` beside a comment promising "half a leg", correct only while the
+// leg happened to be 220.
+const MARKER_SPACING = LEG_LENGTH / 2
 
 export function RoadCanvas({ drive, className }) {
   const canvasRef = useRef(null)

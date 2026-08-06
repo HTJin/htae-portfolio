@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { paletteAt, withAlpha } from './daylight'
+import { STEPS, paletteAt, withAlpha } from './daylight'
 import { routeLength } from './route'
 import { HORIZON_RATIO } from './world'
 import styles from '@/styles/drive.module.css'
@@ -61,8 +61,9 @@ export function Sky({ drive }) {
     return drive.subscribe((sim) => {
       const progress = routeLength > 0 ? sim.travel / routeLength : 0
       // The palette itself is quantised; skip the DOM writes too when the
-      // step has not moved.
-      const step = Math.round(progress * 360)
+      // step has not moved. Uses the palette's own step count, so the two
+      // cannot drift apart.
+      const step = Math.round(progress * STEPS)
       if (step === painted) return
       painted = step
 
