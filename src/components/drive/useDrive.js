@@ -98,8 +98,8 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       }
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
-        -3.4,
-        3.4
+        -2.3,
+        2.3
       )
 
       const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)

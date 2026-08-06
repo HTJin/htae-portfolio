@@ -6,6 +6,7 @@ import {
   ROAD_HALF,
   Z_FAR,
   Z_NEAR,
+  cameraX,
   curveAt,
   hillAt,
   makeCamera,
@@ -20,13 +21,7 @@ const LAMP_SPACING = 72
 // they read as progress rather than clutter.
 const MARKER_SPACING = 110
 
-// Traffic on the far carriageway. Their own speed is added to yours, so they
-// keep passing even while you are parked at an exit.
-const ONCOMING_SPEED = 31 // m/s
-const ONCOMING_SPAWN = 300 // metres ahead
-const ONCOMING_GAPS = [40, 165, 275] // deterministic start positions
-
-export function RoadCanvas({ drive, className, reducedMotion = false }) {
+export function RoadCanvas({ drive, className }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
@@ -36,11 +31,6 @@ export function RoadCanvas({ drive, className, reducedMotion = false }) {
     let camera = makeCamera(canvas.clientWidth || 1, canvas.clientHeight || 1)
 
     const points = []
-
-    // Pre-allocated and mutated in place — the paint loop must not build these
-    // every frame. `z` is metres ahead of the camera, counting down.
-    const oncoming = ONCOMING_GAPS.map((z) => ({ z }))
-    let lastFrameAt = 0
 
     function buildPoints(sim) {
       const { width, focal, horizon } = camera
@@ -56,7 +46,7 @@ export function RoadCanvas({ drive, className, reducedMotion = false }) {
         point.z = z
         point.s = s
         point.scale = scale
-        point.cx = width / 2 + (curveAt(s) - baseCurve - sim.x) * scale
+        point.cx = width / 2 + (curveAt(s) - baseCurve - cameraX(sim)) * scale
         point.y = horizon + (CAM_HEIGHT + baseHill - hillAt(s)) * scale
       }
     }
@@ -151,7 +141,7 @@ export function RoadCanvas({ drive, className, reducedMotion = false }) {
         const z = s - sim.travel
         const scale = focal / z
         return {
-          x: width / 2 + (curveAt(s) - baseCurve + x - sim.x) * scale,
+          x: width / 2 + (curveAt(s) - baseCurve + x - cameraX(sim)) * scale,
           y: horizon + (CAM_HEIGHT + baseHill - hillAt(s) - y) * scale,
           scale,
         }
@@ -253,69 +243,6 @@ export function RoadCanvas({ drive, className, reducedMotion = false }) {
           ctx.fill()
         }
       }
-
-      drawOncoming(sim, colors, place)
-    }
-
-    /**
-     * Headlights on the far carriageway. Twenty-one exits of an empty highway
-     * reads as a treadmill; a car passing the other way every few seconds is
-     * the cheapest thing that makes a road feel like a road.
-     *
-     * They close at their own speed plus yours, so they keep coming while you
-     * sit at an exit. Positions are mutated in place and the frame delta is
-     * clamped, so a resize or a backgrounded tab cannot teleport them.
-     */
-    function drawOncoming(sim, colors, place) {
-      // The rest of drive mode already honours the motion preference: the
-      // throttle jumps between exits instead of animating, the carousel does
-      // not autoplay, the arrival panel fades rather than projecting. Traffic
-      // moves on a wall clock independent of travel, so it would keep sliding
-      // toward a stationary viewer — the one thing that preference is asking
-      // us not to do. Absent traffic simply restores the empty road.
-      if (reducedMotion) return
-
-      const { horizon, height } = camera
-
-      const now = performance.now()
-      const dt = lastFrameAt ? Math.min((now - lastFrameAt) / 1000, 0.05) : 0
-      lastFrameAt = now
-
-      for (const car of oncoming) {
-        car.z -= (ONCOMING_SPEED + sim.speed) * dt
-        if (car.z <= Z_NEAR) car.z += ONCOMING_SPAWN
-
-        const s = sim.travel + car.z
-        const centre = place(s, -(ROAD_HALF * 0.52), 0.75)
-        if (centre.y < horizon - 4 || centre.y > height * 1.3) continue
-
-        // Fade in at the far end so they arrive rather than blink into being.
-        const fade = Math.min(1, (ONCOMING_SPAWN - car.z) / 90)
-        const spread = 0.9 * centre.scale
-        const bulb = Math.max(1.5, 0.3 * centre.scale)
-
-        const halo = ctx.createRadialGradient(
-          centre.x,
-          centre.y,
-          0,
-          centre.x,
-          centre.y,
-          Math.max(6, spread * 3)
-        )
-        halo.addColorStop(0, withAlpha(colors.lamp, 0.6 * fade))
-        halo.addColorStop(1, withAlpha(colors.lamp, 0))
-        ctx.fillStyle = halo
-        ctx.beginPath()
-        ctx.arc(centre.x, centre.y, Math.max(6, spread * 3), 0, Math.PI * 2)
-        ctx.fill()
-
-        ctx.fillStyle = withAlpha(colors.paint, 0.92 * fade)
-        for (const offset of [-spread, spread]) {
-          ctx.beginPath()
-          ctx.arc(centre.x + offset, centre.y, bulb, 0, Math.PI * 2)
-          ctx.fill()
-        }
-      }
     }
 
     function draw(sim) {
@@ -401,7 +328,7 @@ export function RoadCanvas({ drive, className, reducedMotion = false }) {
       window.removeEventListener('resize', resize)
       unsubscribe()
     }
-  }, [drive, reducedMotion])
+  }, [drive])
 
   return <canvas ref={canvasRef} className={className} aria-hidden="true" />
 }

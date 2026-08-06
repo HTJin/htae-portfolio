@@ -10,6 +10,22 @@
 
 export const ROAD_HALF = 5.5 // metres from centre line to the outer edge line
 export const CAM_HEIGHT = 1.35 // driver eye height above the tarmac
+
+/**
+ * Where the car actually sits across the road.
+ *
+ * You drive *in a lane*, not astride the centre line — so the camera is offset
+ * into the right-hand lane. This is also what makes the driver's-seat framing
+ * read correctly: the road's vanishing point falls slightly left of screen
+ * centre, which is exactly where it belongs when you are sitting to the right
+ * of the road's centreline in a left-hand-drive car.
+ */
+export const LANE_OFFSET = 2.7
+
+/** The car's lateral position: its lane, plus whatever steering drift. */
+export function cameraX(sim) {
+  return LANE_OFFSET + sim.x
+}
 export const HORIZON_RATIO = 0.44 // where the vanishing point sits vertically
 export const Z_NEAR = 2.4
 export const Z_FAR = 460
@@ -40,7 +56,7 @@ export function makeCamera(width, height) {
 export function project(camera, sim, z, x = 0, y = 0) {
   const s = sim.travel + z
   const scale = camera.focal / z
-  const lateral = curveAt(s) - curveAt(sim.travel) + x - sim.x
+  const lateral = curveAt(s) - curveAt(sim.travel) + x - cameraX(sim)
   const vertical = CAM_HEIGHT + hillAt(sim.travel) - hillAt(s) - y
 
   return {

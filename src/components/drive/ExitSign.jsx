@@ -1,7 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { paletteAt } from './daylight'
 import { METERS_PER_MILE, routeLength } from './route'
-import { CAM_HEIGHT, ROAD_HALF, curveAt, hillAt, makeCamera } from './world'
+import {
+  CAM_HEIGHT,
+  ROAD_HALF,
+  cameraX,
+  curveAt,
+  hillAt,
+  makeCamera,
+} from './world'
 import styles from '@/styles/drive.module.css'
 
 // The sign is authored at 300x180 design px standing for 6m x 3.6m of
@@ -44,7 +51,8 @@ export function ExitSign({ drive, stop }) {
       const scale = camera.focal / z
       const x =
         camera.width / 2 +
-        (curveAt(stop.s) - curveAt(sim.travel) + OFFSET_X - sim.x) * scale
+        (curveAt(stop.s) - curveAt(sim.travel) + OFFSET_X - cameraX(sim)) *
+          scale
       const y =
         camera.horizon +
         (CAM_HEIGHT + hillAt(sim.travel) - hillAt(stop.s) - MOUNT_HEIGHT) *
