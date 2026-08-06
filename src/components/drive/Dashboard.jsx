@@ -805,75 +805,93 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
         </div>
       </div>
 
-      {/* Desktop: the real driver's seat. */}
-      <div className="mx-auto hidden h-full max-w-6xl items-stretch gap-5 px-6 pb-2 pt-3 lg:flex">
+      {/* Desktop: the real driver's seat.
+
+          The middle grid column is the steering column, and it is a fixed
+          width between two `1fr` columns — so the wheel is centred on the
+          viewport by construction, at every width. That is not decoration:
+          `project()` puts the camera (the driver's eye) at the middle of the
+          image, so the middle of the viewport *is* the driver's eyeline, and
+          the wheel is the one thing that must sit directly in front of it.
+          The road was previously drawn from an eye at 50% while the cockpit
+          was laid out around one at 32% — a 345px disagreement at 1920.
+          To the driver's left is the door; the console lives to their right. */}
+      <div className="hidden h-full grid-cols-[0.42fr_clamp(260px,24vw,400px)_1fr] items-stretch gap-5 px-6 pb-2 pt-3 lg:grid xl:grid-cols-[1fr_clamp(260px,24vw,400px)_1fr]">
+        {/* The door side. Only from xl up does it take a full column: below
+            that, giving the console an equal share of a narrow dash squeezes
+            the trip computer and wraps the buttons, so the wheel is brought
+            most of the way to the eyeline rather than all of it. */}
+        <div className={`h-full ${styles.doorCard}`} aria-hidden="true" />
+
         {/* Driver's side: binnacle behind, wheel in front, one locked unit. */}
-        <div className="relative h-full flex-[1.05]">
+        <div className="relative h-full">
           <Binnacle drive={drive} />
           <SteeringWheel drive={drive} />
         </div>
 
-        {/* Centre stack. */}
-        <div className="flex h-full flex-[1.15] flex-col justify-center gap-2 py-1">
-          <div className="flex justify-between gap-3">
-            <Vent className="flex w-[26%]" />
-            <Vent className="flex w-[26%]" />
+        {/* Centre stack and footwell, both to the driver's right. */}
+        <div className="flex h-full min-w-0 items-stretch gap-4">
+          <div className="flex h-full min-w-0 flex-[1.15] flex-col justify-center gap-2 py-1">
+            <div className="flex justify-between gap-3">
+              <Vent className="flex w-[26%]" />
+              <Vent className="flex w-[26%]" />
+            </div>
+            <div className="h-[clamp(84px,13vh,116px)]">
+              <TripComputer drive={drive} stop={stop} />
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
+              <ConsoleButton
+                onClick={drive.goBack}
+                disabled={drive.index === 0}
+                title="Previous stop (Backspace)"
+                label="Back to the previous exit"
+              >
+                ◂ Back
+              </ConsoleButton>
+              <ConsoleButton
+                onClick={drive.driveToNext}
+                disabled={drive.index === route.length - 1 && drive.parked}
+                accent
+                title="Autopilot to the next stop (N)"
+                label="Drive on to the next exit"
+              >
+                Next ▸
+              </ConsoleButton>
+              <ConsoleButton
+                onClick={onOpenMap}
+                title="Route map (M)"
+                label={mapOpen ? 'Close the route map' : 'Open the route map'}
+              >
+                {mapOpen ? 'Close map' : 'Route map'}
+              </ConsoleButton>
+              <AudioToggle drive={drive} />
+            </div>
           </div>
-          <div className="h-[clamp(84px,13vh,116px)]">
-            <TripComputer drive={drive} stop={stop} />
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-1.5">
-            <ConsoleButton
-              onClick={drive.goBack}
-              disabled={drive.index === 0}
-              title="Previous stop (Backspace)"
-              label="Back to the previous exit"
-            >
-              ◂ Back
-            </ConsoleButton>
-            <ConsoleButton
-              onClick={drive.driveToNext}
-              disabled={drive.index === route.length - 1 && drive.parked}
-              accent
-              title="Autopilot to the next stop (N)"
-              label="Drive on to the next exit"
-            >
-              Next ▸
-            </ConsoleButton>
-            <ConsoleButton
-              onClick={onOpenMap}
-              title="Route map (M)"
-              label={mapOpen ? 'Close the route map' : 'Open the route map'}
-            >
-              {mapOpen ? 'Close map' : 'Route map'}
-            </ConsoleButton>
-            <AudioToggle drive={drive} />
-          </div>
-        </div>
 
-        {/* Pedals, tucked where the footwell would be. */}
-        <div
-          className={`flex h-full flex-[0.5] items-end gap-2 pb-2 ${styles.footwell}`}
-        >
-          <div className="h-[clamp(52px,8vh,74px)] w-[46%] max-w-[62px]">
-            <Pedal
-              label="BRAKE"
-              name="Brake"
-              hint="↓ / S"
-              tone="stop"
-              onPress={() => drive.setBrake(1)}
-              onRelease={() => drive.setBrake(0)}
-            />
-          </div>
-          <div className="h-[clamp(62px,9.5vh,88px)] w-[46%] max-w-[62px]">
-            <Pedal
-              label="GO"
-              name="Go — hold to accelerate"
-              hint="↑ / W"
-              tone="go"
-              onPress={() => drive.setThrottle(1)}
-              onRelease={() => drive.setThrottle(0)}
-            />
+          {/* Pedals, tucked where the footwell would be. */}
+          <div
+            className={`flex h-full flex-[0.5] shrink-0 items-end gap-2 pb-2 ${styles.footwell}`}
+          >
+            <div className="h-[clamp(52px,8vh,74px)] w-[46%] max-w-[62px]">
+              <Pedal
+                label="BRAKE"
+                name="Brake"
+                hint="↓ / S"
+                tone="stop"
+                onPress={() => drive.setBrake(1)}
+                onRelease={() => drive.setBrake(0)}
+              />
+            </div>
+            <div className="h-[clamp(62px,9.5vh,88px)] w-[46%] max-w-[62px]">
+              <Pedal
+                label="GO"
+                name="Go — hold to accelerate"
+                hint="↑ / W"
+                tone="go"
+                onPress={() => drive.setThrottle(1)}
+                onRelease={() => drive.setThrottle(0)}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -20,10 +20,16 @@ export const CAM_HEIGHT = 1.35 // driver eye height above the tarmac
  * Where the car actually sits across the road.
  *
  * You drive *in a lane*, not astride the centre line — so the camera is offset
- * into the right-hand lane. This is also what makes the driver's-seat framing
- * read correctly: the road's vanishing point falls slightly left of screen
- * centre, which is exactly where it belongs when you are sitting to the right
- * of the road's centreline in a left-hand-drive car.
+ * into the right-hand lane, and the centre line runs down the left of the view
+ * where it belongs.
+ *
+ * What this does **not** do is move the vanishing point. `project()` divides
+ * the lateral offset by `z`, so the offset only shifts the road's *near* field:
+ * measured, the road centre lands 201px left of centre at 10m, 15px at 100m,
+ * and converges on the screen centre exactly (960.00 of 960 at 1e6 m). The
+ * camera is the driver's eye and it looks straight down the road, so the eye
+ * is always at the middle of the image — which is why the cockpit is laid out
+ * around the middle of the viewport, not around some offset seat position.
  */
 export const LANE_OFFSET = 2.7
 
