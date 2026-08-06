@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { paletteAt } from './daylight'
-import { METERS_PER_MILE, routeLength } from './route'
+import { LEG_LENGTH, METERS_PER_MILE, routeLength } from './route'
 import { ROAD_HALF, makeCamera, project } from './world'
 import styles from '@/styles/drive.module.css'
 
@@ -11,7 +11,21 @@ const SIGN_METERS = 6
 const MOUNT_HEIGHT = 5.4
 const ANCHOR_Y = 90
 const OFFSET_X = ROAD_HALF + 4.6
-const VISIBLE_FROM = 420
+
+/**
+ * The sign's whole approach is scaled to the leg you actually drive.
+ *
+ * This was a literal 420m, against a `LEG_LENGTH` of 220 — a window nearly
+ * twice the furthest you can ever be from the sign. Two things fell out of
+ * that, both measured: the fade-in was dead code, because `min(1, (420 - z) /
+ * 160)` is already **1.0** at z = 220 and would only have finished at z = 260;
+ * and the retroreflective flare began at **0.227** rather than 0, so a quarter
+ * of the sweep that makes an approach read as an approach was spent before the
+ * car had moved. Deriving both from `LEG_LENGTH` means neither can drift again
+ * if the route spacing changes.
+ */
+const VISIBLE_FROM = LEG_LENGTH
+const FADE_OVER = LEG_LENGTH * 0.35
 const VISIBLE_UNTIL = 7
 
 export function ExitSign({ drive, stop }) {
@@ -47,7 +61,9 @@ export function ExitSign({ drive, stop }) {
       const size = (SIGN_METERS * scale) / DESIGN_WIDTH
 
       wrapper.style.visibility = 'visible'
-      wrapper.style.opacity = String(Math.min(1, (VISIBLE_FROM - z) / 160))
+      wrapper.style.opacity = String(
+        Math.min(1, (VISIBLE_FROM - z) / FADE_OVER)
+      )
       wrapper.style.transform = `translate(${x}px, ${y}px) scale(${size}) translate(-50%, -${ANCHOR_Y}px)`
 
       // Retroreflective sheeting: the face is dull at distance and flares as
