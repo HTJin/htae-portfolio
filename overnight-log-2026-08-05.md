@@ -99,3 +99,26 @@ Running progress, phase transitions, decisions and assumptions. Append-only.
 - **Response:** did not stop. Switched verification to `npm run build`, `next lint`, Node, and SSR probes; parked the pixel-level checks as Needs testing / Awaiting scenario; and pulled the S9b stretch task back to the Backlog rather than shipping more unverifiable canvas work.
 
 **21:33 — Builder exit.** `npm run build` compiles (`/drive` 17.1 kB), `next lint` clean, two commits: `94eea90`, `c209b57`. Dev server restarted clean after the build per guardrail 6, now on **port 3007**. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 4 / Phase: Planner`.
+
+---
+
+## Cycle 4
+
+**21:33 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 4`. Dev server healthy on 3007.
+
+**21:34 — Blocker re-check (as the Awaiting-scenario item instructs): still blocked.** `curl http://127.0.0.1:3007/drive` returns the page; navigating the same URL in Chrome lands on `chrome-error://chromewebdata/`. So cycle 4 was planned deliberately around work that is **fully verifiable without pixels** — server-rendered output, which `curl` can prove — rather than shipping more canvas work blind.
+
+**21:35 — Planner + Critic.** Read `src/pages/drive.jsx`, `src/pages/_app.jsx`, `src/components/FormattedDate.jsx` cold. Planned the S14 audit, the newly-found canonical defect, and enriching the crawlable itinerary. Added guardrails 18-20: do not edit out of scope to "fix" the canonical; do not let the enriched itinerary invent content; do not call the timezone sweep clean without a verdict per call site.
+
+**21:36-21:40 — Task 1: timezone audit. Closed clean — the classic site is not affected.** Enumerated all eight date call sites in `src/` and classified each:
+- `FormattedDate.jsx:1-5` builds `Intl.DateTimeFormat('en-US', { year:'numeric', month:'short', timeZone:'UTC' })` — pinning UTC is exactly the right defence. `:15` writes `dateTime` from `toISOString()`, always UTC. **Not affected.**
+- Proven rather than reasoned: ran that exact formatter config in Node against all ten content dates while the process was in a timezone behind UTC. It renders **Jan 2024** correctly. The same process returned `2023` for `new Date('2024-01-01').getFullYear()`, which self-validates that the test really was running behind UTC.
+- `route.js:7` compares instants (timezone-independent). `Intro.jsx:131` and `generateRssFeed.js:82` read the *current* year for a copyright line, where local time is the wanted semantic. `generateRssFeed.js:107` hands a `Date` to the feed library, which serialises UTC.
+- **Verdict:** `route.js` was the only affected site; fixed in cycle 3. No edit, no Needs-human item.
+
+**21:41-21:45 — Task 2: a real SEO defect, parked as Needs human.** `/drive` ships **two** `<link rel="canonical">` — `https://htae.dev` from `_app.jsx:69` and `https://htae.dev/drive` from `drive.jsx:17` — plus two `og:url` and two `og:title`. Measured directly out of the served HTML, not inferred. A crawler taking the first canonical is told `/drive` duplicates the homepage; a social scraper taking the first `og:title` previews a shared drive link as the homepage, which defeats the `?exit=` deep links from cycle 2. Cause: `next/head` only dedupes tags carrying a matching `key`, and neither side sets one. The fix belongs in `_app.jsx`, which is outside this run's write scope, so it is parked as **Needs human** with the exact patch and a one-line verification command. Deliberately did **not** bodge a key into `drive.jsx` alone — without the `_app` side it changes nothing and would have *looked* fixed.
+
+**21:46-21:52 — Task 3: years and structure in the crawlable itinerary.** The `sr-only` block is the only version of this résumé a crawler or screen reader can consume. It now groups stops under their leg (h1 route -> h2 leg -> h3 stop) using the `legsOf()` helper `route.js` already exported but nothing consumed, and carries a `<time>` year for every dated stop.
+- Verified by reading the served HTML back: six `<h2>` leg headings, 21 `<h3>` stop headings, exactly ten `<time>` elements reading `2016 2017 2019 2020 2023 2023 2023 2024 2024 2025`. That matches education plus the nine roles and includes the January-2024 role the cycle-3 fix corrected. The eleven undated stops carry no year.
+
+**21:53 — Builder exit.** `next lint` clean, one commit `e799e92`; task 1 closed with no code change, task 2 parked as Needs human. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 5 / Phase: Planner`.

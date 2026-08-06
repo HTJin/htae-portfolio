@@ -99,11 +99,24 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** small-medium.
   - **Outcome:** *(proposed)*
 
-- [ ] **S14 — Audit the rest of the site for the same timezone year bug** — Status: Proposed — Cycle: 3
+- [ ] **S14 — Audit the rest of the site for the same timezone year bug** — Status: Done (no bug found) — Cycle: 4
   - **Source:** the bug found while verifying S12. `new Date('YYYY-MM-DD').getFullYear()` reports the previous year for January 1st dates in any timezone behind UTC.
   - **Suggestion:** check whether the classic site formats the same content dates the same way — the education and experience sections render the same `date` fields.
   - **Why / expected impact:** if it does, a role's year is wrong on the main résumé page too, which matters more than on the drive page.
   - **Scope:** small, but **read-only from this run** — `src/components/sections/**` is outside the write scope, so a confirmed hit becomes a **Needs human** item with the evidence attached rather than an edit.
+  - **Outcome:** **Investigated, closed clean — the classic site is not affected.** `FormattedDate.jsx` already builds its formatter with `timeZone: 'UTC'`, which is exactly the right defence, and writes its `dateTime` attribute from `toISOString()`. Proven by running that exact config in Node against all ten content dates in a timezone behind UTC: it renders *Jan 2024* correctly while `getFullYear()` in the same process returns 2023. All eight date call sites in `src/` were classified individually. `route.js` was the only affected one and was fixed in cycle 3. No change needed.
+
+- [ ] **S16 — `/drive` ships two canonical tags, the first pointing at the homepage** — Status: **Needs human** — Cycle: 4
+  - **Source:** site audit — measured straight out of the served HTML while looking at what crawlers see.
+  - **Suggestion:** add matching `key` props so `next/head` deduplicates and the page-level tag wins. Exact patch is written out in the **Needs human** section of `overnight-tasks-2026-08-05.md`.
+  - **Why / expected impact:** a crawler taking the first canonical is told `/drive` duplicates the homepage, which drops drive mode out of the index; a social scraper taking the first `og:title` previews a shared drive link as the homepage, defeating the `?exit=` deep links. `og:url` and `og:title` duplicate the same way.
+  - **Scope:** tiny — three lines in `_app.jsx` and three in `drive.jsx` — but `_app.jsx` is outside this run's write scope, so it is parked rather than edited.
+  - **Outcome:** *(awaiting a human; the loop deliberately did not half-fix it from `drive.jsx` alone, which would have looked fixed and changed nothing)*
+
+- [ ] **S17 — Structured data for `/drive`** — Status: Proposed — Cycle: 4
+  - **Source:** site audit — `_app.jsx:16-48` emits a WebSite / Person / ProfilePage graph all anchored to the site root, so `/drive` inherits markup describing the homepage.
+  - **Suggestion:** a route-specific `WebPage`, or an `ItemList` of the exits, so drive mode stands on its own in search.
+  - **Scope:** small. **Blocked behind S16** — adding page-level head content while two canonicals disagree just adds noise.
   - **Outcome:** *(proposed)*
 
 *(Check the box once you've reviewed the outcome.)*

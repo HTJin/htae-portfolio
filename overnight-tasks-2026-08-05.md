@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 4
+**Cycle:** 5
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -59,6 +59,9 @@
 14. *Failure (cycle 3): the roadside leg lookup allocates per frame.* `drawRoadside` runs inside the 60fps paint and iterates every lamp and post. **Guardrail:** precompute the leg/style table once at module load; the paint loop may only index into it — no `.map`/`.filter`/object literals per lamp.
 15. *Failure (cycle 3): new roadside ribbons reintroduce anti-aliasing seams.* `stripes()` exists precisely because filling each segment separately leaves visible seams (`RoadCanvas.jsx` comment on the stripes helper). **Guardrail:** any new continuous roadside element (guardrail rail, kerb) must be painted with the same run-length approach, never per-segment fills.
 16. *Failure (cycle 3): the year readout re-renders React 60 times a second.* **Guardrail:** it must follow the existing `drive.subscribe` + `ref.textContent` pattern used by every other live readout in `TripComputer`.
+18. *Failure (cycle 4): "fixing" the canonical tag by editing a file outside the write scope.* The real fix is in `_app.jsx`, which this run may not touch. **Guardrail:** measure it, write the exact patch out, park it as **Needs human** — do not edit `_app.jsx`, and do not bodge a half-fix into `drive.jsx` that only appears to work.
+19. *Failure (cycle 4): the enriched itinerary changes what the page claims.* The `sr-only` block is the crawlable résumé; adding years there repeats the guardrail-13 risk. **Guardrail:** render `stop.year` only where it exists, never a fallback, and diff the rendered text against the previous output rather than eyeballing it.
+20. *Failure (cycle 4): calling the timezone sweep "clean" without reading each site.* **Guardrail:** enumerate every date-formatting call in the repo and record a verdict per call site with the line reference, rather than concluding from one file.
 17. *Failure (cycle 3): per-leg furniture pops as you drive.* If the leg is derived from the **camera** position rather than each object's own world position, furniture will change appearance as you approach it. **Guardrail:** the leg must be a function of the object's `s`, not of `sim.travel`.
 
 ## Decisions & assumptions locked in
@@ -78,7 +81,50 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 3's list is fully resolved — see Done / Needs testing. The Planner fills this for cycle 4 from the Backlog.)*
+*(cycle 4's list is fully resolved — see Done / Needs human. The Planner fills this for cycle 5 from the Backlog.)*
+
+<details>
+<summary>Cycle 4's list (resolved — kept for context)</summary>
+
+### CYCLE 4
+
+Chrome still cannot reach the dev server (re-checked at the top of this cycle: `curl` returns the page,
+the browser returns `chrome-error://chromewebdata/`). So cycle 4 deliberately picks work that is **fully verifiable
+without pixels** — server-rendered output, which `curl` can prove — rather than shipping more canvas work blind.
+
+- [ ] **1. Audit the rest of the site for the timezone year bug** (backlog S14)
+  - **Why:** cycle 3 found that `new Date('YYYY-MM-DD').getFullYear()` reports the previous year for January 1st dates
+    in any timezone behind UTC, which had put a role in the wrong year. The classic site renders the same content
+    dates, so it may have the same fault — and that page matters more than the drive page.
+  - **Files:** read-only sweep of `src/components/**`, `src/lib/**`, `src/pages/**`.
+  - **Done when:** every date-formatting site in the codebase has been read and classified as affected or not, with the
+    evidence recorded. If anything outside this run's write scope is affected it becomes **Needs human**, not an edit.
+- [ ] **2. Investigate the duplicate canonical / Open Graph tags on `/drive`** *(new, found this cycle)*
+  - **Why:** `/drive` currently ships **two** `<link rel="canonical">` tags — one pointing at the site root and one at
+    `/drive` — plus two `og:url` and two `og:title`. Search engines take one canonical; if they take the first, `/drive`
+    is declared a duplicate of the homepage and drops out of the index. Social scrapers take the first `og:title`, so
+    sharing a drive-mode link would preview as the homepage.
+  - **Evidence (measured this cycle):** `curl http://127.0.0.1:3007/drive` emits
+    `<link rel="canonical" href="https://htae.dev"/>` **and** `<link rel="canonical" href="https://htae.dev/drive"/>`;
+    likewise `og:url` = `https://htae.dev` and `https://htae.dev/drive`; `og:title` = "Hyun-Tae Jin | Senior MES DevOps
+    Engineer" and "Hyun-Tae Jin | Drive mode". `<title>` is fine — Next dedupes that one.
+  - **Cause:** `src/pages/_app.jsx:69,80,81` emit site-root `canonical` / `og:url` / `og:title` on **every** page, and
+    `src/pages/drive.jsx:17-20` emits its own. `next/head` only dedupes tags that carry a matching `key` prop, and
+    neither side sets one.
+  - **Scope constraint:** the real fix belongs in `_app.jsx`, which is **outside this run's write scope**
+    (scope is `src/components/drive/**`, `src/styles/drive.module.css`, `src/pages/drive.jsx`).
+  - **Done when:** the defect is proven by measurement, an exact patch is written out for a human to apply, and the item
+    is parked as **Needs human** rather than edited.
+- [ ] **3. Put the years into the crawlable itinerary** *(new, follows from cycle 3)*
+  - **Why:** the `sr-only` block in `DriveScene` is the version of this résumé that screen readers and crawlers
+    actually consume — the rest of the page is a canvas and a cockpit. It lists every stop but omits the years, even
+    though `route.js` now carries a real year for education and all nine roles. A crawler currently reads
+    "Web Developer" with no date attached to it.
+  - **Files:** `src/components/drive/DriveScene.jsx` (in scope).
+  - **Done when:** the server-rendered itinerary carries the year for every dated stop and groups stops under their
+    leg, proven by reading the HTML back with `curl`; and no year appears for a stop that has none (guardrail 13).
+
+</details>
 
 <details>
 <summary>Cycle 3's list (resolved — kept for context)</summary>
@@ -184,6 +230,8 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C4-1. Timezone year bug — audit of the rest of the site** — investigated and **closed clean**: the classic site is *not* affected. Every date call site in `src/` was read and classified: `FormattedDate.jsx:1-5` builds its formatter with `Intl.DateTimeFormat('en-US', { …, timeZone: 'UTC' })`, which is exactly the right defence, and `:15` writes the `dateTime` attribute from `toISOString()` (always UTC). Proven by running that exact formatter config in Node against all ten content dates in a timezone behind UTC: it renders **Jan 2024** correctly, while `getFullYear()` on the same date returns 2023 in the same process — so the test conditions were valid and self-checking. `route.js:7` (`byDateAscending`) compares instants and is timezone-independent; `Intro.jsx:131` and `generateRssFeed.js:82` read the *current* year for a copyright line, where local time is the wanted semantic; `generateRssFeed.js:107` hands a `Date` to the feed library, which serialises UTC. Conclusion: `route.js` was the only affected site and it was fixed in `94eea90`. No code change needed, no Needs-human item.
+- **C4-3. Years and leg structure in the crawlable itinerary** — proven working by reading the served HTML back: six `<h2>` leg headings, 21 `<h3>` stop headings, and exactly ten `<time>` elements reading `2016 2017 2019 2020 2023 2023 2023 2024 2024 2025` — matching education and the nine roles, including the January-2024 role the cycle-3 fix corrected. The eleven stops with no date in the content carry no year at all (guardrail 13 / 19). Commit `e799e92`.
 - **C3-1. Trip computer reads in years** — proven working by server-rendering `yearAt` across all 21 stops plus quarter-leg midpoints. Sequence: 2016 at school, 2017 / 2019 / 2020 across the early roles, **2021 and 2022 while crossing the sabbatical**, 2023 / 2024 / 2025 through StarPlus, then `NOW` from the last dated role onward — and `NOW` at every project, toolbox and destination stop, never a fabricated number (guardrail 13 satisfied). SSR HTML confirms the readout renders `2016` initially. Commit `94eea90`.
 - **C3-1b. Timezone year bug (found while verifying C3-1)** — proven fixed. `yearOf()` used `new Date(d).getFullYear()`, which parses `YYYY-MM-DD` as UTC midnight then reads it back in local time, so in any timezone behind UTC a January 1st date reports the previous year. The SSR probe showed **four** stops at 2023 when only three roles are from 2023: the StarPlus UI/UX role (`2024-01-01`, own label "Jan 2024 - Oct 2024") had silently moved to 2023. Confirmed the mechanism in Node across all ten content dates — only the Jan 1st one differed (local 2023 vs UTC/string 2024). The year is now read straight off the string; the re-run probe shows index 8 at 2024. Commit `94eea90`.
 - **C2-3. Deep-link an exit** — proven working: `/drive?exit=11` opens parked on Solar Power Indy with the panel up and the carousel at 1/4; driving on moved the URL to `?exit=12`; `?exit=999` falls back to the ignition screen at MILE 0 without throwing. The accept predicate was additionally exercised across `11/0/20/21/999/-3/banana/11abc/" 11 "/1.5/""/1e3/null/0x5` — only in-range integers accepted. Commit `0d3e493`.
@@ -206,12 +254,55 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Needs human (parked — requires a person; the loop will NOT guess these)
 
-*(empty)*
+- [ ] **`/drive` ships two canonical tags, and the first one points at the homepage** — Needs human because the fix
+  belongs in `src/pages/_app.jsx`, which is **outside this run's write scope** (guardrail 18).
+
+  **The defect, measured — not inferred.** `curl http://127.0.0.1:3007/drive` returns:
+
+  ```html
+  <link rel="canonical" href="https://htae.dev"/>        <!-- from _app.jsx:69 -->
+  <link rel="canonical" href="https://htae.dev/drive"/>  <!-- from drive.jsx:17 -->
+  <meta property="og:url" content="https://htae.dev"/>          <!-- _app.jsx:80 -->
+  <meta property="og:url" content="https://htae.dev/drive"/>    <!-- drive.jsx:18 -->
+  <meta property="og:title" content="Hyun-Tae Jin | Senior MES DevOps Engineer"/>  <!-- _app.jsx:81 -->
+  <meta property="og:title" content="Hyun-Tae Jin | Drive mode"/>                  <!-- drive.jsx:19 -->
+  ```
+
+  `<title>` is fine — Next dedupes that one on its own.
+
+  **Why it matters.** A crawler that honours the first canonical is told `/drive` is a duplicate of the homepage, which
+  drops drive mode out of the index entirely. A social scraper that takes the first `og:title`/`og:url` previews a
+  shared drive-mode link as the homepage — which defeats the `?exit=` deep links shipped in cycle 2.
+
+  **Cause.** `next/head` only deduplicates tags that carry a matching `key` prop. `_app.jsx` emits site-root
+  `canonical` / `og:url` / `og:title` on **every** page and neither side sets a `key`, so both render.
+
+  **Exact patch — add a `key` to each side; the page-level tag then wins:**
+
+  ```jsx
+  // src/pages/_app.jsx  (lines 69, 80, 81)
+  <link rel="canonical" href={siteUrl} key="canonical" />
+  <meta property="og:url" content={siteUrl} key="og:url" />
+  <meta property="og:title" content={meta.pageTitle} key="og:title" />
+
+  // src/pages/drive.jsx  (lines 17-19)
+  <link rel="canonical" href={url} key="canonical" />
+  <meta property="og:url" content={url} key="og:url" />
+  <meta property="og:title" content={title} key="og:title" />
+  ```
+
+  Same treatment is worth applying to `og:description` / `twitter:title` / `twitter:description`, which duplicate the
+  same way. **Verify after applying** with
+  `curl -s http://localhost:3007/drive | grep -c 'rel="canonical"'` — it should print `1`, and the surviving href
+  should be `https://htae.dev/drive`.
+
+  *(The loop deliberately did not bodge a half-fix into `drive.jsx` alone: without a `key` on the `_app` side, adding
+  one only to the page changes nothing, and it would have looked fixed.)*
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
 - **S5 — Ambient drive audio (engine note, turn-signal tick), default muted with a dash toggle** — still deferred: Web Audio only (no new deps allowed), must be opt-in so it never autoplays, and needs a speaker toggle somewhere on the dash that does not crowd the console.
 - **S8 — Persist progress (visited stops / furthest exit) to `localStorage` so a returning visitor resumes** — still deferred: needs a reset affordance so it can't trap someone mid-route. Now interacts with the `?exit=` deep link shipped in cycle 2 — an explicit deep link must win over a stored position.
 - **S9b — Mile markers counting down between exits** — carved out of S9 and *deferred again from cycle 3*: it was the stretch task and the cycle filled up. Needs new drawing in `RoadCanvas.drawRoadside`. Hold until the browser can verify pixels again — shipping more unverifiable canvas work is how seams get missed.
-- **S14 — Audit the rest of the site for the same timezone year bug** *(new, cycle 3)* — `new Date('YYYY-MM-DD').getFullYear()` silently reports the previous year for January 1st dates in any timezone behind UTC. It was fixed in `route.js`, but the classic site renders the same content and may format dates the same way. **Read-only investigation first** — the classic sections are outside this run's write scope, so if the bug exists there it becomes a **Needs human** item rather than an edit.
+- **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13 — Weather that belongs to the light** *(new, cycle 2)* — with the dusk-to-night palette in, a thin layer of drifting haze or a few passing headlights on the opposite carriageway would make the road feel inhabited rather than empty. Canvas-only, must respect the per-frame allocation guardrail.

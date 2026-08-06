@@ -3,78 +3,77 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 3 · branch `feat/drive-mode` · 7 commits, nothing pushed
+**Last updated:** end of cycle 4 · branch `feat/drive-mode` · 9 commits, nothing pushed
 
 ---
 
-## One thing worth knowing (nothing to do right now)
+## ⚠️ One thing for you — a real SEO bug I'm not allowed to fix
 
-**Chrome can no longer reach the dev server, so I've stopped verifying pixels.** From about 21:05 the browser returns
-`ERR_CONNECTION_REFUSED` for the dev server while `curl` on the identical URL returns the page perfectly — and
-`localhost:3001` in Chrome renders one of *your* other apps ("Virsh.shop — Operator Console") even though this
-project's server owns that port. Moving my server to a clean port (3007) didn't help. Chrome's networking is proxied or
-isolated away from the shell's; it isn't a fault in the site, and I can't fix it from here without changing your
-browser or proxy settings.
+**`/drive` ships two `<link rel="canonical">` tags, and the first one points at your homepage.** Measured straight out
+of the served HTML:
 
-I did **not** stop. I switched to verifying through the channels that still work — the build, the linter, Node, and
-**SSR probes** (temporarily rendering a value into the page, reading it with `curl`, then reverting). That technique
-proved both of this cycle's tasks and caught a real bug. But the *visual* pass on the roadside work is parked until the
-browser can reach the server again. If you want that unblocked, the simplest fix is a Chrome window that can load
-`http://localhost:3007/drive`.
+```html
+<link rel="canonical" href="https://htae.dev"/>        <!-- _app.jsx:69 -->
+<link rel="canonical" href="https://htae.dev/drive"/>  <!-- drive.jsx:17 -->
+```
 
-One reading I threw away rather than reporting: a check briefly returned a result that looked like a defect, but the
-page title showed Chrome was serving your Virsh.shop console, not this app. Wrong document, worthless reading.
+`og:url` and `og:title` are duplicated the same way. A crawler that takes the first canonical is told drive mode is a
+duplicate of your homepage and drops it from the index; a social scraper that takes the first `og:title` previews a
+shared drive link as the homepage — which defeats the `?exit=` deep links entirely.
 
----
+The cause is that `next/head` only deduplicates tags carrying a matching `key`, and neither side sets one. The fix is
+six lines, but it belongs in `_app.jsx`, which is outside what this run is allowed to edit — so I've written the exact
+patch into the **Needs human** section of `overnight-tasks-2026-08-05.md` rather than touching it. I deliberately did
+*not* add a key to `drive.jsx` alone: without the `_app` side it changes nothing and would have looked fixed.
 
-## Cycle 3 — the dash now tells you *when* you are
-
-**The trip computer reads in years.** The road is your résumé, but the only quantity on the dash was distance. Now the
-hero number beside the odometer is the year: **2016** at Pittsburgh, counting up through the nine roles to **2025** at
-StarPlus, then simply **`NOW`** for the side builds, the toolbox and the destination. It ticks over *between* exits, so
-crossing the sabbatical visibly takes you through 2021 and 2022 — the gap years are something you drive through rather
-than skip.
-
-Projects, the toolbox and the destination have no dates in your content, so they never get a year. `NOW` is honest and,
-as it happens, reads better than a number would.
-
-**Verifying that found a real bug in your dates.** The probe showed four stops reporting 2023 when only three of your
-roles are from 2023. The cause: `new Date('2024-01-01').getFullYear()` parses the string as UTC midnight and then reads
-it back in local time, so in any timezone behind UTC a **January 1st date reports the previous year**. Your StarPlus
-UI/UX role — whose own label reads "Jan 2024 – Oct 2024" — was being computed as **2023**. Fixed by reading the year
-straight off the string. Worth noting this is the kind of bug that ships silently; nothing crashes, a number is just
-quietly wrong on your CV.
-
-I've queued a follow-up to check whether the **classic site** formats those same dates the same way. If it does, the
-year is wrong there too — and that page matters more. That check is read-only from this run, since the classic sections
-are outside what I'm allowed to edit, so if it's confirmed I'll hand it to you with the evidence rather than touching it.
-
-**Each leg of the road now looks different.** Every mile used to carry identical lamps and delineators, so you couldn't
-tell the school zone from the scenic overlook without reading a sign. Now the scenic overlook has a **guardrail** along
-the verge and a thinner lamp line, as a road with a drop beside it would — and the **sabbatical stretch thins the lights
-out further**, because it really was a quiet piece of road. The logic is proven; the pixels are the thing I can't
-currently see.
+Verify after applying: `curl -s http://localhost:3007/drive | grep -c 'rel="canonical"'` should print `1`.
 
 ---
 
-## Parked
+## Good news on the date bug
 
-**Needs testing** — one item: the visual pass on the roadside work (guardrail seams, lamp thinning, nothing popping as
-you approach it). Everything about its *logic* is already proven by server-side probe, build and lint.
+Cycle 3 found that a January 1st date was reporting the previous year, which had put your StarPlus UI/UX role in 2023.
+The obvious worry was that your **main résumé page** had the same fault. It doesn't. `FormattedDate.jsx` already pins
+`timeZone: 'UTC'`, which is exactly the right defence — I proved it by running that exact formatter config against all
+ten of your content dates in a timezone behind UTC, where it renders "Jan 2024" correctly while the buggy pattern
+returns 2023 in the same process. All eight date call sites in `src/` were checked individually. The drive page was the
+only one affected, and it's fixed.
 
-**Awaiting scenario** — pixel-level browser verification generally, until Chrome can reach the dev server.
+---
 
-**Blocked** — nothing. **Needs human** — nothing yet (the classic-site date audit may become one).
+## Cycle 4 — the version of your résumé that machines read
 
-I also pulled the mile-markers task back to the backlog rather than shipping it. Adding more canvas work I can't look at
-is how seams get missed.
+Chrome still can't reach the dev server (that's unchanged from cycle 3 — see below), so this cycle deliberately took on
+work that `curl` can prove rather than shipping more canvas work blind.
+
+**The crawlable itinerary now carries the years and a real structure.** The `sr-only` block in drive mode is the only
+version of this résumé a search engine or a screen reader can actually consume — everything else is a canvas and a
+cockpit. It used to be a flat run of headings with no dates, so "Web Developer" had nothing placing it in time. Now
+stops are grouped under their leg with a proper hierarchy (route → leg → stop), and every stop with a date carries its
+year in a `<time>` element. Verified by reading the HTML back: six leg headings, 21 stop headings, and exactly ten years
+— `2016 2017 2019 2020 2023 2023 2023 2024 2024 2025` — matching your education and nine roles. The eleven stops with no
+date in your content carry no year at all.
+
+---
+
+## Still blocked (not a fault in the site)
+
+Chrome returns `chrome-error://chromewebdata/` for the dev server while `curl` on the identical URL returns the page.
+Re-checked at the top of this cycle, as I will every cycle. Nothing about the site is broken; Chrome's networking is
+isolated from the shell's, and I can't change that from here without touching your browser or proxy settings.
+
+**Parked because of it:** the visual pass on cycle 3's roadside work (guardrail seams, lamp thinning). Its *logic* is
+already proven by server-side probe, build and lint — only the pixels are unseen. I've also kept the mile-markers and
+weather ideas in the backlog rather than shipping more canvas I can't look at.
+
+If you want that unblocked, a Chrome window that can load `http://localhost:3007/drive` is all it takes.
 
 ---
 
 ## Queued next
 
-Check the classic site for that same date bug; mile markers between exits; weather and oncoming headlights so the road
-feels inhabited; resuming where a visitor left off; and opt-in engine audio. Full reasoning in
+Structured data for `/drive` (blocked behind the canonical fix above); mile markers between exits; weather and oncoming
+headlights; resuming where a visitor left off; opt-in engine audio. Full reasoning in
 `overnight-suggestions-2026-08-05.md`, every idea with a checkbox.
 
 ---
@@ -83,10 +82,9 @@ feels inhabited; resuming where a visitor left off; and opt-in engine audio. Ful
 
 | File | What it holds |
 | --- | --- |
+| `overnight-tasks-2026-08-05.md` | Source of truth: phase/cycle, guardrails, task states — **and the canonical patch** |
 | `overnight-suggestions-2026-08-05.md` | Every idea, its source, and what happened to it — with checkboxes |
-| `overnight-tasks-2026-08-05.md` | Source of truth: phase/cycle, guardrails, task states |
 | `overnight-log-2026-08-05.md` | Blow-by-blow, including every fault and environment gotcha |
 | `overnight-journal-2026-08-05.md` | One line per task, with its commit |
 
-Dev server is on **http://localhost:3007** now (3001 was returning your other app in Chrome). Nothing has been pushed;
-everything is local commits on `feat/drive-mode`.
+Dev server is on **http://localhost:3007**. Nothing has been pushed; everything is local commits on `feat/drive-mode`.

@@ -18,3 +18,6 @@ One line per task as it completes.
 - **Cycle 3 · fix** — `new Date('YYYY-MM-DD').getFullYear()` reads UTC midnight in local time, so Jan 1st dates report the previous year. The StarPlus UI/UX role ("Jan 2024 - Oct 2024") was showing 2023. Year is now read off the string. — `94eea90`
 - **Cycle 3 · T2** — Each leg has its own roadside: guardrail + thinned lamps on the scenic overlook, lights thinned further across the sabbatical. Logic proven by SSR probe; pixels parked as Needs testing. — `c209b57`
 - **Cycle 3 · env** — Chrome can no longer reach the dev server on any host/port (curl can). Switched to SSR probes for real-execution verification.
+- **Cycle 4 · T1** — Swept every date call site in `src/`. The classic site is clean: `FormattedDate` already pins `timeZone: 'UTC'`. `route.js` was the only affected place and it was fixed in cycle 3. No change needed.
+- **Cycle 4 · T2** — Found `/drive` shipping **two** canonical tags, the first pointing at the homepage, plus duplicate `og:url`/`og:title`. Fix belongs in `_app.jsx`, outside write scope → parked as Needs human with an exact patch.
+- **Cycle 4 · T3** — The crawlable itinerary now groups stops by leg (h1→h2→h3) and carries a `<time>` year for each of the ten dated stops; the eleven undated ones carry none. — `e799e92`
