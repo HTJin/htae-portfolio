@@ -106,6 +106,45 @@ function TripSummary() {
   )
 }
 
+/**
+ * A URL written inside a sentence, turned into something you can actually
+ * click.
+ *
+ * One paragraph on the route ends with a bare URL — EXIT 12 cites the Colab
+ * product page — and it rendered as dead text, so the only way to follow it was
+ * to select 43 characters by hand, which on a phone is not a reasonable ask.
+ *
+ * The copy itself is not ours to edit (`src/lib/projects.js` is read-only), so
+ * the words are passed through exactly as written and only the link is added.
+ * Split into React elements rather than built as HTML: turning content text
+ * into markup is how a linkifier becomes an injection.
+ *
+ * The trailing-punctuation class is deliberate. `https://x.dev/a.` at the end
+ * of a sentence must not put the full stop inside the href, and a URL in
+ * brackets must not keep the closing one.
+ */
+const URL_PATTERN = /(https?:\/\/[^\s<>"']*[^\s<>"'.,;:!?)\]}])/g
+
+function linkify(text) {
+  const pieces = text.split(URL_PATTERN)
+  if (pieces.length === 1) return text
+  return pieces.map((piece, position) =>
+    position % 2 === 1 ? (
+      <a
+        key={`${piece}-${position}`}
+        href={piece}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="break-words text-sky-300 underline decoration-sky-300/40 underline-offset-2 transition hover:text-sky-200 hover:decoration-sky-200"
+      >
+        {piece}
+      </a>
+    ) : (
+      piece
+    )
+  )
+}
+
 /** Everything except the media — the column that always has something in it. */
 function StopProse({ stop }) {
   return (
@@ -115,7 +154,7 @@ function StopProse({ stop }) {
           key={paragraph.slice(0, 40)}
           className="mt-3 text-[0.8125rem] leading-6 text-sky-100/80"
         >
-          {paragraph}
+          {linkify(paragraph)}
         </p>
       ))}
 
