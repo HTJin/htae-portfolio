@@ -1,14 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { paletteAt } from './daylight'
 import { METERS_PER_MILE, routeLength } from './route'
-import {
-  CAM_HEIGHT,
-  ROAD_HALF,
-  cameraX,
-  curveAt,
-  hillAt,
-  makeCamera,
-} from './world'
+import { ROAD_HALF, makeCamera, project } from './world'
 import styles from '@/styles/drive.module.css'
 
 // The sign is authored at 300x180 design px standing for 6m x 3.6m of
@@ -48,15 +41,9 @@ export function ExitSign({ drive, stop }) {
         return
       }
 
-      const scale = camera.focal / z
-      const x =
-        camera.width / 2 +
-        (curveAt(stop.s) - curveAt(sim.travel) + OFFSET_X - cameraX(sim)) *
-          scale
-      const y =
-        camera.horizon +
-        (CAM_HEIGHT + hillAt(sim.travel) - hillAt(stop.s) - MOUNT_HEIGHT) *
-          scale
+      // Same projection the canvas uses, so the sign always stands exactly
+      // where the roadside furniture around it does.
+      const { x, y, scale } = project(camera, sim, z, OFFSET_X, MOUNT_HEIGHT)
       const size = (SIGN_METERS * scale) / DESIGN_WIDTH
 
       wrapper.style.visibility = 'visible'

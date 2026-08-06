@@ -10,6 +10,7 @@ import {
   curveAt,
   hillAt,
   makeCamera,
+  project,
 } from './world'
 
 const SEGMENTS = 130
@@ -32,6 +33,14 @@ export function RoadCanvas({ drive, className }) {
 
     const points = []
 
+    /**
+     * The road ribbon. This deliberately inlines the same maths as
+     * `project()` in world.js rather than calling it: it runs SEGMENTS+1 times
+     * every frame, writes into pre-allocated point objects, and hoists the two
+     * base trig terms out of the loop. Going through `project()` would add an
+     * allocation and recompute `curveAt(sim.travel)`/`hillAt(sim.travel)` for
+     * every point. Keep the two in step by hand.
+     */
     function buildPoints(sim) {
       const { width, focal, horizon } = camera
       const baseCurve = curveAt(sim.travel)
@@ -137,15 +146,10 @@ export function RoadCanvas({ drive, className }) {
       const baseCurve = curveAt(sim.travel)
       const baseHill = hillAt(sim.travel)
 
-      const place = (s, x, y) => {
-        const z = s - sim.travel
-        const scale = focal / z
-        return {
-          x: width / 2 + (curveAt(s) - baseCurve + x - cameraX(sim)) * scale,
-          y: horizon + (CAM_HEIGHT + baseHill - hillAt(s) - y) * scale,
-          scale,
-        }
-      }
+      // Roadside furniture goes through the shared projection. It already
+      // returned a fresh object per call, so routing it through project() costs
+      // nothing and removes a second copy of the camera maths.
+      const place = (s, x, y) => project(camera, sim, s - sim.travel, x, y)
 
       // Far to near so nearer objects paint over distant ones.
       const firstLamp = Math.ceil((sim.travel + Z_NEAR) / LAMP_SPACING)

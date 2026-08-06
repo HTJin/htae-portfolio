@@ -4,8 +4,13 @@
  * The camera sits on the road looking straight down it. A world point is
  * described by how far ahead it is (`z`, metres), how far off the road centre
  * it sits (`x`, metres, right-positive) and how high it stands off the tarmac
- * (`y`, metres). Everything on screen — tarmac, poles, exit signs — is placed
- * with `project()` so the canvas and the DOM overlays always agree.
+ * (`y`, metres).
+ *
+ * `project()` is the definition of that mapping, and the roadside furniture and
+ * the exit-sign overlay both go through it so the canvas and the DOM agree.
+ * The one deliberate exception is `RoadCanvas.buildPoints`, which inlines the
+ * same maths for the road ribbon — see the comment there for why. If you change
+ * the projection, change it here and check that one call site.
  */
 
 export const ROAD_HALF = 5.5 // metres from centre line to the outer edge line
