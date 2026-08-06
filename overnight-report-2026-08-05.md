@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 51 · branch `feat/drive-mode` · 66 commits, nothing pushed
+**Last updated:** end of cycle 52 · branch `feat/drive-mode` · 67 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,35 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 52 — checking whether last cycle's fault had siblings, and a false alarm about speed
+
+Last cycle I found the route map showing your position in colour only. The useful next move is not to move on but to
+ask **where else does this page say something in colour alone** — so I checked all of them.
+
+**Clean everywhere else, and deliberately so.** The road, the sky, the car interior, the exit sign, the gauges, the
+warning lights and the P R N D gear letters are all explicitly hidden from screen readers, with the real information
+carried as text in the arrival panel and the itinerary instead. That is the correct arrangement rather than an
+oversight — the trip computer even carries a note explaining that everything on it is already announced elsewhere.
+The screenshot strip exposes only the picture currently on show. The route map was the single gap, and it is fixed.
+
+**Then a scare worth telling you about, because of how it resolved.** I measured the frame rate while driving —
+something not checked since early in the run — and got about **16 frames per second**, with most frames far too slow.
+That reads as a serious performance regression.
+
+It was not. A **completely blank page** in the same browser runs at **15 frames per second**, and drive mode sitting
+still runs at 15.2. Drive mode is at or slightly above the fastest this automated browser can go at all, which means
+the driving simulation, the road painting and the gauges together cost nothing I can measure. The bottleneck is the
+test environment.
+
+I have written a warning into my own notes so that a later pass does not "discover" this same non-problem and start
+optimising against a phantom. **If you want a real answer on smoothness, it needs a normal browser on your own
+machine** — that one is genuinely yours to check, and it is the fourth time this run that a broken measurement, rather
+than broken code, was the thing at fault.
+
+**Nothing shipped this cycle**, which is the honest outcome when four checks come back clean.
 
 ---
 

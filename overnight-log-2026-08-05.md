@@ -1267,3 +1267,27 @@ What makes this an oversight rather than a deliberate choice is the state right 
 - the "driven" markers were left alone, so no second row claims to be current
 
 **Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.4 kB). One commit: `d88f5cd`. -> `Cycle: 52 / Phase: Planner`.
+
+## Cycle 52
+
+**Suggester — hunt the class, not the instance.** Cycle 51 found the route map telling you where you are in colour alone. Rather than wait to trip over another one, this pass went looking for **every** place drive mode signals state visually — the approach that paid off in cycle 32.
+
+**It is clean everywhere else, and deliberately so.** Every decorative layer is hidden from assistive technology rather than half-exposed: the road `<canvas>`, the sky, the interior, the exit sign, the gauge cluster, the tell-tales, the **P R N D** gear block, and the trip computer. That last one carries its own justification in a comment — every value on that screen is already announced by the arrival panel and the itinerary — which is the difference between *hidden* and *forgotten*. The carousel exposes only the frame actually on screen, and its dots carry `aria-current`. The route map was the single gap in this class, and cycle 51 closed it.
+
+**The canvas is not soft on a retina screen either** — `RoadCanvas.jsx:352-357` already scales the backing store by `min(devicePixelRatio, 2)` and repaints after the resize wipes it.
+
+**Then a scare, and the control that defused it.** Sampling `requestAnimationFrame` while driving at 81 MPH gave **16.1 fps**, a median frame of 46ms and **43 of 49 frames over 33ms**. On its face that is a severe regression after thirty cycles of change, and it is exactly the kind of number that gets reported in a panic.
+
+The control says otherwise:
+
+| what | fps |
+|---|---|
+| drive mode, driving | 16.1 |
+| drive mode, parked | 15.2 |
+| **a bare blank page, same browser** | **15.0** |
+
+The empty page is the ceiling. Drive mode runs **at or above** it, so the whole drive loop — simulation, canvas repaint, gauges — costs nothing measurable here. The bottleneck is the automated browser's compositor, and **the window was genuinely foregrounded** (`document.hasFocus()` true), so guardrail 24 is not sufficient protection against this mistake. That is now written at the top of the task file: **do not try to measure frame rate in this environment.**
+
+**And a look rather than a measurement.** At 390×844 the phone cockpit stacks correctly, the screenshot frame and its dots are legible, the panel shows its scroll affordances, and all six controls sit in one reachable row. Nothing to fix.
+
+**Exit.** No commit to `src/`. -> `Cycle: 53 / Phase: Suggester` (backlog still dry).

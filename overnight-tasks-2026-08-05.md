@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
-**Cycle:** 52
+**Phase:** Suggester
+**Cycle:** 53
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -547,9 +547,38 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 52
+## Tonight's tasks (in order) — CYCLE 53
 
-_Not yet planned — the Planner writes this list next._
+_Not yet planned — backlog still dry, so cycle 53 opens at **Suggester**._
+
+> **Do not try to measure frame rate in this environment.** Cycle 52 established that a **bare blank page** runs at
+> **15.0 fps** here, with the window genuinely foregrounded (`document.hasFocus()` true). Drive mode parked measures
+> **15.2** and driving **16.1** — at or above the empty-page ceiling, so there is no signal in the number at all.
+> Guardrail 24 ("frame timing needs a foregrounded window") is **not sufficient**: foregrounded is not enough here. A
+> future cycle that samples `requestAnimationFrame` and reports a performance regression will be reporting the
+> harness, not the site.
+
+<details>
+<summary>Cycle 52's list (a verification-only cycle — nothing shipped, kept for context)</summary>
+
+### CYCLE 52
+
+Backlog dry. Cycle 51 found state told in colour alone, so this pass **hunted that whole defect class** rather than
+waiting to trip over it again (the cycle-32 approach), then tried two other axes. **Four audits, nothing to ship.**
+
+- **Colour-only state, everywhere else — clean.** Every decorative layer is deliberately hidden from assistive
+  technology rather than half-exposed: the road `<canvas>` (`RoadCanvas.jsx:376`), the sky (`Sky.jsx:95`), the
+  interior (`CarInterior.jsx:12`), the exit sign (`ExitSign.jsx:129`), the gauge cluster, the tell-tales and the
+  **P R N D** gear block (`Dashboard.jsx:204,266`), and the trip computer (`:617`) — whose comment states the reason:
+  every value on it is already announced by the arrival panel and the itinerary. The carousel exposes **only** the
+  visible frame and its dots carry `aria-current`. The one gap in this class was the route map, fixed in cycle 51.
+- **Canvas resolution on a high-DPI screen — clean.** `RoadCanvas.jsx:352-357` already scales the backing store by
+  `min(devicePixelRatio, 2)`, so the road is not a soft upscale on a 2× display.
+- **Frame rate — not measurable here.** See the note above; recorded as a limitation rather than a result.
+- **The phone layout, looked at rather than measured — clean.** At 390×844 the cockpit stacks, the screenshot frame
+  and its dots are legible, the panel's scroll affordances show, and all six controls sit in one reachable row.
+
+</details>
 
 <details>
 <summary>Cycle 51's list (resolved — kept for context)</summary>
@@ -2170,6 +2199,22 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C52.0 — The "state told in colour alone" class is clean everywhere else** *(cycle 52 — verification)* — after
+  cycle 51 found the route map marking your position visually only, the whole class was hunted rather than left to
+  surface again. Every decorative layer is **deliberately** `aria-hidden` — canvas, sky, interior, exit sign, gauge
+  cluster, tell-tales, the **P R N D** gear block and the trip computer — and the trip computer's comment gives the
+  reason: its values are already announced by the arrival panel and the itinerary. The carousel exposes only the
+  visible frame and its dots carry `aria-current`. No second instance of the defect exists.
+- **C52.1 — The road canvas is not soft on a high-DPI screen** *(cycle 52 — verification)* — `RoadCanvas.jsx:352-357`
+  scales the backing store by `min(devicePixelRatio, 2)` and repaints after the resize wipes it, so the road renders
+  at device resolution rather than being upscaled.
+- **C52.2 — Frame rate cannot be measured in this environment** *(cycle 52 — limitation, recorded not reported)* — a
+  first sample looked like a catastrophe: **16.1 fps** while driving, 43 of 49 frames over 33ms. The control says
+  otherwise — a **bare blank page** in the same browser runs at **15.0 fps**, and drive mode **parked** at **15.2**.
+  Drive mode is therefore at or above the empty-page ceiling and the number carries no information about the site.
+  Guardrail 24 is insufficient: the window *was* foregrounded (`document.hasFocus()` true). Recorded at the top of the
+  task file so no later cycle mistakes the harness for a regression.
 
 - **C51.0 — Cycle 50's mirror constant holds on a phone** *(cycle 51 — verification)* — the 58px floor assumes the
   mirror's drop is a fixed **50px**, measured at 1280px wide where titles never wrap. On a phone the chip is only 42%
