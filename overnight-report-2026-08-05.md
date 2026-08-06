@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 25 · branch `feat/drive-mode` · 40 commits, nothing pushed
+**Last updated:** end of cycle 26 · branch `feat/drive-mode` · 41 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,40 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 26 — the way out was falling off the bottom of the start screen
+
+The start screen — *"The résumé, from the driver's seat"* with the **Start engine** button — is the first thing anyone
+sees, and it turns out nobody had ever measured it on a phone. The arrival panel and the cockpit have both been
+checked at phone sizes; the screen that comes before them never was.
+
+**And it only breaks for people who come back.** If you've visited before, that screen gains two extra controls —
+*Resume · EXIT 13* and *Forget my progress*. On a phone held sideways that is enough to push the whole thing past the
+screen:
+
+| screen | content | what fell off |
+|---|---|---|
+| 390×844 upright | fits | nothing |
+| 844×390 sideways | 394 in 390 | bottom of the exit link |
+| 667×375 sideways | 393 in 375 | most of the exit link |
+| 568×320 sideways | 468 in 320 | the whole exit link, **and the heading off the top** |
+
+That link is the *only* way out of drive mode while the start screen is up — it sits on top of the small "exit" link
+in the corner — and the page deliberately doesn't scroll, so there was no way to get it back. A returning visitor on
+a small phone could start the drive but not leave it, except with the browser's back button.
+
+It now fits outright on both common landscape phones (the content came down from 394 pixels to 300), and on the very
+smallest screens it scrolls so nothing is stranded.
+
+**One detail I want to flag, because getting it wrong would have looked like a fix.** The obvious repair is "make it
+scrollable". That alone would not have worked: the content was *centred*, and a centred item that grows past its
+container gets pushed to a position no scrollbar can reach. So the centring had to move onto an inner wrapper first.
+Without that, the heading would have gone from clipped to genuinely unreachable, and the measurement would still have
+said "scrollable".
+
+Your upright-phone and desktop start screens are unchanged, measured position by position.
 
 ---
 

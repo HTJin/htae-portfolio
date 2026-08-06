@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 26
+**Cycle:** 27
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -240,6 +240,21 @@
 85. **Pedals stay usable.** Cycle 22 set 24×24 as this run's floor and guardrail 44 warns against trading a visible
     bug for an unusable one. Any pedal shrink must be measured against that floor, not assumed safe.
 
+### Cycle 26 pre-mortem (guardrails for this cycle's tasks)
+
+86. **`justify-center` + `overflow-auto` silently clips the top.** This is the specific flexbox trap this task walks
+    into: a centred flex child that overflows cannot be scrolled back to. The centring must move to an `m-auto`
+    wrapper, and the fix must be verified by measuring that the splash's **first** element is reachable, not just
+    that a scrollbar exists.
+87. **Do not remove the way out to make the layout fit.** The link to the classic site is the only exit while the
+    splash is up (it is `z-50` over the scene's own `z-40` exit link). Whatever else is tightened, that link stays.
+88. **The height breakpoint must not leak upward.** Same rule as cycle 25's guardrail 81: measure 390×844 and
+    1440×900 after the change and require them identical.
+89. **Keep the keyboard legend honest.** If the controls list is hidden or reduced on small screens, it must not
+    become *wrong* on the screens that keep it — and the on-screen controls must still be discoverable without it.
+90. **Verify with saved progress present.** The fault only appears for a returning visitor, so every measurement in
+    this cycle seeds `htae.drive.progress.v1` first. A clean-storage run would show the bug as fixed when it is not.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -255,9 +270,44 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 26
+## Tonight's tasks (in order) — CYCLE 27
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 26's list (resolved — kept for context)</summary>
+
+### CYCLE 26
+
+Backlog dry, so a **Suggester** pass — on the **ignition splash**, which is the first thing every visitor sees and had
+never been measured on a phone. Cycles 12, 23 and 25 checked the panel and the cockpit at phone sizes; the screen that
+comes *before* both was never opened there.
+
+- [x] **1. The ignition splash overflows on short landscape screens and pushes the way out off the bottom** — **DONE**
+  - **Evidence (measured, splash content height vs viewport, with saved progress present):**
+    | viewport | content | overflow (each side) | "back to the classic site" |
+    |---|---|---|---|
+    | 390×844 portrait | 522 in 844 | 0 | fully visible |
+    | 844×390 landscape | **394 in 390** | 2px | bottom 2px clipped |
+    | 667×375 landscape | **393 in 375** | 9px | 368—384, only ~7px of 17 visible |
+    | 568×320 landscape | **468 in 320** | **74px** | 378—394 — **entirely below the viewport** |
+    Without saved progress it fits at 844×390 (343px), so this is specifically the **returning visitor**, who gets two
+    extra controls (`Resume` and `Forget my progress`).
+  - **Why it is worse than a clipped link:** the splash is `z-50` and the scene's own "← exit" link is `z-40`, so while
+    the splash is up that link is the *only* way out of drive mode — and `document.body` has `overflow: hidden`, so
+    there is no scrolling to recover it. On a 568×320 screen the heading is cut off the top as well, because
+    `justify-center` splits the overflow evenly.
+  - **The fix has two halves, and needs both:** tightening alone cannot save 568×320 (148px short), so the splash must
+    become **scrollable** as the safety net — and a flex container with `justify-center` clips the top when content
+    overflows, so the centring has to move to an inner `m-auto` wrapper for scrolling to actually reach it. Then
+    tighten below the height breakpoint so the *common* landscape phones (844×390, 667×375) need no scrolling at all.
+  - **Files:** `src/components/drive/DriveScene.jsx`.
+  - **Done when:** at **844×390 and 667×375 with saved progress** the whole splash fits with **0 overflow** and every
+    control — including the way out — is fully inside the viewport; at **568×320** nothing is unreachable (content
+    scrollable and the top of the splash reachable, not clipped away); **390×844 and 1440×900 are unchanged**,
+    measured; and `Start engine` stays reachable everywhere it already was.
+
+</details>
 
 <details>
 <summary>Cycle 25's list (resolved — kept for context)</summary>
@@ -1052,6 +1102,21 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C26.1 — The ignition splash fits, and keeps the way out on screen** *(cycle 26, commit `d2d0484`)* — the first
+  screen every visitor sees had never been measured on a phone. **With saved progress present** — a returning visitor,
+  who gets two extra controls — it overflowed short landscape viewports: 844×390 **394 in 390** (exit link 2px clipped),
+  667×375 **393 in 375** (~7px of a 17px link visible), 568×320 **468 in 320** with the exit link **entirely below the
+  viewport** and the heading cut off the top. That link is not cosmetic: the splash is `z-50` over the scene's own
+  `z-40` exit link, so while it is up that is the **only** way out of drive mode, and `body` has `overflow: hidden`
+  so nothing can be scrolled back. **Two halves, both required:** tightening alone cannot save 568×320 (148px short),
+  so the splash is now scrollable — and because a centred flex child that overflows cannot be scrolled back to, the
+  centring moved from `justify-center` to `m-auto` on an inner wrapper (guardrail 86; without that the heading would
+  have been *unreachable* rather than merely clipped). Below 430px of height it also tightens. **Verified with
+  progress seeded every time (guardrail 90):** 844×390 **394 -> 300**, no scrolling needed, nothing offscreen;
+  667×375 **393 -> 300**, same; 568×320 overflow **74px -> scrollable by 12px**, nothing offscreen, first element at
+  y=16 so the top is reachable; **390×844 control positions 365/423/503/667 — identical to before** (guardrail 88);
+  1440×900 centred at y=253, exactly where `justify-center` put it.
 
 - **C25.1 — The trip computer fits its box on a landscape phone** *(cycle 25, commit `e9cfe30`)* — at 844×390 the
   terminal's box was **20px** tall against **54px** of content, and because `.screen` is `overflow: visible` it did not

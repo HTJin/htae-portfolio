@@ -530,3 +530,32 @@ On a landscape phone the car's own bonnet — the element that says *you are loo
 - screenshot confirms the exit, the bar and the year all sit inside the bezel with the controls clear beneath
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.9 kB). One commit: `e9cfe30`. -> `Cycle: 26 / Phase: Planner`.
+
+## Cycle 26
+
+**Suggester.** Backlog dry. Cycles 12, 23 and 25 have all checked the arrival panel and the cockpit at phone sizes; nobody had ever opened the screen that comes *before* both — the ignition splash, the first thing every visitor sees.
+
+**The finding, and it only exists for returning visitors.** With saved progress present the splash gains two extra controls (`Resume` and `Forget my progress`), and that is enough to push it past a short landscape viewport:
+
+| viewport | splash content | overflow each side | "back to the classic site" |
+|---|---|---|---|
+| 390×844 portrait | 522 in 844 | 0 | fully visible |
+| 844×390 | **394 in 390** | 2px | bottom 2px clipped |
+| 667×375 | **393 in 375** | 9px | 368—384, ~7px of 17 visible |
+| 568×320 | **468 in 320** | **74px** | **entirely below the viewport** |
+
+With storage clear it fits at 844×390 (343px), which is exactly why this had never shown up — every previous check started from a clean slate.
+
+**Why it is worse than a clipped link.** The splash is `z-50` and the scene's own "← exit" link is `z-40`, so while the splash is up that link is the **only** way out of drive mode, and `document.body` carries `overflow: hidden`, so there is no scrolling to recover it. At 568×320 the heading is cut off the top too, because `justify-center` splits the overflow evenly.
+
+**Two halves, and it needed both.** Tightening alone cannot save 568×320 — it is 148px short — so the splash had to become scrollable. But a **centred flex child that overflows cannot be scrolled back to**: with `justify-center` the top is pushed to a negative offset that no scrollbar reaches. So the centring moved to `m-auto` on an inner wrapper (guardrail 86, written before building precisely because this trap is easy to walk into and produces a fix that *looks* right). Then, below 430px of height, the splash tightens: smaller heading, tighter margins, the two buttons side by side rather than stacked, and the key legend three across instead of two.
+
+**Verified on the production build, with progress seeded before every measurement (guardrail 90 — a clean-storage run would have shown the bug as fixed when it was not):**
+- 844×390 — content **394 -> 300**, `needsScroll: false`, nothing offscreen, exit link fully visible
+- 667×375 — content **393 -> 300**, `needsScroll: false`, nothing offscreen
+- 568×320 — overflow **74px -> scrollable by 12px**, nothing offscreen, first element at **y=16** so the top of the splash is reachable rather than clipped away
+- 390×844 — control positions **365/423/503/667**, identical to the pre-change baseline (guardrail 88)
+- 1440×900 — content centred at y=253, which is exactly `(900 - 394) / 2` — where `justify-center` had it
+- screenshot at 844×390 confirms kicker, heading, blurb, both buttons, the legend and the exit link all on screen
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.9 kB). One commit: `d2d0484`. -> `Cycle: 27 / Phase: Planner`.
