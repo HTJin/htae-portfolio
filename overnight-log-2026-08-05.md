@@ -513,3 +513,20 @@ On a landscape phone the car's own bonnet — the element that says *you are loo
 - `grep clamp(190px` — one definition, plus one mention inside a comment (guardrail 80)
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.8 kB). One commit: `bf95af8`. -> `Cycle: 25 / Phase: Planner`.
+
+## Cycle 25
+
+**Suggester.** Backlog dry. Cycle 24's landscape-phone screenshot had left an *impression* that the trip computer looked wrong; this cycle went and measured it rather than carrying the impression forward.
+
+**The finding, and why nothing looked obviously broken.** At 844×390 the terminal's box is **20px** tall (`clientHeight` 18) while its content needs **54px** — a 36px overflow. `.screen` is `overflow: visible`, so instead of clipping it **painted outside its own box, over the control row**. Row by row: `~/route $ drive --to` / `ARRIVED` was the only row still inside; **`EXIT 06 · Co.Lab` had height 0**; **the progress bar had height 0**; `yr 2023` / `odo 0.8 mi` sat entirely below the box. The line that says which exit you are at had been squashed out of existence, while the bar and year still *drew* over the buttons — which is exactly why a screenshot alone was ambiguous (guardrail 82).
+
+**Where the 190px goes — measured, so the fix was arithmetic and not taste.** Stack padding 18 + gaps 16 leaves **156**. Cluster strip **74** (`shrink-0`, driven by a 62px gauge), trip computer **20** (`flex-1`, gets the remainder), control row **62** (driven by the 62px GO pedal). 74 + 62 + 54 = 190 against a 156 budget — it could not fit, so the flex children collapsed to zero rather than anything visibly "breaking".
+
+**Built.** The shortfall comes out of the three places that can afford it, conditioned on `@media (max-height: 430px)` alone: a 44px gauge instead of 62, tighter stack gaps and terminal padding, pedals at 42/48 instead of 52/62, and the shell-prompt row — the one row carrying nothing the exit line, bar and year do not already say — stands down. Deleting the gauge or the screen would have made the measurement clean while trading away the owner's priority (a); guardrail 84 was written to stop exactly that.
+
+**Verified on the production build:**
+- 844×390 — overflow **36px -> 0**, **no row clipped**, screen box **20 -> 68px**, exit line height **0 -> 17px**, progress bar **0 -> 6px** (guardrail 83 — "no overflow" alone could have been satisfied by collapsing further), budget rebalanced **74/20/62 -> 52/68/48**, screen fully inside the dash, smallest control **25px** with pedals 38/43px (guardrail 85), nothing below the viewport, no horizontal scroll, panel/dash overlap **0**
+- 390×844 and 1440×900 — **identical** screen box and all four row heights, so the height breakpoint does not leak upward (guardrail 81)
+- screenshot confirms the exit, the bar and the year all sit inside the bezel with the controls clear beneath
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.9 kB). One commit: `e9cfe30`. -> `Cycle: 26 / Phase: Planner`.

@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 24 · branch `feat/drive-mode` · 39 commits, nothing pushed
+**Last updated:** end of cycle 25 · branch `feat/drive-mode` · 40 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,35 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 25 — the dashboard screen was drawing on top of the buttons
+
+Last cycle's landscape-phone screenshot left me with a hunch that the little green terminal on the dash looked off. A
+hunch is not a finding, so this cycle measured it.
+
+On a phone held sideways, that screen had **20 pixels** of space for **54 pixels** of content. And because of how it
+was styled it did not crop — it drew straight past its own border, over the buttons underneath. The line that tells
+you **which exit you are at** had been squeezed to zero height and vanished; so had the progress bar. What you could
+still see — the bar and the year — was painting outside the box, which is precisely why it looked *slightly* wrong
+rather than obviously broken.
+
+The cause was arithmetic, and I measured it rather than guessing: the dash gets 190 pixels on that screen; the
+instrument strip was taking 74, the buttons 62, and the terminal got whatever was left — 20 — for something that needs
+54. It never fit, so the layout quietly collapsed instead of complaining.
+
+The 190 pixels are now shared properly, and **only on short screens**: a slightly smaller speedometer, tighter
+spacing, slightly shorter pedals, and the decorative `~/route $ drive --to` prompt line steps aside so the exit name,
+the route bar and the year all survive. The terminal went from 20 pixels to 68, the exit line is back, and the bar is
+back.
+
+**What I did not do:** the easy fix would have been to delete the speedometer or the screen on a landscape phone. That
+would have made my measurements clean and quietly given up the thing you actually asked for — a dash that looks like
+a car. Everything is still there, just sized for the screen.
+
+Your desktop and portrait-phone cockpits are untouched, and I checked that rather than assuming it: same box, same row
+heights, before and after.
 
 ---
 

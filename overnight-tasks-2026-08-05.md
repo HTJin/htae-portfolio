@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 25
+**Cycle:** 26
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -225,6 +225,21 @@
 80. **One literal, checked by grep.** The point of the task is that the quantity exists once. Finish by grepping for
     `clamp(190px` and confirming a single definition.
 
+### Cycle 25 pre-mortem (guardrails for this cycle's tasks)
+
+81. **Height breakpoints must not leak upward.** Everything here is conditioned on a short viewport. Measure
+    390×844 and 1440×900 after the change and require them byte-identical to before — a `max-height` variant that
+    accidentally applies on a desktop would shrink the cockpit for everyone.
+82. **`overflow: visible` is why this was invisible.** The content was painting outside its box rather than clipping,
+    so nothing looked obviously broken in a screenshot. Verification must be `scrollHeight` vs `clientHeight` and
+    per-row boxes, not "it looks fine now".
+83. **A row with height 0 is the failure, not the symptom.** Requiring "no overflow" alone could be satisfied by the
+    rows collapsing further. Assert explicitly that the exit line and the progress bar have **non-zero height**.
+84. **Do not gut the cockpit to make it fit.** Deleting the gauge or the screen on a landscape phone would trade the
+    owner's priority (a) for a clean measurement. Every element stays; they get smaller (guardrail 52).
+85. **Pedals stay usable.** Cycle 22 set 24×24 as this run's floor and guardrail 44 warns against trading a visible
+    bug for an unusable one. Any pedal shrink must be measured against that floor, not assumed safe.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -240,9 +255,44 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 25
+## Tonight's tasks (in order) — CYCLE 26
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 25's list (resolved — kept for context)</summary>
+
+### CYCLE 25
+
+Backlog dry, so a **Suggester** pass. Cycle 24's landscape-phone screenshot showed the trip computer looking wrong;
+this cycle went and measured it instead of leaving it as an impression.
+
+- [x] **1. The trip computer overflows its own box on a landscape phone and paints over the controls** — **DONE**
+  - **Evidence (measured at 844×390, EXIT 06):** the screen's box is **20px tall** (`clientHeight` 18) while its
+    content needs **54px** — a **36px overflow**. Because `.screen` is `overflow: visible`, that content does not clip,
+    it *paints outside the box*, over the control row beneath it. Row by row:
+    - `~/route $ drive --to` / `ARRIVED` — 14px tall, the only row still inside the box
+    - **`EXIT 06 · Co.Lab` — height 0**, below the box edge. The line that says which exit you are at is gone.
+    - **progress bar — height 0**, below the box edge
+    - `yr 2023` / `odo 0.8 mi` — 16px, entirely below the box
+    All four rows report as clipped. At 390×844 (portrait) the same component overflows by **0** and nothing is
+    clipped, so this is specific to short viewports.
+  - **Where the 190px goes** (measured, so the fix is not guesswork): stack padding 18 + gaps 16 leaves **156**;
+    cluster strip **74** (`shrink-0`, driven by a 62px gauge), trip computer **20** (`flex-1`, gets the remainder),
+    control row **62** (driven by the 62px GO pedal). 74 + 62 + 54 = 190 against a 156 budget — it cannot fit as
+    currently sized, which is why the flex children collapsed to zero instead.
+  - **The approach:** take the shortfall from the three places that can afford it *on short viewports only*, and keep
+    every element present rather than deleting the speedometer or the screen — the owner asked for a cockpit, and this
+    is the viewport where it is most tempting and most wrong to gut it. Below a height breakpoint: a smaller gauge, a
+    tighter stack, slightly shorter pedals (still far above the 24px floor), and the trip computer's shell-prompt row
+    — pure chrome — stands down so the exit, the bar and the year survive.
+  - **Files:** `src/components/drive/Dashboard.jsx`, `src/styles/drive.module.css`.
+  - **Done when:** at 844×390 the trip computer's content overflow is **0** and no row is clipped — specifically the
+    `EXIT 06 · Co.Lab` line and the progress bar have **non-zero height** and sit inside the box; every control stays
+    **>= 24px**; the dash still totals its `--dash` height with nothing painting outside it; and **390×844 and
+    1440×900 are unchanged**, measured, since the breakpoint must not leak upward.
+
+</details>
 
 <details>
 <summary>Cycle 24's list (resolved — kept for context)</summary>
@@ -1002,6 +1052,20 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C25.1 — The trip computer fits its box on a landscape phone** *(cycle 25, commit `e9cfe30`)* — at 844×390 the
+  terminal's box was **20px** tall against **54px** of content, and because `.screen` is `overflow: visible` it did not
+  clip — it painted **outside the box, over the control row**. Measured row by row: the shell prompt was the only
+  row still inside; **`EXIT 06 · Co.Lab` had height 0**; **the progress bar had height 0**; the `yr`/`odo` row sat
+  entirely below the box. The line telling you which exit you are at was gone. **Where the 190px went** (measured, not
+  assumed): padding 18 + gaps 16 left **156**, cluster strip took **74** (62px gauge, `shrink-0`), controls **62**
+  (62px GO pedal), leaving **20** for a component needing 54. The shortfall now comes from the three places that can
+  afford it, **on short viewports only**: a 44px gauge, tighter stack gaps and terminal padding, shorter pedals, and
+  the shell-prompt row — pure chrome — stands down. Nothing is deleted; the cockpit keeps its instrument (guardrail
+  84). **Verified:** 844×390 overflow **36 -> 0**, no row clipped, screen box **20 -> 68px**, exit line **0 -> 17px**,
+  bar **0 -> 6px** (guardrail 83), budget **74/20/62 -> 52/68/48**, screen fully inside the dash, smallest control
+  **25px** and pedals 38/43px (guardrail 85), nothing below the viewport, panel/dash overlap **0**; and **390×844 and
+  1440×900 are byte-identical to before** — same screen box, same four row heights (guardrail 81).
 
 - **C24.1 — The bonnet stays in front of the driver on short screens** *(cycle 24, commit `bf95af8`)* —
   `CarInterior` pinned the bonnet, dash reflection and wipers at fixed percentages while `Dashboard`'s height is
