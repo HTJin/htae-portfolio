@@ -188,6 +188,24 @@ export function StopCard({ stop, visible, position, total }) {
   const reducedMotion = useReducedMotion()
   const shots = stop.images?.length ? stop.images : null
 
+  /**
+   * The stops that are only prose get the same width the picture stops get,
+   * and flow in two columns on a big screen.
+   *
+   * Measured at 1440x900: a stop with screenshots widened to 925px while a
+   * text-only one stayed at 704px, so the sabbatical hid 40.9% of itself, the
+   * toolbox 20.5% and the senior role 15.1% — with 736px of the band unused
+   * either side. Widening alone would have fixed the fold and pushed the lines
+   * to ~135 characters; widening *and* columning fixes the fold and brings the
+   * measure down to ~63 characters instead.
+   *
+   * Deliberately not the project stops (they already split media from prose —
+   * a second column context inside that would be a layout nobody designed) and
+   * deliberately not the destination, whose summary band and primary call to
+   * action were composed on purpose and already fit.
+   */
+  const roomy = !shots && stop.kind !== 'destination'
+
   return (
     <AnimatePresence mode="wait">
       {visible ? (
@@ -211,7 +229,7 @@ export function StopCard({ stop, visible, position, total }) {
           // could never announce anything. `ArrivalAnnouncer` in DriveScene is
           // mounted for the life of the page and does the announcing.
           className={`pointer-events-auto relative flex max-h-full w-[min(94vw,44rem)] flex-col rounded-xl px-4 py-3 sm:px-7 sm:py-5 ${
-            shots ? 'lg:w-[min(94vw,58rem)]' : ''
+            shots || roomy ? 'lg:w-[min(94vw,58rem)]' : ''
           } ${styles.hud}`}
         >
           <CornerBrackets />
@@ -256,6 +274,21 @@ export function StopCard({ stop, visible, position, total }) {
                 <div className="lg:pt-3">
                   <StopProse stop={stop} />
                 </div>
+              </div>
+            ) : roomy ? (
+              // Balanced columns, and only from `lg` up — a phone stays one
+              // column. The columns live on an inner wrapper rather than on
+              // the scroll container itself, so the multi-column context is
+              // never the thing that owns the scrollbar.
+              // `break-inside-avoid` is scoped to list items and group cards
+              // on purpose. Putting it on every direct child — which the first
+              // build did — stops the big blocks (the whole bullet list, the
+              // toolbox grid) from splitting at all, so the columns cannot
+              // balance and the content gets *taller*: measured, the toolbox
+              // went from 84px hidden to 261px. Only the small items are
+              // protected from breaking mid-item.
+              <div className="lg:columns-2 lg:gap-x-8 [&_li]:break-inside-avoid">
+                <StopProse stop={stop} />
               </div>
             ) : (
               <StopProse stop={stop} />
