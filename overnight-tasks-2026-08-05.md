@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 39
+**Cycle:** 40
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -383,6 +383,21 @@
 132. **Prove the closed-map path is untouched.** This edits the handler every control on the page runs through. With
      the map closed, every key must behave exactly as it does today, measured rather than assumed.
 
+### Cycle 39 pre-mortem (guardrails for this cycle's tasks)
+
+133. **Do not take space from the cockpit.** Guardrail 71 already forbids buying panel height from the dash; the same
+     applies to the mirror above. The gap to it is 2px at 1440×800, so there is nothing there anyway — this fix must
+     come entirely from unused *width*.
+134. **Wider must not mean harder to read.** The whole reason cycle 28 chose columns over a plain widening was line
+     length. Measure the paragraph width after the change and require it to **narrow**; a fix that pushes past ~75
+     characters is a regression wearing a fix's clothes.
+135. **`2xl` must not leak down.** Re-measure 1440×900, 390×844 and 844×390 and require them identical — the same
+     rule cycles 25 and 26 applied to their height breakpoints.
+136. **Three columns must not orphan a short stop.** Guardrail 100's lesson: two columns with three bullets can read
+     as a mistake, and three is worse. Check a short experience stop in a screenshot at 1920 before calling this done.
+137. **Multi-column can overflow sideways.** Guardrail 99 again — measure `scrollWidth` against `clientWidth` in the
+     built version, not just in the trial.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -398,9 +413,51 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 39
+## Tonight's tasks (in order) — CYCLE 40
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 39's list (resolved — kept for context)</summary>
+
+### CYCLE 39
+
+Backlog dry. This pass went after the residual cycle 28 accepted: **EXIT 04, the sabbatical** — the entry that explains
+a gap on a résumé, and therefore the one least worth hiding — still hid **22.4%** of itself on a desktop.
+
+**First, what is *not* available, established by measurement.** The panel already fills its band exactly (card top =
+band top, card height = band height), so no slack is being wasted inside it. The band is pinned between the rear-view
+mirror above and the dashboard below, and the gap to the mirror is **20px at 1440×1080, 8px at 1440×900 and 2px at
+1440×800** — there is nothing to reclaim vertically without taking it from the cockpit, which guardrail 71 forbids.
+Worth recording: on a **1440×800** laptop the same entry hides **34.3%**.
+
+- [x] **1. The arrival panel ignores wide screens, so the longest entry stays cut off** — **DONE**
+  - **Evidence:** the card is capped at **58rem = 928px** at every width above `lg`. Measured at EXIT 04:
+    | viewport | band width | card width | **unused** | hidden |
+    |---|---|---|---|---|
+    | 1440×900 | 1440 | 928 | **512px** | 94px (22.4%) |
+    | 1920×900 | 1920 | 928 | **992px** | 94px (22.4%) |
+    | 2560×1000 | 2560 | 928 | **1632px** | 44px (10.5%) |
+    On a 1920-wide monitor — the commonest desktop there is — **more than half the band is empty** while the longest
+    entry on the résumé is cut off.
+  - **Trialled both ways before choosing, the cycle-28 method:**
+    | trial at 1920×900 | hidden | paragraph measure |
+    |---|---|---|
+    | today: 928px, 2 columns | 94px (22.4%) | 412px (~63 chars) |
+    | 1088px, 2 columns | 22px (6.3%) | 492px (~76 chars) |
+    | **1216px, 3 columns** | **0px** | **363px (~56 chars)** |
+    Widening alone fixes less *and* reads worse. Widening **and** adding a third column fixes it outright and
+    **improves** the line length — better on both axes, which is exactly how cycle 28 chose two columns over a
+    plain widening.
+  - **Scope, deliberately narrow:** the `roomy` stops only — text-only, not the project stops (their own media/prose
+    grid) and not the destination (composed in cycles 14 and 23, and it overflows by 0). Nothing below `2xl`.
+  - **Files:** `src/components/drive/StopCard.jsx`.
+  - **Done when:** at 1920×900 EXIT 04 hides **0px** and its paragraph measure **narrows** rather than widens; EXIT 10
+    and EXIT 19 stay at 0; **no horizontal overflow** in the scroller or the document; the destination and the project
+    stops are **unchanged**, measured; and 1440×900, 390×844 and 844×390 are unchanged, measured, since the rule must
+    not leak below `2xl`.
+
+</details>
 
 <details>
 <summary>Cycle 38's list (resolved — kept for context)</summary>
@@ -1590,6 +1647,24 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C39.1 — The arrival panel uses a wide screen, closing the cycle-28 residual** *(cycle 39, commit `cb525ea`)* —
+  EXIT 04, the sabbatical, still hid **22.4%** on a desktop and **34.3%** at 1440×800. **What was not available was
+  established first:** the panel already fills its band exactly, and the band is pinned between the mirror above and
+  the dash below — the gap to the mirror is **20px at 1440×1080, 8px at 1440×900, 2px at 1440×800**, so there is
+  nothing to take vertically without raiding the cockpit (guardrail 71/133). **What was available was width:** the card
+  capped at 58rem = 928px at every size above `lg`, leaving **992px of the band empty at 1920×900** — more than half.
+  **Both options trialled before choosing** (the cycle-28 method): 1088px/2 columns -> 22px hidden but the measure
+  widens to 492px (~76 chars); **1216px/3 columns -> 0px hidden and the measure *narrows* to 363px (~56 chars)**.
+  Better on both axes, so that is what shipped. **Verified:** at 1920×900 EXIT 04 **94 -> 0** hidden with the measure
+  **412 -> 363**, EXIT 10 and 19 at 0, project stops unchanged at 928px and the destination at 704px; at 1440×900
+  EXIT 04 is **identical to before** (928px, 2 columns, 94px hidden — guardrail 135); phones unchanged at 358px/799
+  and 704px/552, single column; no horizontal overflow anywhere (guardrail 137); and a three-bullet stop at 1920 reads
+  as three balanced columns in a screenshot (guardrail 136).
+  **A regression caught by measurement, not review:** the two width expressions were first written comma-separated in
+  one interpolation, which prettier wrapped in parentheses — making it the **comma operator**, which evaluates the
+  first operand and discards it. That silently dropped the picture stops from 928px back to 704px. The build and the
+  linter were both happy; only measuring a project stop caught it.
 
 - **C38.1 — The driving keys are inert while the route map is open** *(cycle 38, commit `e06709b`)* — the dialog
   declares `aria-modal="true"`, which `RouteMap`'s own cycle-10 comment describes as a promise that everything behind

@@ -881,3 +881,41 @@ Measured at EXIT 05: with the map open, `ArrowUp` **pulled the car out of the st
 **A note on the shift itself:** the browser extension disconnected mid-verification. Rather than retry blindly, the check was re-run from scratch once it reconnected — which is why the held-key evidence is a speed curve (22 -> 15 -> 52 mph) rather than the weaker "the title did not change" reading the interrupted run had produced.
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.4 kB). One commit: `e06709b`. -> `Cycle: 39 / Phase: Planner`.
+
+## Cycle 39
+
+**Suggester.** Backlog dry. This pass went after the residual cycle 28 accepted and recorded rather than hid: **EXIT 04, the sabbatical** — the entry that explains a gap on a résumé, and therefore the one least worth cutting off — still hid **22.4%** of itself on a desktop.
+
+**Establishing what was *not* available first.** The panel already fills its band exactly (card top = band top, card height = band height), so nothing is being wasted inside it. The band is pinned between the rear-view mirror above and the dashboard below, and the gap to the mirror measures **20px at 1440×1080, 8px at 1440×900 and 2px at 1440×800**. There is no vertical slack to reclaim without taking it from the cockpit, which guardrail 71 forbids and guardrail 133 restated for the mirror. Also worth recording: on a **1440×800** laptop the same entry hid **34.3%**.
+
+**What *was* available was width, and a lot of it.** The card capped at **58rem = 928px** at every width above `lg`:
+
+| viewport | band | card | unused | hidden |
+|---|---|---|---|---|
+| 1440×900 | 1440 | 928 | 512px | 94px (22.4%) |
+| 1920×900 | 1920 | 928 | **992px** | 94px (22.4%) |
+| 2560×1000 | 2560 | 928 | 1632px | 44px (10.5%) |
+
+On a 1920-wide monitor more than half the band sat empty while the longest entry on the résumé was cut off.
+
+**Both options were trialled before choosing one** — the method cycle 28 established, after widening-alone turned out to trade a fold for a readability regression:
+
+| trial at 1920×900 | hidden | paragraph measure |
+|---|---|---|
+| today: 928px, 2 columns | 94px (22.4%) | 412px (~63 chars) |
+| 1088px, 2 columns | 22px (6.3%) | 492px (~76 chars) |
+| **1216px, 3 columns** | **0px** | **363px (~56 chars)** |
+
+Widening alone fixes less *and* reads worse. Widening **and** adding a third column fixes it outright and **narrows** the line length. Better on both axes, so that shipped.
+
+**A regression I introduced and the measurements caught.** The two width expressions were first written comma-separated inside a single template interpolation. Prettier wrapped them in parentheses, which makes it the **comma operator**: it evaluates the first operand and throws it away. The `shots` width silently stopped applying and the **picture stops dropped from 928px back to 704px**. `npm run build` compiled and `next lint` was clean — nothing but measuring an actual project stop would have found it. They are now two separate interpolations with a comment explaining why.
+
+**Verified on the production build:**
+- 1920×900 — EXIT 04 hidden **94 -> 0**, card **928 -> 1216**, measure **412 -> 363**; EXIT 10 and EXIT 19 at 0
+- 1920×900 — project stops back at **928px** and the destination at **704px**, both `columns: auto`, untouched
+- 1440×900 — EXIT 04 **identical to before**: 928px, 2 columns, 94px hidden (guardrail 135, no leak below `2xl`)
+- 390×844 and 844×390 — unchanged, single column
+- no horizontal overflow in the scroller or the document at any size
+- screenshot of a three-bullet stop at 1920: three balanced columns, card sized to content, not an orphaned one
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.5 kB). One commit: `cb525ea`. -> `Cycle: 40 / Phase: Planner`.

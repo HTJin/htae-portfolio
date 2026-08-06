@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 38 · branch `feat/drive-mode` · 50 commits, nothing pushed
+**Last updated:** end of cycle 39 · branch `feat/drive-mode` · 51 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,41 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 39 — your sabbatical entry is no longer cut off
+
+Eleven cycles ago I widened the text-heavy stops and told you one was still not fixed: the **sabbatical** entry still
+had about a fifth of itself below the fold on a desktop, and I said closing that would mean cutting your own words.
+It turned out there was another way.
+
+First I checked the obvious idea and ruled it out: give the panel more height. There is none to give. The panel already
+fills its space exactly, and that space is squeezed between the rear-view mirror above and the dashboard below — the
+clearance to the mirror is 20 pixels on a tall screen, 8 on a standard one, and **2 pixels** on a 1440×800 laptop.
+Taking more would mean shrinking the cockpit, which is the thing you asked me to build.
+
+What there was plenty of is **width**. The panel stopped growing at 928 pixels no matter how wide your monitor is — so
+on a 1920-wide screen, **more than half the available space sat empty** while the longest entry on your résumé was
+still cut off.
+
+I tried it two ways before picking one:
+
+| | hidden | line length |
+|---|---|---|
+| today | 22% | ~63 characters |
+| just make it wider | 6% | ~76 characters |
+| **wider, plus a third column** | **nothing** | **~56 characters** |
+
+Simply making it wider fixes less *and* makes the lines harder to read. Wider **with a third column** shows all of it
+and makes the lines *shorter*. On a 1920 screen the sabbatical entry now fits completely. Your standard 1440 screen,
+your project pages and the final destination panel are all deliberately untouched, and phones are unchanged.
+
+**One mistake worth telling you about.** My first version quietly broke the project stops — they shrank from 928 pixels
+back to 704. I had written two width rules separated by a comma, which in JavaScript means "work out the first one,
+throw it away, keep the second". The build compiled and the linter was happy; nothing flagged it. The only reason I
+found it was that I measure a project stop every time I touch this panel. That habit is the whole reason it did not
+reach you.
 
 ---
 
