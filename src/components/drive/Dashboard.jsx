@@ -45,7 +45,13 @@ function Gauge({
   }, [drive, read, format])
 
   return (
-    <div className={clsx('relative aspect-square', className)}>
+    // Decorative: a non-visual user cannot see the road, so a speedometer
+    // tells them nothing. The itinerary and the arrival panel carry the
+    // content instead.
+    <div
+      className={clsx('relative aspect-square', className)}
+      aria-hidden="true"
+    >
       <svg viewBox="0 0 100 100" className="h-full w-full">
         <defs>
           <radialGradient id={`face-${label}`} cx="50%" cy="30%">
@@ -256,7 +262,7 @@ function GearSelector({ drive }) {
   )
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-1" aria-hidden="true">
       <div className="flex items-baseline gap-1.5">
         {PRND.map((letter) => (
           <span
@@ -489,13 +495,17 @@ function SteeringWheel({ drive }) {
   )
 }
 
-function ConsoleButton({ children, onClick, disabled, title, accent }) {
+function ConsoleButton({ children, onClick, disabled, title, label, accent }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
       title={title}
+      // The visible text is symbols ("◂ Back"), which announces as
+      // "left-pointing small triangle Back". The label keeps the visible word
+      // so voice control still works, and drops the glyph.
+      aria-label={label}
       className={clsx(
         'rounded-md border px-3 py-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.14em] transition',
         'disabled:cursor-not-allowed disabled:opacity-30',
@@ -509,7 +519,7 @@ function ConsoleButton({ children, onClick, disabled, title, accent }) {
   )
 }
 
-function Pedal({ label, hint, onPress, onRelease, tone }) {
+function Pedal({ label, hint, name, onPress, onRelease, tone }) {
   const handlers = {
     onPointerDown: (event) => {
       event.currentTarget.setPointerCapture?.(event.pointerId)
@@ -534,6 +544,7 @@ function Pedal({ label, hint, onPress, onRelease, tone }) {
     <button
       type="button"
       {...handlers}
+      aria-label={name}
       className={clsx(
         'flex h-full w-full touch-none select-none flex-col items-center justify-center rounded-md text-[0.5625rem] uppercase tracking-[0.16em] transition active:translate-y-[3px]',
         styles.pedal,
@@ -584,7 +595,13 @@ function TripComputer({ drive, stop }) {
   )
 
   return (
-    <div className={`flex h-full flex-col justify-between ${styles.screen}`}>
+    // Decorative too: every value on this screen — the exit, the distance, the
+    // year — is already announced by the arrival panel and the itinerary, and
+    // the terminal chrome around it is pure styling.
+    <div
+      className={`flex h-full flex-col justify-between ${styles.screen}`}
+      aria-hidden="true"
+    >
       <div className="flex items-baseline justify-between gap-2 font-mono text-[0.5625rem]">
         <span className="truncate text-emerald-300/50">
           <span className="text-emerald-300/80">~/route</span> $ drive --to
@@ -684,6 +701,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               onClick={drive.goBack}
               disabled={drive.index === 0}
               title="Previous stop"
+              label="Back to the previous exit"
             >
               ◂ Back
             </ConsoleButton>
@@ -692,16 +710,22 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               disabled={drive.index === route.length - 1 && drive.parked}
               accent
               title="Autopilot to the next stop"
+              label="Drive on to the next exit"
             >
               Next ▸
             </ConsoleButton>
-            <ConsoleButton onClick={onOpenMap} title="Route map">
+            <ConsoleButton
+              onClick={onOpenMap}
+              title="Route map"
+              label={mapOpen ? 'Close the route map' : 'Open the route map'}
+            >
               {mapOpen ? 'Close' : 'Map'}
             </ConsoleButton>
           </div>
           <div className="h-[52px] w-[54px] shrink-0">
             <Pedal
               label="BRAKE"
+              name="Brake"
               hint="↓"
               tone="stop"
               onPress={() => drive.setBrake(1)}
@@ -711,6 +735,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
           <div className="h-[62px] w-[54px] shrink-0">
             <Pedal
               label="GO"
+              name="Go — hold to accelerate"
               hint="↑"
               tone="go"
               onPress={() => drive.setThrottle(1)}
@@ -742,6 +767,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               onClick={drive.goBack}
               disabled={drive.index === 0}
               title="Previous stop (Backspace)"
+              label="Back to the previous exit"
             >
               ◂ Back
             </ConsoleButton>
@@ -750,10 +776,15 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               disabled={drive.index === route.length - 1 && drive.parked}
               accent
               title="Autopilot to the next stop (N)"
+              label="Drive on to the next exit"
             >
               Next ▸
             </ConsoleButton>
-            <ConsoleButton onClick={onOpenMap} title="Route map (M)">
+            <ConsoleButton
+              onClick={onOpenMap}
+              title="Route map (M)"
+              label={mapOpen ? 'Close the route map' : 'Open the route map'}
+            >
               {mapOpen ? 'Close map' : 'Route map'}
             </ConsoleButton>
           </div>
@@ -766,6 +797,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
           <div className="h-[clamp(52px,8vh,74px)] w-[46%] max-w-[62px]">
             <Pedal
               label="BRAKE"
+              name="Brake"
               hint="↓ / S"
               tone="stop"
               onPress={() => drive.setBrake(1)}
@@ -775,6 +807,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
           <div className="h-[clamp(62px,9.5vh,88px)] w-[46%] max-w-[62px]">
             <Pedal
               label="GO"
+              name="Go — hold to accelerate"
               hint="↑ / W"
               tone="go"
               onPress={() => drive.setThrottle(1)}

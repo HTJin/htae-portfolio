@@ -100,9 +100,12 @@ function Ignition({ onStart }) {
       <p className="text-[0.6875rem] uppercase tracking-[0.3em] text-sky-300/70">
         Hyun-Tae Jin · drive mode
       </p>
-      <h1 className="mt-3 max-w-xl font-display text-2xl font-light leading-tight text-white sm:text-4xl">
+      {/* An h2, not an h1: the itinerary's heading is the page's real title
+          and this splash is transient. Two h1s would compete to describe the
+          page for assistive tech and for crawlers. */}
+      <h2 className="mt-3 max-w-xl font-display text-2xl font-light leading-tight text-white sm:text-4xl">
         The résumé, from the driver&apos;s seat
-      </h1>
+      </h2>
       <p className="mt-3 max-w-md text-sm leading-6 text-white/50">
         Every exit on this road is a job, a build, or a chapter. Hold the
         accelerator, roll up to the sign, read, then drive on.
