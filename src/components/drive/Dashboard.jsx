@@ -739,7 +739,8 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
   return (
     <div
       className={clsx(
-        'absolute inset-x-0 bottom-0 z-30 h-[clamp(190px,36%,48%)]',
+        // Height comes from `--dash` on the scene root — see DriveScene.
+        'absolute inset-x-0 bottom-0 z-30 h-[var(--dash)]',
         styles.dash
       )}
     >

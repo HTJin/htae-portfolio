@@ -433,7 +433,16 @@ export function DriveScene() {
   }, [started, setThrottle, setBrake, setSteer, drive, toggleMap])
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#03060c] text-white">
+    <div
+      className="fixed inset-0 overflow-hidden bg-[#03060c] text-white"
+      // The dashboard's height, defined once and read by everything that has
+      // to line up with it: the dash itself, the arrival panel's bottom edge,
+      // and the bonnet / dash reflection / wipers in `CarInterior`. It used to
+      // be written out three times, and the copies only agreed while `36%` was
+      // the winning branch of the clamp — below ~528px tall the floor wins and
+      // the car's own bonnet ended up behind the dashboard (guardrail 43).
+      style={{ '--dash': 'clamp(190px, 36%, 48%)' }}
+    >
       {/* Only once under way: before that the ignition splash is the page, and
           the crawler's title from `drive.jsx` is the honest one. */}
       {started ? (
@@ -451,7 +460,7 @@ export function DriveScene() {
       <CarInterior passedStop={passedStop} />
 
       {/* Heads-up display floats on the glass: below the mirror, above the dash. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[clamp(190px,36%,48%)] top-[14%] z-30 flex items-center justify-center px-4">
+      <div className="pointer-events-none absolute inset-x-0 bottom-[var(--dash)] top-[14%] z-30 flex items-center justify-center px-4">
         <StopCard
           stop={stop}
           visible={started && parked && !mapOpen}

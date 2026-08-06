@@ -44,9 +44,18 @@ export function CarInterior({ passedStop }) {
         className={`absolute inset-y-0 right-0 w-[15%] bg-[#0a0d12] sm:w-[11%] ${styles.pillarRight}`}
       />
 
-      {/* Wipers parked at the base of the glass, just above the bonnet. */}
+      {/* Wipers parked at the base of the glass, just above the bonnet.
+
+          Everything from here down is positioned against `--dash` (the
+          dashboard's height, defined once in DriveScene) rather than against a
+          percentage of the viewport. These used to be fixed percentages chosen
+          to sit right when the dash was 36% tall — but the dash is
+          `clamp(190px, 36%, 48%)`, so below ~528px of height the 190px floor
+          wins and the furniture stayed put while the dash grew over it. On a
+          844x390 landscape phone that hid the bonnet completely. The offsets
+          below resolve to exactly the old values at the 36% branch. */}
       <svg
-        className="absolute inset-x-0 bottom-[41%] h-[8%] w-full opacity-70"
+        className="absolute inset-x-0 bottom-[calc(var(--dash)_+_5%)] h-[8%] w-full opacity-70"
         viewBox="0 0 1000 80"
         preserveAspectRatio="none"
       >
@@ -64,14 +73,18 @@ export function CarInterior({ passedStop }) {
         />
       </svg>
 
-      {/* The dash top, smeared back at the driver by the windshield. */}
+      {/* The dash top, smeared back at the driver by the windshield. Sits
+          directly on the dash, so it reads from the same quantity. */}
       <div
-        className={`absolute inset-x-[12%] bottom-[36%] h-[9%] ${styles.dashReflection}`}
+        className={`absolute inset-x-[12%] bottom-[var(--dash)] h-[9%] ${styles.dashReflection}`}
       />
 
-      {/* The car's own bonnet, the last thing before the road. */}
+      {/* The car's own bonnet, the last thing before the road. It tucks a
+          hair behind the dash so there is no seam between them, and keeps a
+          floor on its height so it still reads as a bonnet on a short screen
+          rather than thinning to a line. */}
       <div
-        className={`absolute inset-x-[-6%] bottom-[35.4%] h-[6%] ${styles.hood}`}
+        className={`absolute inset-x-[-6%] bottom-[calc(var(--dash)_-_0.6%)] h-[clamp(26px,6%,64px)] ${styles.hood}`}
       />
 
       {/* Vignette so the eye stays on the road. */}
