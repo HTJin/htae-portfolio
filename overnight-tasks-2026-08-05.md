@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 9
+**Cycle:** 10
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -49,6 +49,10 @@
 4. *Failure: a redesigned StopCard becomes unreadable or unscrollable on mobile.* **Guardrail:** verify the panel at 390x844 — content must scroll, no horizontal overflow, and the close/next affordances must stay reachable.
 5. *Failure: the screenshot carousel autoplays over reduced-motion users, or leaks timers between stops.* **Guardrail:** honor `useReducedMotion()` (show a static first frame + manual dots), and clear the interval on unmount/stop-change; verify by switching stops repeatedly and watching for stacked timers.
 6. *Failure: running `npm run build` while `npm run dev` is live, or trusting a poisoned `.next` cache.* They share `.next`; the build clobbers the dev server's route manifest (`/drive` starts 404ing for new requests while the open tab keeps working off HMR). Worse, the webpack cache can go stale and **silently serve CSS that is missing newly-added Tailwind classes** — observed in cycle 2, where `line-clamp-2` and `lg:truncate` produced zero CSS rules until a clean restart. **Guardrail:** after any `npm run build`, restart the dev server; and if a class looks inert, run `npm run dev:fresh` (wipes `.next`) and re-check *before* concluding the class or the config is at fault.
+33. *Failure (cycle 9): audio that starts without being asked for.* A résumé page that makes noise on load is worse than one with no sound at all. **Guardrail:** the `AudioContext` may only be constructed inside the toggle's own click handler, and the preference must **not** be persisted — a stored "on" would attempt playback on the next visit before any gesture exists.
+34. *Failure (cycle 9): the audio graph driven from React state per frame.* Same trap as guardrail 2, but worse — re-rendering at 60fps to set a frequency would be pure waste. **Guardrail:** drive `AudioParam`s from `drive.subscribe` using `setTargetAtTime`/`value`, never component state.
+35. *Failure (cycle 9): a leaked `AudioContext`.* Browsers cap how many a page may create, so a context per mount would eventually throw. **Guardrail:** close the context on unmount and null the reference; never build a second one while the first is alive.
+36. *Failure (cycle 9): "fixing" a layout defect that is really a frozen animation.* Observed this cycle — the arrival panel measured 26px into the dash at phone width, which looked like an overlap. It was framer-motion's *initial* transform (`translateY 26`, `rotateX 10°`, `scale .97`) never advancing, because rAF is paused in a hidden tab. Neutralising the transform showed the settled layout was flush and correct. **Guardrail:** before treating a measured overlap as real, read `getComputedStyle(el).transform`; if it is not `none`/identity, the element is mid-animation and the number is meaningless.
 28. *Failure (cycle 8): reading `localStorage` during render and breaking hydration.* The server has no storage, so any markup that depends on it differs from the client's first paint — the exact class of bug guardrail 1 exists for. **Guardrail:** never touch storage during render. Read it in an effect, hold it in state that starts `null`, and render the resume affordance only once mounted; then confirm a cold load is warning-free.
 29. *Failure (cycle 8): storage access throwing and taking the page with it.* `localStorage` throws on access in Safari private mode, when cookies are blocked, and in some embedded webviews — not just on write. **Guardrail:** every read *and* write goes through try/catch; a storage failure must degrade to "no saved progress", never to a broken page.
 30. *Failure (cycle 8): restoring a stale index onto a changed route.* The route is derived from content; if a role is added or removed, a stored index points somewhere else entirely — or off the end. **Guardrail:** version the storage key, and clamp/validate the restored index against `route.length` before using it. Store the stop's `id` too and only trust the index if the id still matches.
@@ -93,7 +97,33 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 8's list is fully resolved — see Done. The Planner fills this for cycle 9.)*
+*(cycle 9's list is fully resolved — see Done / Needs testing. The Planner fills this for cycle 10.)*
+
+<details>
+<summary>Cycle 9's list (resolved — kept for context)</summary>
+
+### CYCLE 9
+
+- [ ] **1. Phone-width regression sweep of the three stated priorities** *(new, cycle 9)*
+  - **Why:** the phone cockpit was last verified in **cycle 1**. Since then the daylight system, traffic, mile markers,
+    the aria pass and the resume UI have all landed, and the resume buttons were only ever seen at desktop width.
+    Nobody had re-checked the user's three actual priorities on a phone in seven cycles.
+  - **Done when:** cockpit, arrival panel, screenshot carousel and the new ignition resume UI are each measured at
+    390x844 against a production build, with any real defect either fixed or recorded.
+- [ ] **2. Opt-in engine audio** (backlog S5 — the last actionable item)
+  - **Why:** the last idea in the backlog, and the only sense the drive doesn't engage. An engine that responds to the
+    throttle is the difference between watching a road and driving one.
+  - **Design (decided):** **off by default and never persisted.** The `AudioContext` is created lazily *inside the
+    toggle's click handler*, so it can only ever exist as the result of a deliberate user gesture — that is both the
+    browser's autoplay requirement and the right default for a résumé page someone may open in an open-plan office.
+    The preference is deliberately **not** stored: a persisted "on" would try to start audio on the next visit before
+    any gesture, which is exactly what must never happen.
+  - **Files:** new `src/components/drive/engineAudio.js`, `src/components/drive/Dashboard.jsx` (toggle on the console).
+  - **Done when:** no `AudioContext` exists before the toggle is pressed; pressing it creates a running context whose
+    oscillator frequency tracks `sim.rpm`; pressing it again silences and suspends; the gain is driven from
+    `drive.subscribe` via `AudioParam`, never React state per frame; and everything is torn down on unmount.
+
+</details>
 
 <details>
 <summary>Cycle 8's list (resolved — kept for context)</summary>
@@ -354,6 +384,10 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C9-1. Phone-width regression sweep — no regressions found** — the cockpit had not been re-checked at phone width since cycle 1, with seven cycles of change since. Measured at 386x840 against a production build: hydrated, **no horizontal overflow**, cluster strip and trip screen laid out correctly, the arrival panel present and internally scrollable (content 472px in a 291px scroller), the screenshot frame at its native 2:1 (287x141), and the new ignition resume UI stacking correctly instead of overflowing. Nothing needed fixing.
+  - **A false positive was caught and *not* acted on.** The panel measured 26px into the dash, which read as an overlap. Its computed transform was `matrix3d(0.97, …, 26, 0, 1)` — framer-motion's *initial* state (`translateY 26`, `rotateX 10°`, `scale .97`) frozen, because rAF is paused in a hidden tab. Neutralising the transform showed the settled layout at 118→538 against a dash top of 538: flush, zero overlap. "Fixing" it would have permanently shifted the panel to compensate for a measurement artefact. Recorded as guardrail 36.
+- **C9-2. Opt-in engine audio** — proven working against a production build with the `AudioContext` constructor spied on from a parent frame: **zero contexts before any gesture**; pressing the toggle creates **exactly one**; toggling off then on again reuses that same one rather than leaking a second (guardrail 35); unmounting moves it to **`closed`**; and no audio key is written to storage (only `htae.drive.progress.v1` is present), so nothing can autostart on a later visit (guardrail 33). Commit `655a3ce`.
+  - **Verification caught a real flaw.** The toggle originally set itself "on" unconditionally, so a browser that refuses to resume would leave it lit over silence. `enable()` now resolves to whether the context actually reached `running`, and the toggle reports that. Confirmed after the fix: under a synthetic click the context stays `suspended` and the button correctly stays **off**.
 - **C8-1. Remember progress and offer to resume** — proven working against a production build, every path exercised with `localStorage` read directly rather than inferred:
   - **clean first visit** — nothing stored, no Resume and no Forget button on the ignition screen;
   - **driving to EXIT 13** — stored exactly `{"index":13,"id":"project-co-lab-portfolio"}`;
@@ -376,6 +410,8 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5c. Reduced-motion path through the carousel** *(cleared cycle 2)* — proven by real execution: `matchMedia('(prefers-reduced-motion: reduce)')` was patched to report `matches: true` inside a 390px probe frame before hydration, then EXIT 11 was opened. The frame counter held at `1/4` across 11 seconds (autoplay would have advanced 2-3 times at the 4.2s interval), clicking the third dot still moved it `1/4 -> 3/4`, and the `@media (prefers-reduced-motion: reduce) { .shot { transition: none } }` rule is present in the served stylesheet.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
+
+- [ ] **Engine audio actually sounds, and tracks the revs** — everything *structural* about it is verified (see C9-2), but audible output is not: a synthetic click grants no user activation, so the `AudioContext` never reaches `running` in this environment and `update()` correctly early-returns. Test with a real press in a foreground window: the toggle should light, a low engine note should be audible, its pitch should rise with the tachometer under throttle, and tyre noise should build with speed. Turning it off should fade to silence.
 
 - [ ] **Frame rate while driving, measured on the production build** — the only part of the cycle-3 roadside check that
   could not be completed. `requestAnimationFrame` is paused whenever `document.hidden` is true, so a frame-timing loop
@@ -476,7 +512,6 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
-- **S5 — Ambient drive audio (engine note, turn-signal tick), default muted with a dash toggle** — **UNBLOCKED as of cycle 6**, though still the riskiest item: Web Audio only (no new deps allowed), must be opt-in so it never autoplays, and needs a speaker toggle somewhere on the dash that does not crowd the console.
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** *(the unbuilt half of S13; traffic shipped in cycle 7)* — a thin drifting weather layer near the horizon. Deferred deliberately, not for lack of time: the existing horizon haze already blends the tarmac into the sky, and a second moving layer risks muddying it. Would need careful A/B against the current look.
 

@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 8 · branch `feat/drive-mode` · 15 commits, nothing pushed
+**Last updated:** end of cycle 9 · branch `feat/drive-mode` · 17 commits, nothing pushed
 
 ---
 
@@ -19,56 +19,65 @@ won't surface it.
 Both are a handful of lines in files this run isn't allowed to edit (`_app.jsx`, `public/sitemap.xml`). **Exact patches
 and one-line verification commands** are in the Needs-human section of `overnight-tasks-2026-08-05.md`.
 
+**One small thing to try yourself:** press the **♪** button on the dash. Engine sound is the last thing that shipped
+and it's the one feature I can't check from here — see below.
+
 ---
 
-## Cycle 8 — the route remembers you
+## Cycle 9 — sound, and a check that found nothing (which was the point)
 
-The route is 21 exits long. Anyone who read a few, closed the tab and came back was dropped at MILE 0 with no way back
-except driving the whole thing again — probably the most likely reason to give up on this page on a second visit.
+**The drive has an engine now, if you ask for it.** A **♪** toggle on the console; press it and two oscillators an
+octave apart follow the revs, with filtered tyre noise that follows speed instead. It's all synthesised, so it adds no
+download and no dependency.
 
-Now it remembers where you got to. But the design decision that matters is that it **offers** rather than **applies**:
-come back and you see *Resume · EXIT 13 — Co.Lab Portfolio App* sitting beside *Start engine*, with **Forget my
-progress** underneath. Auto-jumping you somewhere would take away the choice and hide the beginning of the route.
-Nobody gets trapped by state they didn't ask for, and a clean start is always one click away.
+The conservative choices are the whole design. The audio context is created **inside the button's own click handler** —
+never on load — and the preference is **deliberately not remembered**, because a stored "on" would try to make noise on
+your next visit before you'd touched anything. That's the last thing a résumé someone opens in an open-plan office
+should do.
 
-A shared `?exit=` link always wins over saved progress — someone following your link asked for that exit specifically.
+I verified that by watching the `AudioContext` constructor itself: **zero exist before any gesture**, pressing the
+toggle creates **exactly one**, toggling repeatedly reuses that same one rather than leaking, and leaving the page
+closes it. Storage contains only your saved route progress — no audio key.
 
-### Storage is hostile, so it's treated that way
+**That verification caught a real flaw.** The toggle originally lit up unconditionally, so when a browser refuses to
+start audio the button would claim "on" over silence. It now only reports on if the context actually started.
 
-`localStorage` doesn't just fail to save in Safari private mode or with cookies blocked — it **throws on access**. Every
-read and write is wrapped, and a failure degrades to "no saved progress" rather than a broken page.
+**What I couldn't check: whether it actually makes a sound.** Browsers require a genuine user press to start audio, and
+a scripted click doesn't count — so the context never runs in my environment. Press **♪** yourself: the note should
+rise with the tachometer under throttle, and tyre noise should build with speed.
 
-The subtler one: your route is *derived from your content*. If you add or remove a role, a stored index quietly points
-at something else entirely. So the key is versioned and a restored position is only trusted if the stop's id still
-matches the index. I armed three deliberately broken entries — a stale id, unparseable JSON, and index 999 — reloaded
-through the real code path each time, and all three fell back to no offer with the page alive.
+### The check that found nothing
 
-Everything was checked against a production build with `localStorage` read directly rather than inferred: clean first
-visit offers nothing; driving to EXIT 13 stores it; `?exit=5` overrides without clobbering the saved 13; the plain load
-offers the resume and lands there; Forget clears it.
+Your phone layout hadn't been re-verified since cycle 1 — seven cycles of change ago. I measured it: no overflow,
+cockpit correct, arrival panel scrollable, screenshots at full width, resume UI stacking properly. **Nothing needed
+fixing.**
+
+Worth mentioning because of the near-miss: the arrival panel measured 26px *into* the dashboard, which looked like a
+clear overlap. It wasn't — it was the panel's entry animation frozen at its first frame, because animation is paused in
+a backgrounded tab. The settled layout sits flush. Had I "fixed" it, I'd have permanently shifted the panel out of
+place for every real visitor to correct a measurement artefact.
 
 ---
 
 ## Where the drive stands
 
-Your three original asks shipped in cycle 1. The seven cycles since have gone into the standing brief — making it feel
-like a real place:
+Your three original asks shipped in cycle 1. The eight cycles since went into the standing brief:
 
 a driver's-POV cockpit with working instruments · an arrival panel with auto-cycling full-bleed screenshots ·
 dusk-to-dawn light that advances with your career · real interstate guide signs · per-leg roadside character ·
-a trip computer counting the actual years · deep links to any exit · oncoming traffic · mile markers · and now
-resume-where-you-left-off.
+a trip computer counting the actual years · deep links to any exit · oncoming traffic · mile markers ·
+resume-where-you-left-off · and now opt-in engine sound.
 
 ---
 
 ## Queued next
 
-Opt-in engine audio (the riskiest remaining item — Web Audio, must never autoplay); a drifting haze layer, deliberately
-deferred because the existing horizon haze already does the job; and structured data for `/drive`, still blocked behind
-the canonical fix above. Full reasoning in `overnight-suggestions-2026-08-05.md`, every idea with a checkbox.
+The backlog is down to two items, both deliberately held: structured data for `/drive` (blocked behind the canonical
+fix above — adding page markup while two canonicals disagree just adds noise), and a drifting haze layer (the existing
+horizon haze already does that job). So the next cycle will generate fresh ideas rather than mine the backlog.
 
-Still parked: frame rate while driving. Every Chrome tab here reports itself hidden, which pauses animation entirely —
-a probe returned zero frames in six seconds. Not something I can resolve from this side.
+Still parked: frame rate while driving, and now audible engine output — both need a foreground browser window, which
+isn't something I can arrange from here.
 
 ---
 

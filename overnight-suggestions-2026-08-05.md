@@ -35,12 +35,12 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** large — `Dashboard.jsx`, `CarInterior.jsx`, `drive.module.css`. Highest risk of crowding the road; guardrail 3 in the tasks file bounds it.
   - **Outcome:** **Shipped** in `646b717`. Wheel on the driver's axis with a hooded binnacle behind it, moulded dash grain, cowl lip, vents, bonnet, meaningful tell-tales, PRND, a terminal-styled centre screen, tilted pedal pads, and a separate stacked cockpit for phones. Evidence: a live driving frame at 1920x895 showed 35 MPH, tach up, `P R N D 3` with D lit, CRUISE lit under autopilot, and the screen counting down `EXIT 12 · Matrimoni  0.1 MI`; at 386x840 the phone layout had no horizontal overflow. Guardrail 3 held — glass is 573px of 895 (64%). Two real defects were found and fixed en route (see the log).
 
-- [ ] **S5 — Ambient drive audio (engine note, turn-signal tick), muted by default** — Status: Proposed — Cycle: 1
+- [ ] **S5 — Ambient drive audio (engine note, turn-signal tick), muted by default** — Status: Done (audible output Needs testing) — Cycle: 9
   - **Source:** market research — driving/scroll-story portfolios commonly pair motion with a subtle audio layer; absent here entirely.
   - **Suggestion:** a muted-by-default speaker toggle on the dash, with a synthesized engine note tied to `sim.rpm`.
   - **Why / expected impact:** large presence gain for a small surface; must stay opt-in so it never autoplays.
   - **Scope:** medium; Web Audio only, no new deps. Deferred to Backlog this cycle.
-  - **Outcome:** *(deferred)*
+  - **Outcome:** **Shipped** in `655a3ce`. Two oscillators through a lowpass follow the revs, filtered noise follows speed; all synthesised, no download, no dependency. Off by default, built only inside the toggle's click handler, and deliberately **not** persisted so nothing can autostart on a later visit. Verified by spying on the `AudioContext` constructor: zero before any gesture, exactly one after, reused across toggles, `closed` on unmount, no audio key in storage. Verification also caught the toggle lying — it lit up even when the browser refused to resume — so `enable()` now reports whether audio really started. **Audible output itself is still untested** (a synthetic click grants no user activation); see Needs testing.
 
 - [ ] **S6 — Time-of-day lighting that advances along the route** — Status: Done — Cycle: 2
   - **Source:** site audit — the scene is permanently night (`RoadCanvas.jsx:17-27` fixed colour table, `Sky.jsx` stars).
@@ -135,5 +135,9 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** compounds with S16 — drive mode is both unlisted *and* disowned by its own canonical, so fixing either alone will not surface it in search.
   - **Scope:** one `<url>` block in `public/sitemap.xml`, which is outside this run's write scope (it covers `public/images/` only). Exact patch is in the **Needs human** section of `overnight-tasks-2026-08-05.md`.
   - **Outcome:** *(awaiting a human)*
+
+- [ ] **S21 — Phone-width regression sweep** — Status: Done (no regressions) — Cycle: 9
+  - **Source:** noticed that the phone cockpit had not been re-checked since cycle 1, with the daylight system, traffic, mile markers, the aria pass and the resume UI all landing since.
+  - **Outcome:** **Clean.** At 386x840 against a production build: no horizontal overflow, cockpit laid out correctly, arrival panel present and internally scrollable, screenshot frame at its native 2:1, and the new resume UI stacking rather than overflowing. One apparent 26px overlap of the panel into the dash turned out to be a frozen framer-motion entry transform (rAF is paused in a hidden tab); the settled layout is flush. Nothing was changed — and deliberately so.
 
 *(Check the box once you've reviewed the outcome.)*

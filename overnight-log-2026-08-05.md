@@ -213,3 +213,27 @@ Rebuilt the same commit and served it with `npm run start` on port 3008: hydrate
 **Hostile-storage cases, each armed and reloaded through the real code path** (guardrails 29-30): a **stale id** (`index 13` pointing at a stop id that no longer exists), **unparseable JSON**, and **index 999**. All three fell back to "no offer" with the page alive and hydrated — none threw, none restored a bogus position. That last case matters most: the route is built from content, so a stored index means nothing on its own once a role is added or removed.
 
 **00:06 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 18.1 kB). One commit: `4ebe999`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 9 / Phase: Planner`.
+
+---
+
+## Cycle 9
+
+**00:03 local (2026-08-06) — Relief shift took the baton.** `Phase: Planner`, `Cycle: 9`. Production server healthy on :3008. Backlog down to one actionable item (S5 audio), one blocked (S15), one deliberately deferred (S13b).
+
+**00:04-00:15 — Task 1: phone-width regression sweep, and a false positive I did not act on.** The phone cockpit had last been verified in **cycle 1**; since then the daylight system, traffic, mile markers, the aria pass and the resume UI had all landed, and the resume buttons had only ever been seen at desktop width. Measured at 386x840 against production: hydrated, **no horizontal overflow**, cluster strip and trip screen correct, arrival panel present and internally scrollable (472px of content in a 291px scroller), screenshot frame at its native 2:1, resume UI stacking correctly. **No regressions.**
+- The near-miss worth recording: the panel measured **26px into the dash**, which looked like a clear overlap and would have been a plausible thing to "fix" by nudging the panel up. Its computed transform was `matrix3d(0.97, …, 26, 0, 1)` — framer-motion's *initial* state (`translateY 26`, `rotateX 10°`, `scale .97`) never advancing, because rAF is paused in a hidden tab. Neutralising the transform showed the settled layout at 118→538 against a dash top of 538: flush, zero overlap. Compensating for that would have permanently mis-positioned the panel for every real user. Recorded as guardrail 36: check `getComputedStyle(el).transform` before believing a measured overlap.
+
+**00:16-00:25 — Task 2: opt-in engine audio (S5).** New `engineAudio.js`: two oscillators an octave apart through a lowpass following the revs, plus filtered noise following speed. All synthesised — no samples, no dependency. The conservative choices are the point: the `AudioContext` is constructed **inside the toggle's click handler**, and the preference is **deliberately not persisted**, because a stored "on" would attempt playback on the next visit before any gesture exists.
+
+**00:26-00:40 — Verified by spying on the `AudioContext` constructor** from the parent frame (the same pre-hydration race used for `matchMedia` in cycle 2):
+- **zero contexts before any gesture**;
+- pressing the toggle creates **exactly one**;
+- toggling off then on again **reuses that same one** — no leak (guardrail 35);
+- unmounting (navigating the frame away) moves it to **`closed`**;
+- storage contains only `htae.drive.progress.v1` — no audio key, so nothing can autostart later (guardrail 33).
+
+**Verification caught a real flaw.** The toggle originally set itself "on" unconditionally. Under a synthetic click the context stayed `suspended` — browsers require genuine user activation — yet the button reported **on**, i.e. lit over silence. Fixed: `enable()` is now async and resolves to whether the context actually reached `running`, and the toggle reports that. Re-verified after the fix: context `suspended`, button correctly **off**.
+
+**Honest limitation.** Audible output and the rpm→frequency mapping cannot be checked here: a synthetic click grants no user activation, so the context never runs and `update()` correctly early-returns. Parked as **Needs testing** for a real press in a foreground window.
+
+**00:42 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19 kB). One commit: `655a3ce`. The backlog is now down to S15 (blocked behind the Needs-human canonical fix) and S13b (deliberately deferred) — so cycle 10 will need a fresh **Suggester** pass. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 10 / Phase: Planner`.
