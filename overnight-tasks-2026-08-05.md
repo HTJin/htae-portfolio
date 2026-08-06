@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 8
+**Cycle:** 9
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -49,6 +49,11 @@
 4. *Failure: a redesigned StopCard becomes unreadable or unscrollable on mobile.* **Guardrail:** verify the panel at 390x844 — content must scroll, no horizontal overflow, and the close/next affordances must stay reachable.
 5. *Failure: the screenshot carousel autoplays over reduced-motion users, or leaks timers between stops.* **Guardrail:** honor `useReducedMotion()` (show a static first frame + manual dots), and clear the interval on unmount/stop-change; verify by switching stops repeatedly and watching for stacked timers.
 6. *Failure: running `npm run build` while `npm run dev` is live, or trusting a poisoned `.next` cache.* They share `.next`; the build clobbers the dev server's route manifest (`/drive` starts 404ing for new requests while the open tab keeps working off HMR). Worse, the webpack cache can go stale and **silently serve CSS that is missing newly-added Tailwind classes** — observed in cycle 2, where `line-clamp-2` and `lg:truncate` produced zero CSS rules until a clean restart. **Guardrail:** after any `npm run build`, restart the dev server; and if a class looks inert, run `npm run dev:fresh` (wipes `.next`) and re-check *before* concluding the class or the config is at fault.
+28. *Failure (cycle 8): reading `localStorage` during render and breaking hydration.* The server has no storage, so any markup that depends on it differs from the client's first paint — the exact class of bug guardrail 1 exists for. **Guardrail:** never touch storage during render. Read it in an effect, hold it in state that starts `null`, and render the resume affordance only once mounted; then confirm a cold load is warning-free.
+29. *Failure (cycle 8): storage access throwing and taking the page with it.* `localStorage` throws on access in Safari private mode, when cookies are blocked, and in some embedded webviews — not just on write. **Guardrail:** every read *and* write goes through try/catch; a storage failure must degrade to "no saved progress", never to a broken page.
+30. *Failure (cycle 8): restoring a stale index onto a changed route.* The route is derived from content; if a role is added or removed, a stored index points somewhere else entirely — or off the end. **Guardrail:** version the storage key, and clamp/validate the restored index against `route.length` before using it. Store the stop's `id` too and only trust the index if the id still matches.
+31. *Failure (cycle 8): trapping a returning visitor.* Auto-jumping someone to a stored position takes away their choice and hides the beginning of the route. **Guardrail:** progress is *offered*, never applied automatically, and clearing it is always one click away on the same screen.
+32. *Failure (cycle 8): writing to storage from the 60fps loop.* **Guardrail:** persist only when the current exit changes — never inside `subscribe`.
 25. *Failure (cycle 7): oncoming traffic that breaks determinism or the frame budget.* `Math.random` in the paint loop would make the scene non-reproducible and could differ between server and client; allocating fresh car objects each frame would churn. **Guardrail:** keep a fixed, pre-allocated set of cars in the effect closure and mutate their positions in place; drive them from a clamped frame delta (a huge `dt` after a resize or a background tab must not teleport them).
 26. *Failure (cycle 7): a car drives through the player or through an exit sign.* **Guardrail:** oncoming vehicles live on the opposite carriageway only, and are skipped once they are nearer than the near clip — never drawn at or behind the camera.
 27. *Failure (cycle 7): mile markers become visual noise.* Delineator posts already appear every 24m; adding markers at a similar cadence would read as clutter. **Guardrail:** markers must be far sparser than the delineator line and visually distinct from it, and the result must be checked in a screenshot rather than assumed.
@@ -88,7 +93,33 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 7's list is fully resolved — see Done. The Planner fills this for cycle 8.)*
+*(cycle 8's list is fully resolved — see Done. The Planner fills this for cycle 9.)*
+
+<details>
+<summary>Cycle 8's list (resolved — kept for context)</summary>
+
+### CYCLE 8
+
+- [ ] **1. Remember where a visitor got to, and offer to resume** (backlog S8)
+  - **Why:** the route is 21 exits long. Anyone who reads a few, closes the tab and comes back is dropped at MILE 0 with
+    no way back to where they were except driving the whole thing again. That is the single most likely reason someone
+    abandons this page on a second visit.
+  - **Design (decided, and the reset affordance is the point):** progress is remembered, but it is **never applied
+    automatically**. On the ignition screen, a returning visitor sees their furthest exit offered next to *Start
+    engine* — "Resume — EXIT 07 · 3FGolf" — plus a way to clear it. Nobody can be trapped mid-route by state they did
+    not ask for, and a fresh start is always one click away.
+  - **Precedence:** an explicit `?exit=` deep link **always wins** over stored progress. Someone following a shared
+    link asked for that exit specifically.
+  - **Files:** `src/components/drive/DriveScene.jsx`, new `src/components/drive/progress.js` (in scope).
+  - **Done when:** driving to an exit and reloading shows the resume option for that exit; clicking it lands there with
+    the engine running; clearing it returns the ignition screen to its first-visit state; `?exit=` overrides a stored
+    position; and a cold load has **no hydration warning** (guardrail 28).
+- [ ] **2. Verify against a production build** (guardrail 23)
+  - **Done when:** `npm run build` passes, the page is served with `npm run start`, hydration is confirmed via
+    `document.body.style.overflow === 'hidden'`, and the resume/clear/override paths are each exercised in the browser
+    with `localStorage` inspected directly.
+
+</details>
 
 <details>
 <summary>Cycle 7's list (resolved — kept for context)</summary>
@@ -323,6 +354,13 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C8-1. Remember progress and offer to resume** — proven working against a production build, every path exercised with `localStorage` read directly rather than inferred:
+  - **clean first visit** — nothing stored, no Resume and no Forget button on the ignition screen;
+  - **driving to EXIT 13** — stored exactly `{"index":13,"id":"project-co-lab-portfolio"}`;
+  - **`?exit=5` overrides it** — landed on EXIT 05, Resume *not* offered, and the stored `13` left intact (the write is forward-only, so visiting an earlier exit cannot clobber it);
+  - **plain load** — offered "Resume · EXIT 13 / Co.Lab Portfolio App" with "Forget my progress" beneath, confirmed in a screenshot; clicking it landed on EXIT 13 and set the URL to `?exit=13`;
+  - **Forget** — cleared both the offer and the storage key, returning the screen to its first-visit state with Start engine intact.
+  - **Hostile storage (guardrails 29-30)** — three malformed entries were each armed and reloaded through the real code path: a **stale id** (`index 13` with a non-existent id), **unparseable JSON**, and **index 999**. All three fell back to "no offer" with the page alive and hydrated; none threw. Commit `4ebe999`.
 - **C7-1. Oncoming traffic on the far carriageway** — proven working against a production build, and proven by measurement rather than by eye. With the car **parked** the whole scene is static, so two canvas captures taken either side of 45 forced repaints can only differ where something animates: **12,564 sampled pixels changed**, confined to a compact box (CSS px 809-968 x 357-500) near the vanishing point extending down and to the left — exactly the approach path of oncoming headlights, and nothing else in the canvas moves while parked. A screenshot afterwards shows the headlights as a bright warm pair on the opposite carriageway. Cars are deterministic (no `Math.random`), pre-allocated and mutated in place, with a clamped frame delta (guardrails 25-26). Commit `ff1f8d9`.
 - **C7-2. Mile markers between exits** — proven working, and the first attempt was caught **failing**: at `0.5m x 0.36m` the plates rendered about **2x1 pixels** at distance, indistinguishable from the delineator reflectors — visible in the zoom only as a speck. Guardrail 27 required checking a screenshot rather than assuming, which is what caught it. Enlarged to `0.95m x 0.7m`, raised to 1.9m and set outboard at `ROAD_HALF + 2.5`; they now read as distinct green plates on posts, clearly separate from the 24m delineator line. Commit `ff1f8d9`.
 - **C6-1. Per-leg roadside character — visual pass (clears the cycle-3 parked item)** — proven working in the browser at last, against a **production** build. At EXIT 12/13 (Scenic overlook) the guardrail renders along the right verge as **one continuous ribbon with no anti-aliasing seams** — confirmed by zooming the right-hand verge, where it recedes as a single smooth band (guardrail 15 satisfied; this is exactly what the run-length `railRuns` pass was written for). The lamp line is visibly thinner there than on the career highway, and at EXIT 04 (the sabbatical) it is thinner again **with no guardrail**, matching the SSR mapping proven in cycle 3. Nothing was observed popping or changing character on approach, consistent with the style being keyed off each object's own world position (guardrail 17). Commit `c209b57`. *Frame-rate remains unmeasured — see Needs testing.*
@@ -439,7 +477,6 @@ biggest lever available: making the drive pass **time**, not just distance.
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
 - **S5 — Ambient drive audio (engine note, turn-signal tick), default muted with a dash toggle** — **UNBLOCKED as of cycle 6**, though still the riskiest item: Web Audio only (no new deps allowed), must be opt-in so it never autoplays, and needs a speaker toggle somewhere on the dash that does not crowd the console.
-- **S8 — Persist progress (visited stops / furthest exit) to `localStorage` so a returning visitor resumes** — **UNBLOCKED as of cycle 6** (browser verification is available again against a production build): needs a reset affordance so it can't trap someone mid-route. Now interacts with the `?exit=` deep link shipped in cycle 2 — an explicit deep link must win over a stored position.
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** *(the unbuilt half of S13; traffic shipped in cycle 7)* — a thin drifting weather layer near the horizon. Deferred deliberately, not for lack of time: the existing horizon haze already blends the tarmac into the sky, and a second moving layer risks muddying it. Would need careful A/B against the current look.
 

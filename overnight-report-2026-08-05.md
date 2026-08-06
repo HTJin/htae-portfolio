@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 7 · branch `feat/drive-mode` · 13 commits, nothing pushed
+**Last updated:** end of cycle 8 · branch `feat/drive-mode` · 15 commits, nothing pushed
 
 ---
 
@@ -21,55 +21,54 @@ and one-line verification commands** are in the Needs-human section of `overnigh
 
 ---
 
-## Cycle 7 — the road isn't empty any more
+## Cycle 8 — the route remembers you
 
-Two things that had been waiting on the browser blocker finally shipped, both answering the same complaint: you were
-driving twenty-one exits of a completely deserted highway, with nothing between exits to tell you you were making
-progress.
+The route is 21 exits long. Anyone who read a few, closed the tab and came back was dropped at MILE 0 with no way back
+except driving the whole thing again — probably the most likely reason to give up on this page on a second visit.
 
-**There's other traffic now.** Headlights come toward you on the far carriageway, closing at their own speed plus
-yours — so they keep passing even while you're parked reading a stop. They take their colour from the time of day, so
-they belong to whatever light you're driving through.
+Now it remembers where you got to. But the design decision that matters is that it **offers** rather than **applies**:
+come back and you see *Resume · EXIT 13 — Co.Lab Portfolio App* sitting beside *Start engine*, with **Forget my
+progress** underneath. Auto-jumping you somewhere would take away the choice and hide the beginning of the route.
+Nobody gets trapped by state they didn't ask for, and a clean start is always one click away.
 
-**And mile markers between the exits** — a green plate on a slim post every half-leg, set outboard of and taller than
-the reflector line so they never read as just more delineator posts.
+A shared `?exit=` link always wins over saved progress — someone following your link asked for that exit specifically.
 
-### Both checks were worth doing properly
+### Storage is hostile, so it's treated that way
 
-The mile markers **failed the first time**. At the size I'd authored them they projected to about **two pixels by one**
-at distance — a speck, indistinguishable from the reflectors. Nothing errored; the code was "working". Only looking at
-a zoomed screenshot caught it. They're now four times the area, raised and set further out.
+`localStorage` doesn't just fail to save in Safari private mode or with cookies blocked — it **throws on access**. Every
+read and write is wrapped, and a failure degrades to "no saved progress" rather than a broken page.
 
-The traffic needed a trick to verify at all. A frame-timing probe returned **zero frames in eight seconds** — this
-Chrome reports every tab as hidden, which pauses animation entirely, so the scene only paints in bursts when something
-pokes it. I couldn't watch the cars move. So I used the fact that **a parked car makes the whole scene static**:
-nothing in the canvas can change while you're stopped. Two pixel captures either side of 45 forced repaints differed in
-**12,564 pixels**, confined to a compact box near the vanishing point extending down and to the left — exactly the
-approach path of oncoming headlights, and nothing else could have produced it. That proved both rendering *and*
-motion without ever seeing an animation.
+The subtler one: your route is *derived from your content*. If you add or remove a role, a stored index quietly points
+at something else entirely. So the key is versioned and a restored position is only trusted if the stop's id still
+matches the index. I armed three deliberately broken entries — a stale id, unparseable JSON, and index 999 — reloaded
+through the real code path each time, and all three fell back to no offer with the page alive.
 
-A follow-up screenshot then showed the headlights were only 2–4 pixels across: present, but not legible as headlights.
-So they got bigger. **Presence and legibility are different questions** — worth separating in future canvas work.
+Everything was checked against a production build with `localStorage` read directly rather than inferred: clean first
+visit offers nothing; driving to EXIT 13 stores it; `?exit=5` overrides without clobbering the saved 13; the plain load
+offers the resume and lands there; Forget clears it.
 
 ---
 
-## Where the drive stands now
+## Where the drive stands
 
-Everything you originally asked for shipped in cycle 1, and the six cycles since have gone into the standing brief —
-making it feel like a real place. As it stands: a driver's-POV cockpit with working instruments, an arrival panel with
-auto-cycling full-bleed screenshots, dusk-to-dawn light that advances with your career, real guide signs, per-leg
-roadside character, a trip computer counting the actual years, deep links to any exit, oncoming traffic, and mile
-markers.
+Your three original asks shipped in cycle 1. The seven cycles since have gone into the standing brief — making it feel
+like a real place:
+
+a driver's-POV cockpit with working instruments · an arrival panel with auto-cycling full-bleed screenshots ·
+dusk-to-dawn light that advances with your career · real interstate guide signs · per-leg roadside character ·
+a trip computer counting the actual years · deep links to any exit · oncoming traffic · mile markers · and now
+resume-where-you-left-off.
 
 ---
 
 ## Queued next
 
-Resume-where-you-left-off; opt-in engine audio; a drifting haze layer (deliberately deferred — the existing horizon
-haze already does the job and a second layer risks muddying it); and structured data for `/drive`, which stays blocked
-behind the canonical fix above. Full reasoning in `overnight-suggestions-2026-08-05.md`, every idea with a checkbox.
+Opt-in engine audio (the riskiest remaining item — Web Audio, must never autoplay); a drifting haze layer, deliberately
+deferred because the existing horizon haze already does the job; and structured data for `/drive`, still blocked behind
+the canonical fix above. Full reasoning in `overnight-suggestions-2026-08-05.md`, every idea with a checkbox.
 
-Still parked: frame rate while driving, which can't be measured while every tab reports itself hidden.
+Still parked: frame rate while driving. Every Chrome tab here reports itself hidden, which pauses animation entirely —
+a probe returned zero frames in six seconds. Not something I can resolve from this side.
 
 ---
 

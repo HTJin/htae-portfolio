@@ -190,3 +190,26 @@ Rebuilt the same commit and served it with `npm run start` on port 3008: hydrate
 - A follow-up screenshot showed the bulbs were only ~2-4px, i.e. present but not legible as headlights, so they were enlarged and the halo strengthened. **Presence is not legibility** — worth separating those two questions in future canvas work.
 
 **23:32 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 17.6 kB), verified against a production build with hydration confirmed first (guardrail 23). One commit: `ff1f8d9`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 8 / Phase: Planner`.
+
+---
+
+## Cycle 8
+
+**23:33 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 8`. Production server healthy on :3008.
+
+**23:34 — Frame-rate item re-checked, still unmeasurable.** A 20-frame probe returned **0 frames in 6 seconds** with `visibilityState: 'hidden'`. Stays parked; nothing else can be done about it from here.
+
+**23:35 — Planner + Critic.** Picked S8 (resume progress) as the most valuable actionable item — it is the most likely reason someone abandons a 21-exit page on a second visit. Wrote guardrails 28-32 before building: never read storage during render (hydration); wrap every access because `localStorage` *throws* in Safari private mode and with cookies blocked; version the key and validate the restored index against the stop id, because the route is derived from content; never auto-apply progress; never write from the frame loop.
+
+**23:38-23:55 — Builder.** New `src/components/drive/progress.js` plus wiring in `DriveScene`. The design decision worth recording: progress is **offered, never applied**. A returning visitor sees "Resume · EXIT 13 / Co.Lab Portfolio App" beside *Start engine*, with "Forget my progress" underneath. Auto-jumping would take away their choice and hide the start of the route; this way nobody is trapped by state they did not ask for, and a fresh start is one click away. An explicit `?exit=` deep link always wins — that visitor asked for that exit specifically.
+
+**23:56-00:05 — Verified against a production build, reading `localStorage` directly rather than inferring:**
+- clean first visit — nothing stored, no Resume, no Forget;
+- drove to EXIT 13 — stored exactly `{"index":13,"id":"project-co-lab-portfolio"}`;
+- `?exit=5` — landed on EXIT 05, Resume *not* offered, and the stored `13` survived untouched (the write is forward-only, so an earlier exit cannot clobber a later one);
+- plain load — offered "Resume · EXIT 13", confirmed in a screenshot, and clicking it landed on EXIT 13 with the URL set to `?exit=13`;
+- Forget — cleared the offer and the key, restoring the first-visit screen.
+
+**Hostile-storage cases, each armed and reloaded through the real code path** (guardrails 29-30): a **stale id** (`index 13` pointing at a stop id that no longer exists), **unparseable JSON**, and **index 999**. All three fell back to "no offer" with the page alive and hydrated — none threw, none restored a bogus position. That last case matters most: the route is built from content, so a stored index means nothing on its own once a role is added or removed.
+
+**00:06 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 18.1 kB). One commit: `4ebe999`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 9 / Phase: Planner`.

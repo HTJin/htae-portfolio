@@ -56,7 +56,7 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** medium. Deferred until task 4 settles the dash layout.
   - **Outcome:** **Resolved** by the phone cockpit in `646b717`: at small widths the dash stacks (cluster strip / terminal / controls and both pedals in one thumb-reachable row) instead of laying out side by side, which is what was overflowing. Verified at 386x840 with no horizontal overflow and every control inside the viewport. Closing this rather than carrying it — reopen only if real thumb testing on a device finds a problem.
 
-- [ ] **S8 — Persist route progress to `localStorage`** — Status: Proposed — Cycle: 1
+- [ ] **S8 — Persist route progress to `localStorage`** — Status: Done — Cycle: 8
   - **Source:** market research — long interactive narratives normally let you resume; here every visit restarts at MILE 0 (`useDrive.js` initialises fresh).
   - **Suggestion:** remember the furthest exit reached and offer "resume from EXIT n" on the ignition screen, with a reset.
   - **Scope:** small-medium. Deferred to Backlog.
