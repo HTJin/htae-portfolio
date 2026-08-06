@@ -256,3 +256,21 @@ An in-browser measurement was attempted first but was inconclusive — the image
 - Along the way, two Escape presses appeared not to close the dialog before a later one did. Rather than call that a bug, the likely cause was identified: React 18 schedules updates through the scheduler, which is throttled along with rAF in a hidden tab, so state changes flush late. A subsequent run with longer waits confirmed Escape closes it.
 
 **01:06 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.3 kB). One commit: `09fe15d`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 11 / Phase: Planner`.
+
+---
+
+## Cycle 11
+
+**01:03 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 11`. Backlog dry again (S15 blocked, S13b held), so another **Suggester** pass — which found a regression this run itself had introduced.
+
+**01:05 — The finding: my own cycle-7 traffic ignored `prefers-reduced-motion`.** Drive mode honours that preference deliberately and consistently — `useDrive.js:227,244` makes the throttle *jump* to the next exit instead of animating travel, `ProjectShots.jsx:41` disables carousel autoplay, `StopCard.jsx:151,157` swaps the projecting entry for a plain fade, and `drive.module.css:329` kills the star twinkle, ignition pulse and blink. `grep -c reducedMotion src/components/drive/RoadCanvas.jsx` returned **0**. Because the cars advance from `performance.now()` deltas rather than from `sim.travel`, a visitor who had asked their system for less motion still got headlights sliding toward them **while stationary at a stop** — precisely what the preference exists to prevent.
+
+**01:08 — Decision recorded:** under reduced motion, *don't draw* the traffic rather than freeze it. Frozen cars sitting in a live carriageway would read as wreckage; an absent one simply restores the empty road the page had before cycle 7, which is a coherent state.
+
+**01:10-01:40 — Verified by single-frame pixel comparison.** Movement could not be watched (rAF is paused here), and this time `setTimeout` was throttled too, so the repeated-repaint technique from cycle 7 blew the 45s CDP budget. A cleaner method suited the question anyway: the scene is **fully deterministic at a given exit**, so two loads of `?exit=6` — one with `matchMedia` patched before hydration to report reduced motion, one without — can differ *only* where traffic is drawn. Result: **185 changed samples in a 30x32px box at the vanishing point**, every other pixel identical. That identity is itself the control: it confirms the rest of the frame is deterministic and the method sound.
+
+**Two environment lessons worth carrying:** a `setInterval(..., 0)` spy left running starved the main thread and produced three consecutive 45s CDP timeouts that looked like a frozen renderer — sweeping stray interval ids fixed it instantly. And in a backgrounded tab `setTimeout` is clamped hard, so any verification built on a loop of short awaits will time out; prefer a single deterministic comparison over a temporal one.
+
+**01:42 — Task 2: swept the whole reduced-motion contract, which no cycle had done together.** All four hold: traffic absent; **throttle jumped `EXIT 06 -> EXIT 07`** with no intermediate driving state and `ARRIVED` on both sides, confirming the jump substitution; the **arrival panel** computed `transform: none`, i.e. the opacity-only variant; and the **carousel** was already proven in cycle 2.
+
+**01:45 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.3 kB). One commit: `eef571b`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 12 / Phase: Planner`.

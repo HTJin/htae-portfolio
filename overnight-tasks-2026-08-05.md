@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 11
+**Cycle:** 12
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -49,6 +49,9 @@
 4. *Failure: a redesigned StopCard becomes unreadable or unscrollable on mobile.* **Guardrail:** verify the panel at 390x844 — content must scroll, no horizontal overflow, and the close/next affordances must stay reachable.
 5. *Failure: the screenshot carousel autoplays over reduced-motion users, or leaks timers between stops.* **Guardrail:** honor `useReducedMotion()` (show a static first frame + manual dots), and clear the interval on unmount/stop-change; verify by switching stops repeatedly and watching for stacked timers.
 6. *Failure: running `npm run build` while `npm run dev` is live, or trusting a poisoned `.next` cache.* They share `.next`; the build clobbers the dev server's route manifest (`/drive` starts 404ing for new requests while the open tab keeps working off HMR). Worse, the webpack cache can go stale and **silently serve CSS that is missing newly-added Tailwind classes** — observed in cycle 2, where `line-clamp-2` and `lg:truncate` produced zero CSS rules until a clean restart. **Guardrail:** after any `npm run build`, restart the dev server; and if a class looks inert, run `npm run dev:fresh` (wipes `.next`) and re-check *before* concluding the class or the config is at fault.
+40. *Failure (cycle 11): reading the motion preference during render and breaking hydration.* Same trap as guardrail 28 — the server has no `matchMedia`. **Guardrail:** the flag comes from `useReducedMotion()` in `DriveScene`, which framer-motion already resolves safely, and is passed down as a prop; the canvas must never query it itself during render.
+41. *Failure (cycle 11): the canvas effect not re-running when the preference flips.* `RoadCanvas` builds its draw loop inside a `useEffect` keyed on `[drive]`; adding a prop it reads without adding it to the deps would silently keep the old value. **Guardrail:** include the flag in the dependency array and confirm a change actually re-subscribes.
+42. *Failure (cycle 11): "verifying" reduced motion by reading the code.* Every one of these four mechanisms is an assertion until exercised. **Guardrail:** patch `matchMedia` before hydration and prove each one from observable state — pixels for the traffic, the frame counter for the carousel, `travel`/odometer for the throttle.
 37. *Failure (cycle 10): a focus trap that fights the existing key handling.* `DriveScene` already binds global `keydown` for driving and for Escape. A second handler that swallows keys would break closing the map, or leave the car accelerating while the dialog is open. **Guardrail:** the trap may only act on Tab; Escape must continue to reach the existing handler.
 38. *Failure (cycle 10): stealing focus when the dialog is shut.* An effect that focuses on every render would yank focus away from whatever the visitor is using. **Guardrail:** move focus only on the open transition, restore only on the close transition, and never touch focus while closed.
 39. *Failure (cycle 10): trapping focus so completely the page becomes a prison.* **Guardrail:** cycle Tab within the dialog, but leave Escape and the browser's own chrome reachable — never `preventDefault` anything except Tab.
@@ -100,7 +103,40 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 10's list is fully resolved — see Done / Needs human. The Planner fills this for cycle 11.)*
+*(cycle 11's list is fully resolved — see Done. The Planner fills this for cycle 12.)*
+
+<details>
+<summary>Cycle 11's list (resolved — kept for context)</summary>
+
+### CYCLE 11
+
+Backlog dry again (S15 blocked, S13b held), so another **Suggester** pass. It turned up a regression this run itself
+introduced — the kind worth catching before a human ever sees it.
+
+- [ ] **1. Oncoming traffic ignores `prefers-reduced-motion`** *(new, cycle 11 — a regression from cycle 7)*
+  - **Why:** drive mode already honours the preference everywhere else, deliberately and consistently:
+    `useDrive.js:227,244` makes the throttle **jump** to the next exit instead of animating travel;
+    `ProjectShots.jsx:41` disables carousel autoplay; `StopCard.jsx:151,157` swaps the projecting entry for a plain
+    fade; and `drive.module.css:329` kills the star twinkle, the ignition pulse and the blink. The traffic added in
+    cycle 7 respects none of it — it advances from `performance.now()` deltas, entirely independent of `sim.travel`,
+    so a visitor who has asked their system for less motion still gets headlights sliding toward them **even while
+    parked at a stop**.
+  - **Evidence:** `grep -c reducedMotion src/components/drive/RoadCanvas.jsx` returns **0** — the canvas has no
+    awareness of the preference at all.
+  - **Decision:** under reduced motion, **do not draw the traffic**, rather than freezing it. Frozen cars would read as
+    vehicles abandoned in the live carriageway; absent traffic simply restores the empty road the page had before
+    cycle 7, which is a coherent state.
+  - **Files:** `src/components/drive/RoadCanvas.jsx`, `src/components/drive/DriveScene.jsx` (pass the flag through).
+  - **Done when:** with `prefers-reduced-motion: reduce` the canvas draws no oncoming vehicles, and with it off they
+    behave exactly as before — both proven by pixel comparison, not by reading the code.
+- [ ] **2. Verify the whole reduced-motion contract end to end** *(new, cycle 11)*
+  - **Why:** four separate mechanisms claim to honour the preference and no cycle has ever exercised them together.
+    Cycle 2 tested the carousel alone; the rest are unverified assertions.
+  - **Done when:** with `matchMedia('(prefers-reduced-motion: reduce)')` patched to match before hydration, each of
+    these is checked against a production build: traffic absent, carousel not autoplaying, throttle jumping rather
+    than animating travel, and the arrival panel using the plain-fade variant.
+
+</details>
 
 <details>
 <summary>Cycle 10's list (resolved — kept for context)</summary>
@@ -424,6 +460,9 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C11-1. Oncoming traffic respects `prefers-reduced-motion`** — a regression this branch introduced in cycle 7, found and fixed before any human saw it. `grep -c reducedMotion src/components/drive/RoadCanvas.jsx` returned **0**, while every other mechanism in drive mode honours the preference. Because cars advance from `performance.now()` deltas rather than `sim.travel`, a visitor asking for less motion still got headlights sliding toward them **while parked**. Now not drawn at all under the preference (frozen cars would read as wreckage in a live carriageway; an empty road is the coherent state the page had pre-cycle-7). Commit `eef571b`.
+  - **Proven by pixel comparison, not by reading the code.** The scene is fully deterministic at a given exit, so two loads of `?exit=6` — one with `matchMedia` patched to report reduced motion, one without — can differ *only* where traffic is drawn. **185 samples changed, confined to a 30x32px box at the vanishing point**; every other pixel identical, which also validates the method.
+- **C11-2. The whole reduced-motion contract, swept end to end** — four mechanisms claimed it and none had been exercised together. All hold: **traffic** absent (above); **throttle** jumped `EXIT 06 -> EXIT 07` with no intermediate driving state, confirming `useDrive` substitutes a jump for animated travel; the **arrival panel** computed `transform: none`, i.e. the opacity-only variant rather than the projecting one; and the **carousel** was already proven in cycle 2 (counter held `1/4` across 11s while the dots still worked).
 - **C10-1. Route map behaves like the modal it claims to be** — proven working against a production build by reading `document.activeElement` at each step. Before: the open dialog held **23** tabbable elements while `dialog.contains(document.activeElement)` was **false**. After: opening moves focus to the panel (verified twice), **Tab** from the last item wraps to the first and **Shift+Tab** from the first wraps to the last — both staying inside the panel — and **Escape still closes it**, confirming the global handler in `DriveScene` is untouched (guardrail 37: the trap only ever `preventDefault`s Tab). Commit `09fe15d`.
   - *Focus-restore-on-close executes but could not be observed here:* programmatic `.focus()` on the trigger does not stick without OS window focus, so nothing meaningful was captured to restore to. Added to Needs testing rather than claimed.
 - **C10-2. The classic site's project cards** — investigated; **out of scope, parked as Needs human with an exact patch.** This is the user's own priority (c) and it is only half-fixed: drive mode was corrected in cycle 1, but `src/components/Projects.jsx` still crops every screenshot (`aspect-video` + `object-cover`; computed against the real files, **all 28** are wider than 16:9, losing **10.1%** of width on average and **14.2%** at worst) and still advances only on click (`grep` for `setInterval|setTimeout|useEffect` in that file returns nothing). See the starred entry under **Needs human**.

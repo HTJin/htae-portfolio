@@ -36,3 +36,5 @@ One line per task as it completes.
 - **Cycle 9 · fix** — The audio toggle lit up even when the browser refused to resume. `enable()` now reports whether audio actually started, so the button can't claim "on" over silence. — `655a3ce`
 - **Cycle 10 · T1** — Route map now behaves like the modal it declares: focus moves in on open, Tab/Shift+Tab cycle inside, Escape still closes. It previously left focus outside a dialog holding 23 tabbable elements. — `09fe15d`
 - **Cycle 10 · T2** — Found the user's priority (c) only half-fixed: the CLASSIC site still crops every project screenshot (10.1% of width on average) and only cycles on click. Out of write scope → Needs human with an exact patch.
+- **Cycle 11 · T1** — Caught a regression this branch introduced in cycle 7: oncoming traffic ignored `prefers-reduced-motion`, sliding toward a parked viewer who had asked for less motion. Now not drawn under the preference. — `eef571b`
+- **Cycle 11 · T2** — Swept the whole reduced-motion contract end to end for the first time: traffic, throttle-jumps, panel fade variant and carousel autoplay all hold.

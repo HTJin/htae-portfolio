@@ -151,4 +151,9 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** small, but `src/components/Projects.jsx` is outside this run's write scope, and the working tree carries the user's own uncommitted edits nearby. Exact patch is in the **Needs human** section of `overnight-tasks-2026-08-05.md`.
   - **Outcome:** *(awaiting a human)*
 
+- [ ] **S24 — Oncoming traffic ignored `prefers-reduced-motion`** — Status: Done — Cycle: 11
+  - **Source:** Suggester audit of the reduced-motion contract. `grep -c reducedMotion src/components/drive/RoadCanvas.jsx` returned 0, while four other mechanisms in drive mode honour it.
+  - **Why / expected impact:** a regression this branch introduced in cycle 7 — cars advance on a wall clock independent of travel, so a visitor who asked for less motion still got headlights sliding toward them while parked.
+  - **Outcome:** **Shipped** in `eef571b`; traffic is not drawn under the preference. Proven by comparing two deterministic single frames of `?exit=6` with `matchMedia` patched: 185 samples changed in a 30x32px box at the vanishing point, every other pixel identical.
+
 *(Check the box once you've reviewed the outcome.)*
