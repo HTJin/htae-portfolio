@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 36 · branch `feat/drive-mode` · 49 commits, nothing pushed
+**Last updated:** end of cycle 37 · branch `feat/drive-mode` · 49 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,33 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 37 — checking every year on your résumé, properly this time
+
+The single worst thing this page could do is show a wrong year on your résumé. Early in this run it did: a date written
+`2024-01-01` came out as **2023**, because of how JavaScript reads dates in timezones behind UTC. I fixed it and
+checked one stop. That was thirty-three cycles ago, and it had never been checked properly since — so this cycle
+checked all of it.
+
+I read the dates straight out of your content files first, then compared them against what the page actually shows —
+so the page is being checked against your résumé, not against itself.
+
+**The dashboard readout is right at every stop:** 2016 at Pittsburgh, 2017, 2019, 2020, 2023 three times, 2024 twice,
+and *NOW* at your current role. Critically, the UI/UX role dated **January 1st, 2024** reads **2024** — that is the exact
+entry the old bug moved into the wrong year.
+
+**The hidden copy is right too,** and that one matters more than it looks: it is what Google and screen readers read.
+Twenty-one entries for twenty-one stops. Ten carry a year, all correct, with the machine-readable date matching the
+visible one every time. **Eleven carry no year at all** — your eight side builds, the toolbox, the destination and the
+start line — because those have no date in your content, and nothing on the page invents one for them.
+
+One detail that looks like a contradiction and is not: your current role shows **2025** in the hidden copy and **NOW**
+on the dashboard. The first is stating a fact; the second is saying "this is where you are". Both are correct.
+
+**Nothing changed this cycle,** and that is the result. This is the property the whole page exists to get right, and it
+is now verified end to end rather than assumed.
 
 ---
 

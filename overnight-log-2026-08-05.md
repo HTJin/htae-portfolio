@@ -825,3 +825,35 @@ Two units in one readout, and the second is **metres** — on an American inters
 - the sign hides below ~23 FT by design, so the last stretch is arithmetic (`z=7m -> 20 FT`) rather than sampled — stated rather than implied
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.4 kB). One commit: `faf5a43`. -> `Cycle: 37 / Phase: Planner`.
+
+## Cycle 37
+
+**Suggester — the highest-stakes thing on the page.** Backlog dry. Guardrail 13 states plainly that a wrong year on someone's résumé is the worst bug this page could ship, and cycle 4 found precisely that: `new Date('2024-01-01').getFullYear()` returns **2023** in any timezone behind UTC, which had quietly moved a January 1st role into the wrong year. It was fixed by reading the year off the string, and spot-checked at a single stop. Thirty-three cycles later it had still never been verified across every stop, in both of the places a year is displayed.
+
+**Method.** Read the dates out of `src/content/education.js` and `experience.js` first — the source of truth — then measured what the page actually renders, rather than comparing the page against itself.
+
+**The cockpit readout.** Visited all eleven dated positions and read the trip computer's `yr` field:
+
+| exit | stop | content date | shown |
+|---|---|---|---|
+| MILE 0 | origin (undated) | — | 2016 |
+| 01 | University of Pittsburgh | 2016-12-01 | **2016** |
+| 02 | Web Developer | 2017-09-01 | **2017** |
+| 03 | Application Developer | 2019-03-01 | **2019** |
+| 04 | Sabbatical | 2020-05-01 | **2020** |
+| 05 | Full Stack Developer Trainee | 2023-04-01 | **2023** |
+| 06 | Software Engineer | 2023-09-01 | **2023** |
+| 07 | Freelance Web Developer | 2023-10-01 | **2023** |
+| 08 | UI / UX Software Engineer | **2024-01-01** | **2024** |
+| 09 | MES Software Engineer | 2024-11-01 | **2024** |
+| 10 | Senior MES DevOps Engineer | 2025-12-01 | NOW |
+
+EXIT 08 is the one that matters most — that is the January 1st entry cycle 4's bug moved to 2023. It reads 2024.
+
+**The crawlable copy.** The `sr-only` itinerary is what a search engine and a screen reader consume, so an error there is arguably worse than one on the dashboard. 21 articles for 21 stops. **Ten** carry a year, every one correct, with `<time datetime>` matching the visible text in all ten. **Eleven** carry no `<time>` element at all — MILE 0, all eight side builds, the toolbox and the destination — which is exactly right: those have no date in the content and nothing fabricates one.
+
+**One nuance worth writing down rather than flagging as a bug.** The current role reads **2025** in the crawlable copy and **NOW** in the cockpit. That is not a contradiction: the itinerary states the fact, the cockpit states the present. Both are correct in their own register.
+
+**Outcome: no defect, and nothing changed.** Recorded as a result rather than a non-event — this is the property the whole page exists to get right, and it is now checked end to end instead of trusted.
+
+**Exit.** No commit to `src/`. -> `Cycle: 38 / Phase: Planner`.

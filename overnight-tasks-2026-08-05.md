@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 37
+**Cycle:** 38
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -385,9 +385,25 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 37
+## Tonight's tasks (in order) — CYCLE 38
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 37's list (resolved — kept for context)</summary>
+
+### CYCLE 37
+
+Backlog dry. This Suggester pass went after the **highest-stakes correctness property on the page**: the years. Guardrail
+13 calls a wrong year on someone's résumé the worst bug this page could ship, and cycle 4 found exactly that — a
+timezone bug that moved a January 1st role into the previous year. It was fixed and spot-checked at one stop. It had
+never been verified **systematically, across every stop, in both places the years appear**.
+
+- [x] **1. Audit every year against the content, in the cockpit and in the crawlable copy** — **DONE (no defect)**
+  - **Done when:** every dated stop's readout matches `src/content/*` exactly; every undated stop shows no invented
+    year in either place; and the January 1st entry is confirmed still correct.
+
+</details>
 
 <details>
 <summary>Cycle 36's list (resolved — kept for context)</summary>
@@ -1527,6 +1543,19 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C37.0 — Every year on the page matches the content** *(cycle 37 — verification only, no code changed)* — the
+  highest-stakes property here, and never checked systematically before. Read the dates straight out of
+  `src/content/education.js` and `experience.js`, then measured both places a year is shown.
+  **The cockpit readout, all eleven dated positions:** MILE 0 **2016**, EXIT 01 **2016**, 02 **2017**, 03 **2019**,
+  04 **2020**, 05/06/07 **2023**, 08 **2024**, 09 **2024**, 10 **NOW**. Every one matches its content date — including
+  **EXIT 08, dated `2024-01-01`**, the January 1st entry that cycle 4's timezone bug had moved to 2023. Still correct.
+  **The crawlable `sr-only` copy:** 21 articles for 21 stops; **10 dated**, each carrying the right year with
+  `<time datetime>` matching its visible text in every case; **11 undated** (MILE 0, all eight builds, the toolbox and
+  the destination) carrying **no `<time>` at all** — nothing invents a year, which is what guardrails 13 and 19 exist
+  to protect.
+  **One nuance, correct rather than contradictory:** the current role shows **2025** in the crawlable copy and **NOW**
+  in the cockpit. The itinerary states the fact; the cockpit states the present. Both are right.
 
 - **C36.0 — Resizing the window mid-drive is handled** *(cycle 36 — verification only)* — every layout check in this
   run had loaded at a fixed size. Departed EXIT 05, resized **1440×900 -> 900×650 while under way**, then waited for a
