@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 16 · branch `feat/drive-mode` · 29 commits, nothing pushed
+**Last updated:** end of cycle 17 · branch `feat/drive-mode` · 31 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,34 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 17 — what the page says when nobody is looking at it
+
+Almost all of `/drive` is a `<canvas>`. So this pass ignored the picture entirely and asked what the page says through
+the channels that aren't the picture: the browser tab, the history entry, and what a screen reader actually hears.
+
+**The tab never moved.** Drive from exit 13 to exit 14 and the address bar updates — but the tab title stayed
+*"Hyun-Tae Jin | Drive mode"* the whole way. Twenty-one different destinations, one bookmark name, one history entry.
+Bookmark the Co.Lab build and later you can't tell it from the toolbox.
+
+**And that same string was being read aloud.** Next.js announces the page title to screen readers on every URL change —
+assertively, meaning it interrupts. Since the URL changes each time you pull away from an exit, a blind visitor was
+interrupted twenty times with the *identical* sentence, and never once told which exit they'd reached. The title now
+carries the exit, so the interruption became the useful sentence it was always trying to be: *"EXIT 14 · Virshop -
+Backend."* Your crawler-facing title is untouched — I checked the served HTML directly, not the browser, because the
+browser would have shown me my own change and told me nothing.
+
+**The arrival panel was labelled as announcing itself, and couldn't.** It carried the right attribute, but the panel is
+rebuilt from scratch every time you arrive — and a region that appears at the same moment as its text announces
+nothing. Measured: different DOM node before and after each arrival, and no region on the page at all while driving.
+There's now a small permanent one that says *"Arrived at EXIT 14 — Virshop - Backend"* as you pull up. Mile 0 says
+*"At the start line"*, because you didn't arrive anywhere yet.
+
+One thing worth mentioning because it's how these get caught: the first build produced the tab title *"MILE 0 ·
+Hyun-Tae Jin | Hyun-Tae Jin"* — the start line's title is your name, so appending your name doubled it. That only
+showed up by looking at the actual output.
 
 ---
 
@@ -163,7 +191,7 @@ Both would have been easy — and wrong — to "fix":
 
 ## Where the drive stands
 
-Your three original asks shipped in cycle 1 (with (c) flagged above for the classic site). Twelve cycles since went
+Your three original asks shipped in cycle 1 (with (c) flagged above for the classic site). Thirteen cycles since went
 into the standing brief:
 
 a driver's-POV cockpit with working instruments · an arrival panel with auto-cycling full-bleed screenshots ·

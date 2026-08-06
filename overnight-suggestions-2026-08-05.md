@@ -194,4 +194,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** parked at a stop, every animation frame redraws a provably identical image - continuous CPU and battery burn on a page someone may leave open while reading.
   - **Outcome:** **Backlog S16a.** Not built, on purpose: the win (frames skipped) cannot be measured here - rAF is suspended in a backgrounded tab, and the only way to force a repaint is a resize, which must bypass any dirty-check because setting `canvas.width` clears the backing store. Shipping an unmeasurable optimisation into a hot path is guardrail 9's failure mode. Pick it up when a foregrounded window is available, so the check and its evidence land together.
 
+- [ ] **S33 - Every exit had the same tab title, and the route announcer repeated it** - Status: Done - Cycle: 17
+  - **Source:** a Suggester pass that left the canvas alone and asked what the page says through the channels that are *not* the canvas - the tab, the history entry, and what a screen reader hears.
+  - **Why / expected impact:** measured - the URL changed from `?exit=13` to `?exit=14` while `document.title` stayed `"Hyun-Tae Jin | Drive mode"`. Twenty-one destinations, one bookmark name. And Next's route announcer (`aria-live="assertive"`) reads that title on every shallow URL change, so a screen-reader user was interrupted twenty times with the identical sentence and never told the exit.
+  - **Outcome:** **Shipped** in `aafb4d9`. A per-stop `next/head` title in `DriveScene`; the SSR `<title>` in `drive.jsx` untouched and confirmed by `curl`. Verified distinct across EXIT 14 / MILE 0 / EXIT 20. A first attempt read `"MILE 0 · Hyun-Tae Jin | Hyun-Tae Jin"` - stop 0's title *is* the name - caught in verification and fixed.
+
+- [ ] **S34 - The arrival panel's `aria-live` could never fire** - Status: Done - Cycle: 17
+  - **Source:** the same pass, checking whether the accessibility attributes on the page do what they claim.
+  - **Why / expected impact:** measured - the live node was a *different node* before and after an exit change, and between exits there was no polite region on the page at all. `StopCard` is keyed by stop inside `AnimatePresence`, so it is destroyed and rebuilt on arrival; a live region created together with its content is the documented unreliable case. The attribute read as an accessibility feature while announcing nothing.
+  - **Outcome:** **Shipped** in `aafb4d9`. A permanently mounted `role="status"` region in `DriveScene`; the dead attribute removed with a comment naming its replacement. Verified by DOM node identity across three arrivals while the text changed, exactly one region, and MILE 0 announcing *"At the start line"* rather than an arrival.
+
 *(Check the box once you've reviewed the outcome.)*

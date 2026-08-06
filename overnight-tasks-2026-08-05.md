@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 17
+**Cycle:** 18
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -103,6 +103,16 @@
 20. *Failure (cycle 4): calling the timezone sweep "clean" without reading each site.* **Guardrail:** enumerate every date-formatting call in the repo and record a verdict per call site with the line reference, rather than concluding from one file.
 17. *Failure (cycle 3): per-leg furniture pops as you drive.* If the leg is derived from the **camera** position rather than each object's own world position, furniture will change appearance as you approach it. **Guardrail:** the leg must be a function of the object's `s`, not of `sim.travel`.
 
+### Cycle 17 pre-mortem (guardrails for this cycle's tasks)
+
+46. **Do not weaken the SSR title.** A client-side per-stop title is for the tab, the bookmark and the route announcer.
+    The `<title>` in `src/pages/drive.jsx` is what a crawler sees and must still be in the served HTML — verify with
+    `curl`, not with the browser's DOM, which shows the client's value.
+47. **A live region is only real if it is still the same node.** The whole defect being fixed is a remounting region;
+    "it has `aria-live` on it" is not evidence. Verification must compare node identity across an arrival.
+48. **Do not announce what did not happen.** MILE 0 is where you start, not somewhere you arrived. And do not fire an
+    arrival announcement while the car is still moving.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -118,9 +128,45 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 17
+## Tonight's tasks (in order) — CYCLE 18
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 17's list (resolved — kept for context)</summary>
+
+### CYCLE 17
+
+Backlog dry again (S15 blocked, S16a waiting on a foreground window, S13b closed). A **Suggester** pass aimed at what
+the page *tells* a visitor who is not looking at the canvas — the tab, the history entry, and what a screen reader
+hears — since the whole drive is a canvas and those channels are all that is left.
+
+- [x] **1. The tab never says where you are, and the route announcer repeats itself** — **DONE**
+  - **Evidence (measured on the production build):** drove from EXIT 13 to EXIT 14. `location.href` changed
+    `?exit=13` -> `?exit=14`; `document.title` was `"Hyun-Tae Jin | Drive mode"` **before and after**. Twenty-one
+    exits share one tab title, one bookmark name and one history entry.
+  - **The part that makes it worse, also measured:** the only `[aria-live]` element left on the page while driving is
+    Next's own route announcer, and it is `aria-live="assertive"`. `router.replace(..., {shallow:true})` fires on every
+    departure, so a screen-reader user is interrupted with the identical string *"Hyun-Tae Jin | Drive mode"* on every
+    one of the twenty legs — and is never told which exit it is.
+  - **Why one change fixes both:** the announcer reads `document.title`. Give the title the exit and the same
+    interruption becomes the useful sentence it was always trying to be.
+  - **Files:** `src/components/drive/DriveScene.jsx` (a `next/head` title; the page-level `<title>` in `drive.jsx`
+    stays as the SSR/crawler title and must not be weakened).
+  - **Done when:** parked at EXIT 14 the tab reads the exit and its title; the SSR HTML still carries the original
+    `<title>` for crawlers; and the title changes as you move between exits.
+- [x] **2. The arrival panel claims to announce itself and cannot** — **DONE**
+  - **Evidence (measured):** `StopCard`'s root carries `aria-live="polite"`, but it lives inside `AnimatePresence`
+    keyed by `stop.id`. Captured the live node before an exit change and after: **different nodes** (`sameNode:false`),
+    and for the whole drive between exits there is **no polite region on the page at all**. A live region has to be
+    present *before* its content changes; one created together with its content is the documented unreliable case.
+    So the attribute reads as an accessibility feature while announcing nothing.
+  - **Files:** `src/components/drive/DriveScene.jsx` (a permanently mounted `role="status"` region), and
+    `src/components/drive/StopCard.jsx` (drop the attribute that cannot work).
+  - **Done when:** the region's DOM node is **identical** before and after an arrival while its text changes to name
+    the exit; no `aria-live` remains on a node that remounts; and MILE 0 does not claim you "arrived" there.
+
+</details>
 
 <details>
 <summary>Cycle 16's list (resolved — kept for context)</summary>
@@ -608,6 +654,21 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C17.1 — The tab, the bookmark and the route announcer now name the exit** *(cycle 17, commit `aafb4d9`)* —
+  `document.title` was identical at every exit while the URL changed, so twenty-one destinations shared one bookmark
+  name and one history entry; and because Next's route announcer reads the title **assertively** on every shallow URL
+  change (every departure), a screen-reader user was interrupted twenty times with the same sentence. `DriveScene` now
+  renders a per-stop `next/head` title, which fixes both at once. **Verified:** titles distinct across EXIT 14 / MILE 0
+  / EXIT 20, and `curl` confirms the served HTML still carries the page-level `<title>` for crawlers (guardrail 46).
+  MILE 0 drops the duplicated brand, whose own title *is* the owner's name.
+- **C17.2 — Arrivals are announced by a region that actually exists** *(cycle 17, commit `aafb4d9`)* — `StopCard` was
+  labelled `aria-live="polite"` but is keyed by stop inside `AnimatePresence`: measured, the live node was a **different
+  node** before and after an exit change, and between exits there was **no polite region on the page at all**. A
+  permanently mounted `role="status"` region in `DriveScene` replaces it, and the attribute that could not work was
+  removed. **Verified:** identical DOM node across three arrivals while its text changed (guardrail 47), exactly one
+  region, no `aria-live` left on a remounting node, and MILE 0 reads *"At the start line"* rather than claiming an
+  arrival (guardrail 48).
 
 - **C16.1 — Resuming restores the history behind the resumed exit** *(cycle 16, commit `f0b7c6c`)* — the route map no
   longer contradicts the resume offer. `useDrive` gained `markVisitedThrough(index)`, called from `resumeDrive` in

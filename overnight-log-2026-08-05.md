@@ -358,3 +358,19 @@ An in-browser measurement was attempted first but was inconclusive — the image
 **Second item, deliberately not built.** While parked, `RoadCanvas.draw()` still repaints every frame and produces a provably identical image — since traffic was removed (cycle 13) the drawing is a pure function of `travel`, `x` and the camera, all constant while parked. The fix is a cheap dirty-check, but its *benefit* cannot be measured in this environment (rAF suspended in a backgrounded tab; the only forced repaint is a resize, which must bypass the check because setting `canvas.width` clears the backing store). Shipping an unmeasurable optimisation into a hot path is guardrail 9's exact failure mode, so it was written to the Backlog as **S16a** with the reasoning attached instead.
 
 **Builder + Reviewer exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.4 kB). One commit: `f0b7c6c`. Both cycle-16 tasks resolved **Done**. -> controller advanced to `Cycle: 17 / Phase: Planner`.
+
+## Cycle 17
+
+**Suggester.** Backlog dry (S15 blocked, S16a waiting on a foreground window, S13b closed). This pass deliberately left the canvas alone and looked at what the page says through the channels that are *not* the canvas — the tab, the history entry, and what a screen reader hears — on the grounds that on a page which is almost entirely `<canvas>`, those are the only channels some visitors have.
+
+**Finding 1 (measured, not inferred).** Drove EXIT 13 -> EXIT 14 on the production build. `location.href` changed; `document.title` was `"Hyun-Tae Jin | Drive mode"` **before and after**. Then the sharper half: the only `[aria-live]` element on the page while driving is Next's own route announcer, and it is `aria-live="assertive"`. `router.replace(..., {shallow:true})` fires on every departure, so a screen-reader user gets that same string barked at them on all twenty legs and is never told which exit it is. One change fixes both, because the announcer reads `document.title`.
+
+**Finding 2 (measured).** Captured the `aria-live` node before and after an exit change: **different nodes**, and mid-drive there is no polite region on the page at all. `StopCard` carries the attribute but sits inside `AnimatePresence` keyed by `stop.id`, so it is destroyed and rebuilt on every arrival — the documented case where a live region announces nothing. The attribute was reading as an accessibility feature while doing nothing.
+
+**Built.** A per-stop `next/head` title in `DriveScene`, rendered only once under way (before that the ignition splash is the page). A permanently mounted `role="status" aria-live="polite"` region alongside the itinerary. The dead attribute removed from `StopCard`, with a comment naming its replacement so it does not come back.
+
+**Caught in verification, not in review.** The first build produced `"MILE 0 · Hyun-Tae Jin | Hyun-Tae Jin"` — stop 0's own title *is* the owner's name, so appending the brand doubled it. `titleFor` now omits the brand in that one case. This is exactly the class of thing that only shows up when you look at the real output.
+
+**Verified on the production build at `:3008`:** titles distinct across EXIT 14 / MILE 0 / EXIT 20; `curl` confirms the served HTML still carries the page-level `<title>` (guardrail 46 — the DOM would have lied here, since it shows the client's value); the status region is the **same DOM node** across three arrivals while its text changes (guardrail 47); exactly one status region; no `aria-live` on any remounting node; MILE 0 announces *"At the start line"*, not an arrival (guardrail 48).
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.6 kB). One commit: `aafb4d9`. Both tasks **Done**. -> `Cycle: 18 / Phase: Planner`.
