@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { useReducedMotion } from 'framer-motion'
 import styles from '@/styles/drive.module.css'
+
+/**
+ * What the frame actually renders at, so the optimiser ships that and not the
+ * 2350px original: 678px on a big screen (cycle 40), 451px on a normal
+ * desktop, and roughly four-fifths of the viewport on a phone.
+ */
+const SHOT_SIZES = '(min-width: 1536px) 700px, (min-width: 1024px) 470px, 80vw'
 
 const HOLD = 4200 // ms a frame stays up before the cross-fade to the next one
 
@@ -74,11 +82,18 @@ export function ProjectShots({ images, title, site }) {
         {/* The viewport. Fixed 2:1 so the layout never jumps between frames. */}
         <div className={styles.browserViewport}>
           {images.map((source, position) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            // Through the optimiser rather than straight off disk. Measured:
+            // arriving here requested all five of Matrimoni's frames as raw
+            // PNG — 5,306 KB — because `loading="lazy"` cannot help when every
+            // frame is stacked inside the visible panel. The same first frame
+            // is 11 KB of WebP at the width it is actually drawn at. The
+            // originals in `public/images/projects/` are only ever read.
+            <Image
               key={source}
               src={source}
               alt={`${title} — screenshot ${position + 1} of ${count}`}
+              fill
+              sizes={SHOT_SIZES}
               // The frames are stacked and cross-faded with opacity, which
               // does *not* take an element out of the accessibility tree — so
               // all of them used to be announced and a screen-reader user met
@@ -88,7 +103,7 @@ export function ProjectShots({ images, title, site }) {
               className={`${styles.shot} ${
                 position === index ? styles.shotOn : ''
               }`}
-              loading={position === 0 ? 'eager' : 'lazy'}
+              priority={position === 0}
               draggable="false"
             />
           ))}
