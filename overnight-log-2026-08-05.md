@@ -483,3 +483,33 @@ The before/after pixel capture used the cycle-19 iframe technique with the host 
 **Known limit, recorded rather than hidden.** At **375×667** — a 667px-tall phone — the destination still overflows by 38px and scrolls. Fitting it there would mean cutting real content, and scrolling is precisely what guardrail 4 asks for.
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.8 kB). One commit: `06f6e26`. -> `Cycle: 24 / Phase: Planner`.
+
+## Cycle 24
+
+**Suggester.** Backlog dry, so a fresh pass — this time on `CarInterior.jsx`, the one cockpit file no cycle in this run had audited, and squarely the owner's priority (a).
+
+**The finding, and it is a repeat offender's shape.** `CarInterior` pins the bonnet, the dash reflection and the wipers at fixed percentages (`bottom-[35.4%]`, `[36%]`, `[41%]`) while `Dashboard`'s height is `clamp(190px,36%,48%)`. Those only agree while `36%` is the winning branch of the clamp. Below ~528px of viewport height the **190px floor** wins, the dash grows past the furniture, and the furniture stays exactly where it was — behind it. This is guardrail 43 verbatim (one quantity written twice in different units), and it was the **third** copy: `DriveScene`'s arrival-panel offset repeated the literal as well.
+
+**Measured at EXIT 06 in sized iframes, before touching anything:**
+
+| viewport | dash | bonnet visible | bonnet hidden | reflection hidden | wipers hidden |
+|---|---|---|---|---|---|
+| 1440×900 | 324px (36%) | 49 of 54px | 5px | 0 | 0 |
+| 1024×500 | 190px (38%) | 17 of 30px | 13px | 10px | 0 |
+| 844×390 | 190px (48.7%) | **0 of 23px** | 52px | 50px | 30px |
+
+On a landscape phone the car's own bonnet — the element that says *you are looking over its nose* — was gone completely, on the single viewport where the cockpit is already most cramped.
+
+**Built the fix guardrail 43 actually asks for.** The dash height is now defined **once**, as `--dash` on the scene root, and all three consumers read it: `Dashboard`'s height, `DriveScene`'s panel offset, and `CarInterior`'s furniture through `calc()`. The offsets were chosen to resolve to exactly today's values at the `36%` branch, which turns the desktop rendering into a regression test instead of a redesign (guardrail 76). The bonnet also gained a height floor so it still reads as a bonnet at 390px tall rather than thinning to a line.
+
+**Two traps avoided rather than discovered late.** Tailwind arbitrary values need underscores where `calc()` requires spaces — `calc(var(--dash)_-_0.6%)` — and an invalid arbitrary value produces **no rule at all**, which would have looked exactly like the bug being fixed; so the verification reads the computed `bottom` and confirms it is a real pixel value (318.594px / 324px / 369px at 1440×900), not a default. And the fix moves the furniture to meet the dash, never the dash to meet the furniture (guardrail 79 — the 190px floor is load-bearing for the phone cockpit).
+
+**Verified on the production build:**
+- 1440×900 — bonnet box `{t:527, b:581, h:54}` **before and after, identical**; reflection and wipers unchanged
+- 1024×500 — bonnet visible **17 -> 27 of 30px**, reflection hidden **10 -> 0**
+- 844×390 — bonnet visible **0 -> 24 of 26px**, reflection hidden **50 -> 0**, wipers hidden **30 -> 0**
+- 390×844 — bonnet 45 of 50px visible
+- arrival panel / dash overlap **0** at all four viewports
+- `grep clamp(190px` — one definition, plus one mention inside a comment (guardrail 80)
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.8 kB). One commit: `bf95af8`. -> `Cycle: 25 / Phase: Planner`.

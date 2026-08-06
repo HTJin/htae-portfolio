@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 23 · branch `feat/drive-mode` · 38 commits, nothing pushed
+**Last updated:** end of cycle 24 · branch `feat/drive-mode` · 39 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,37 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 24 — the car lost its bonnet on a phone
+
+Your priority (a) again, and this one is the same bug that has now bitten this branch three times.
+
+The dashboard's height is a formula: 36% of the screen, but never less than 190 pixels. The bonnet, the dash
+reflection on the glass and the parked wipers were positioned separately, at fixed percentages picked to line up when
+that formula lands on 36%. Below about 528 pixels of screen height the 190-pixel floor takes over, the dash grows —
+and the furniture stays where it was, behind it.
+
+Measured at the same exit:
+
+| screen | bonnet visible |
+|---|---|
+| 1440×900 desktop | 49 of 54 pixels |
+| 1024×500 short laptop | 17 of 30 |
+| 844×390 landscape phone | **0 of 23** |
+
+Turn a phone sideways — which is the natural thing to do with a driving interface — and the car's own bonnet was gone
+completely, along with the reflection and the wipers. The bonnet is the single element that makes the view read as
+*sitting in a car looking over its nose*, and it vanished on the one screen where the cockpit is already tightest.
+
+The dashboard's height is now written down **once** and everything that has to line up with it reads that one value:
+the dash, the arrival panel's bottom edge, and the bonnet, reflection and wipers. That is the same fix I applied after
+the landscape-phone overlap bug in cycle 12 — this was the third copy of that number quietly disagreeing with itself.
+
+On the landscape phone the bonnet went from **0 to 24 of 26 pixels visible**, with the reflection and wipers fully
+back. And your desktop cockpit is untouched: I captured the bonnet's exact box before and after and it lands on
+precisely the same pixels, which is the point — this was a correction, not a restyle.
 
 ---
 
