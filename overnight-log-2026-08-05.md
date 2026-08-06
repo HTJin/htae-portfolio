@@ -919,3 +919,32 @@ Widening alone fixes less *and* reads worse. Widening **and** adding a third col
 - screenshot of a three-bullet stop at 1920: three balanced columns, card sized to content, not an orphaned one
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.5 kB). One commit: `cb525ea`. -> `Cycle: 40 / Phase: Planner`.
+
+## Cycle 40
+
+**Suggester.** Backlog dry. Cycle 39 gave the **text** stops a wide-screen layout and left the **project** stops — the owner's priority (c) — capped, so this pass measured what that costs.
+
+**The finding.** The screenshot renders **451×225** from a **1899×970** source: **23.7% of native**. And it is the *same 451px* at 1440, 1920 and 2560 wide, because the card caps at 58rem while the band leaves **992px unused at 1920×900** and **1632px at 2560**. The original brief was *"the projects sections the photos just get cut off"*. Cycle 1 stopped the cropping; what was left on a large monitor is a whole web page shown at a quarter size, where you can make out the layout and nothing else.
+
+**The constraint that shaped the fix came out of a trial, not an assumption.** The browser frame is a fixed **2:1**, so widening the card grows the frame's **height** too — and the band's height belongs to the cockpit, which guardrails 71 and 133 put out of reach. Widening to 1216px at **1920×900** introduced **46px** of overflow at the current split, and **83px** with a media-favouring one. That is trading small screenshots for cut-off text, the trade this run keeps refusing.
+
+**So the gate had to be height as well as width, and the threshold was measured rather than picked.** At 1216px with a `1.5fr / 1fr` split:
+
+| viewport | shot | scale | hidden |
+|---|---|---|---|
+| 1920×900 | 672×336 | 35.4% | **83px** |
+| 1920×1000 | 672×336 | 35.4% | **33px** |
+| 1920×1080 | 678×339 | 35.7% | **0** |
+| 1920×1152 | 678×339 | 35.7% | **0** |
+
+The boundary sits between 1000 and 1080, so the rule fires at **min-width 1536 and min-height 1120** — margin above the boundary rather than sitting on it (guardrail 139).
+
+**Verified on the production build:**
+- 1920×1200 — card **928 -> 1216**, shot **451×225 -> 678×339**, **23.7% -> 35.7%** of native, prose column 454px, **0 hidden**
+- 1920×900 and 1440×900 — **unchanged**, 928px card and 451px shot, 0 hidden
+- **2560×900 — unchanged**: wide but short, and the rule correctly does not fire. This is the case that proves the gate is doing what it claims rather than just tracking width
+- 1920×1200 — text stops still 1216px with three columns, destination still 704px, both untouched
+- 390×844 and 844×390 — unchanged
+- no horizontal overflow anywhere; a screenshot shows the page inside the frame is now **legible** — the heading, the bio paragraph and the body text can be read — rather than merely recognisable as a layout
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.5 kB). One commit: `cb086c2`. -> `Cycle: 41 / Phase: Planner`.

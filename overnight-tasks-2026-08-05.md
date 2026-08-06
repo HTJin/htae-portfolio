@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 40
+**Cycle:** 41
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -398,6 +398,21 @@
 137. **Multi-column can overflow sideways.** Guardrail 99 again — measure `scrollWidth` against `clientWidth` in the
      built version, not just in the trial.
 
+### Cycle 40 pre-mortem (guardrails for this cycle's tasks)
+
+138. **A bigger picture must not create a scroll.** The measured overflow at 900 and 1000 tall is the whole reason
+     this needs a height gate. Verify `hidden === 0` at every viewport where the rule fires — a larger screenshot
+     that pushes the description below the fold is a worse page, not a better one.
+139. **Gate on measured heights, not a guessed one.** 1080 measured 0 and 1000 measured 33, so the boundary sits
+     between them. Leave margin above the boundary rather than sitting exactly on it, and re-measure the built CSS
+     rather than trusting the trial (the cycle-28 lesson).
+140. **Do not touch the 2:1 frame.** It exists so the layout does not jump between screenshots of different shapes
+     (cycle 1). Changing it to buy height would reintroduce that, and letterboxing is what stopped the cropping.
+141. **The prose column must stay readable.** Favouring the media narrows the text beside it. Measure the prose width
+     and keep it inside a sane measure — the same test that chose three columns in cycle 39.
+142. **Most laptops must see no change at all.** 1440×900 and 1920×900 are the common cases and there is no room
+     there. Require them identical, measured, exactly as cycle 39 required of `2xl`.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -413,9 +428,44 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 40
+## Tonight's tasks (in order) — CYCLE 41
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 40's list (resolved — kept for context)</summary>
+
+### CYCLE 40
+
+Backlog dry. Cycle 39 gave the **text** stops a wide-screen layout; the **project** stops — the owner's priority (c) —
+were left capped, so this pass measured what that costs.
+
+- [x] **1. Project screenshots render at a quarter size on any monitor** — **DONE**
+  - **Evidence:** the screenshot renders **451×225** from a **1899×970** source — **23.7% scale** — and it is the
+    *same 451px* at 1440, 1920 and 2560 wide, because the card caps at 58rem. Meanwhile the band leaves **992px
+    unused at 1920×900** and **1632px at 2560**. The original brief was *"the projects sections the photos just get
+    cut off"*; cycle 1 stopped the cropping, but on a large monitor the fix is a whole page shown at a quarter size,
+    where layout is legible and nothing else is.
+  - **The constraint that shapes the fix, found by trial rather than assumed:** the browser frame is a fixed **2:1**,
+    so widening grows the **height** too, and the band's height is fixed by the cockpit. Widening the card to 1216px
+    at **1920×900** introduced **46px** of overflow at the current ratio and **83px** with a media-favouring one —
+    trading small screenshots for cut-off content, which is the trade this run keeps refusing.
+  - **Where it does fit, measured across heights** at 1216px with a `1.5fr / 1fr` split:
+    | viewport | shot | scale | hidden |
+    |---|---|---|---|
+    | 1920×900 | 672×336 | 35.4% | **83px** |
+    | 1920×1000 | 672×336 | 35.4% | **33px** |
+    | 1920×1080 | 678×339 | 35.7% | **0** |
+    | 1920×1152 | 678×339 | 35.7% | **0** |
+    So the gate has to be **height as well as width**. Below it nothing changes — correctly, because the room is not
+    there.
+  - **Files:** `src/components/drive/StopCard.jsx`.
+  - **Done when:** on a tall wide screen the screenshot grows from **451px to ~678px** (23.7% -> ~35.7% of native) with
+    **0 hidden**; the prose column stays a readable measure; **1920×900, 1440×900 and both phone sizes are
+    byte-identical to today**, measured, since the rule must not fire where the height is not there; text stops and the
+    destination are untouched; and there is no horizontal overflow.
+
+</details>
 
 <details>
 <summary>Cycle 39's list (resolved — kept for context)</summary>
@@ -1647,6 +1697,20 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C40.1 — Project screenshots are legible on a big screen** *(cycle 40, commit `cb086c2`)* — the screenshot
+  rendered **451×225** from a **1899×970** source — **23.7% of native** — and it was the *same 451px* at 1440, 1920
+  and 2560 wide, because the card capped at 58rem while the band left **992px unused at 1920×900**. Cycle 1 stopped the
+  cropping; what remained on a large monitor was a whole web page at a quarter size, where the layout reads and
+  nothing else does. **The constraint came from the trial, not an assumption:** the frame is a fixed 2:1, so widening
+  grows the height, and the band's height belongs to the cockpit — 1216px at 1920×900 introduced **46px** of overflow
+  at the current split and **83px** with a media-favouring one. Measured across heights at 1216px with `1.5fr/1fr`:
+  **900 -> 83px hidden, 1000 -> 33px, 1080 -> 0, 1152 -> 0**, so the gate is height *and* width, set at 1120px with
+  margin above the boundary rather than on it (guardrail 139). **Verified:** at 1920×1200 the shot goes
+  **451×225 -> 678×339**, **23.7% -> 35.7%** of native, prose column 454px, **0 hidden**; **1920×900, 1440×900 and
+  2560×900 are all unchanged** — the last of those being wide but short, where the rule correctly does not fire
+  (guardrails 138, 142); text stops and the destination untouched; phones unchanged; no horizontal overflow; and a
+  screenshot confirms the page inside the frame is now legible rather than merely recognisable.
 
 - **C39.1 — The arrival panel uses a wide screen, closing the cycle-28 residual** *(cycle 39, commit `cb525ea`)* —
   EXIT 04, the sabbatical, still hid **22.4%** on a desktop and **34.3%** at 1440×800. **What was not available was

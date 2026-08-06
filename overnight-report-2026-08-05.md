@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 39 · branch `feat/drive-mode` · 51 commits, nothing pushed
+**Last updated:** end of cycle 40 · branch `feat/drive-mode` · 52 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,33 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 40 — your project screenshots were being shown at a quarter size
+
+Your original brief had three parts, and the third was that the project photos were getting cut off. That was fixed in
+drive mode on the first night — they show whole now, and they cycle themselves. But measuring them properly this cycle
+turned up the other half of the problem: they were being displayed at **451 pixels wide, from images that are 1899
+pixels wide**. Under a quarter of their real size, on every monitor, whether yours is 1440 or 2560 across. Meanwhile
+nearly a thousand pixels of the panel area sat empty beside them.
+
+At that size you can tell there *is* a web page in the frame. You cannot read a word of it.
+
+They now render at **678 pixels** — about 36% of native instead of 24% — on screens with the room for it, and the
+difference is the difference between recognising a layout and actually reading the page you built.
+
+**The catch, and why this took a measurement rather than a one-line change.** The little browser frame is a fixed
+2:1 shape, so making it wider also makes it taller — and the height it has to fit into belongs to the dashboard and
+the mirror, which I am not willing to shrink. Widening it on a 1920×900 screen pushed 83 pixels of your project
+description below the fold. That is trading one problem for another.
+
+So the bigger screenshot only appears when there is genuinely room for it — wide *and* tall. I measured where that
+line falls rather than guessing: at 900 tall it overflows by 83 pixels, at 1000 by 33, and from 1080 upward it fits
+exactly. On a standard laptop nothing changes at all, which is the correct answer rather than a compromise.
+
+The check I am most pleased with: a **2560×900** screen — very wide, but short — correctly gets no change. That is
+what proves the rule is tracking actual room rather than just how wide your monitor is.
 
 ---
 
