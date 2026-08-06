@@ -527,7 +527,7 @@ function ConsoleButton({ children, onClick, disabled, title, label, accent }) {
   )
 }
 
-function Pedal({ label, hint, name, onPress, onRelease, tone }) {
+function Pedal({ label, hint, name, onPress, onRelease, tone, disabled }) {
   const handlers = {
     onPointerDown: (event) => {
       event.currentTarget.setPointerCapture?.(event.pointerId)
@@ -552,13 +552,19 @@ function Pedal({ label, hint, name, onPress, onRelease, tone }) {
     <button
       type="button"
       {...handlers}
+      disabled={disabled}
       aria-label={name}
       className={clsx(
-        'flex h-full w-full touch-none select-none flex-col items-center justify-center rounded-md text-[0.5625rem] uppercase tracking-[0.16em] transition active:translate-y-[3px]',
+        'flex h-full w-full touch-none select-none flex-col items-center justify-center rounded-md text-[0.5625rem] uppercase tracking-[0.16em] transition',
+        // The pedal travels under the press — but only when pressing it does
+        // something. At the end of the route it used to depress and brighten
+        // with the car going nowhere, which reads as a broken control rather
+        // than a finished journey.
+        'enabled:active:translate-y-[3px] disabled:cursor-not-allowed disabled:opacity-30',
         styles.pedal,
         tone === 'go'
-          ? 'text-emerald-200 hover:brightness-125'
-          : 'text-rose-200 hover:brightness-125'
+          ? 'text-emerald-200 enabled:hover:brightness-125'
+          : 'text-rose-200 enabled:hover:brightness-125'
       )}
     >
       <span className="font-display text-sm font-semibold tracking-normal drop-shadow">
@@ -742,8 +748,56 @@ function Vent({ className }) {
 }
 
 export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
+  const dashRef = useRef(null)
+  const lastFocusedRef = useRef(null)
+
+  /**
+   * The road runs out at the last exit: `useDrive` only pulls away from a stop
+   * while `target < stops.length - 1`, so at the destination the car cannot
+   * move at all. `Next` already knows that and greys itself out; the throttle
+   * did not, and stayed the brightest control in the cockpit doing nothing.
+   */
+  const routeEnded = drive.index === route.length - 1 && drive.parked
+
+  // Remember what the keyboard was on. Disabling the focused control drops
+  // focus to `<body>`, and afterwards there is no way to tell that apart from
+  // "nothing was focused anyway" — which is why this is recorded up front
+  // rather than reconstructed in the effect below.
+  useEffect(() => {
+    const dash = dashRef.current
+    if (!dash) return undefined
+    const remember = (event) => {
+      lastFocusedRef.current = event.target
+    }
+    dash.addEventListener('focusin', remember)
+    return () => dash.removeEventListener('focusin', remember)
+  }, [])
+
+  useEffect(() => {
+    if (!routeEnded) return
+
+    // A pedal disabled mid-press never receives its `pointerup`/`keyup`, so
+    // the throttle would still read 1 — and `Back` would then pull straight
+    // out of the destination the moment it was pressed.
+    drive.setThrottle(0)
+
+    // Measured, not assumed: arriving with the keyboard on `Next` put
+    // `document.activeElement` on `<body>` at the instant the button
+    // disabled, sending the next Tab back to the top of the document. Only
+    // rescue focus when that is demonstrably what happened.
+    const previous = lastFocusedRef.current
+    if (
+      previous?.disabled &&
+      document.activeElement === document.body &&
+      dashRef.current?.contains(previous)
+    ) {
+      dashRef.current.focus()
+    }
+  }, [routeEnded, drive])
+
   return (
     <div
+      ref={dashRef}
       // The skip link's target. `tabIndex={-1}` is what makes an in-page
       // anchor actually move focus here rather than only scrolling — from
       // here the next Tab lands on the first real control.
@@ -785,7 +839,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
             </ConsoleButton>
             <ConsoleButton
               onClick={drive.driveToNext}
-              disabled={drive.index === route.length - 1 && drive.parked}
+              disabled={routeEnded}
               accent
               title="Autopilot to the next stop"
               label="Drive on to the next exit"
@@ -816,9 +870,14 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
           <div className="h-[62px] w-[54px] shrink-0 [@media(max-height:430px)]:h-[48px]">
             <Pedal
               label="GO"
-              name="Go — hold to accelerate"
+              name={
+                routeEnded
+                  ? 'Go — unavailable, this is the end of the route'
+                  : 'Go — hold to accelerate'
+              }
               hint="↑"
               tone="go"
+              disabled={routeEnded}
               onPress={() => drive.setThrottle(1)}
               onRelease={() => drive.setThrottle(0)}
             />
@@ -878,7 +937,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               </ConsoleButton>
               <ConsoleButton
                 onClick={drive.driveToNext}
-                disabled={drive.index === route.length - 1 && drive.parked}
+                disabled={routeEnded}
                 accent
                 title="Autopilot to the next stop (N)"
                 label="Drive on to the next exit"
@@ -913,9 +972,14 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
             <div className="h-[clamp(62px,9.5vh,88px)] w-[46%] max-w-[62px]">
               <Pedal
                 label="GO"
-                name="Go — hold to accelerate"
+                name={
+                  routeEnded
+                    ? 'Go — unavailable, this is the end of the route'
+                    : 'Go — hold to accelerate'
+                }
                 hint="↑ / W"
                 tone="go"
+                disabled={routeEnded}
                 onPress={() => drive.setThrottle(1)}
                 onRelease={() => drive.setThrottle(0)}
               />
