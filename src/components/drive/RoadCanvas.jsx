@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react'
+import { paletteAt, withAlpha } from './daylight'
+import { routeLength } from './route'
 import {
   CAM_HEIGHT,
   ROAD_HALF,
@@ -13,18 +15,6 @@ const SEGMENTS = 130
 const DASH_PERIOD = 14 // metres of "on" then "off" for the centre line
 const DELINEATOR_SPACING = 24
 const LAMP_SPACING = 72
-
-const COLORS = {
-  groundNear: '#04070d',
-  groundFar: '#0a1526',
-  vergeDark: '#0b1a2b',
-  vergeLight: '#102438',
-  tarmacNear: '#14171d',
-  tarmacFar: '#1b2029',
-  paint: 'rgba(233, 241, 250, 0.82)',
-  centreLine: 'rgba(250, 226, 140, 0.85)',
-  lamp: 'rgba(255, 214, 150, 1)',
-}
 
 export function RoadCanvas({ drive, className }) {
   const canvasRef = useRef(null)
@@ -95,7 +85,7 @@ export function RoadCanvas({ drive, className }) {
       }
     }
 
-    function drawRoadside(sim) {
+    function drawRoadside(sim, colors) {
       const { focal, horizon, width, height } = camera
       const baseCurve = curveAt(sim.travel)
       const baseHill = hillAt(sim.travel)
@@ -129,6 +119,7 @@ export function RoadCanvas({ drive, className }) {
         ctx.lineTo(arm.x, arm.y)
         ctx.stroke()
 
+        // Lamps warm up as dusk turns to night, and dim again at first light.
         const glow = Math.max(2, 1.6 * arm.scale)
         const halo = ctx.createRadialGradient(
           arm.x,
@@ -138,13 +129,13 @@ export function RoadCanvas({ drive, className }) {
           arm.y,
           glow * 3
         )
-        halo.addColorStop(0, 'rgba(255, 208, 140, 0.55)')
-        halo.addColorStop(1, 'rgba(255, 208, 140, 0)')
+        halo.addColorStop(0, withAlpha(colors.lamp, 0.55 * colors.lampAlpha))
+        halo.addColorStop(1, withAlpha(colors.lamp, 0))
         ctx.fillStyle = halo
         ctx.beginPath()
         ctx.arc(arm.x, arm.y, glow * 3, 0, Math.PI * 2)
         ctx.fill()
-        ctx.fillStyle = COLORS.lamp
+        ctx.fillStyle = withAlpha(colors.lamp, 0.35 + 0.65 * colors.lampAlpha)
         ctx.beginPath()
         ctx.arc(arm.x, arm.y, glow * 0.5, 0, Math.PI * 2)
         ctx.fill()
@@ -179,31 +170,35 @@ export function RoadCanvas({ drive, className }) {
       const { width, height, horizon } = camera
       ctx.clearRect(0, 0, width, height)
 
+      // Where we are along the route decides what time of day it is.
+      const colors = paletteAt(routeLength > 0 ? sim.travel / routeLength : 0)
+
       const ground = ctx.createLinearGradient(0, horizon - 4, 0, height)
-      ground.addColorStop(0, COLORS.groundFar)
-      ground.addColorStop(1, COLORS.groundNear)
+      ground.addColorStop(0, colors.groundFar)
+      ground.addColorStop(1, colors.groundNear)
       ctx.fillStyle = ground
       ctx.fillRect(0, horizon - 6, width, height - horizon + 6)
 
       buildPoints(sim)
 
-      band(-(ROAD_HALF + 22), ROAD_HALF + 22, COLORS.vergeDark)
+      band(-(ROAD_HALF + 22), ROAD_HALF + 22, colors.vergeDark)
 
       // Rumble bands on the verge, alternating with distance travelled.
-      stripes(-(ROAD_HALF + 2.4), -ROAD_HALF, 9, COLORS.vergeLight)
-      stripes(ROAD_HALF, ROAD_HALF + 2.4, 9, COLORS.vergeLight)
+      stripes(-(ROAD_HALF + 2.4), -ROAD_HALF, 9, colors.vergeLight)
+      stripes(ROAD_HALF, ROAD_HALF + 2.4, 9, colors.vergeLight)
 
       const tarmac = ctx.createLinearGradient(0, horizon, 0, height)
-      tarmac.addColorStop(0, COLORS.tarmacFar)
-      tarmac.addColorStop(1, COLORS.tarmacNear)
+      tarmac.addColorStop(0, colors.tarmacFar)
+      tarmac.addColorStop(1, colors.tarmacNear)
       band(-ROAD_HALF, ROAD_HALF, tarmac)
 
-      band(-ROAD_HALF + 0.25, -ROAD_HALF + 0.55, COLORS.paint)
-      band(ROAD_HALF - 0.55, ROAD_HALF - 0.25, COLORS.paint)
+      const paint = withAlpha(colors.paint, 0.82)
+      band(-ROAD_HALF + 0.25, -ROAD_HALF + 0.55, paint)
+      band(ROAD_HALF - 0.55, ROAD_HALF - 0.25, paint)
 
-      stripes(-0.16, 0.16, DASH_PERIOD, COLORS.centreLine)
+      stripes(-0.16, 0.16, DASH_PERIOD, withAlpha(colors.centreLine, 0.85))
 
-      drawRoadside(sim)
+      drawRoadside(sim, colors)
 
       // Haze so the tarmac dissolves into the sky instead of ending abruptly.
       const haze = ctx.createLinearGradient(
@@ -212,8 +207,8 @@ export function RoadCanvas({ drive, className }) {
         0,
         horizon + height * 0.14
       )
-      haze.addColorStop(0, 'rgba(12, 34, 60, 0.95)')
-      haze.addColorStop(1, 'rgba(12, 34, 60, 0)')
+      haze.addColorStop(0, withAlpha(colors.haze, colors.hazeAlpha))
+      haze.addColorStop(1, withAlpha(colors.haze, 0))
       ctx.fillStyle = haze
       ctx.fillRect(0, horizon - 2, width, height * 0.14 + 2)
     }

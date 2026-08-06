@@ -243,7 +243,7 @@ export function DriveScene() {
     <div className="fixed inset-0 overflow-hidden bg-[#03060c] text-white">
       <Itinerary />
 
-      <Sky />
+      <Sky drive={drive} />
       <RoadCanvas drive={drive} className="absolute inset-0 h-full w-full" />
       <ExitSign drive={drive} stop={stop} />
       <CarInterior passedStop={passedStop} />
