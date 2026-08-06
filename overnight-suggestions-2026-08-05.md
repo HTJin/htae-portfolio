@@ -87,17 +87,17 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** small-medium.
   - **Outcome:** **Shipped** in `94eea90`, and it earned its keep twice over. The readout counts 2016 -> 2025 across school and the nine roles, ticking over *between* exits (2021 and 2022 pass while crossing the sabbatical), then reads `NOW` for the side builds, the toolbox and the destination — which have no dates, so they never get a fabricated one. Verifying it also **uncovered a live data bug**: `new Date('YYYY-MM-DD').getFullYear()` reads UTC midnight in local time, so the StarPlus UI/UX role (`2024-01-01`, labelled "Jan 2024 - Oct 2024") was reporting **2023**. Fixed.
 
-- [ ] **S13 — Weather and traffic that belong to the light** — Status: Proposed — Cycle: 2
+- [ ] **S13 — Weather and traffic that belong to the light** — Status: Done (traffic half; haze returns to Backlog) — Cycle: 7
   - **Source:** site audit after the daylight work — the road is completely empty; nothing else is ever on it.
   - **Suggestion:** a thin drifting haze layer and occasional oncoming headlights on the far carriageway, tinted by the current palette.
   - **Why / expected impact:** makes the road feel inhabited rather than a treadmill, and sells the dusk-to-night transition further.
   - **Scope:** medium; canvas only, must not allocate per frame.
-  - **Outcome:** *(proposed)*
+  - **Outcome:** **Traffic shipped** in `ff1f8d9` — headlights on the opposite carriageway, closing at their own speed plus yours so they keep passing while you are parked, deterministic and palette-tinted. Proven by a controlled pixel diff while parked (12,564 samples changed, confined to the approach path). The **drifting-haze half was not built** and returns to the Backlog as S13b: the existing horizon haze already blends the tarmac into the sky, and a second drifting layer risks muddying it.
 
-- [ ] **S9b — Mile markers counting down between exits** — Status: Proposed — Cycle: 2
+- [ ] **S9b — Mile markers counting down between exits** — Status: Done — Cycle: 7
   - **Source:** carved out of S9 when the sign itself shipped; the markers need new drawing in the canvas roadside pass rather than DOM work.
   - **Scope:** small-medium.
-  - **Outcome:** *(proposed)*
+  - **Outcome:** **Shipped** in `ff1f8d9`. A green plate on a slim post every half-leg, set outboard of and taller than the delineator line. The first pass rendered at ~2x1 pixels and was invisible — caught by checking a screenshot, then enlarged until it read as a marker.
 
 - [ ] **S14 — Audit the rest of the site for the same timezone year bug** — Status: Done (no bug found) — Cycle: 4
   - **Source:** the bug found while verifying S12. `new Date('YYYY-MM-DD').getFullYear()` reports the previous year for January 1st dates in any timezone behind UTC.

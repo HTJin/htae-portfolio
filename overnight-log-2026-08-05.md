@@ -173,3 +173,20 @@ Rebuilt the same commit and served it with `npm run start` on port 3008: hydrate
 **23:06 — Backlog unblocked.** S9b (mile markers), S13 (weather/traffic), S8 (persist progress) and S5 (audio) had all been held pending browser verification. That condition has arrived, so they are marked **UNBLOCKED** for cycle 7, with a standing note to verify against a production build rather than `next dev`.
 
 **23:07 — Cycle exit.** No code changed this cycle — it was a verification cycle, and the honest outcome was that the thing that looked broken was not. -> the controller advanced to `Cycle: 7 / Phase: Planner`.
+
+---
+
+## Cycle 7
+
+**23:03 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 7`. Production server healthy on :3008. With pixels verifiable again, the two canvas ideas held since cycle 2/3 were finally buildable — both addressing the same complaint: **the road is completely empty**, and the 220m legs have nothing marking progress.
+
+**23:05 — Critic.** Added guardrails 25-27: keep traffic deterministic and pre-allocated with a clamped frame delta; keep vehicles on the opposite carriageway and never behind the camera; and make mile markers far sparser and visually distinct from the 24m delineator line — **checked in a screenshot rather than assumed**.
+
+**23:08-23:30 — Builder.** Both features in `RoadCanvas`. Traffic closes at its own speed plus yours, so cars keep passing while you sit at an exit, and takes its colour from the route palette.
+
+**Guardrail 27 earned its place immediately.** The first mile markers were authored at 0.5m x 0.36m, which projects to about **2x1 pixels** at distance — in the zoom they were a single speck, completely indistinguishable from the delineator reflectors. Had I assumed rather than looked, that would have shipped as "done". Enlarged to 0.95m x 0.7m, raised to 1.9m and moved outboard to `ROAD_HALF + 2.5`; they now read as distinct green plates on posts.
+
+**Verifying the traffic needed a trick, because rAF is dead here.** A short frame-timing probe returned **0 frames in 8 seconds** — `requestAnimationFrame` is fully paused while `document.hidden` is true, so the scene only paints in bursts when CDP or a screenshot pokes the renderer. That rules out watching motion directly. Instead I used a **controlled pixel diff**: with the car *parked* the entire canvas is static — travel is constant, so the palette, road, lamps and markers cannot change — which means anything that differs between two captures is the traffic and nothing else. Two `getImageData` captures either side of 45 forced repaints differed in **12,564 sampled pixels**, confined to a compact box (CSS px 809-968 x 357-500) near the vanishing point extending down and to the left: exactly the approach path of oncoming headlights. That is proof of both rendering *and* motion without ever seeing an animation.
+- A follow-up screenshot showed the bulbs were only ~2-4px, i.e. present but not legible as headlights, so they were enlarged and the halo strengthened. **Presence is not legibility** — worth separating those two questions in future canvas work.
+
+**23:32 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 17.6 kB), verified against a production build with hydration confirmed first (guardrail 23). One commit: `ff1f8d9`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 8 / Phase: Planner`.

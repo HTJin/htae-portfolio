@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 7
+**Cycle:** 8
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -49,6 +49,9 @@
 4. *Failure: a redesigned StopCard becomes unreadable or unscrollable on mobile.* **Guardrail:** verify the panel at 390x844 — content must scroll, no horizontal overflow, and the close/next affordances must stay reachable.
 5. *Failure: the screenshot carousel autoplays over reduced-motion users, or leaks timers between stops.* **Guardrail:** honor `useReducedMotion()` (show a static first frame + manual dots), and clear the interval on unmount/stop-change; verify by switching stops repeatedly and watching for stacked timers.
 6. *Failure: running `npm run build` while `npm run dev` is live, or trusting a poisoned `.next` cache.* They share `.next`; the build clobbers the dev server's route manifest (`/drive` starts 404ing for new requests while the open tab keeps working off HMR). Worse, the webpack cache can go stale and **silently serve CSS that is missing newly-added Tailwind classes** — observed in cycle 2, where `line-clamp-2` and `lg:truncate` produced zero CSS rules until a clean restart. **Guardrail:** after any `npm run build`, restart the dev server; and if a class looks inert, run `npm run dev:fresh` (wipes `.next`) and re-check *before* concluding the class or the config is at fault.
+25. *Failure (cycle 7): oncoming traffic that breaks determinism or the frame budget.* `Math.random` in the paint loop would make the scene non-reproducible and could differ between server and client; allocating fresh car objects each frame would churn. **Guardrail:** keep a fixed, pre-allocated set of cars in the effect closure and mutate their positions in place; drive them from a clamped frame delta (a huge `dt` after a resize or a background tab must not teleport them).
+26. *Failure (cycle 7): a car drives through the player or through an exit sign.* **Guardrail:** oncoming vehicles live on the opposite carriageway only, and are skipped once they are nearer than the near clip — never drawn at or behind the camera.
+27. *Failure (cycle 7): mile markers become visual noise.* Delineator posts already appear every 24m; adding markers at a similar cadence would read as clutter. **Guardrail:** markers must be far sparser than the delineator line and visually distinct from it, and the result must be checked in a screenshot rather than assumed.
 23. *Failure (cycle 6): trusting the dev server's client bundle.* This project's `next dev` intermittently serves a page whose HTML is correct but which **never hydrates** — `body.style.overflow` stays unset, "Start engine" does nothing, and every deep link appears broken, all with **no console error and all JS chunks returning 200**. It looks exactly like a shipped regression. **Guardrail:** before diagnosing any interactivity bug, confirm hydration with `document.body.style.overflow === 'hidden'`; if it is false, re-verify against a **production build** (`npm run build` then `PORT=<p> npm run start`) before concluding anything. Production has been reliable all night; dev has faked three separate defects.
 24. *Failure (cycle 6): rAF-based measurements in a background tab.* `requestAnimationFrame` is paused when `document.hidden` is true, so any loop awaiting N frames never resolves and the CDP call times out at 45s, which reads as "the renderer is frozen". **Guardrail:** check `document.hidden` before any frame-timing measurement; if true, the number is unobtainable — say so rather than inventing one.
 7. *Failure: mistaking a hidden Chrome window for a broken page.* A backgrounded tab reports `document.visibilityState === 'hidden'`; Chrome then unrenders it, so screenshots come back solid black and every `getBoundingClientRect()` returns 0. **Guardrail:** before reporting any visual defect, check `document.hidden` first — if true, the finding is worthless, and verification must fall back to build/lint until a person foregrounds Chrome.
@@ -85,7 +88,47 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 5's list is fully resolved — see Done / Needs human. The Planner fills this for cycle 6.)*
+*(cycle 7's list is fully resolved — see Done. The Planner fills this for cycle 8.)*
+
+<details>
+<summary>Cycle 7's list (resolved — kept for context)</summary>
+
+### CYCLE 7
+
+Pixels can be verified again, so the two canvas ideas that were held through cycles 3-6 are finally buildable. Both are
+about the same complaint: **the road is completely empty.** Nothing else is ever on it, and between exits there is no
+sense of progress.
+
+- [ ] **1. Put other traffic on the road** (backlog S13, the traffic half)
+  - **Why:** twenty-one exits of a totally deserted highway reads as a treadmill. A few cars passing the other way is
+    the cheapest thing that makes a road feel like a road — and it gives the long legs something to watch.
+  - **Evidence it is currently empty:** `RoadCanvas.drawRoadside` draws lamps and delineator posts and nothing else;
+    there is no vehicle of any kind in the scene.
+  - **Design:** headlights on the **opposite** carriageway only, closing at their own speed plus yours, so they still
+    pass while you are parked. Deterministic — no `Math.random` — and they take their colour from the route palette so
+    they belong to the current light.
+  - **Files:** `src/components/drive/RoadCanvas.jsx`.
+  - **Done when:** cars visibly approach and pass on the far side at several points on the route, they never appear on
+    your carriageway or collide with the exit signs, and the paint loop still allocates nothing new per frame beyond
+    the gradients the lamps already create (guardrail 9).
+- [ ] **2. Mile markers between exits** (backlog S9b)
+  - **Why:** completes the signage story started in cycle 2 and gives the 220m legs a sense of progress between exits.
+  - **Files:** `src/components/drive/RoadCanvas.jsx`.
+  - **Done when:** small markers appear between exits, sparse enough not to add noise to the delineator line
+    (which is already every 24m), and visually distinct from it.
+- [ ] **3. Verify against a production build** (guardrail 23)
+  - **Done when:** `npm run build` passes, the page is served with `npm run start`, hydration is confirmed via
+    `document.body.style.overflow === 'hidden'`, and both changes are seen in screenshots at more than one point on
+    the route.
+
+</details>
+
+<details>
+<summary>Cycle 6's list (a verification cycle — no tasks were planned; see Done C6-1..C6-3)</summary>
+
+*(cycle 5's list is fully resolved — see Done / Needs human.)*
+
+</details>
 
 <details>
 <summary>Cycle 5's list (resolved — kept for context)</summary>
@@ -280,6 +323,8 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C7-1. Oncoming traffic on the far carriageway** — proven working against a production build, and proven by measurement rather than by eye. With the car **parked** the whole scene is static, so two canvas captures taken either side of 45 forced repaints can only differ where something animates: **12,564 sampled pixels changed**, confined to a compact box (CSS px 809-968 x 357-500) near the vanishing point extending down and to the left — exactly the approach path of oncoming headlights, and nothing else in the canvas moves while parked. A screenshot afterwards shows the headlights as a bright warm pair on the opposite carriageway. Cars are deterministic (no `Math.random`), pre-allocated and mutated in place, with a clamped frame delta (guardrails 25-26). Commit `ff1f8d9`.
+- **C7-2. Mile markers between exits** — proven working, and the first attempt was caught **failing**: at `0.5m x 0.36m` the plates rendered about **2x1 pixels** at distance, indistinguishable from the delineator reflectors — visible in the zoom only as a speck. Guardrail 27 required checking a screenshot rather than assuming, which is what caught it. Enlarged to `0.95m x 0.7m`, raised to 1.9m and set outboard at `ROAD_HALF + 2.5`; they now read as distinct green plates on posts, clearly separate from the 24m delineator line. Commit `ff1f8d9`.
 - **C6-1. Per-leg roadside character — visual pass (clears the cycle-3 parked item)** — proven working in the browser at last, against a **production** build. At EXIT 12/13 (Scenic overlook) the guardrail renders along the right verge as **one continuous ribbon with no anti-aliasing seams** — confirmed by zooming the right-hand verge, where it recedes as a single smooth band (guardrail 15 satisfied; this is exactly what the run-length `railRuns` pass was written for). The lamp line is visibly thinner there than on the career highway, and at EXIT 04 (the sabbatical) it is thinner again **with no guardrail**, matching the SSR mapping proven in cycle 3. Nothing was observed popping or changing character on approach, consistent with the style being keyed off each object's own world position (guardrail 17). Commit `c209b57`. *Frame-rate remains unmeasured — see Needs testing.*
 - **C6-2. `?exit=` deep links, carousel and year readout re-verified end to end on a production build** — `/drive?exit=12` hydrates, lands parked on **EXIT 12 · Matrimoni** with the panel open and the screenshot carousel already cycling (2/5), and the trip computer reads **`yr NOW`** — correctly refusing to invent a year for a project stop (guardrail 13). `?exit=3` and `?exit=11` behaved likewise; `?exit=4` showed **`yr 2019`**. This was checked because the dev server made all of it *look* broken (see C6-3).
 - **C6-3. False alarm investigated and cleared: the dev server, not the code** — `/drive?exit=12` on `next dev` showed the ignition screen, no panel, and a dead "Start engine" button, which looked exactly like a regression in the cycle-2 deep link. Rather than accept that, the cause was isolated: `document.body.style.overflow` was **unset**, meaning `DriveScene`'s very first effect had never run — **React had not hydrated at all**. Plain `/drive` with no query behaved identically, ruling out the deep-link code; all eight JS chunks returned **200**; the console produced no error. Rebuilding and serving the same commit with `npm run start` on port 3008 hydrated correctly and every feature worked. **No code defect existed.** Recorded as guardrail 23.
@@ -395,9 +440,8 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 - **S5 — Ambient drive audio (engine note, turn-signal tick), default muted with a dash toggle** — **UNBLOCKED as of cycle 6**, though still the riskiest item: Web Audio only (no new deps allowed), must be opt-in so it never autoplays, and needs a speaker toggle somewhere on the dash that does not crowd the console.
 - **S8 — Persist progress (visited stops / furthest exit) to `localStorage` so a returning visitor resumes** — **UNBLOCKED as of cycle 6** (browser verification is available again against a production build): needs a reset affordance so it can't trap someone mid-route. Now interacts with the `?exit=` deep link shipped in cycle 2 — an explicit deep link must win over a stored position.
-- **S9b — Mile markers counting down between exits** — **UNBLOCKED as of cycle 6**: the browser can reach a production build again, so canvas work can be verified visually. Needs new drawing in `RoadCanvas.drawRoadside`. Good first pick for cycle 7.
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
-- **S13 — Weather that belongs to the light** *(new, cycle 2)* — **UNBLOCKED as of cycle 6** for the same reason. A thin drifting haze layer and occasional oncoming headlights on the far carriageway, tinted by the current palette, would make the road feel inhabited rather than empty. Canvas-only, must respect the per-frame allocation guardrail (9).
+- **S13b — Drifting haze** *(the unbuilt half of S13; traffic shipped in cycle 7)* — a thin drifting weather layer near the horizon. Deferred deliberately, not for lack of time: the existing horizon haze already blends the tarmac into the sky, and a second moving layer risks muddying it. Would need careful A/B against the current look.
 
 ---
 
