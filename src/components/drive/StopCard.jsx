@@ -281,7 +281,7 @@ export function StopCard({ stop, visible, position, total }) {
             shots
               ? 'lg:w-[min(94vw,58rem)] [@media(min-width:1536px)_and_(min-height:1120px)]:w-[min(94vw,76rem)]'
               : ''
-          } ${roomy ? 'lg:w-[min(94vw,58rem)] 2xl:w-[min(94vw,76rem)]' : ''} ${
+          } ${roomy ? 'lg:w-[min(94vw,58rem)] xl:w-[min(94vw,76rem)]' : ''} ${
             styles.hud
           }`}
         >
@@ -359,7 +359,17 @@ export function StopCard({ stop, visible, position, total }) {
               // nothing and *narrows* the measure to 363px (~56). Better on
               // both axes, which is the same trade that chose two columns
               // over a plain widening in the first place.
-              <div className="lg:columns-2 lg:gap-x-8 2xl:columns-3 [&_li]:break-inside-avoid">
+              //
+              // Both this and the card width sat at `2xl` (1536px), which left
+              // 1280-1535 — an ordinary laptop — on the narrow layout. The
+              // sabbatical hid 94px (22% of itself) at 1440x900 and 144px
+              // (34%) at 1280x800, and it is the longest entry on the résumé,
+              // so it was the one stop you could not read without scrolling.
+              // At `xl` it hides nothing at 1440 and 24px at 1280. Width and
+              // columns move together on purpose: widening alone would stretch
+              // the measure to ~590px per column, which is worse than the
+              // problem being fixed.
+              <div className="lg:columns-2 lg:gap-x-8 xl:columns-3 [&_li]:break-inside-avoid">
                 <StopProse stop={stop} />
               </div>
             ) : (
