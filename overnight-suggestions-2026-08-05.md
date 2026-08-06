@@ -140,4 +140,15 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Source:** noticed that the phone cockpit had not been re-checked since cycle 1, with the daylight system, traffic, mile markers, the aria pass and the resume UI all landing since.
   - **Outcome:** **Clean.** At 386x840 against a production build: no horizontal overflow, cockpit laid out correctly, arrival panel present and internally scrollable, screenshot frame at its native 2:1, and the new resume UI stacking rather than overflowing. One apparent 26px overlap of the panel into the dash turned out to be a frozen framer-motion entry transform (rAF is paused in a hidden tab); the settled layout is flush. Nothing was changed — and deliberately so.
 
+- [ ] **S22 — The route map claimed to be a modal but never took focus** — Status: Done — Cycle: 10
+  - **Source:** Suggester audit of `RouteMap.jsx`, a surface never examined in nine cycles. Measured: 23 tabbable elements inside the open dialog, `dialog.contains(document.activeElement)` false.
+  - **Why / expected impact:** `aria-modal="true"` promises assistive tech that the page behind is inert. Without focus management a keyboard user tabs through the cockpit under an overlay they cannot see past.
+  - **Outcome:** **Shipped** in `09fe15d`. Focus moves to the panel on open, Tab/Shift+Tab cycle within it, Escape still closes it (the trap only intercepts Tab). Focus-restore executes but needs a foreground window to observe — see Needs testing.
+
+- [ ] **⭐ S23 — The CLASSIC site still crops project photos and never cycles them** — Status: **Needs human** — Cycle: 10
+  - **Source:** Suggester audit, prompted by re-reading the original brief. Priority (c) was fixed in drive mode in cycle 1 but never checked on the main portfolio page.
+  - **Why / expected impact:** this is the user's own stated priority, still live on the page most visitors actually see — and easy to believe is already solved. `src/components/Projects.jsx:97` uses an `aspect-video` frame with `object-cover` at `:120`; computed against the real files, **all 28** screenshots are wider than 16:9, so **10.1%** of each image's width is cropped on average (**14.2%** worst). Cycling is click-only — no timer exists anywhere in the file.
+  - **Scope:** small, but `src/components/Projects.jsx` is outside this run's write scope, and the working tree carries the user's own uncommitted edits nearby. Exact patch is in the **Needs human** section of `overnight-tasks-2026-08-05.md`.
+  - **Outcome:** *(awaiting a human)*
+
 *(Check the box once you've reviewed the outcome.)*

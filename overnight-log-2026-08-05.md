@@ -237,3 +237,22 @@ Rebuilt the same commit and served it with `npm run start` on port 3008: hydrate
 **Honest limitation.** Audible output and the rpm→frequency mapping cannot be checked here: a synthetic click grants no user activation, so the context never runs and `update()` correctly early-returns. Parked as **Needs testing** for a real press in a foreground window.
 
 **00:42 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19 kB). One commit: `655a3ce`. The backlog is now down to S15 (blocked behind the Needs-human canonical fix) and S13b (deliberately deferred) — so cycle 10 will need a fresh **Suggester** pass. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 10 / Phase: Planner`.
+
+---
+
+## Cycle 10
+
+**00:33 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 10`. Backlog confirmed dry (S15 blocked behind the Needs-human canonical fix, S13b deliberately held), so per the controller this became a **Suggester** cycle. Audited two surfaces never examined in nine cycles: `RouteMap.jsx`, and — because it bears on the user's stated priority (c) — the **classic site's** project cards.
+
+**00:36-00:45 — The most important finding of the night: priority (c) is only half-fixed.** The original brief asked for project photos that are not cut off and that cycle automatically with a smooth fade. That was delivered in **drive mode** in cycle 1. The **main portfolio page** still has both faults:
+- `src/components/Projects.jsx:97` frames the image `aspect-video` (16:9) and `:120` renders it `object-cover`. Rather than estimate, I computed it against the real files: **all 28** screenshots in `public/images/projects/` are wider than 16:9, so `object-cover` discards **10.1%** of each image's width on average and **14.2%** at worst — both edges of every screenshot are cut.
+- `grep -nE "setInterval|setTimeout|useEffect"` on that file returns **nothing**; advancing happens only in `handleScreenshotClick`, so a visitor who never clicks sees one screenshot out of up to five.
+An in-browser measurement was attempted first but was inconclusive — the images lazy-load via IntersectionObserver, which is throttled in a hidden tab — so the finding rests on the source plus the measured file dimensions, which is arithmetic rather than inference. `src/components/Projects.jsx` is outside this run's write scope and the user has their own uncommitted edits nearby, so it is parked as **Needs human** with an exact patch, starred at the top of that section.
+
+**00:46-00:52 — Task 1: the route map was lying about being a modal.** It renders `role="dialog" aria-modal="true"`, which tells assistive technology the page behind is inert. Measured with the map open: **23** tabbable elements inside it, and `dialog.contains(document.activeElement)` **false** — focus had never left the cockpit behind the overlay. Added focus-in on open, a Tab/Shift+Tab cycle, and restore-on-close. Escape was deliberately left alone (guardrail 37): `DriveScene` binds it globally with the driving keys, so the trap only ever `preventDefault`s Tab.
+
+**00:53-01:05 — Verified by reading `document.activeElement` at each step:** opening moves focus to the panel (twice confirmed); Tab from the last item wraps to the first; Shift+Tab from the first wraps to the last; both stay inside the panel; Escape still closes the dialog.
+- **Not verifiable here:** focus-restore-on-close. Programmatic `.focus()` on the trigger button does not stick without OS window focus, so `<body>` is what gets captured at open and dutifully restored at close — correct behaviour, but unobservable. Added to Needs testing rather than claimed as done.
+- Along the way, two Escape presses appeared not to close the dialog before a later one did. Rather than call that a bug, the likely cause was identified: React 18 schedules updates through the scheduler, which is throttled along with rAF in a hidden tab, so state changes flush late. A subsequent run with longer waits confirmed Escape closes it.
+
+**01:06 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.3 kB). One commit: `09fe15d`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 11 / Phase: Planner`.

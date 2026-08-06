@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 10
+**Cycle:** 11
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -49,6 +49,9 @@
 4. *Failure: a redesigned StopCard becomes unreadable or unscrollable on mobile.* **Guardrail:** verify the panel at 390x844 — content must scroll, no horizontal overflow, and the close/next affordances must stay reachable.
 5. *Failure: the screenshot carousel autoplays over reduced-motion users, or leaks timers between stops.* **Guardrail:** honor `useReducedMotion()` (show a static first frame + manual dots), and clear the interval on unmount/stop-change; verify by switching stops repeatedly and watching for stacked timers.
 6. *Failure: running `npm run build` while `npm run dev` is live, or trusting a poisoned `.next` cache.* They share `.next`; the build clobbers the dev server's route manifest (`/drive` starts 404ing for new requests while the open tab keeps working off HMR). Worse, the webpack cache can go stale and **silently serve CSS that is missing newly-added Tailwind classes** — observed in cycle 2, where `line-clamp-2` and `lg:truncate` produced zero CSS rules until a clean restart. **Guardrail:** after any `npm run build`, restart the dev server; and if a class looks inert, run `npm run dev:fresh` (wipes `.next`) and re-check *before* concluding the class or the config is at fault.
+37. *Failure (cycle 10): a focus trap that fights the existing key handling.* `DriveScene` already binds global `keydown` for driving and for Escape. A second handler that swallows keys would break closing the map, or leave the car accelerating while the dialog is open. **Guardrail:** the trap may only act on Tab; Escape must continue to reach the existing handler.
+38. *Failure (cycle 10): stealing focus when the dialog is shut.* An effect that focuses on every render would yank focus away from whatever the visitor is using. **Guardrail:** move focus only on the open transition, restore only on the close transition, and never touch focus while closed.
+39. *Failure (cycle 10): trapping focus so completely the page becomes a prison.* **Guardrail:** cycle Tab within the dialog, but leave Escape and the browser's own chrome reachable — never `preventDefault` anything except Tab.
 33. *Failure (cycle 9): audio that starts without being asked for.* A résumé page that makes noise on load is worse than one with no sound at all. **Guardrail:** the `AudioContext` may only be constructed inside the toggle's own click handler, and the preference must **not** be persisted — a stored "on" would attempt playback on the next visit before any gesture exists.
 34. *Failure (cycle 9): the audio graph driven from React state per frame.* Same trap as guardrail 2, but worse — re-rendering at 60fps to set a frequency would be pure waste. **Guardrail:** drive `AudioParam`s from `drive.subscribe` using `setTargetAtTime`/`value`, never component state.
 35. *Failure (cycle 9): a leaked `AudioContext`.* Browsers cap how many a page may create, so a context per mount would eventually throw. **Guardrail:** close the context on unmount and null the reference; never build a second one while the first is alive.
@@ -97,7 +100,44 @@
 
 ## Tonight's tasks (in order)
 
-*(cycle 9's list is fully resolved — see Done / Needs testing. The Planner fills this for cycle 10.)*
+*(cycle 10's list is fully resolved — see Done / Needs human. The Planner fills this for cycle 11.)*
+
+<details>
+<summary>Cycle 10's list (resolved — kept for context)</summary>
+
+### CYCLE 10
+
+The backlog was dry (S15 blocked, S13b deliberately held), so this cycle ran a **Suggester** pass over two surfaces
+never examined in nine cycles: `RouteMap.jsx`, and — because it bears directly on the user's stated priority (c) — the
+**classic site's** project cards.
+
+- [ ] **1. The route map claims to be a modal but never takes focus** *(new, cycle 10 — in scope)*
+  - **Why:** `RouteMap` renders `role="dialog" aria-modal="true"`, which tells assistive technology that everything
+    behind it is inert. Nothing enforces that: focus is never moved into the dialog, never trapped, and never returned
+    to the trigger on close. A keyboard user presses "Route map" and is left tabbing through the cockpit *behind* an
+    overlay they cannot see past; a screen-reader user is told a modal opened while their focus sits outside it.
+  - **Evidence (measured):** with the map open, the dialog contains **23** tabbable elements, yet
+    `dialog.contains(document.activeElement)` is **false** — focus stayed on `<body>`.
+  - **Files:** `src/components/drive/RouteMap.jsx`.
+  - **Done when:** opening the map moves focus into it, Tab and Shift+Tab cycle within it, Escape still closes it (the
+    existing global handler must keep working), and closing returns focus to the button that opened it — each verified
+    by reading `document.activeElement` rather than assumed.
+- [ ] **2. The classic site still crops project photos and never cycles them** *(new, cycle 10 — OUT of scope → Needs human)*
+  - **Why this matters most:** this is the user's own priority (c) — *"the projects sections the photos just get cut
+    off and then the cycling through photos should just happen automatically with smooth fade transition"*. It was
+    fixed in **drive mode** in cycle 1, but the **main portfolio page** has the same two faults, so they may well
+    believe it is already solved everywhere.
+  - **Evidence (computed from the real files, not estimated):** `src/components/Projects.jsx:97` puts the image in an
+    `aspect-video` (16:9 = 1.778) box and `:120` renders it `object-cover`. **All 28 screenshots** on disk are wider
+    than that — `object-cover` therefore crops an average of **10.1%** of each image's width, worst case **14.2%**.
+    And `grep` for `setInterval|setTimeout|useEffect` in that file returns **nothing**: cycling only happens via
+    `handleScreenshotClick`, so a visitor who never clicks the picture never sees screenshots 2..n.
+  - **Scope constraint:** the write scope is `src/components/drive/**`, `src/styles/drive.module.css`,
+    `src/pages/drive.jsx`. `src/components/Projects.jsx` is outside it, and the working tree already carries the
+    user's own uncommitted edits nearby.
+  - **Done when:** the defect is proven and an exact patch is written out under **Needs human**, not applied.
+
+</details>
 
 <details>
 <summary>Cycle 9's list (resolved — kept for context)</summary>
@@ -384,6 +424,9 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C10-1. Route map behaves like the modal it claims to be** — proven working against a production build by reading `document.activeElement` at each step. Before: the open dialog held **23** tabbable elements while `dialog.contains(document.activeElement)` was **false**. After: opening moves focus to the panel (verified twice), **Tab** from the last item wraps to the first and **Shift+Tab** from the first wraps to the last — both staying inside the panel — and **Escape still closes it**, confirming the global handler in `DriveScene` is untouched (guardrail 37: the trap only ever `preventDefault`s Tab). Commit `09fe15d`.
+  - *Focus-restore-on-close executes but could not be observed here:* programmatic `.focus()` on the trigger does not stick without OS window focus, so nothing meaningful was captured to restore to. Added to Needs testing rather than claimed.
+- **C10-2. The classic site's project cards** — investigated; **out of scope, parked as Needs human with an exact patch.** This is the user's own priority (c) and it is only half-fixed: drive mode was corrected in cycle 1, but `src/components/Projects.jsx` still crops every screenshot (`aspect-video` + `object-cover`; computed against the real files, **all 28** are wider than 16:9, losing **10.1%** of width on average and **14.2%** at worst) and still advances only on click (`grep` for `setInterval|setTimeout|useEffect` in that file returns nothing). See the starred entry under **Needs human**.
 - **C9-1. Phone-width regression sweep — no regressions found** — the cockpit had not been re-checked at phone width since cycle 1, with seven cycles of change since. Measured at 386x840 against a production build: hydrated, **no horizontal overflow**, cluster strip and trip screen laid out correctly, the arrival panel present and internally scrollable (content 472px in a 291px scroller), the screenshot frame at its native 2:1 (287x141), and the new ignition resume UI stacking correctly instead of overflowing. Nothing needed fixing.
   - **A false positive was caught and *not* acted on.** The panel measured 26px into the dash, which read as an overlap. Its computed transform was `matrix3d(0.97, …, 26, 0, 1)` — framer-motion's *initial* state (`translateY 26`, `rotateX 10°`, `scale .97`) frozen, because rAF is paused in a hidden tab. Neutralising the transform showed the settled layout at 118→538 against a dash top of 538: flush, zero overlap. "Fixing" it would have permanently shifted the panel to compensate for a measurement artefact. Recorded as guardrail 36.
 - **C9-2. Opt-in engine audio** — proven working against a production build with the `AudioContext` constructor spied on from a parent frame: **zero contexts before any gesture**; pressing the toggle creates **exactly one**; toggling off then on again reuses that same one rather than leaking a second (guardrail 35); unmounting moves it to **`closed`**; and no audio key is written to storage (only `htae.drive.progress.v1` is present), so nothing can autostart on a later visit (guardrail 33). Commit `655a3ce`.
@@ -411,6 +454,8 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
+- [ ] **Route map returns focus to its trigger on close** — the trap's cleanup restores whatever was focused when the dialog opened, and that path runs, but it cannot be observed here: `.focus()` on the trigger button does not stick without OS window focus, so `<body>` is what gets captured and restored. Test in a foreground window: Tab to "Route map", press Enter, press Escape — focus should land back on the "Route map" button.
+
 - [ ] **Engine audio actually sounds, and tracks the revs** — everything *structural* about it is verified (see C9-2), but audible output is not: a synthetic click grants no user activation, so the `AudioContext` never reaches `running` in this environment and `update()` correctly early-returns. Test with a real press in a foreground window: the toggle should light, a low engine note should be audible, its pitch should rise with the tachometer under throttle, and tyre noise should build with speed. Turning it off should fade to silence.
 
 - [ ] **Frame rate while driving, measured on the production build** — the only part of the cycle-3 roadside check that
@@ -433,6 +478,49 @@ biggest lever available: making the drive pass **time**, not just distance.
 *(empty)*
 
 ## Needs human (parked — requires a person; the loop will NOT guess these)
+
+- [ ] **⭐ The CLASSIC site still crops project photos and never cycles them — this is priority (c), only half-fixed** —
+  Needs human because `src/components/Projects.jsx` is outside this run's write scope.
+
+  **Why this is the most important item here.** The original brief said: *"the projects sections the photos just get
+  cut off and then the cycling through photos should just happen automatically with smooth fade transition to the next
+  screenshot."* That was fixed in **drive mode** in cycle 1 — but the **main portfolio page** has both faults still, so
+  it would be easy to believe the problem is solved everywhere when it is not.
+
+  **Fault 1 — photos are cropped.** `src/components/Projects.jsx:97` wraps the image in an `aspect-video` box
+  (16:9 = 1.778) and `:120` renders it with `object-cover`. Computed against the real files: **all 28 screenshots** in
+  `public/images/projects/` are wider than 16:9, so `object-cover` discards an average of **10.1%** of each image's
+  width — worst case **14.2%**. Both edges of every screenshot are cut off.
+
+  **Fault 2 — cycling is click-only.** `grep -nE "setInterval|setTimeout|useEffect" src/components/Projects.jsx`
+  returns **nothing**. Advancing happens solely in `handleScreenshotClick` (`:61`), so a visitor who never thinks to
+  click the picture sees only screenshot 1 of up to 5.
+
+  **Suggested patch** — the same two moves that fixed drive mode, and the cross-fade already present there:
+
+  ```jsx
+  // :97  give the frame the screenshots' own ~2:1 shape instead of 16:9
+  <div className="relative aspect-[2/1] w-full min-w-0 !max-w-xl overflow-hidden">
+
+  // :120 stop cropping; letterbox against the card instead
+  className="max-w-full cursor-pointer rounded-lg object-contain shadow-lg"
+
+  // and advance on a timer as well as on click (pausing on hover), e.g.
+  useEffect(() => {
+    if (screenshots.length < 2) return undefined
+    const id = setInterval(handleScreenshotClick, 4200)
+    return () => clearInterval(id)
+  }, [currentScreenshot, screenshots.length])
+  ```
+
+  `AnimatePresence` already wraps the image at `:104`, so the smooth fade the user asked for comes for free once the
+  timer drives it. Consider `useReducedMotion()` to skip the autoplay, as `ProjectShots` does in drive mode.
+
+  **Verify after applying:** the full width of a screenshot should be visible (compare against
+  `public/images/projects/solar-indy/1.png`), and the image should advance on its own after ~4 seconds without a click.
+
+  *(The loop did not apply this: the scope is drive mode, and the working tree already carries uncommitted edits of
+  the user's own in this area.)*
 
 - [ ] **`/drive` is missing from the sitemap** — Needs human because `public/sitemap.xml` is outside this run's write
   scope (the scope covers `public/images/` only).
