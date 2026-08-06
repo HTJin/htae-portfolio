@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
+import { createEngineAudio } from './engineAudio'
 import { formatMiles, route, routeLength, yearAt } from './route'
 import { clamp } from './world'
 import styles from '@/styles/drive.module.css'
@@ -653,6 +654,64 @@ function TripComputer({ drive, stop }) {
   )
 }
 
+/**
+ * The one control that makes noise, so it is the one control that is off until
+ * you press it. The AudioContext is built *inside this handler* — never on
+ * mount, never from a stored preference — so sound can only ever be the result
+ * of a deliberate gesture.
+ */
+function AudioToggle({ drive }) {
+  const engineRef = useRef(null)
+  const [on, setOn] = useState(false)
+
+  // Tear the graph down with the component; browsers cap live contexts.
+  useEffect(
+    () => () => {
+      engineRef.current?.close()
+      engineRef.current = null
+    },
+    []
+  )
+
+  useEffect(() => {
+    if (!on) return undefined
+    return drive.subscribe((sim) => engineRef.current?.update(sim))
+  }, [on, drive])
+
+  const toggle = useCallback(async () => {
+    if (!engineRef.current) {
+      engineRef.current = createEngineAudio()
+      if (!engineRef.current) return // No Web Audio here; stay silent.
+    }
+    if (on) {
+      engineRef.current.disable()
+      setOn(false)
+      return
+    }
+    // Only claim it is on if the context really started — the browser can
+    // refuse, and a lit toggle over silence is a lie.
+    setOn(await engineRef.current.enable())
+  }, [on])
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-pressed={on}
+      aria-label={on ? 'Turn engine sound off' : 'Turn engine sound on'}
+      title={on ? 'Engine sound on' : 'Engine sound off'}
+      className={clsx(
+        'rounded-md border px-2 py-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.14em] transition',
+        on
+          ? 'border-amber-300/50 bg-amber-300/10 text-amber-200 hover:bg-amber-300/20'
+          : 'border-white/15 bg-white/5 text-white/50 hover:border-white/30 hover:text-white'
+      )}
+    >
+      <span aria-hidden="true">{on ? '♪' : '♪̸'}</span>
+    </button>
+  )
+}
+
 /** Slatted air vents — the cheapest, most convincing "this is a car" cue. */
 function Vent({ className }) {
   // Display lives in the utility classes, not the module — a module rule of
@@ -721,6 +780,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
             >
               {mapOpen ? 'Close' : 'Map'}
             </ConsoleButton>
+            <AudioToggle drive={drive} />
           </div>
           <div className="h-[52px] w-[54px] shrink-0">
             <Pedal
@@ -787,6 +847,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
             >
               {mapOpen ? 'Close map' : 'Route map'}
             </ConsoleButton>
+            <AudioToggle drive={drive} />
           </div>
         </div>
 
