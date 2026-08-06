@@ -26,7 +26,7 @@ const ONCOMING_SPEED = 31 // m/s
 const ONCOMING_SPAWN = 300 // metres ahead
 const ONCOMING_GAPS = [40, 165, 275] // deterministic start positions
 
-export function RoadCanvas({ drive, className }) {
+export function RoadCanvas({ drive, className, reducedMotion = false }) {
   const canvasRef = useRef(null)
 
   useEffect(() => {
@@ -267,6 +267,14 @@ export function RoadCanvas({ drive, className }) {
      * clamped, so a resize or a backgrounded tab cannot teleport them.
      */
     function drawOncoming(sim, colors, place) {
+      // The rest of drive mode already honours the motion preference: the
+      // throttle jumps between exits instead of animating, the carousel does
+      // not autoplay, the arrival panel fades rather than projecting. Traffic
+      // moves on a wall clock independent of travel, so it would keep sliding
+      // toward a stationary viewer — the one thing that preference is asking
+      // us not to do. Absent traffic simply restores the empty road.
+      if (reducedMotion) return
+
       const { horizon, height } = camera
 
       const now = performance.now()
@@ -393,7 +401,7 @@ export function RoadCanvas({ drive, className }) {
       window.removeEventListener('resize', resize)
       unsubscribe()
     }
-  }, [drive])
+  }, [drive, reducedMotion])
 
   return <canvas ref={canvasRef} className={className} aria-hidden="true" />
 }

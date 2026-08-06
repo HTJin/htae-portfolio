@@ -386,7 +386,11 @@ export function DriveScene() {
       <Itinerary />
 
       <Sky drive={drive} />
-      <RoadCanvas drive={drive} className="absolute inset-0 h-full w-full" />
+      <RoadCanvas
+        drive={drive}
+        reducedMotion={Boolean(reducedMotion)}
+        className="absolute inset-0 h-full w-full"
+      />
       <ExitSign drive={drive} stop={stop} />
       <CarInterior passedStop={passedStop} />
 
