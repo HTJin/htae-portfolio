@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 31
+**Cycle:** 32
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -298,6 +298,21 @@
 105. **Check the parked and past-the-exit states explicitly.** `z < VISIBLE_UNTIL` and `z > VISIBLE_FROM` are the two
      hide branches; narrowing the window changes the second one, so re-verify the sign is hidden when parked.
 
+### Cycle 31 pre-mortem (guardrails for this cycle's tasks)
+
+106. **Keyframes must stay strictly ascending.** `paletteAt` walks the list assuming order; a derived `at` that lands
+     out of sequence would silently break the interpolation for a whole stretch of road. Assert the ordering at module
+     load and verify it, rather than trusting the arithmetic.
+107. **Derive only what names a real stop.** "Middle of the career highway" and "the side builds" are ranges, not
+     stops — there is nothing to anchor them to, so they keep their hand-picked fractions and their comments get
+     corrected to say so. Only the toolbox keyframe names one specific stop.
+108. **A missing stop must not break the sky.** If the content ever loses the toolbox, the lookup must fall back to
+     the current literal rather than producing `undefined` and a `NaN` palette.
+109. **Do not retune the colours.** This moves *when* full night happens, not what it looks like. Every colour value
+     stays exactly as authored (guardrail 52).
+110. **Check the destination did not change.** Compressing the dawn into the last leg makes it faster; verify EXIT 20
+     still measures the authored first-light values and does not overshoot.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -313,9 +328,42 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 31
+## Tonight's tasks (in order) — CYCLE 32
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 31's list (resolved — kept for context)</summary>
+
+### CYCLE 31
+
+Backlog dry, so a **Suggester** pass on `Sky.jsx` and `daylight.js` — the last two drive files never audited.
+
+**Most of it holds up and that is worth recording.** The shared-palette design is safe (every caller reads it
+immediately, nobody keeps the reference); the star field is deterministic so SSR and client match; the reduced-motion
+CSS block already covers **all four** animations (`.star`, `.ignition`, `.blink`, `.shot`); and the arc genuinely
+progresses — measured at six exits, the horizon runs `rgb(226,140,84)` golden at MILE 0 through `rgb(37,79,118)` blue
+at EXIT 14 to `rgb(122,152,172)` pale at the destination, with stars 0 -> 0.85 and the moon 0.12 -> 0.91. One anchor is
+in the wrong place.
+
+- [x] **1. "Full night" lands between two exits instead of at the stop it names** — **DONE**
+  - **Evidence:** the keyframe is written `at: 0.92, // full night — the toolbox`, and the module header promises
+    *"full night by the toolbox"*. The toolbox is **EXIT 19**, whose progress is **19/20 = 0.95**. `0.92` is
+    **exit 18.40** — mid-leg between two stops, where nobody ever parks.
+  - **What that costs, measured at the toolbox:** by the time you arrive the palette is already **37.5% of the way
+    into dawn** — `starOpacity` **0.850** against a peak of 1.0, moon **0.888**. The darkest, most night-like moment
+    of the drive happens while you are moving between EXIT 18 and EXIT 19, and the stop that was designed to *be* full
+    night is already brightening. Confirmed live: EXIT 14 measures a **higher** moon (0.908) than EXIT 19 (0.887).
+  - **The shape, again:** a fraction typed by hand that has to agree with the route's geometry, and does not — the
+    fifth instance this run (dash height, camera lateral, interior furniture, exit-sign window, now this).
+  - **Files:** `src/components/drive/daylight.js`.
+  - **Done when:** the full-night keyframe is **derived from the toolbox stop's own position** rather than typed, so it
+    cannot drift if a role or a build is added; measured at EXIT 19 `starOpacity` is **1.0** and moon **1.0**; the
+    destination still reads first light (0.6 / 0.7); MILE 0 is unchanged; the keyframes remain strictly ascending; and
+    the other two anchors' comments are corrected to describe where they actually fall rather than implying a
+    precision they do not have.
+
+</details>
 
 <details>
 <summary>Cycle 30's list (resolved — kept for context)</summary>
@@ -1267,6 +1315,26 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C31.0 — `Sky.jsx` and `daylight.js` audited; most of it holds** *(cycle 31)* — the last two never-audited drive
+  files. The shared-palette design is safe (every caller reads it immediately; nobody keeps the reference), the star
+  field is deterministic so SSR and client agree, the reduced-motion CSS block already covers **all four** animations
+  (`.star`, `.ignition`, `.blink`, `.shot`), and the arc genuinely progresses — measured across six exits, horizon
+  `rgb(226,140,84)` golden at MILE 0 through `rgb(37,79,118)` at EXIT 14 to `rgb(122,152,172)` at the destination.
+- **C31.1 — Full night now happens at the toolbox** *(cycle 31, commit `f6c267f`)* — the keyframe read
+  `at: 0.92, // full night — the toolbox` and the module header promises *"full night by the toolbox"*, but the
+  toolbox is EXIT 19 of 20 = **0.95**. `0.92` is **exit 18.40**, mid-leg. Measured, the toolbox was already **37.5% of
+  the way into dawn** — `starOpacity` **0.850** against a peak of 1.0, moon **0.888** — so the darkest moment of the
+  drive fell between EXIT 18 and EXIT 19 and the stop designed to *be* full night was brightening. It showed up in the
+  numbers: EXIT 14 measured a **higher** moon (0.908) than EXIT 19 (0.887). The anchor is now **derived from the
+  toolbox stop's own position** (guardrail 107 — only the keyframe that names a real stop was derived; the other two
+  name ranges and keep their fractions with corrected comments), with a literal fallback if the content ever loses
+  that stop (guardrail 108) and an ascending-order guard, since `paletteAt` walks the list assuming order and would
+  have failed silently (guardrail 106). **Verified:** EXIT 19 star **0.850 -> 1.000**, moon **0.888 -> 1.000**, horizon
+  `rgb(20, 64, 95)` — the authored full-night palette; EXIT 18 0.967/0.982, a monotonic approach; **destination
+  unchanged** at 0.6/0.7 and `rgb(122,152,172)` (guardrail 110); MILE 0 and exits 05/10/14 unchanged; a cold deep link
+  to EXIT 19 lands on peak night; **zero console messages**. No colour was retuned (guardrail 109) — this changed
+  *when* full night happens, not what it looks like.
 
 - **C30.1 — The exit sign's approach is scaled to the real leg** *(cycle 30, commit `f299914`)* — `ExitSign` used a
   literal `VISIBLE_FROM = 420` against `LEG_LENGTH = 220` (`route.js:4`), a window **1.91× the furthest you can ever be

@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 30 · branch `feat/drive-mode` · 44 commits, nothing pushed
+**Last updated:** end of cycle 31 · branch `feat/drive-mode` · 45 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,33 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 31 — nightfall was arriving in the wrong place
+
+The drive passes time as well as distance: golden hour as you pull onto the highway, dusk across the career stretch,
+full night at the toolbox, and the first hint of dawn as you arrive. That last beat is the point — the final stop is
+the one that asks what comes next.
+
+Full night was landing in the wrong place. The code anchors it at 92% of the route and labels that "the toolbox", but
+the toolbox is exit 19 of 20 — **95%**. 92% is exit 18.4: halfway down a stretch of road where nobody stops. So the
+darkest, most night-like moment of the whole drive was happening while you were still moving, and by the time you
+parked at the toolbox the sky was already **37% of the way into dawn**.
+
+The measurements are what gave it away — exit 14 had a *brighter* moon than exit 19. The sky was getting lighter
+before the stop that is supposed to be darkest.
+
+That anchor now comes from where the toolbox actually is, so adding a role or a build can't pull the two apart again.
+At the toolbox the stars and moon are now at full strength against the authored night palette, exit 18 climbs toward
+it, and your arrival still opens into exactly the same first light as before — the dawn just happens over the final
+leg, where it belongs.
+
+**Nothing about the colours changed** — only when they arrive.
+
+This was also the last of the fifteen drive files to get a proper read-through. The rest of that audit came back clean:
+the palette machinery is safe, the star field is stable between server and browser, and the "reduce motion" setting
+already silences every animation in the stylesheet — including two that my earlier accessibility sweep hadn't looked at.
 
 ---
 

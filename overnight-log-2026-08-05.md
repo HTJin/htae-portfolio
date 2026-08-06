@@ -673,3 +673,30 @@ The sign is fully opaque roughly halfway along the leg, so nothing is lost as wa
 **One thing not obtained, stated rather than glossed:** a screenshot of the sign mid-approach. By the time a capture could be timed the car had arrived and the arrival panel occludes that region. The numeric series above is the evidence; there is no visual for this one.
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.1 kB). One commit: `f299914`. -> `Cycle: 31 / Phase: Planner`.
+
+## Cycle 31
+
+**Suggester.** Backlog dry. `Sky.jsx` and `daylight.js` were the last two drive files never audited in this run.
+
+**Most of it holds up, and that is a result.** The shared-palette design — one module-level object mutated in place, for the reasons guardrail 9 gives — is safe: every caller (`Sky`, `RoadCanvas.draw`, `ExitSign.paint`) reads it immediately and nobody keeps the reference, so the mutation cannot leak between frames. The star field is generated from a fixed seed so SSR and the client agree. And the reduced-motion CSS block already covers **all four** animations `.star`, `.ignition`, `.blink` and `.shot` — which cycle 29's JS-level sweep had not looked at.
+
+**The arc itself works.** Measured at six exits: horizon `rgb(226,140,84)` golden at MILE 0, `rgb(188,111,101)` at EXIT 05, `rgb(116,90,114)` at EXIT 10, `rgb(37,79,118)` blue at EXIT 14, `rgb(122,152,172)` pale at the destination; stars 0 -> 0.85, moon 0.12 -> 0.91.
+
+**One anchor is in the wrong place, and the measurements are what exposed it.** EXIT 14 measured a **higher** moon (0.908) than EXIT 19 (0.887) — the sky was getting *lighter* before the stop that is supposed to be the darkest. The cause: the keyframe reads `at: 0.92, // full night — the toolbox`, and the module header promises *"full night by the toolbox"*, but the toolbox is EXIT 19 of 20, which is **0.95**. `0.92` is **exit 18.40** — mid-leg, where nobody parks. Arrived at the toolbox you were already **37.5% into dawn**: `starOpacity` 0.850 against a peak of 1.0.
+
+**The shape, for the fifth time this run:** a number typed by hand that has to agree with the route's geometry, and quietly does not (dash height, camera lateral, interior furniture, exit-sign window, now the daylight anchor). The fix is the same in kind — derive it.
+
+**Built, with three deliberate limits.** Only the keyframe that names a *real stop* was derived; "the middle of the career highway" and "the side builds" are ranges, so they keep their hand-picked fractions and their comments now say they are judgement calls rather than implying an anchor (guardrail 107). A missing stop falls back to the old literal rather than producing a NaN palette (108). And since `paletteAt` walks the keyframes assuming they ascend — a stray derived value would have broken interpolation for a whole stretch of road *silently* — a guard nudges any out-of-sequence value back between its neighbours (106).
+
+**Verified on the production build:**
+
+| | before | after |
+|---|---|---|
+| EXIT 19 toolbox | star 0.850, moon 0.888 | **star 1.000, moon 1.000**, horizon `rgb(20,64,95)` |
+| EXIT 18 | — | star 0.967, moon 0.982 — monotonic approach |
+| EXIT 20 destination | 0.6 / 0.7 | **0.6 / 0.7, unchanged** |
+| MILE 0, exits 05/10/14 | — | unchanged |
+
+A cold deep link straight to EXIT 19 also lands on peak night, and the run produced **zero console messages**. No colour value was retuned — this moved *when* full night happens, not what it looks like.
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.2 kB). One commit: `f6c267f`. Every drive file has now been audited at least once. -> `Cycle: 32 / Phase: Planner`.
