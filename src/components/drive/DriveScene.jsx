@@ -144,76 +144,90 @@ function Ignition({ onStart, resume, onResume, onForget }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
-      className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#03070e]/80 px-6 text-center backdrop-blur-[2px]"
+      // Scrolls when it has to. A returning visitor gets two extra controls
+      // here, which on a short landscape phone pushed the whole splash past
+      // the viewport — and the link out is the only way to leave drive mode
+      // while this is up, since it sits over the scene's own exit link.
+      // The centring lives on the inner wrapper rather than on this flex
+      // container: a centred flex child that overflows cannot be scrolled
+      // back to, so `justify-center` here would hide the heading for good.
+      className="absolute inset-0 z-50 flex overflow-y-auto bg-[#03070e]/80 px-6 py-6 text-center backdrop-blur-[2px] [@media(max-height:430px)]:py-4"
     >
-      <p className="text-[0.6875rem] uppercase tracking-[0.3em] text-sky-300/70">
-        Hyun-Tae Jin · drive mode
-      </p>
-      {/* An h2, not an h1: the itinerary's heading is the page's real title
+      <div className="m-auto flex w-full flex-col items-center">
+        <p className="text-[0.6875rem] uppercase tracking-[0.3em] text-sky-300/70">
+          Hyun-Tae Jin · drive mode
+        </p>
+        {/* An h2, not an h1: the itinerary's heading is the page's real title
           and this splash is transient. Two h1s would compete to describe the
           page for assistive tech and for crawlers. */}
-      <h2 className="mt-3 max-w-xl font-display text-2xl font-light leading-tight text-white sm:text-4xl">
-        The résumé, from the driver&apos;s seat
-      </h2>
-      <p className="mt-3 max-w-md text-sm leading-6 text-white/50">
-        Every exit on this road is a job, a build, or a chapter. Hold the
-        accelerator, roll up to the sign, read, then drive on.
-      </p>
+        <h2 className="mt-3 max-w-xl font-display text-2xl font-light leading-tight text-white sm:text-4xl [@media(max-height:430px)]:mt-1.5 [@media(max-height:430px)]:text-xl">
+          The résumé, from the driver&apos;s seat
+        </h2>
+        <p className="mt-3 max-w-md text-sm leading-6 text-white/50 [@media(max-height:430px)]:mt-1.5 [@media(max-height:430px)]:leading-5">
+          Every exit on this road is a job, a build, or a chapter. Hold the
+          accelerator, roll up to the sign, read, then drive on.
+        </p>
 
-      <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
-        <button
-          type="button"
-          onClick={onStart}
-          className={`rounded-full border border-yellow-300/60 bg-yellow-300/10 px-8 py-3 font-display text-sm font-semibold uppercase tracking-[0.2em] text-yellow-200 transition hover:bg-yellow-300/20 ${styles.ignition}`}
-        >
-          Start engine
-        </button>
+        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row [@media(max-height:430px)]:mt-4 [@media(max-height:430px)]:flex-row">
+          <button
+            type="button"
+            onClick={onStart}
+            className={`rounded-full border border-yellow-300/60 bg-yellow-300/10 px-8 py-3 font-display text-sm font-semibold uppercase tracking-[0.2em] text-yellow-200 transition hover:bg-yellow-300/20 ${styles.ignition}`}
+          >
+            Start engine
+          </button>
 
-        {/* Offered, never applied. Someone who read a few exits last time gets
+          {/* Offered, never applied. Someone who read a few exits last time gets
             back to them in one click; everyone else sees nothing new. */}
+          {resume ? (
+            <button
+              type="button"
+              onClick={onResume}
+              className="max-w-[18rem] rounded-full border border-sky-400/50 bg-sky-400/10 px-6 py-3 text-left text-sm text-sky-200 transition hover:bg-sky-400/20"
+            >
+              <span className="block text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-sky-300/70">
+                Resume · {resume.label}
+              </span>
+              <span className="mt-0.5 block truncate font-display">
+                {resume.title}
+              </span>
+            </button>
+          ) : null}
+        </div>
+
         {resume ? (
           <button
             type="button"
-            onClick={onResume}
-            className="max-w-[18rem] rounded-full border border-sky-400/50 bg-sky-400/10 px-6 py-3 text-left text-sm text-sky-200 transition hover:bg-sky-400/20"
+            onClick={onForget}
+            className="text-white/35 mt-3 text-[0.6875rem] uppercase tracking-[0.18em] transition hover:text-sky-300"
           >
-            <span className="block text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-sky-300/70">
-              Resume · {resume.label}
-            </span>
-            <span className="mt-0.5 block truncate font-display">
-              {resume.title}
-            </span>
+            Forget my progress
           </button>
         ) : null}
-      </div>
 
-      {resume ? (
-        <button
-          type="button"
-          onClick={onForget}
-          className="text-white/35 mt-3 text-[0.6875rem] uppercase tracking-[0.18em] transition hover:text-sky-300"
+        {/* Three across on a short screen instead of two, which costs a row.
+          It stays visible: these are the keys the drive actually responds to,
+          and the on-screen controls repeat them on the dash anyway. */}
+        <dl className="mt-10 grid max-w-lg grid-cols-2 gap-x-6 gap-y-1.5 text-left text-[0.6875rem] sm:grid-cols-3 [@media(max-height:430px)]:mt-4 [@media(max-height:430px)]:grid-cols-3 [@media(max-height:430px)]:gap-y-1">
+          {CONTROLS.map(([key, action]) => (
+            <div key={key} className="flex items-baseline gap-2">
+              <dt className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[0.625rem] text-white/70">
+                {key}
+              </dt>
+              <dd className="text-white/40">{action}</dd>
+            </div>
+          ))}
+        </dl>
+
+        {/* The only way out of drive mode while this splash is up — it covers
+          the scene's own exit link. It never gets tightened away. */}
+        <Link
+          href="/"
+          className="text-white/35 mt-8 text-[0.6875rem] uppercase tracking-[0.18em] transition hover:text-sky-300 [@media(max-height:430px)]:mt-3"
         >
-          Forget my progress
-        </button>
-      ) : null}
-
-      <dl className="mt-10 grid max-w-lg grid-cols-2 gap-x-6 gap-y-1.5 text-left text-[0.6875rem] sm:grid-cols-3">
-        {CONTROLS.map(([key, action]) => (
-          <div key={key} className="flex items-baseline gap-2">
-            <dt className="rounded border border-white/15 bg-white/5 px-1.5 py-0.5 font-mono text-[0.625rem] text-white/70">
-              {key}
-            </dt>
-            <dd className="text-white/40">{action}</dd>
-          </div>
-        ))}
-      </dl>
-
-      <Link
-        href="/"
-        className="text-white/35 mt-8 text-[0.6875rem] uppercase tracking-[0.18em] transition hover:text-sky-300"
-      >
-        ← back to the classic site
-      </Link>
+          ← back to the classic site
+        </Link>
+      </div>
     </motion.div>
   )
 }
