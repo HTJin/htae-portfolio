@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 31 · branch `feat/drive-mode` · 45 commits, nothing pushed
+**Last updated:** end of cycle 32 · branch `feat/drive-mode` · 46 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,36 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 32 — going looking for the bug I keep finding by accident
+
+Five times now I have found the same kind of fault in this codebase: a number typed into one file that has to match a
+number kept in another, with nothing making sure they agree. The dashboard height. The car's sideways position. The
+bonnet. The exit sign's approach. Nightfall. Each one was found by accident, while looking at something else.
+
+Since every file has now had a proper read-through, this cycle went looking for it on purpose — listing every fixed
+number in the drive code and asking, one at a time, whether it has to agree with something it cannot see. Most do not.
+**Three did**, and all three were correct today and would have broken quietly later:
+
+- The **sky** had its own copy of how finely the colour fade is stepped. Change the fade to be smoother and the sky
+  would have kept updating at the old rate — visibly banding and lagging while the road, which reads the same colours
+  every frame, kept up.
+- The **mile markers** were spaced at 110, under a comment promising they sit *"half a leg"* apart. A leg is 220. Right
+  by coincidence, with nothing keeping it right.
+- **Top gear** ended at 42 next to a top speed of 42. Raise the top speed alone and the rev counter would have sat
+  pinned at the redline for the whole of top gear.
+
+All three now read the real value from the one place that owns it.
+
+**The interesting part of this cycle is the proof, not the change.** Because all three produce the same numbers today,
+the only acceptable outcome was that *nothing whatsoever* changed on screen. So I photographed the rendered road
+before and after at two different exits and compared every pixel: **0 of 4,096,000 different**, both times, with the
+sky readings identical to the last decimal and the speedometer curve unchanged.
+
+Nothing here will look different to you. It means the next time one of those numbers moves, the things that depend on
+it will move with it instead of drifting apart.
 
 ---
 

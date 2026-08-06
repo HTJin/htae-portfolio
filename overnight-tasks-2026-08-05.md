@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 32
+**Cycle:** 33
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -313,6 +313,20 @@
 110. **Check the destination did not change.** Compressing the dawn into the last leg makes it faster; verify EXIT 20
      still measures the authored first-light values and does not overshoot.
 
+### Cycle 32 pre-mortem (guardrails for this cycle's tasks)
+
+111. **This must be a no-op, and "must" means measured.** All three substitutions produce the same numbers today. The
+     only acceptable result is identical output: zero pixels different on the canvas, identical sky and gauge
+     readings. A visible change means the substitution was wrong, not that the baseline needs updating.
+112. **Do not "improve" the values while touching them.** The temptation with `GEAR_RATIOS` is to respace the whole
+     ladder. Out of scope — this cycle changes where a number comes from, never what it is (guardrail 52).
+113. **Watch the import graph.** `daylight.js` gained an import of `route.js` in cycle 31. Adding
+     `RoadCanvas -> route` (already present) and `Sky -> daylight` (already present) is safe, but confirm the build
+     still compiles rather than assuming no cycle was created.
+114. **Leave the unreachable fallback alone, and say why.** Once `GEAR_RATIOS` ends at `MAX_SPEED`, the
+     `?? MAX_SPEED` in `gearCeiling` can no longer fire. It is a correct guard for an empty/short array and removing
+     it would be a second change hiding inside a no-op commit.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -328,9 +342,41 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 32
+## Tonight's tasks (in order) — CYCLE 33
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 32's list (resolved — kept for context)</summary>
+
+### CYCLE 32
+
+All fifteen drive files have now been audited, so this Suggester pass hunted the **pattern** instead of a file. Five
+separate cycles have found the same defect — a constant typed in one place that has to agree with a number kept
+somewhere else, and quietly does not: the dash height (cycle 24), the camera lateral (13), the interior furniture
+(24), the exit-sign window (30), the daylight anchor (31). Rather than wait to trip over the sixth, every module-level
+numeric constant in `src/components/drive/` was enumerated and asked one question: *does this have to agree with
+something it cannot see?* Three do.
+
+- [x] **1. Close the three remaining copies of a number that lives somewhere else** — **DONE**
+  - **A — `Sky.jsx:65` re-types the palette's quantisation.** `daylight.js` quantises progress into `STEPS = 360`
+    before rebuilding colour strings; `Sky` independently writes `Math.round(progress * 360)` as its own repaint
+    guard, and `STEPS` is **not exported**. They must match. The dangerous direction is real: make the palette *finer*
+    (say 720) and `Sky` still repaints on 360 steps — the sky would visibly lag and band while the road, which reads
+    the same palette every frame with no guard, keeps up.
+  - **B — `RoadCanvas.jsx:23` types `MARKER_SPACING = 110`** under a comment that says *"Mile markers sit at half a
+    leg"*, with a second comment at the draw site repeating *"half a leg apart"*. `LEG_LENGTH` is **220**. It is
+    correct today by coincidence of arithmetic, and nothing keeps it correct.
+  - **C — `useDrive.js:12` ends `GEAR_RATIOS` at `42`, which is `MAX_SPEED`.** The code's own fallback
+    (`GEAR_RATIOS[sim.gear] ?? MAX_SPEED`) shows the top of the band is meant to *be* `MAX_SPEED`. Raise `MAX_SPEED`
+    alone and top gear still caps at 42, so `inGear` exceeds 1 and the tachometer pegs early for the whole top gear.
+  - **Files:** `src/components/drive/Sky.jsx`, `src/components/drive/daylight.js`,
+    `src/components/drive/RoadCanvas.jsx`, `src/components/drive/useDrive.js`.
+  - **Done when:** each of the three reads its value from the single place that owns it; **and the rendered output is
+    provably unchanged**, because all three are no-ops at today's numbers — a canvas frame captured before and after
+    must differ by **zero pixels** (the cycle-15 method), and the sky and gauge readings must measure identical.
+
+</details>
 
 <details>
 <summary>Cycle 31's list (resolved — kept for context)</summary>
@@ -1315,6 +1361,22 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C32.1 — The last three copies of a number that lives elsewhere** *(cycle 32, commit `57cd6cc`)* — with every
+  drive file audited, this pass hunted the **pattern**: every module-level numeric constant in
+  `src/components/drive/` was enumerated and asked whether it has to agree with something it cannot see. Three did.
+  **(A)** `Sky.jsx` typed its own `360` as a repaint guard while `daylight.js` holds `STEPS = 360` and did not export
+  it — make the palette finer and the sky keeps repainting on the old step, lagging and banding while the road,
+  which reads the same palette every frame with no guard, keeps up. **(B)** `RoadCanvas` typed `MARKER_SPACING = 110`
+  under a comment promising half a leg, against `LEG_LENGTH = 220` — right by arithmetic coincidence, with nothing
+  keeping it right. **(C)** `useDrive` ended `GEAR_RATIOS` at a literal `42` beside `MAX_SPEED = 42`, and its own
+  `?? MAX_SPEED` fallback shows the top of the band is meant to *be* `MAX_SPEED`; raise `MAX_SPEED` alone and top gear
+  still caps at 42, so `inGear` runs past 1 and the tachometer pegs for the whole of top gear.
+  **All three are no-ops at today's numbers, so the requirement was that nothing change — measured, not assumed
+  (guardrail 111):** EXIT 09 and EXIT 16 each **0 of 4,096,000 pixels different**, max channel delta **0**; sky
+  gradient, star, moon and skyline readings **byte-identical** at both; gauge count unchanged; speed climbs 0 -> 81 mph
+  under autopilot and stays under the 94 mph maximum. No value changed — only where it comes from. The now
+  unreachable `?? MAX_SPEED` was left in place on purpose (guardrail 114).
 
 - **C31.0 — `Sky.jsx` and `daylight.js` audited; most of it holds** *(cycle 31)* — the last two never-audited drive
   files. The shared-palette design is safe (every caller reads it immediately; nobody keeps the reference), the star

@@ -700,3 +700,31 @@ The sign is fully opaque roughly halfway along the leg, so nothing is lost as wa
 A cold deep link straight to EXIT 19 also lands on peak night, and the run produced **zero console messages**. No colour value was retuned — this moved *when* full night happens, not what it looks like.
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.2 kB). One commit: `f6c267f`. Every drive file has now been audited at least once. -> `Cycle: 32 / Phase: Planner`.
+
+## Cycle 32
+
+**Suggester — hunting the pattern, not a file.** Every drive file has now been audited, so instead of picking another one this pass went after the *shape* that has produced a defect in five separate cycles: a constant typed in one place that has to agree with a number kept somewhere else, and quietly does not — the dash height (24), the camera lateral (13), the interior furniture (24), the exit-sign window (30), the daylight anchor (31). Every module-level numeric constant in `src/components/drive/` was enumerated and asked one question: **does this have to agree with something it cannot see?**
+
+Most do not. `HOLD`, `IDLE_HZ`/`REV_HZ`, `SWEEP`/`START_ANGLE`, the sign's own design dimensions and the road's segment counts are all self-contained, and the sign's lateral offset and the lamp positions already derive from `ROAD_HALF`. **Three did.**
+
+**A — the sky's repaint guard re-typed the palette's quantisation.** `daylight.js` quantises progress into `STEPS = 360` before rebuilding colour strings, and does not export it; `Sky.jsx` independently wrote `Math.round(progress * 360)`. The dangerous direction is concrete: make the palette *finer* and the sky would still repaint on 360 steps, lagging and banding, while the road — which reads the same palette every frame with no guard — kept up. `STEPS` is now exported and consumed.
+
+**B — the mile markers.** `MARKER_SPACING = 110` sat under a comment saying *"Mile markers sit at half a leg"*, with the draw site repeating *"half a leg apart"*. `LEG_LENGTH` is 220. Correct today by coincidence of arithmetic; now `LEG_LENGTH / 2`.
+
+**C — top gear.** `GEAR_RATIOS` ended at a literal `42` beside `MAX_SPEED = 42`, and the code's own fallback `GEAR_RATIOS[sim.gear] ?? MAX_SPEED` shows the top of the band is meant to *be* `MAX_SPEED`. Raise `MAX_SPEED` alone and top gear still caps at 42, so `inGear` runs past 1 and clamps — the tachometer would peg for the entire top gear. Now built from `MAX_SPEED`.
+
+**The verification is the whole point of this cycle.** All three substitutions produce identical numbers today, so the only acceptable result is that **nothing changed** — and that had to be measured rather than reasoned (guardrail 111), using the cycle-15 method: capture a canvas frame before, rebuild, capture after, compare every pixel.
+
+| | result |
+|---|---|
+| EXIT 09 canvas | **0 of 4,096,000 pixels differ**, max channel delta 0 |
+| EXIT 16 canvas | **0 of 4,096,000 pixels differ**, max channel delta 0 |
+| sky gradient / star / moon / skyline | **byte-identical** at both exits |
+| gauge count | unchanged |
+| speed under autopilot | 0 -> 81 mph, never past the 94 mph maximum |
+
+**One limitation stated rather than glossed:** the probe for the lit `PRND` letter matched both the phone and desktop copies of the selector, so it could not isolate which gear was showing. The speed curve is the evidence for the gear ladder, not the gear glyph.
+
+**Also deliberate:** the `?? MAX_SPEED` fallback is now unreachable, and was left alone. It is still a correct guard for a short array, and removing it would be a second change hiding inside a no-op commit (guardrail 114).
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.2 kB). One commit: `57cd6cc`. -> `Cycle: 33 / Phase: Planner`.
