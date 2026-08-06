@@ -53,7 +53,7 @@ function StopLinks({ links }) {
   if (!links?.length) return null
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-2">
+    <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-4">
       {links.map((link, position) =>
         link.external ? (
           <a
@@ -85,13 +85,19 @@ function StopLinks({ links }) {
  */
 function TripSummary() {
   return (
-    <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-sky-400/15 py-3 sm:grid-cols-4">
+    // Four across at every width. Stacked 2x2 on a phone this block cost 112px
+    // and pushed the last row of actions 12px past the panel's scroll edge, so
+    // the drive ended on a call to action sliced through the middle. Across, it
+    // costs about half that. The labels are allowed to wrap onto two lines at
+    // the narrow end rather than being abbreviated — these figures are derived
+    // from the content and must stay legible and accurate (guardrail 72).
+    <dl className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3 border-y border-sky-400/15 py-2.5 sm:mt-4 sm:gap-x-4 sm:py-3">
       {tripSummary.map((item) => (
         <div key={item.label}>
-          <dt className="text-[0.625rem] uppercase tracking-[0.18em] text-sky-300/60">
+          <dt className="text-[0.5625rem] uppercase leading-tight tracking-[0.12em] text-sky-300/60 sm:text-[0.625rem] sm:tracking-[0.18em]">
             {item.label}
           </dt>
-          <dd className="mt-0.5 font-display text-xl font-semibold leading-none text-white">
+          <dd className="mt-0.5 font-display text-lg font-semibold leading-none text-white sm:text-xl">
             {item.value}
           </dd>
         </div>
@@ -204,7 +210,7 @@ export function StopCard({ stop, visible, position, total }) {
           // AnimatePresence, so it is destroyed and rebuilt on every arrival and
           // could never announce anything. `ArrivalAnnouncer` in DriveScene is
           // mounted for the life of the page and does the announcing.
-          className={`pointer-events-auto relative flex max-h-full w-[min(94vw,44rem)] flex-col rounded-xl px-5 py-4 sm:px-7 sm:py-5 ${
+          className={`pointer-events-auto relative flex max-h-full w-[min(94vw,44rem)] flex-col rounded-xl px-4 py-3 sm:px-7 sm:py-5 ${
             shots ? 'lg:w-[min(94vw,58rem)]' : ''
           } ${styles.hud}`}
         >

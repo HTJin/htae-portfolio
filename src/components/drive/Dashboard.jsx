@@ -508,7 +508,12 @@ function ConsoleButton({ children, onClick, disabled, title, label, accent }) {
       // so voice control still works, and drops the glyph.
       aria-label={label}
       className={clsx(
-        'rounded-md border px-3 py-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.14em] transition',
+        // Tighter padding and letter-spacing below `sm` only: on a 390px phone
+        // the four console controls overflowed their row by ~11px and the audio
+        // toggle wrapped onto a line of its own in the corner. Nothing here
+        // changes the visible words (guardrail 22) or drops a target below the
+        // 24px floor — the room comes from spacing.
+        'rounded-md border px-2 py-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.1em] transition sm:px-3 sm:tracking-[0.14em]',
         'disabled:cursor-not-allowed disabled:opacity-30',
         accent
           ? 'border-sky-400/50 bg-sky-400/10 text-sky-200 hover:bg-sky-400/20'
@@ -749,13 +754,15 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
       {/* Phone: no room for a wheel, so the cockpit stacks instead of sitting
           side by side. Cluster on the cowl, screen under it, controls in reach
           of a thumb at the bottom. */}
-      <div className="flex h-full flex-col gap-2 px-3 pb-2 pt-2.5 lg:hidden">
+      <div className="flex h-full flex-col gap-2 px-2.5 pb-2 pt-2.5 lg:hidden">
         <ClusterStrip drive={drive} />
         <div className="min-h-0 flex-1">
           <TripComputer drive={drive} stop={stop} />
         </div>
-        <div className={`flex items-end gap-2 ${styles.footwell}`}>
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        <div className={`flex items-end gap-1.5 ${styles.footwell}`}>
+          {/* `flex-wrap` stays as the safety net for anything narrower than a
+              phone, but at 360px and up these four now fit on one row. */}
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
             <ConsoleButton
               onClick={drive.goBack}
               disabled={drive.index === 0}
