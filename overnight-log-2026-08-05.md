@@ -147,3 +147,29 @@ Also found, but out of scope: **`/drive` is missing from `public/sitemap.xml`**,
 **22:21 — Task 3 parked as Needs human.** `public/sitemap.xml` is outside the write scope (`public/images/` only). Documented with the exact `<url>` entry to add and a one-line verification. Noted explicitly that it **compounds** with the cycle-4 canonical defect: drive mode is currently unlisted in the sitemap *and* disowned by its own canonical, so fixing only one will not surface the page.
 
 **22:22 — Builder exit.** Lint clean, build clean, one commit `5fcf996`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 6 / Phase: Planner`.
+
+---
+
+## Cycle 6 — the Reviewer cycle
+
+**22:33 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 6`.
+
+**22:35 — THE NETWORK BLOCKER CLEARED.** Chrome loaded `http://127.0.0.1:3007/drive`, rendered the canvas, reported 12 buttons and a dash measuring 342px, and a screenshot came back with real pixels — golden-hour dusk at MILE 0 with **YR 2016** live on the trip computer. After three cycles of working blind, pixel verification was available again, so this cycle became a **Reviewer** cycle: clear the parked visual work rather than start new features.
+
+**22:40-22:55 — A convincing false alarm, chased to ground.** `?exit=10` and then `?exit=12` came up on the ignition screen with no panel — i.e. the cycle-2 deep link appeared to have regressed. It had not:
+- `document.body.style.overflow` was **unset**, meaning `DriveScene`'s first effect had never run — **React had not hydrated**.
+- Plain `/drive` with no query behaved identically, which ruled out the deep-link code.
+- All eight JS chunks fetched **200**; the console reported nothing.
+- Clicking "Start engine" did nothing, confirming the page was inert rather than mis-routed.
+Rebuilt the same commit and served it with `npm run start` on port 3008: hydrated immediately, `?exit=12` landed parked on **EXIT 12 · Matrimoni** with the panel open, the carousel already cycling at 2/5, and the trip computer reading **`yr NOW`**. **No code defect existed** — this project's `next dev` intermittently serves correct HTML that never hydrates. Recorded as guardrail 23, with the standing instruction to verify against a production build.
+
+**22:56-23:05 — Cleared the cycle-3 parked item (per-leg roadside character).** Against the production build:
+- **Guardrail ribbon:** at EXIT 12/13 in the Scenic overlook it runs along the right verge as **one continuous band with no anti-aliasing seams**, confirmed by zooming the verge — precisely what the run-length `railRuns` pass was written to guarantee (guardrail 15).
+- **Lamp thinning:** visibly sparser through the overlook than the career highway, and sparser again approaching EXIT 04, the sabbatical — matching the SSR mapping proven in cycle 3.
+- **No guardrail outside the overlook:** confirmed at EXIT 04.
+- **No popping** observed on approach, consistent with the style being keyed off each object's own world position (guardrail 17).
+- **Frame rate: could not be measured.** Two rAF-timing attempts timed out the CDP call at 45s. Cause identified rather than guessed: every tab reports `document.hidden === true`, and `requestAnimationFrame` is paused in a background tab, so a loop awaiting N frames never resolves. Recorded as guardrail 24 and left as the single residual Needs-testing item.
+
+**23:06 — Backlog unblocked.** S9b (mile markers), S13 (weather/traffic), S8 (persist progress) and S5 (audio) had all been held pending browser verification. That condition has arrived, so they are marked **UNBLOCKED** for cycle 7, with a standing note to verify against a production build rather than `next dev`.
+
+**23:07 — Cycle exit.** No code changed this cycle — it was a verification cycle, and the honest outcome was that the thing that looked broken was not. -> the controller advanced to `Cycle: 7 / Phase: Planner`.

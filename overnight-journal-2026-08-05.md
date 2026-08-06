@@ -25,3 +25,6 @@ One line per task as it completes.
 - **Cycle 5 · T2** — `/drive` was serving two `<h1>`s; the transient ignition splash is now an `<h2>`. — `5fcf996`
 - **Cycle 5 · T3** — `/drive` is absent from `public/sitemap.xml`. Out of write scope → Needs human with an exact patch; it compounds with the cycle-4 canonical defect.
 - **Cycle 5 · env** — Chrome still unreachable (3rd cycle). Dev server also hung mid-cycle on a poisoned `.next`; `dev:fresh` cleared it.
+- **Cycle 6 · unblock** — The network blocker cleared: Chrome reached a production build on :3008 and drove the route. Cycles 3-5 had been pixel-blind.
+- **Cycle 6 · verify** — Cleared the cycle-3 parked item: the overlook guardrail renders as one continuous seam-free ribbon, lamps thin on the overlook and thin further across the sabbatical, no guardrail elsewhere. Frame-rate still unmeasurable (rAF pauses in a background tab).
+- **Cycle 6 · false alarm** — `?exit=` looked broken on `next dev`; the real cause was that React never hydrated (body.overflow unset, chunks all 200, no console error). Same commit on a production build worked perfectly. No code defect. Now guardrail 23.

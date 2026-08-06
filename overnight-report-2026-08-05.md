@@ -3,69 +3,71 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 5 · branch `feat/drive-mode` · 11 commits, nothing pushed
+**Last updated:** end of cycle 6 · branch `feat/drive-mode` · 11 commits, nothing pushed
 
 ---
 
-## ⚠️ Two things for you — both out of my reach, both about being findable
+## ⚠️ Two things for you — both about being findable
 
-These compound. Drive mode is currently invisible to search **from both directions at once**, and fixing only one of
-them will not surface it.
+Unchanged from last cycle, and they **compound**: drive mode is invisible to search from both directions at once, so
+fixing only one won't surface it.
 
-**1. `/drive` ships two `<link rel="canonical">` tags and the first points at your homepage.** So the copy that *is*
-reachable disowns itself.
+1. **`/drive` ships two `<link rel="canonical">` tags and the first points at your homepage** — the reachable copy
+   disowns itself. `og:url` and `og:title` duplicate the same way, so a shared drive link previews as your homepage.
+2. **`/drive` is not in your sitemap** — `public/sitemap.xml` lists only the site root.
 
-```html
-<link rel="canonical" href="https://htae.dev"/>        <!-- _app.jsx:69 -->
-<link rel="canonical" href="https://htae.dev/drive"/>  <!-- drive.jsx:17 -->
-```
-
-`og:url` and `og:title` duplicate the same way, so sharing a drive-mode link previews as your homepage — which defeats
-the `?exit=` deep links.
-
-**2. `/drive` is not in your sitemap.** `public/sitemap.xml` lists only `https://htae.dev/`, and `robots.txt` points
-crawlers at that file. So the page is never advertised in the first place.
-
-Both fixes are a handful of lines, and both live in files this run isn't allowed to edit (`_app.jsx` and
-`public/sitemap.xml`). The **exact patches** and one-line verification commands are in the **Needs human** section of
-`overnight-tasks-2026-08-05.md`. I deliberately didn't half-fix the canonical from `drive.jsx` alone — without the
-`_app` side it changes nothing and would have looked fixed.
+Both are a handful of lines in files this run isn't allowed to edit (`_app.jsx`, `public/sitemap.xml`). **Exact patches
+and one-line verification commands** are in the Needs-human section of `overnight-tasks-2026-08-05.md`.
 
 ---
 
-## Cycle 5 — the cockpit is now usable without eyes
+## Cycle 6 — I could finally see the site again, so I checked the work instead of adding more
 
-The backlog had run dry of anything I could verify without a browser, so the loop did what it's designed to do and
-generated fresh work: an audit of the one surface still available to me, the served HTML. It found three real defects.
+The browser blocker that ran through cycles 3–5 **cleared**. Chrome reached the site, drove the route, and screenshots
+came back with real pixels. So this cycle was spent proving the work I'd shipped blind, rather than piling on more.
 
-**Drive mode was close to unusable with a screen reader.** Measured, not guessed: **none of the 11 buttons had an
-accessible name** — "Next ▸" announced as "Next right-pointing small triangle", the accelerator as "GO up-arrow slash
-W". Meanwhile the *decorative* instruments were all being read aloud: `x1000 0 mph P R N D gear ~/route $ drive --to yr
-2016 odo 0.0 mi`, which is noise, and which badly duplicated content the hidden itinerary already presents properly.
+**The roadside work checks out.** Driving into the Scenic overlook, the guardrail renders along the right verge as one
+continuous ribbon **with no seams** — which was the specific risk, and the reason it was built as a run-length pass
+rather than segment-by-segment fills. The lamp line is visibly thinner through the overlook, thinner again across the
+sabbatical stretch, and there's no guardrail anywhere else. Nothing pops as you approach it.
 
-Now every control has a real name that keeps the word you can see — "Back to the previous exit", "Drive on to the next
-exit", "Open the route map", "Brake", "Go — hold to accelerate" — so voice control still works on what's visible. The
-gauges, gear selector and trip-computer screen are out of the accessibility tree: a speedometer tells you nothing if
-you can't see the road. Verified from the HTML: 10 of 11 buttons labelled (the 11th is "Start engine", which already
-names itself), `aria-hidden` up from 12 to 19, and the itinerary still fully exposed with all ten years.
+**Everything else re-verified end to end on a real production build:** deep links land correctly, the project
+screenshots auto-cycle, and the year readout shows `2019` on the career highway and `NOW` at a side build — correctly
+refusing to invent a date for projects that don't have one.
 
-**`/drive` was also serving two `<h1>`s** — the itinerary's and the ignition splash's — competing to describe the page.
-The splash is now an `<h2>`; exactly one `<h1>` is served.
+### The interesting part: a bug that wasn't
+
+`?exit=12` came up dead — ignition screen, no panel, "Start engine" doing nothing. That looks exactly like I'd broken
+the deep links I shipped in cycle 2.
+
+I didn't take it at face value. `document.body.style.overflow` was unset, which meant the very first effect in the
+component had never run — **React had never hydrated**. Plain `/drive` with no query was equally dead, which ruled out
+the deep-link code entirely. All eight JavaScript chunks returned 200. The console was silent.
+
+Rebuilding the *same commit* and serving it with `npm run start` fixed everything instantly. So: no defect. Your
+`next dev` intermittently serves correct HTML that never comes alive — that's now the fourth distinct way the dev
+server has faked a failure tonight, and it's written into the run's guardrails so future cycles check hydration before
+believing anything.
+
+**Worth knowing if you test this yourself:** use a production build (`npm run build`, then `npm run start`), not
+`npm run dev`.
 
 ---
 
-## Still blocked, and one false alarm
+## One measurement I couldn't take
 
-Chrome still can't reach the dev server (third cycle) — `curl` serves the page, the browser gets
-`chrome-error://chromewebdata/`. Nothing about the site is broken; Chrome's networking is isolated from the shell's.
-The visual pass on cycle 3's roadside work stays parked, and I'm still keeping the mile-markers and weather ideas in the
-backlog rather than shipping canvas I can't look at. A Chrome window that can load `http://localhost:3007/drive`
-unblocks all of it.
+Frame rate while driving. `requestAnimationFrame` is paused in a backgrounded tab, so the timing loop waits forever —
+it hung twice before I identified why. Every Chrome tab here reports itself as hidden. Screenshots, layout and DOM
+reads all work in that state; only frame timing doesn't. It's the single item still parked, and for reference cycle 3
+measured the much heavier daylight change at 34fps against a 26fps baseline, so the bar is low.
 
-Mid-cycle the dev server hung and `/drive` stopped responding — which looked exactly like I'd broken something. Instead
-of assuming, I killed the server and ran the linter and a full production build, both independent of it: clean, and
-`/drive` compiled fine. It was the `.next` cache again. That's the third distinct way that cache has faked a defect
-tonight.
+---
+
+## Queued next — the backlog just reopened
+
+Now that pixels can be verified again, four ideas that were on hold are live for the next cycle: mile markers counting
+down between exits, weather and oncoming headlights so the road feels inhabited, resuming where a visitor left off, and
+opt-in engine audio. Full reasoning in `overnight-suggestions-2026-08-05.md`, every idea with a checkbox.
 
 ---
 
@@ -78,4 +80,5 @@ tonight.
 | `overnight-log-2026-08-05.md` | Blow-by-blow, including every fault and environment gotcha |
 | `overnight-journal-2026-08-05.md` | One line per task, with its commit |
 
-Dev server is on **http://localhost:3007**. Nothing has been pushed; everything is local commits on `feat/drive-mode`.
+Production build is currently served on **http://localhost:3008**. Nothing has been pushed; everything is local commits
+on `feat/drive-mode`.

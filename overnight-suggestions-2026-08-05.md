@@ -73,12 +73,12 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Scope:** small-medium; router wiring in `src/pages/drive.jsx`. Deferred to Backlog.
   - **Outcome:** **Shipped** in `0d3e493`. `/drive?exit=11` opens parked at that exit with the engine already running, and the URL tracks the exit as you travel so it is always copyable. Verified end to end for `?exit=11` and `?exit=999`, with the accept predicate exercised across fourteen junk and boundary inputs.
 
-- [ ] **S11 — Give each leg its own roadside character** — Status: Built (pixels Needs testing) — Cycle: 3
+- [ ] **S11 — Give each leg its own roadside character** — Status: Done — Cycle: 6
   - **Source:** site audit after the daylight work — the route has five named legs but `RoadCanvas.drawRoadside` paints identical lamps and delineators for all 21 stops, so position on the route is invisible from the roadside.
   - **Suggestion:** vary the furniture per leg — denser lighting through the city legs, a guardrail on the scenic overlook, sparse open road elsewhere.
   - **Why / expected impact:** makes where-you-are legible at a glance and stops the middle of the drive feeling repetitive.
   - **Scope:** medium; canvas only, subject to the per-frame allocation guardrail.
-  - **Outcome:** **Built** in `c209b57`. The scenic overlook gets a guardrail and a thinned lamp line; the sabbatical thins further. Style is resolved once at module load and keyed off each object's own world position, so nothing changes character as you approach it. Mapping proven by SSR probe across all 21 stops; build and lint clean. **The pixels are not yet verified** — Chrome cannot currently reach the dev server — so the visual pass sits in Needs testing.
+  - **Outcome:** **Built** in `c209b57`. The scenic overlook gets a guardrail and a thinned lamp line; the sabbatical thins further. Style is resolved once at module load and keyed off each object's own world position, so nothing changes character as you approach it. Mapping proven by SSR probe across all 21 stops; build and lint clean. **Pixels verified in cycle 6** once the browser blocker cleared: against a production build the guardrail renders along the right verge of the Scenic overlook as one continuous ribbon with **no anti-aliasing seams**, the lamp line is visibly thinner there and thinner again across the sabbatical, and there is no guardrail elsewhere. Nothing pops on approach. Only frame-rate remains unmeasured (rAF is paused in a background tab).
 
 - [ ] **S12 — Odometer that reads in years, not just miles** — Status: Done — Cycle: 3
   - **Source:** site audit — the trip computer counts miles, but the route is chronological and education/experience stops already carry dates.
