@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 21 · branch `feat/drive-mode` · 35 commits, nothing pushed
+**Last updated:** end of cycle 22 · branch `feat/drive-mode` · 37 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,32 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 22 — back to the screenshots, and two things around them
+
+Your priority (c) — screenshots showing whole and cycling themselves — has been working in drive mode since the first
+cycle, and I hadn't looked at it since. It holds up: the captures show complete in a little browser window with the
+real URL in the address bar, they cross-fade on their own every few seconds, they pause when you hover or tab into
+them, and they hold still for anyone who's asked their system for reduced motion. But two things *around* them were
+measurably wrong.
+
+**A screen reader heard four screenshots where you see one.** The captures are stacked on top of each other and faded
+between — and fading something to invisible does not hide it from a screen reader. So at the Co.Lab exit, someone
+listening to the page was told "screenshot 1 of 4", "screenshot 2 of 4", "3 of 4", "4 of 4", for a single picture.
+Only the one actually on screen is announced now.
+
+**The little dots under the screenshots were 6 pixels wide.** The guideline minimum for something you tap is 24. That
+carousel shows up inside the arrival panel on a phone, so those dots were effectively decoration you couldn't use. Each
+one now has a proper 24-pixel target around it — the dots themselves are exactly the same size, they just sit a bit
+further apart.
+
+**One note on how that second one went**, because it's the sort of thing worth being straight about. My own plan said
+the fix must not move the visible dots at all. Building it, that turned out to be impossible: 6px dots with a 6px gap
+sit 12px apart, and the accessibility rule can be satisfied either by big enough targets *or* by enough spacing — at
+12px apart, both fail. There is no version of this that doesn't take more room. So I amended the rule in the notes with
+that reasoning attached, rather than quietly shipping against it and saying nothing.
 
 ---
 

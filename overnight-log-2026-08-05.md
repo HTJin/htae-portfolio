@@ -447,3 +447,17 @@ Then, to prove it *tracks* rather than merely runs: patched `createOscillator`/`
 The before/after pixel capture used the cycle-19 iframe technique with the host page left un-navigated, so the baseline survived the rebuild — the same trap that cost cycle 15 a first attempt.
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.7 kB). One commit: `574ff15`. S16a retired from the Backlog. -> `Cycle: 22 / Phase: Planner`.
+
+## Cycle 22
+
+**Suggester.** Backlog dry (S15 blocked, S13b closed), so a fresh pass — pointed back at the owner's priority (c), the project screenshots, which no cycle had re-examined since building them in cycle 1. The carousel itself holds up: captures show whole in a browser-chrome frame with `object-contain` at 2:1, they cross-fade on their own, they pause on hover *and* focus, reduced motion holds frame 1, and a stop change restarts at frame 1. Two things **around** it are measurably wrong.
+
+**Finding 1 (measured at EXIT 13).** All four `<img>` elements sit in the DOM at once with only the current one at `opacity: 1`. Opacity does not remove an element from the accessibility tree, so all four carried live `alt` text: *"Co.Lab Portfolio App — screenshot 1 of 4"* through *"4 of 4"*. A screen-reader user met four screenshots where a sighted user sees one.
+
+**Finding 2 (measured).** Each inactive dot's hit box was **6×6 CSS px** (active 20×6). WCAG 2.5.8 asks for 24×24. This carousel appears inside the arrival panel on a phone, so that is the difference between being able to browse the captures and not.
+
+**A guardrail I had to amend rather than break.** I wrote guardrail 69 as "growing a hit area must not move a pixel". Building it, that turned out to be unsatisfiable: 6px dots with a 6px gap put centres **12px** apart, which fails the 24×24 target rule *and* fails its spacing exception (24px circles centred on each target would intersect). Compliance requires more room by definition. Rather than silently ship against my own rule, the guardrail carries an amendment saying exactly this, and the weakened form — pill size unchanged, no overlapping targets, confirm by screenshot — is what was verified against.
+
+**Verified on the production build at EXIT 13:** exactly **one** image exposed and it is the one at `opacity: 1` (guardrail 67 — a count of one would not have proved the *right* one), still true after the carousel advanced from 3 of 4 to 4 of 4 (guardrail 68); every dot target **24×24**; neighbour overlap **0px**; pills unchanged at 6×6 and 20×6; and a zoomed screenshot confirms the row still reads as three dots and a pill.
+
+**Exit.** `next lint` clean (after a first build failed on a JSX comment placed inside a ternary's expression slot — caught by the build, fixed, rebuilt), `npm run build` compiles (`/drive` 19.7 kB). One commit: `2f62f6d`. -> `Cycle: 23 / Phase: Planner`.

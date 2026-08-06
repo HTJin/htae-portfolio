@@ -224,4 +224,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** parked at a stop the canvas was repainted on every animation frame to produce a provably identical image - measured at **130 full repaints in 130 frames over 5s**, into a 3840x1790 backing store. That is continuous CPU and battery on a page someone leaves open while reading an exit.
   - **Outcome:** **Shipped** in `574ff15`, five cycles after it was found. It was deliberately *not* built in cycle 16 because the win could not be measured in a backgrounded tab, and guardrail 9 forbids unmeasurable optimisations in a paint loop; cycle 20 removed that blocker. Parked repaints went **130/130 frames -> 0/140**, driving is unchanged at 136 paints/132 frames, a resize still repaints exactly once, steering while parked still repaints and then settles to zero, and a captured frame differs by **0 of 4,096,000 pixels**. The design detail that mattered: an equality check would have skipped nothing, because the parked steering drift decays asymptotically and never repeats a value.
 
+- [ ] **S38 - Every screenshot was announced, not just the visible one** - Status: Done - Cycle: 22
+  - **Source:** a Suggester pass aimed back at the owner's priority (c), the project screenshots, unexamined since cycle 1.
+  - **Why / expected impact:** measured at EXIT 13 - the captures are stacked and cross-faded with `opacity`, which does not remove an element from the accessibility tree, so all four carried live alt text. A screen-reader user met "screenshot 1 of 4" through "4 of 4" for a single visible picture.
+  - **Outcome:** **Shipped** in `2f62f6d`. Inactive frames are `aria-hidden`. Verified that exactly one image is exposed *and that it is the one at opacity 1* - a count alone would not have proved the right one - and that it still holds after the carousel advanced.
+
+- [ ] **S39 - The carousel dots were 6x6px targets** - Status: Done - Cycle: 22
+  - **Source:** the same pass, measuring the controls rather than reading them.
+  - **Why / expected impact:** each inactive dot's hit box was 6x6 CSS px (20x6 active) against the WCAG 2.5.8 minimum of 24x24, in a carousel that sits inside the arrival panel on a phone.
+  - **Outcome:** **Shipped** in `2f62f6d`. Each dot is a 24x24 box with the same pill centred inside; targets verified at 24x24 with 0px neighbour overlap and pill sizes unchanged. Worth knowing: the plan's own guardrail said the visible dots must not move, and building it showed that to be impossible - 6px dots 6px apart put centres 12px apart, failing both the target rule and its spacing exception. The guardrail was amended with that reasoning rather than quietly ignored, and only the spacing between dots grew.
+
 *(Check the box once you've reviewed the outcome.)*
