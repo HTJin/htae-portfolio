@@ -27,6 +27,7 @@ const OFFSET_X = ROAD_HALF + 4.6
 const VISIBLE_FROM = LEG_LENGTH
 const FADE_OVER = LEG_LENGTH * 0.35
 const VISIBLE_UNTIL = 7
+const FEET_PER_MILE = 5280
 
 export function ExitSign({ drive, stop }) {
   const wrapperRef = useRef(null)
@@ -92,9 +93,19 @@ export function ExitSign({ drive, stop }) {
       }
 
       if (distanceRef.current) {
-        const miles = z / METERS_PER_MILE
-        distanceRef.current.textContent =
-          miles >= 0.1 ? `${miles.toFixed(2)} MI` : `${Math.round(z)} M`
+        // Feet, all the way down. This used to read miles above 0.1 and then
+        // switch to *metres* — two units in one readout, the second metric,
+        // on an American guide sign in a cockpit whose speedometer says mph
+        // and whose odometer says MI. A leg is 220m = 0.137 miles and the
+        // sign is only ever visible below that, so the "1 MILE / 1/2 / 1/4"
+        // ladder real signage uses above a quarter mile can never apply here;
+        // below a quarter mile, real advance signage is given in feet.
+        //
+        // Derived from METERS_PER_MILE rather than a typed 3.28084: this run
+        // has already closed six constants that shadowed a number kept
+        // somewhere else. 5280 is a definition, not a measurement.
+        const feet = (z / METERS_PER_MILE) * FEET_PER_MILE
+        distanceRef.current.textContent = `${Math.round(feet / 10) * 10} FT`
       }
     }
 
