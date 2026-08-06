@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 51
+**Cycle:** 52
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -517,6 +517,21 @@
 172. **Do not touch `--dash` or the bottom edge.** This is the top of the band only. Re-measure panel/dash overlap
      stays 0 everywhere, or the fix has simply moved the collision to the other end.
 
+### Cycle 51 pre-mortem (guardrails for this cycle's tasks)
+
+173. **Exactly one, not one per leg.** The rows are rendered inside six leg groups. A condition written against the
+     wrong index (position within the leg rather than the route) would mark six rows "current". **Count** the matches
+     across the whole dialog rather than checking that the right one is marked.
+174. **`aria-current` must not change a single pixel.** It is an attribute, not a class. Compare the row's rendered
+     class list and box before and after — if the highlight shifts, something else was edited by mistake.
+175. **Prove it follows.** Open the map at more than one exit (start, middle, destination) and confirm the attribute
+     moves. A single-exit check would pass even if the value were hard-coded.
+176. **Pick the token deliberately.** ARIA defines `location` as the current location within an environment, e.g. on
+     a map — which is literally this widget. Unknown tokens degrade to `true` per spec, so it is safe, but record
+     *why* it was chosen rather than reaching for `true` by reflex.
+177. **Do not decorate the "driven" markers.** They already announce as text. Adding `aria-current` to them would make
+     several rows claim to be current at once.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -532,10 +547,47 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 51
+## Tonight's tasks (in order) — CYCLE 52
 
 _Not yet planned — the Planner writes this list next._
 
+<details>
+<summary>Cycle 51's list (resolved — kept for context)</summary>
+
+### CYCLE 51
+
+Backlog dry. This pass first audited **cycle 50's own constant**, then went at the route map's geometry.
+
+**Clean — cycle 50's 58px constant holds.** It assumes the mirror's drop is a fixed 50px, which was measured at
+1280px wide where titles never wrap. On a phone the chip is only 42% of the width, and some stops show a very long
+title (EXIT 5's mirror reads *"Sabbatical / COVID / Family and Personal Reasons"*), so a wrap would have made the
+constant too small. Swept all 21 stops at **390×844** and **844×390**: the chip is **38px at every stop and both
+sizes** — the title truncates rather than wraps — minimum gap **+16** and **+8**, **zero** negatives.
+
+**Clean — the route map's geometry.** At 844×390, 390×844 and 1440×900 the dialog fits the viewport exactly, all
+**21** rows are present, the close control stays on screen at **70×31**, and the list scrolls. (A first probe called
+16 controls "off-screen" — that was my metric confusing *not scrolled into view* with *unreachable* inside a
+deliberately scrolling list. The map was fine.)
+
+- [x] **1. The route map tells you where you are only if you can see it** — **DONE**
+  - **Evidence:** the current exit is marked **purely visually** — `RouteMap.jsx:153-156` swaps in
+    `border-sky-400/50 bg-sky-400/10` and nothing else. Probing the open dialog for `aria-current` returns **nothing**
+    on any row, at any exit. So a screen-reader user hears **21 near-identical buttons** and cannot tell which one
+    they are parked at.
+  - **The file already knows this matters:** its own comment at `:20` says *"The map highlights the current exit"* —
+    the highlight is the point of the map, and it is sighted-only.
+  - **The neighbouring state is done right**, which is what makes this an oversight rather than a decision: "driven"
+    is rendered as real text (`:169-173`), so it **is** announced. Only the current position is silent.
+  - **Files:** `src/components/drive/RouteMap.jsx` (the row button, `:147-157`).
+  - **Done when:** exactly **one** row carries `aria-current` while the map is open, it is the current exit, it
+    follows when the exit changes, and the visual styling is **unchanged**.
+
+</details>
+
+<details>
+<summary>Cycle 50's list (resolved — kept for context)</summary>
+
+### CYCLE 50
 <details>
 <summary>Cycle 50's list (resolved — kept for context)</summary>
 
@@ -2118,6 +2170,29 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C51.0 — Cycle 50's mirror constant holds on a phone** *(cycle 51 — verification)* — the 58px floor assumes the
+  mirror's drop is a fixed **50px**, measured at 1280px wide where titles never wrap. On a phone the chip is only 42%
+  of the width and one stop's mirror reads *"Sabbatical / COVID / Family and Personal Reasons"*, so a wrap would have
+  made the constant too small. Swept all 21 stops at **390×844** and **844×390**: the chip is **38px at every stop and
+  both sizes** (the title truncates rather than wrapping — only EXIT 5's clips, by 6px), minimum gap **+16** and **+8**,
+  **zero** negatives.
+- **C51.1 — The route map's geometry is sound on a small screen** *(cycle 51 — verification)* — at 844×390, 390×844
+  and 1440×900 the dialog fits the viewport exactly, all **21** rows are present, the close control stays on screen at
+  **70×31**, and the list scrolls. A first probe called 16 controls "off-screen" — that was the metric confusing
+  *not scrolled into view* with *unreachable* inside a deliberately scrolling list, not a defect.
+- **C51.2 — The route map now says where you are, not just shows it** *(cycle 51, commit `d88f5cd`)* — the current
+  exit was marked in **colour alone** (`RouteMap.jsx:153-156`), and probing the open dialog for `aria-current` returned
+  **nothing** on any row at any exit — so a screen-reader user met **21 near-identical buttons**. The file's own
+  comment calls the highlight the point of the map. What makes it an oversight rather than a decision is the
+  neighbouring state: **"driven" is real text and always did announce**; only the current position was silent. Now
+  `aria-current="location"` — ARIA's token for the current place within an environment, which gives *a map* as its
+  example, and which degrades to `true` in any reader that does not know it (guardrail 176). **Verified at three exits
+  — start, a project stop and the destination:** **exactly one** row carries it each time, **not one per leg group**
+  (guardrail 173); it is the **same element** as the single visually highlighted row, found **by class rather than by
+  the attribute just added**; it **follows** the exit rather than being pinned (guardrail 175); and nothing moved —
+  border `rgba(56,189,248,0.5)`, background `rgba(56,189,248,0.1)`, box **711×56**, identical at all three
+  (guardrail 174). The "driven" markers were left alone (guardrail 177).
 
 - **C50.0 — Cycle 49 holds up where it was never tested** *(cycle 50 — verification)* — cycle 49 moved a rule from
   1536px to 1280px but only measured 1440×900 and 1280×800, never where wide meets **short**. Comparing the shipped

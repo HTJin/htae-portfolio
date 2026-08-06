@@ -1242,3 +1242,28 @@ The model fits every sample — chip bottom = `7.5%×h + 50px`, band top = `14%�
 **The cost, stated rather than buried (guardrail 168):** clearing the mirror pushes the panel down, so a 720-768 tall window hides **8-11px more** of a long entry than it did after cycle 49 — partly against what that cycle just won there. It is the right trade, because a sliced mirror reads as broken and a few pixels of scroll does not. On a landscape phone it costs nothing at all.
 
 **Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.4 kB). One commit: `6544a7a`. -> `Cycle: 51 / Phase: Planner`.
+
+## Cycle 51
+
+**Suggester — audit my own newest constant, then look somewhere new.**
+
+**Cycle 50's 58px floor came back clean, and it was worth checking.** That constant assumes the mirror's drop is a fixed **50px** — measured at 1280px wide, where titles never wrap. On a phone the chip is only 42% of the screen and one stop's mirror reads *"Sabbatical / COVID / Family and Personal Reasons"*; if that wrapped to two lines the constant would be too small and the overlap would be back. Swept all 21 stops at **390×844** and **844×390**: the chip is **38px at every stop at both sizes**, because the title truncates instead of wrapping (only EXIT 5's clips, by 6px). Minimum gap **+16** and **+8**, **zero** negatives. The fix holds.
+
+**The route map's geometry is also fine.** At 844×390, 390×844 and 1440×900 the dialog fits exactly, all 21 rows are present, the close control stays on screen at 70×31, and the list scrolls. One false alarm: a first probe reported **16 controls off-screen**, which was my metric confusing *not currently scrolled into view* with *unreachable* inside a list that is meant to scroll. The map was fine; the measurement was not.
+
+**But that probe surfaced a real one.** Looking for the current row, I searched for `aria-current` — and found **none**, at any exit.
+
+The current exit is marked in **colour alone**: `border-sky-400/50 bg-sky-400/10` and nothing more. So a screen-reader user opening the route map meets **21 near-identical buttons** with no way to tell which one they are parked at. The file's own comment at `:20` says *"The map highlights the current exit"* — that highlight is the point of the widget, and it was sighted-only.
+
+What makes this an oversight rather than a deliberate choice is the state right beside it: **"driven" is rendered as real text**, so it always did announce. Only *where you are* was silent.
+
+**The token was chosen, not reached for.** `aria-current="location"` rather than `"true"`: ARIA defines `location` as the current place within an environment and gives **a map** as its example, which is literally this widget. Any reader that does not know the token treats it as `true` per spec, so it degrades safely.
+
+**Verified with the map opened at three exits — the start, a project stop and the destination:**
+- **exactly one** row carries `aria-current` each time — **not one per leg group**, which was the obvious way to get this wrong given the rows render inside six groups
+- it is the **same element** as the single visually highlighted row, located **by class** rather than by the attribute I had just added
+- it **follows** the exit rather than being pinned to one row — a single-exit check would have passed on a hard-coded value
+- **nothing moved:** border `rgba(56,189,248,0.5)`, background `rgba(56,189,248,0.1)`, box **711×56**, identical at all three
+- the "driven" markers were left alone, so no second row claims to be current
+
+**Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.4 kB). One commit: `d88f5cd`. -> `Cycle: 52 / Phase: Planner`.

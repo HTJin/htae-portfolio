@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 50 · branch `feat/drive-mode` · 64 commits, nothing pushed
+**Last updated:** end of cycle 51 · branch `feat/drive-mode` · 66 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,36 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 51 — the route map showed you your place but never said it
+
+Two checks and one fix.
+
+**First, I re-tested last cycle's mirror fix on a phone**, because it depends on the mirror's label being a fixed
+height and I had only measured that on a desktop. One of your stops shows *"Sabbatical / COVID / Family and Personal
+Reasons"* in that little label; on a narrow screen, if it wrapped onto a second line, the fix would quietly stop
+working. It does not wrap — it truncates — so the clearance holds at every stop on both a portrait and a sideways
+phone.
+
+**Then the route map, which turned out to have a real gap.** The map marks the exit you are parked at with a coloured
+border and a tint. That is all. There was no non-visual marker of any kind in it.
+
+So someone using a screen reader opened your route map and met **twenty-one near-identical buttons**, with no way to
+hear which one is where they currently are. Showing you your place on the route is the entire purpose of that panel,
+and for those visitors it was not doing it.
+
+The thing that convinced me this was an oversight rather than a considered choice is the tag right next to it: the
+**"driven"** marker is real text, so that always was announced properly. Only *where you are now* was silent.
+
+Fixed — and worth saying that **nothing about the appearance changed**, because the fix is an attribute rather than a
+style. I checked it at the start of the route, at a project stop and at the destination: exactly one row is marked
+each time, it is the same row that is highlighted in colour, and it moves as you drive.
+
+**One measurement note.** A probe of the map first told me 16 of its controls were off-screen, which sounded alarming.
+It was wrong: the map is a scrolling list, and my check was confusing "not scrolled into view" with "unreachable". The
+map's layout is fine at every size I tried.
 
 ---
 

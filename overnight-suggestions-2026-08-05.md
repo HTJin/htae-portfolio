@@ -462,4 +462,13 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Outcome:** **Shipped** in `6544a7a`. The panel now keeps a floor of clearance under the mirror, so all 21 stops clear it by at least 8 pixels at every size I tested, from a sideways phone up to a 1920x1080 monitor. Big screens are completely untouched - the new rule only does anything once the window gets short enough to matter.
   - **The cost, plainly:** pushing the panel down means a 720-768 pixel tall window now hides 8-11 more pixels of a long entry than it did after last cycle's improvement. I think that is the right way round - a sliced mirror looks broken, a little more scrolling does not - but it is a real trade and you should know it was made. On a sideways phone it costs nothing.
 
+- [ ] **S86 - Does the mirror fix from last cycle survive on a phone?** - Status: Done (no defect) - Cycle: 51
+  - **Source:** last cycle's fix relies on the mirror label being a fixed height, which was measured on a desktop where titles never wrap. On a phone the label is much narrower, and one stop's mirror reads "Sabbatical / COVID / Family and Personal Reasons".
+  - **Outcome:** **It holds.** The label truncates rather than wrapping, so it stays exactly the same height at all 21 stops on both a portrait and a sideways phone, and the clearance never goes negative.
+
+- [ ] **S87 - The route map told you where you were only if you could see it** - Status: Done - Cycle: 51
+  - **Source:** found while checking the route map's layout on small screens.
+  - **Why / expected impact:** the map marks the exit you are parked at with a coloured border and tint - and nothing else. There was no non-visual marker anywhere in it. Someone using a screen reader opened the route map and met **21 near-identical buttons**, with no way to tell which one is where they currently are. The map's whole purpose is to show you your place on the route, so for those visitors it did not do its job. What tells you this was an oversight rather than a decision: the "driven" tag next to it is real text, so that always was announced. Only your current position was silent.
+  - **Outcome:** **Shipped** in `d88f5cd`. The current exit now carries a proper marker, using the specific term the accessibility standard reserves for "the current place on a map". Checked at the start of the route, a project stop and the destination: exactly one row is marked each time, it is the same row that is highlighted visually, it moves as you drive, and **nothing about the appearance changed** - it is an attribute, not a style.
+
 *(Check the box once you've reviewed the outcome.)*
