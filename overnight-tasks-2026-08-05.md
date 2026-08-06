@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
+**Phase:** Suggester
 **Cycle:** 46
 
 ## Project orientation (so a fresh agent can start cold)
@@ -481,7 +481,15 @@
 
 ## Tonight's tasks (in order) — CYCLE 46
 
-_Not yet planned — the Planner writes this list next._
+_Not yet planned. **A Suggester pass is in progress** — the backlog is dry (S15 blocked behind the Needs-human
+canonical fix, S13b closed as unwanted), so cycle 46 opened at Suggester rather than Planner. Probed so far, both
+**clean, do not re-probe**:_
+
+- _**The ignition splash.** Renders START ENGINE, a **RESUME · EXIT 20** offer, FORGET MY PROGRESS, the six-key
+  control legend and a way back to the classic site. (An early reading called the splash missing — that was a
+  case-sensitive `includes('Start engine')` against text uppercased in CSS, not a defect.)_
+- _**The origin boundary.** At MILE 0 the mirror reads **BEHIND YOU / "Open road"** — the empty case is authored
+  deliberately rather than left blank._
 
 <details>
 <summary>Cycle 45's list (resolved — kept for context)</summary>
