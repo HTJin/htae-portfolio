@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 41
+**Cycle:** 42
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -413,6 +413,22 @@
 142. **Most laptops must see no change at all.** 1440×900 and 1920×900 are the common cases and there is no room
      there. Require them identical, measured, exactly as cycle 39 required of `2xl`.
 
+### Cycle 41 pre-mortem (guardrails for this cycle's tasks)
+
+143. **Never rewrite the owner's screenshots.** The guardrails forbid deleting or overwriting anything in
+     `public/images/projects/`, and this task does not need to — the optimiser reads them and emits a derivative.
+     If a fix ever seems to require re-encoding those files, it is the wrong fix.
+144. **`fill` needs the frame it already has.** `.browserViewport` is `position: relative` with `aspect-ratio: 2/1`,
+     which is exactly what `next/image fill` requires — verify the rendered box is *identical* afterwards rather than
+     assuming, because a changed frame would undo cycles 1, 22 and 40 in one go.
+145. **The cross-fade is the feature.** Priority (c) asked for a smooth fade. `.shot` carries the 900ms opacity
+     transition; `next/image` applies its own inline positioning, so confirm the transition still runs by sampling
+     **mid-fade** with two frames partly visible, not by checking the end states.
+146. **Keep the accessibility work from cycle 22.** Only the visible frame may be exposed; the inactive ones stay
+     `aria-hidden`. Re-measure, since the element being swapped is exactly the one that carries it.
+147. **Measure bytes cache-cold.** A warm cache reports `transferSize: 0` and would make any change look like a win —
+     it already did once this cycle. Bust the cache or read `content-length` from the server.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -428,9 +444,46 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 41
+## Tonight's tasks (in order) — CYCLE 42
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 41's list (resolved — kept for context)</summary>
+
+### CYCLE 41
+
+Backlog dry. Cycle 40 made the screenshots legible; this pass weighed what they cost to deliver.
+
+- [x] **1. Arriving at a project stop downloads several megabytes of PNG** — **DONE**
+  - **Evidence (served bytes, measured with `curl` against the production build):** the screenshots total **15.6 MB**
+    on disk across 28 files, and they are served as raw PNG with `content-type: image/png` and
+    `cache-control: public, max-age=0`. Arriving at **EXIT 12 (Matrimoni)** requests **all five** of its frames —
+    confirmed in the browser's resource timeline, because `loading="lazy"` cannot help when every frame is stacked
+    inside the visible panel:
+    | file | served |
+    |---|---|
+    | 1.png | 1,903 KB |
+    | 2.png | 1,217 KB |
+    | 3.png | 1,627 KB |
+    | 4.png | 490 KB |
+    | 5.png | 67 KB |
+    | **one arrival** | **5,306 KB** |
+  - **And they are enormously larger than what is displayed.** Matrimoni's frames are **2350px** natural, rendered at
+    **451px** — about 19% — or 678px on a big screen. The page is shipping roughly five times the pixels it draws.
+  - **The optimiser is already here and already works.** `/_next/image?url=...&w=750&q=75` returns **200** with
+    `content-type: image/webp` at **11,054 bytes** for the frame that costs **1,903 KB** as PNG — the same picture,
+    **~176× smaller**. The classic site's `Projects.jsx` already renders through `next/image`; drive mode is the
+    outlier still using a plain `<img>`.
+  - **Nothing about the owner's files changes.** The PNGs in `public/images/projects/` are read, never rewritten —
+    the guardrails forbid touching them, and this does not need to.
+  - **Files:** `src/components/drive/ProjectShots.jsx`.
+  - **Done when:** arriving at EXIT 12 transfers **dramatically fewer bytes**, measured cache-cold and served as
+    **WebP**; the frame's box is unchanged (**451×225** at 1440×900 and **678×339** at 1920×1200); the cross-fade still
+    runs, sampled mid-transition with both frames partly visible; only the visible frame is exposed to assistive tech
+    (cycle 22); the dots still switch frames; and reduced motion still holds frame 1.
+
+</details>
 
 <details>
 <summary>Cycle 40's list (resolved — kept for context)</summary>
@@ -1697,6 +1750,20 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C41.1 — Project screenshots go through the image optimiser** *(cycle 41, commit `1f9c323`)* — the 28 files total
+  **15.6 MB** on disk and were served as raw PNG with `cache-control: max-age=0`. Arriving at **EXIT 12** requested
+  **all five** frames — `loading="lazy"` cannot help when every frame is stacked inside the visible panel — for
+  **5,306 KB** in one arrival, against frames that are 2350px natural and drawn at 451px. The optimiser was already
+  running and the classic site already used it; drive mode was the outlier on a plain `<img>`. **Measured cache-cold
+  (guardrail 147):** **5,306 KB -> 131 KB**, five requests, **all WebP**, **zero raw-PNG requests**, per request
+  18/35/44/21/13 KB — about **40× smaller**, with the derivative sized to the frame (**470px** at 1440×900,
+  **692px** at 1920×1200 where cycle 40's larger frame applies). **Everything that had to survive was re-measured:**
+  frame box unchanged at **451×225** and **678×339** (guardrail 144); the cross-fade still runs, sampled mid-transition
+  at **0.961 / 0.039** so both frames are partly visible rather than cutting (guardrail 145); `object-fit: contain`
+  preserved; auto-advance and the dots still work; cycle 22's accessibility intact with **exactly one frame exposed and
+  it is the visible one** (guardrail 146); and reduced motion still holds frame 1 for nine seconds. The owner's PNGs
+  are only ever read (guardrail 143).
 
 - **C40.1 — Project screenshots are legible on a big screen** *(cycle 40, commit `cb086c2`)* — the screenshot
   rendered **451×225** from a **1899×970** source — **23.7% of native** — and it was the *same 451px* at 1440, 1920

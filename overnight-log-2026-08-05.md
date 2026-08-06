@@ -948,3 +948,41 @@ The boundary sits between 1000 and 1080, so the rule fires at **min-width 1536 a
 - no horizontal overflow anywhere; a screenshot shows the page inside the frame is now **legible** — the heading, the bio paragraph and the body text can be read — rather than merely recognisable as a layout
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.5 kB). One commit: `cb086c2`. -> `Cycle: 41 / Phase: Planner`.
+
+## Cycle 41
+
+**Suggester.** Backlog dry. Cycle 40 made the screenshots legible; this pass weighed what they cost to deliver, and the answer was megabytes.
+
+**The finding.** The 28 screenshots total **15.6 MB** on disk and were served as raw PNG — `content-type: image/png`, `cache-control: public, max-age=0`. Arriving at **EXIT 12 (Matrimoni)** requested **all five** of its frames, confirmed in the browser's resource timeline: `loading="lazy"` cannot help when every frame is stacked inside the panel that just opened.
+
+| file | served |
+|---|---|
+| 1.png | 1,903 KB |
+| 2.png | 1,217 KB |
+| 3.png | 1,627 KB |
+| 4.png | 490 KB |
+| 5.png | 67 KB |
+| **one arrival** | **5,306 KB** |
+
+And the files are far larger than what is drawn — Matrimoni's frames are **2350px** natural, rendered at **451px**. Roughly five times the pixels on the wire that ever reach the screen.
+
+**The fix was already in the building.** `/_next/image?...&w=750` returned **200**, `content-type: image/webp`, **11,054 bytes** for the frame that costs 1,903 KB as PNG — the same picture, ~176× smaller. The classic site's `Projects.jsx` has always rendered through `next/image`; drive mode was the one place still using a plain `<img>`. Nothing about the owner's files changes: the PNGs are read and a derivative is emitted (guardrail 143).
+
+**Measured cache-cold, arriving at EXIT 12** — and cache-cold matters, because a warm cache reported `transferSize: 0` earlier in this very cycle and would have made any change look like a triumph (guardrail 147):
+
+| | requests | bytes |
+|---|---|---|
+| before | 5, raw PNG | **5,306 KB** |
+| after | 5, **all WebP**, zero raw PNG | **131 KB** |
+
+About **40× smaller**, and the derivative is sized to the frame rather than the file: **470px** at 1440×900, **692px** at 1920×1200 where cycle 40's larger frame applies.
+
+**Everything that had to survive was re-measured rather than assumed** — this component carries work from cycles 1, 22 and 40:
+- frame box unchanged: **451×225** at 1440×900, **678×339** at 1920×1200
+- the cross-fade still runs — sampled **mid-transition at 0.961 / 0.039**, both frames partly visible, so it fades rather than cuts. Checking the end states alone would have proved nothing
+- `object-fit: contain` preserved on every frame, so nothing is cropped
+- auto-advance still runs and the dots still switch frames
+- cycle 22's accessibility intact: **exactly one frame exposed, and it is the visible one**
+- reduced motion still holds frame 1 for nine seconds
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.5 kB). One commit: `1f9c323`. -> `Cycle: 42 / Phase: Planner`.

@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 40 · branch `feat/drive-mode` · 52 commits, nothing pushed
+**Last updated:** end of cycle 41 · branch `feat/drive-mode` · 53 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,37 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 41 — one project stop was a five-megabyte download
+
+Having made the screenshots bigger last cycle, I weighed what they cost to load. Opening the **Matrimoni** project
+downloaded **5.3 megabytes**. Not the page — just that one stop's five screenshots.
+
+All five load the moment you arrive, because they are stacked on top of each other inside the panel, so the browser's
+usual "only load what is on screen" behaviour does not save you. And the files are far bigger than anything you see:
+those images are 2350 pixels wide and were being drawn at 451. You were sending about five times the picture that ever
+reached the screen, as uncompressed PNG, with caching switched off.
+
+Across all your projects that is **15.6 MB** of screenshots.
+
+The fix was already in your own codebase. Your main site runs its project images through Next.js's image optimiser —
+drive mode was the one place still loading them raw. Now it does the same:
+
+| | arriving at that stop |
+|---|---|
+| before | **5,306 KB** of PNG |
+| after | **131 KB** of WebP |
+
+**About forty times smaller**, and the images are now generated at the size they are actually shown — 470 pixels
+normally, 692 on a large monitor where last cycle's bigger frame kicks in. **Your original screenshot files are
+untouched**; the optimiser reads them and produces its own copies.
+
+I re-checked everything that shares that component rather than assuming a swap this size was harmless: the frame is
+the same size, the fade between screenshots still fades (I caught it mid-transition with two frames both partly
+visible, rather than just checking the start and end), nothing is cropped, the dots still work, the screen-reader fix
+from earlier still holds, and reduced-motion still freezes on the first image.
 
 ---
 
