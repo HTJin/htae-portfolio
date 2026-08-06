@@ -174,7 +174,7 @@ export function StopCard({ stop, visible, position, total }) {
               <p className="truncate text-[0.625rem] uppercase tracking-[0.24em] text-emerald-300/70">
                 {stop.leg}
               </p>
-              <h2 className="mt-0.5 truncate font-display text-lg font-semibold leading-tight text-white sm:text-2xl">
+              <h2 className="mt-0.5 line-clamp-2 font-display text-lg font-semibold leading-tight text-white sm:text-2xl lg:truncate">
                 {stop.title}
               </h2>
             </div>

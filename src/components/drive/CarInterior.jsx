@@ -2,7 +2,8 @@ import styles from '@/styles/drive.module.css'
 
 /**
  * Everything between the driver and the road: glass, pillars, headliner,
- * mirror and wipers. Purely decorative — it never swallows pointer events.
+ * mirror, wipers and the car's own bonnet. Purely decorative — it never
+ * swallows pointer events.
  */
 export function CarInterior({ passedStop }) {
   return (
@@ -15,17 +16,17 @@ export function CarInterior({ passedStop }) {
       {/* Tinted strip along the top of the windshield. */}
       <div className="absolute inset-x-0 top-0 h-[16%] bg-gradient-to-b from-[#050a12] via-[#050a12]/70 to-transparent" />
 
-      {/* Headliner and roof line. */}
+      {/* Headliner, roof line and sun visors. */}
       <div className="absolute inset-x-0 top-0 h-[7%] bg-[#0a0d12] shadow-[0_14px_34px_rgba(0,0,0,0.85)] sm:h-[8%]">
         <div className="absolute inset-x-0 bottom-0 h-px bg-white/10" />
-        <div className="absolute left-[6%] top-[35%] h-[52%] w-[26%] rounded-b-md bg-[#12161d]" />
-        <div className="absolute right-[6%] top-[35%] h-[52%] w-[26%] rounded-b-md bg-[#12161d]" />
+        <div className="absolute left-[6%] top-[35%] h-[52%] w-[26%] rounded-b-md bg-[#12161d] shadow-[0_6px_12px_-6px_rgba(0,0,0,0.9)]" />
+        <div className="absolute right-[6%] top-[35%] h-[52%] w-[26%] rounded-b-md bg-[#12161d] shadow-[0_6px_12px_-6px_rgba(0,0,0,0.9)]" />
       </div>
 
       {/* Rear-view mirror: what is already behind you. */}
-      <div className="absolute left-1/2 top-[6.5%] w-[46%] max-w-[300px] -translate-x-1/2 sm:top-[7.5%]">
-        <div className="mx-auto h-3 w-3 rounded-b bg-[#12161d]" />
-        <div className="rounded-md border border-white/10 bg-gradient-to-b from-[#0d141d] to-[#070a0f] px-3 py-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.7)]">
+      <div className="absolute left-1/2 top-[6.5%] w-[42%] max-w-[280px] -translate-x-1/2 sm:top-[7.5%]">
+        <div className="mx-auto h-3 w-2.5 rounded-b bg-[#12161d]" />
+        <div className="rounded-md border border-white/10 bg-gradient-to-b from-[#0d141d] to-[#070a0f] px-3 py-1 shadow-[0_8px_20px_rgba(0,0,0,0.7)]">
           <div className="text-[0.5rem] uppercase tracking-[0.22em] text-white/30">
             Behind you
           </div>
@@ -43,9 +44,9 @@ export function CarInterior({ passedStop }) {
         className={`absolute inset-y-0 right-0 w-[15%] bg-[#0a0d12] sm:w-[11%] ${styles.pillarRight}`}
       />
 
-      {/* Wipers parked at the base of the glass. */}
+      {/* Wipers parked at the base of the glass, just above the bonnet. */}
       <svg
-        className="absolute inset-x-0 bottom-[34%] h-[9%] w-full opacity-70 sm:bottom-[33%]"
+        className="absolute inset-x-0 bottom-[41%] h-[8%] w-full opacity-70"
         viewBox="0 0 1000 80"
         preserveAspectRatio="none"
       >
@@ -62,6 +63,16 @@ export function CarInterior({ passedStop }) {
           strokeLinecap="round"
         />
       </svg>
+
+      {/* The dash top, smeared back at the driver by the windshield. */}
+      <div
+        className={`absolute inset-x-[12%] bottom-[36%] h-[9%] ${styles.dashReflection}`}
+      />
+
+      {/* The car's own bonnet, the last thing before the road. */}
+      <div
+        className={`absolute inset-x-[-6%] bottom-[35.4%] h-[6%] ${styles.hood}`}
+      />
 
       {/* Vignette so the eye stays on the road. */}
       <div className="absolute inset-0 shadow-[inset_0_0_180px_60px_rgba(2,5,10,0.85)]" />
