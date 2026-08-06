@@ -424,3 +424,26 @@ An in-browser measurement was attempted first but was inconclusive — the image
 Then, to prove it *tracks* rather than merely runs: patched `createOscillator`/`createGain`/`createBiquadFilter` on the context prototype, navigated client-side to `/` and back so `AudioToggle` unmounted (tearing the old graph down) and rebuilt an observable one in the same JS realm, and read the AudioParams while driving. Idle **43.83 Hz** -> accelerating **65.37** -> at speed **71.56**; the square oscillator exactly double the saw at every sample; lowpass **691.9 -> 1112.8 -> 1284.2 Hz**; tyre noise **0 -> 0.0177 -> 0.0333**. Idle 43.83 Hz is exactly `IDLE_HZ + (REV_HZ-IDLE_HZ) * rpm` at parked idle, which is what proves `update()` is running against the real sim rather than the graph merely existing. Toggling off ramped master gain to **0**.
 
 **Exit.** All three passed as built — **zero code changes** (guardrail 60). The **Needs testing** section is now empty for the first time in the run, and the **Awaiting scenario** entry is resolved. -> `Cycle: 21 / Phase: Planner`.
+
+## Cycle 21
+
+**Planner.** Backlog mined: **S16a** became actionable the moment cycle 20 established that the window is foregrounded and rAF genuinely runs. It had been parked since cycle 16 under guardrail 9 — not because the fix was hard, but because an optimisation whose win cannot be observed has no business going into a paint loop.
+
+**Read the code before designing the check (guardrail 62).** A grep for `sim.` in `RoadCanvas.jsx` returns `sim.travel` alone; `sim.x` enters only through `cameraX(sim)` inside `buildPoints` and `project`; `camera` changes only in `resize()`. No `Math.random`, no clock. So the image is a pure function of `(travel, x, camera)` — established by reading, not assumed.
+
+**The two details the design turns on.**
+1. While parked, `useDrive.step()` still runs its steering block, so `sim.x` decays asymptotically toward 0 and never repeats a value. An equality check would have skipped **nothing** — the optimisation would have looked correct and done zero work. Hence a **1e-4 m** tolerance (~0.03px at the nearest projected point, where the scale is ~335 px/m).
+2. The comparison is against the last *painted* state, not the previous frame (guardrail 63). A per-frame delta threshold silently freezes slow motion; this one bounds the error at the threshold itself, because accumulated drift eventually crosses it.
+
+**Baseline taken before touching anything.** Shadowed `clearRect` on the road canvas's own 2D context — `draw()` calls it exactly once per paint — and counted: **130 paints in 130 frames over 5s** while parked. One full repaint per frame.
+
+**Verified after, on the production build:**
+- parked and settled: **0 paints / 140 frames** (from 130/130)
+- driving: **136 paints / 132 frames** — unchanged, every frame still painted
+- dispatched `resize`: **1 repaint**, so the backing-store bypass works (guardrail 64)
+- steering while parked: **53 paints**, then **0 / 116 frames** once the drift settles — it is skipping idle work, not freezing the road
+- pixel identity (guardrail 65): a frame captured at EXIT 06 before and after differs by **0 of 4,096,000 pixels**, max channel delta **0**
+
+The before/after pixel capture used the cycle-19 iframe technique with the host page left un-navigated, so the baseline survived the rebuild — the same trap that cost cycle 15 a first attempt.
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.7 kB). One commit: `574ff15`. S16a retired from the Backlog. -> `Cycle: 22 / Phase: Planner`.

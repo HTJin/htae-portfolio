@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 21
+**Cycle:** 22
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -158,6 +158,21 @@
 61. **Escape must still close the map.** Guardrail 37 stands: the focus test drives the real key path, so if Escape
     stops closing the dialog that is a regression to report, not an inconvenience to work around with a Close click.
 
+### Cycle 21 pre-mortem (guardrails for this cycle's tasks)
+
+62. **A dirty-check that misses an input freezes the road.** The check must cover everything `draw()` reads. Those
+    were enumerated from the file this cycle — `sim.travel`, `sim.x` via `cameraX`, and `camera` — and the enumeration
+    is the guardrail: if a later change makes `draw()` read anything else, the check must gain it in the same commit.
+63. **Compare against the last *drawn* state, never the last frame.** A per-frame delta threshold silently freezes
+    slow motion; a last-drawn threshold bounds the error at the threshold itself.
+64. **`resize()` bypasses the check, always.** `canvas.width = ...` wipes the backing store, so a skipped paint after
+    a resize is a blank screen, not a saved frame.
+65. **Prove it changes nothing on screen.** This is an optimisation, so the only acceptable visual result is identical
+    output: capture a frame at a fixed exit before and after and require a zero-pixel difference (the cycle-15
+    method).
+66. **If the measurement does not show a win, do not ship it.** The item was parked for five cycles under guardrail 9
+    for exactly this reason. A dirty-check that skips nothing is added complexity in a hot path.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -173,9 +188,44 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 21
+## Tonight's tasks (in order) — CYCLE 22
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 21's list (resolved — kept for context)</summary>
+
+### CYCLE 21
+
+Backlog mined: **S16a** became actionable when cycle 20 proved the window is foregrounded and `requestAnimationFrame`
+genuinely runs. It has been sitting since cycle 16 precisely because it could not be measured, and guardrail 9 forbids
+shipping an unmeasurable optimisation into a paint loop. It can be measured now.
+
+- [x] **1. Skip the canvas repaint while the picture cannot have changed (S16a)** — **DONE**
+  - **Why:** parked at a stop, `RoadCanvas.draw()` runs on every animation frame and produces the same image. On a
+    page someone leaves open while reading an exit, that is continuous CPU and battery for a still picture.
+  - **What `draw()` actually depends on — read, not assumed** (`RoadCanvas.jsx`): `sim.travel` (directly, and via
+    `paletteAt`, `buildPoints`, `drawRoadside`, `roadsideAt`) and `sim.x` (only through `cameraX(sim)` inside
+    `buildPoints` and `project`), plus `camera`, which only `resize()` changes. A grep for `sim.` in the file returns
+    `sim.travel` alone; `sim.x` enters solely through `cameraX`. No `Math.random`, no clock. The image is therefore a
+    pure function of `(travel, x, camera)`.
+  - **The subtlety that decides the design:** while parked, `useDrive.step()` still runs its steering block, so
+    `sim.x` decays asymptotically toward 0 and never becomes exactly equal frame to frame. An equality check would
+    therefore never skip anything. The check compares against the **last drawn** values with a **1e-4 m** tolerance
+    (0.034px at the nearest projected point, where the scale is ~335 px/m) — against the last *drawn* values, not the
+    last frame, so slow continuous motion accumulates and still triggers a redraw instead of freezing.
+  - **`resize()` must bypass it.** Setting `canvas.width` clears the backing store, so the identical-state check would
+    otherwise leave a blank canvas after a resize. It sets the dirty flag before drawing.
+  - **How the win is measured (this is the whole reason it was parked):** shadow `clearRect` on the road canvas's own
+    2D context with a counter — `draw()` calls it exactly once per paint — and count paints over a fixed wall-clock
+    window, before and after, on the production build.
+  - **Files:** `src/components/drive/RoadCanvas.jsx`.
+  - **Done when:** parked and settled, paints per 5s drop from roughly one-per-frame to **0**; while driving the paint
+    count is unchanged; a dispatched `resize` still repaints; and a captured frame at a fixed exit is **pixel-identical**
+    before and after, because this must not change what is drawn. If the measurement shows no real reduction, it is
+    **not shipped** — guardrail 9 stands.
+
+</details>
 
 <details>
 <summary>Cycle 20's list (resolved — kept for context)</summary>
@@ -800,6 +850,19 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Done (proven by the autonomous Reviewer)
 
+- **C21.1 — The road stops repainting when the picture cannot have changed (S16a)** *(cycle 21, commit `574ff15`)*
+  — parked at a stop, `draw()` was running every animation frame and producing the same image: **130 full repaints in
+  130 frames over 5s**, into a **3840×1790** backing store. `draw()` reads `sim.travel`, `sim.x` (only through
+  `cameraX`) and `camera`, and nothing else, so it now skips when none of them has moved. The comparison is against
+  the last *painted* state rather than the previous frame (guardrail 63), with a **1e-4 m** tolerance rather than
+  equality, because the parked steering drift decays asymptotically and never repeats a value — ~0.03px at the
+  nearest projected point. `resize()` forces a paint, since `canvas.width` wipes the backing store (guardrail 64).
+  **Measured on the production build:** parked and settled **130/130 -> 0 paints / 140 frames**; driving **136 paints /
+  132 frames (unchanged)**; a dispatched resize **1 repaint**; steering while parked **53 paints, then 0 once
+  settled** — so it is skipping idle work, not freezing motion. **And it changes nothing on screen:** a frame captured
+  at EXIT 06 before and after differs by **0 of 4,096,000 pixels**, max channel delta **0** (guardrail 65).
+  Parked since cycle 16 under guardrail 9 because the win could not be measured in a backgrounded tab.
+
 - **C20.1 — Frame rate while driving, finally measured** *(cycle 20; clears the item parked since cycle 3/6)* — on
   the production build, three independent alternating samples of 120 real rAF deltas each. **Driving under autopilot:
   median 29.9 / 30.0 / 29.9 fps.** **Parked at a stop: 21.8 / 17.1 / 21.8 fps.** Driving is *faster and far steadier*
@@ -1074,22 +1137,6 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
-- **S16a — Skip the canvas repaint while parked** *(new, cycle 16 — recorded, not built)* — while the car is parked
-  `RoadCanvas.draw()` runs every animation frame and produces a **provably identical image**: since traffic was removed
-  (cycle 13) the drawing is a pure function of `sim.travel`, `sim.x` and the camera, all constant while parked. That is
-  continuous CPU and battery burn for a static picture on a page someone may leave open while reading a stop.
-  **Why it was not built:** the fix is a cheap dirty-check, but the *win* (frames actually skipped) cannot be measured
-  here — `requestAnimationFrame` is suspended in a backgrounded tab (guardrail 24), and the one way to force a repaint
-  is a resize, which must bypass any such check because setting `canvas.width` clears the backing store. Shipping an
-  unmeasurable optimisation into a hot path is how guardrail 9 gets broken quietly. **Pick this up when a foregrounded
-  window is available** — then the dirty-check and its frame-count evidence can land together.
-  > **UNBLOCKED in cycle 20.** The window is foregrounded and `requestAnimationFrame` genuinely runs, and cycle 20
-  > built a working frame sampler (`__sample`/`__stats`, alternating parked-vs-driving medians). So the win is now
-  > measurable and this is the **next actionable Backlog item** for the Planner. One caveat cycle 20 turned up that
-  > must shape the measurement: while parked the page currently samples **17–22 fps** against **30 fps** while
-  > driving, i.e. an idle page is being served *fewer* frames, not more. So "parked fps went up" is the wrong success
-  > metric — measure the *work per frame* (skipped draws), and if the dirty-check produces no observable difference,
-  > guardrail 9 still says do not ship it into the paint loop.
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
 

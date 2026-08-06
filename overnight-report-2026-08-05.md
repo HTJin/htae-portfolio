@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 20 · branch `feat/drive-mode` · 34 commits, nothing pushed
+**Last updated:** end of cycle 21 · branch `feat/drive-mode` · 35 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,34 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 21 — the road was redrawing itself for nobody
+
+When you're parked at an exit reading it, the road ahead isn't moving — but the page was still redrawing the entire
+scene, sixty times a second, into a canvas the size of your screen. I measured it before touching anything: **130 full
+repaints in 130 frames** over five seconds, all producing the identical picture. If you leave the tab open while
+reading, that is your laptop fan for no reason at all.
+
+It now stops painting when nothing that affects the picture has moved. Parked and settled: **0 repaints in 140
+frames.** Driving is untouched — still every frame. Resize still redraws. Steer while parked and it redraws, because
+then the picture genuinely *is* changing, and settles back to zero when the car finishes drifting into lane.
+
+Two things made this less trivial than it sounds, and both are the kind of detail that turns an "optimisation" into a
+bug. A plain "has anything changed?" check would have skipped **nothing**, because the car's sideways position keeps
+decaying toward centre by ever-smaller amounts and never repeats a value — so the test is a tolerance of a tenth of a
+millimetre, about a thirtieth of a pixel. And the check compares against the last frame *actually painted*, not the
+previous frame, because otherwise slow movement would be dismissed as "no change" every frame and the road would
+freeze while you were driving.
+
+To be sure it changes nothing you'd see, I captured the rendered road before and after: **0 of 4,096,000 pixels
+differ.**
+
+Worth noting how this one got here: I found it five cycles ago and deliberately **didn't build it**, because at the
+time I had no way to prove it helped, and an unmeasurable optimisation in code that runs every frame is how things
+quietly get worse. Once the browser window was properly available, the measurement became possible and it shipped the
+same cycle.
 
 ---
 
