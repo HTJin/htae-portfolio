@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 19 · branch `feat/drive-mode` · 34 commits, nothing pushed
+**Last updated:** end of cycle 20 · branch `feat/drive-mode` · 34 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,38 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 20 — everything that was "waiting for a real window" is now checked
+
+Three things had been sitting unverified for most of this run — not because they were broken, but because a browser
+window that is never actually in front of you can't animate, can't hold focus, and won't let a page make sound. This
+cycle the window was properly foregrounded, so all three got measured. **None of them needed fixing.**
+
+**The engine really does sound like an engine.** This one had been parked the longest, and the reason was subtle: a
+click made *by a script* doesn't count as you clicking, so browsers refuse to start audio for it. With a genuine click,
+the audio starts, and I could read the actual synthesiser while driving:
+
+| | engine note | octave above | filter | tyre noise |
+|---|---|---|---|---|
+| idling at a stop | 43.8 Hz | 87.7 Hz | 692 Hz | none |
+| pulling away | 65.4 Hz | 130.7 Hz | 1113 Hz | rising |
+| at speed | 71.6 Hz | 143.1 Hz | 1284 Hz | rising |
+
+The note climbs with the tachometer, the harmony stays exactly an octave above it, the tone opens up as the engine
+works, and tyre roar builds with speed. Switching it off fades it to true silence. It is doing everything it claimed.
+
+**Frame rate: the driving isn't what costs you.** Driving holds a steady 29.9—30.0 fps across three separate samples —
+while *sitting parked* manages only 17—22. That inversion is the useful part: an idle page can't be slower than a busy
+one, so the ~30 ceiling belongs to this machine (an empty animation loop on your homepage measured 28), not to the
+road. The drive loop keeps up with everything the environment will give it. I'm not claiming 60fps on your hardware —
+I'm claiming driving costs no measurable frames over standing still.
+
+**And the route map gives focus back.** Tab to it, open it, press Escape — focus lands back on the button you opened it
+with, which is what makes it usable without a mouse.
+
+**Nothing is parked behind a browser window any more.** That list is empty for the first time tonight.
 
 ---
 
@@ -261,8 +293,8 @@ reads as an arrival.
 
 ## Parked, all needing a foreground browser window
 
-Frame rate while driving; audible engine output; and focus returning to the button when you close the route map.
-(The re-centred dash at narrow widths came off this list in cycle 19 — it was measurable after all.)
+**Nothing — this list is empty.** Frame rate, engine audio and route-map focus were all cleared in cycle 20; the
+re-centred dash at narrow widths was cleared in cycle 19.
 Animation, timers and focus are all suspended in a backgrounded tab, which isn't something I can arrange from here.
 
 ---

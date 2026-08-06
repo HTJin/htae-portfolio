@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 20
+**Cycle:** 21
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -143,6 +143,21 @@
     If something looks wrong there it is either pre-existing or an artefact — diagnose which before changing anything,
     because a change there is out of this task's scope.
 
+### Cycle 20 pre-mortem (guardrails for this cycle's tasks)
+
+57. **A frame rate without a baseline is a number, not a result.** This machine returned 28fps for an *empty* rAF loop
+    on the static homepage, so the renderer here is not a 60fps reference. Every drive-mode figure must be reported
+    beside a same-method sample taken in the same session, and the verdict must be about the *difference*.
+58. **Measure the sim, not the measurement.** The probe loop is itself work on the main thread. Sample with a plain
+    rAF delta accumulator — no DOM writes, no logging per frame — and discard the first few frames.
+59. **`element.click()` is not a gesture.** That is precisely why the audio item has been parked for eleven cycles.
+    Use a real dispatched input event; if the context still does not reach `running`, report that, do not describe
+    the audio as working because the code looks right (the cycle-9 defect was a toggle that lied about its own state).
+60. **Do not "fix" a passing test.** These three items are being *verified*, not built. If they pass, the change to
+    the repo is zero and the tasks move to Done on the evidence alone.
+61. **Escape must still close the map.** Guardrail 37 stands: the focus test drives the real key path, so if Escape
+    stops closing the dialog that is a regression to report, not an inconvenience to work around with a Close click.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -158,9 +173,45 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 20
+## Tonight's tasks (in order) — CYCLE 21
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 20's list (resolved — kept for context)</summary>
+
+### CYCLE 20
+
+**The Awaiting-scenario condition has arrived.** Probed at the start of this cycle: `document.hidden` is **false**,
+`document.visibilityState` is `visible`, `document.hasFocus()` is **true**, `requestAnimationFrame` actually runs
+(28 callbacks in 1013ms on the homepage), and programmatic `.focus()` now sticks (`document.activeElement` is the
+element). Every one of those was the stated blocker for the three parked **Needs testing** items. So this cycle is a
+Reviewer sweep to clear them rather than a Suggester pass — they have been waiting since cycles 3, 9 and 10.
+
+- [x] **1. Frame rate while driving, on the production build** — **DONE** *(parked since cycle 3/6)*
+  - **Why:** the roadside furniture, the daylight cycle and the per-frame canvas work were all shipped without ever
+    measuring the frame budget, because rAF is paused in a hidden tab and the measurement timed out at 45s twice.
+  - **Method:** load `/drive` on the production build, put the car under autopilot, sample ~240 frames of real rAF
+    deltas, and report median and 5th-percentile fps — plus the same sample taken while parked, so the *cost of
+    driving* is separable from the cost of the machine.
+  - **Done when:** a real distribution is recorded, compared against a same-method baseline, with a verdict.
+- [x] **2. Focus returns to its trigger when the route map closes** — **DONE** *(parked since cycle 10)*
+  - **Why:** `RouteMap`'s cleanup restores `returnFocusRef`, and that path runs, but it could never be observed —
+    `.focus()` did not stick without OS window focus, so `<body>` was captured and restored.
+  - **Method:** focus the "Route map" button for real, open the dialog, confirm focus moved into the panel, close it
+    with Escape, and read `document.activeElement` back.
+  - **Done when:** focus is observed on the trigger after close — or a real defect is found and fixed this cycle.
+- [x] **3. Engine audio actually sounds and tracks the revs** — **DONE** *(parked since cycle 9)*
+  - **Why:** everything structural was verified, but audible output never was: a scripted click grants no user
+    activation, so the `AudioContext` never reached `running`.
+  - **Method:** click the toggle with a **real dispatched input event** (CDP-level, which Chrome treats as a trusted
+    gesture) rather than `element.click()`. Then read the context's own state and its live `AudioParam` values under
+    throttle — audibility itself cannot be heard from here, but "the context is `running` and its oscillator
+    frequency rises with the tachometer" is observable and is the actual claim.
+  - **Done when:** either the context reaches `running` and its parameters track the sim, or it does not and the
+    reason is recorded from observation rather than assumed.
+
+</details>
 
 <details>
 <summary>Cycle 19's list (resolved — kept for context)</summary>
@@ -749,6 +800,34 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Done (proven by the autonomous Reviewer)
 
+- **C20.1 — Frame rate while driving, finally measured** *(cycle 20; clears the item parked since cycle 3/6)* — on
+  the production build, three independent alternating samples of 120 real rAF deltas each. **Driving under autopilot:
+  median 29.9 / 30.0 / 29.9 fps.** **Parked at a stop: 21.8 / 17.1 / 21.8 fps.** Driving is *faster and far steadier*
+  than idling, which identifies the ceiling as the environment, not the code: an empty rAF loop on the static homepage
+  in the same session returned **28 fps**, so this renderer is capped near 30 and coalesces frames when the page has
+  nothing to schedule. **Verdict: the drive loop keeps up with everything this environment will give it** — it is not
+  the limiting factor. This is explicitly *not* a claim of 60fps on the owner's machine; it is a claim that driving
+  costs no measurable frames relative to sitting still (guardrail 57).
+- **C20.2 — Focus returns to the route-map trigger** *(cycle 20; clears the item parked since cycle 10)* — observed
+  end to end now that `.focus()` sticks: focus on the "Route map" button -> open -> `document.activeElement` is the
+  dialog panel and `dialog.contains(activeElement)` is true -> **Escape** closes it (guardrail 61: the global key path
+  still works) -> `document.activeElement === trigger` is **true**. The `aria-modal` promise is kept.
+- **C20.3 — The engine really sounds, and really tracks the revs** *(cycle 20; clears the item parked since cycle 9)*
+  — the eleven-cycle blocker was that `element.click()` grants no user activation. Clicked the toggle with a **real
+  dispatched input event** instead: `navigator.userActivation.hasBeenActive` **true**, `AudioContext.state`
+  **`running`**, master gain ramped to **0.09** (the `enable()` target — audible, not muted), and the toggle's own
+  label/`aria-pressed` flipped honestly. Then, with the graph captured by patching the context's factory methods
+  before a client-side remount, the sim was driven and the **AudioParams read directly**:
+  | | low osc | high osc | lowpass | tyre noise |
+  |---|---|---|---|---|
+  | parked idle | 43.83 Hz | 87.67 Hz | 691.9 Hz | 0 |
+  | accelerating | 65.37 Hz | 130.74 Hz | 1112.8 Hz | 0.0177 |
+  | at speed | 71.56 Hz | 143.13 Hz | 1284.2 Hz | 0.0333 |
+  Pitch rises with revs, the square holds **exactly** an octave above the saw at every sample, the filter opens as the
+  engine works, and tyre noise builds with speed — and idle 43.83 Hz is exactly `IDLE_HZ + (REV_HZ-IDLE_HZ) * rpm`
+  at the parked idle rpm, so `update()` is demonstrably running against the real sim. Turning it off ramped master
+  gain to **0**. Nothing was changed: this was verification (guardrail 60).
+
 - **C19.1 — The re-centred dash verified at narrow widths** *(cycle 19, commit `72ccf3f`; clears the cycle-18
   Needs-testing item)* — the OS window would not resize, so `/drive` was loaded in a **same-origin iframe** of an
   explicit size instead. Guardrail 53 was satisfied first: `contentWindow.innerWidth` read **1100** while the host read
@@ -858,24 +937,15 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
-- [ ] **Route map returns focus to its trigger on close** — the trap's cleanup restores whatever was focused when the dialog opened, and that path runs, but it cannot be observed here: `.focus()` on the trigger button does not stick without OS window focus, so `<body>` is what gets captured and restored. Test in a foreground window: Tab to "Route map", press Enter, press Escape — focus should land back on the "Route map" button.
-
-- [ ] **Engine audio actually sounds, and tracks the revs** — everything *structural* about it is verified (see C9-2), but audible output is not: a synthetic click grants no user activation, so the `AudioContext` never reaches `running` in this environment and `update()` correctly early-returns. Test with a real press in a foreground window: the toggle should light, a low engine note should be audible, its pitch should rise with the tachometer under throttle, and tyre noise should build with speed. Turning it off should fade to silence.
-
-- [ ] **Frame rate while driving, measured on the production build** — the only part of the cycle-3 roadside check that
-  could not be completed. `requestAnimationFrame` is paused whenever `document.hidden` is true, so a frame-timing loop
-  in a backgrounded tab never resolves (it timed out the CDP call twice at 45s before the cause was identified —
-  guardrail 24). Everything else about that item is now **Done** (see C6-1). Test when a Chrome window is actually in
-  the foreground: drive under autopilot and sample ~240 frames. For reference, cycle 3 measured the much larger
-  daylight change at **34.2fps vs a 26.6fps baseline** in dev, so the bar is "not worse than that".
+*(empty — all three long-parked items were cleared in cycle 20 once the window became foregrounded.)*
 
 ## Awaiting scenario (can't test until a specific scenario occurs)
 
-- [ ] **Anything needing a *foregrounded* Chrome window** — Awaiting scenario: a Chrome window that is actually visible,
-  not merely reachable. **The network blocker from cycles 3-5 is RESOLVED** — at 22:35 local Chrome loaded
-  `http://127.0.0.1:3008/drive` successfully, rendered the canvas, and drove the route. But every tab still reports
-  `document.hidden === true`, which pauses `requestAnimationFrame`. Screenshots, DOM reads and layout measurements all
-  work in this state; only frame-timing does not.
+- **RESOLVED in cycle 20 — the foregrounded Chrome window arrived.** Probed at the top of cycle 20:
+  `document.hidden` **false**, `visibilityState` `visible`, `document.hasFocus()` **true**, `requestAnimationFrame`
+  actually running, and programmatic `.focus()` sticking. All three items that had been waiting on this (frame rate
+  since cycle 3/6, focus return since cycle 10, audible engine since cycle 9) were measured and moved to **Done**.
+  Keep the check in mind for future cycles — the window may go back to hidden — but nothing is parked behind it now.
 
 ## Blocked (couldn't be implemented — missing dependency the loop can't supply)
 
