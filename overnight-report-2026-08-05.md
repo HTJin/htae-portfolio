@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 43 · branch `feat/drive-mode` · 53 commits, nothing pushed
+**Last updated:** end of cycle 44 · branch `feat/drive-mode` · 54 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,33 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 44 — without JavaScript, drive mode was a locked door
+
+This cycle tested *conditions* rather than features — someone zoomed in to 200%, someone on light theme, someone
+whose JavaScript never loads. The first two are fine. The third was not.
+
+If JavaScript does not run — blocked by a corporate proxy, a privacy extension, a flaky connection that drops the
+bundle — `/drive` showed the opening screen, *"The résumé, from the driver's seat"*, with a **Start engine button that
+does nothing at all**. And the cruel part: your entire résumé was already on that page. Every role, every build, the
+toolbox. It is in the HTML for search engines and screen readers — but it is deliberately clipped to an invisible
+one-pixel box, so a person saw none of it. A dead end with the answer sitting inside it.
+
+There was no fallback message anywhere in the app.
+
+There is now: a short panel saying drive mode needs JavaScript, and a button through to your main site — which does
+render fully without scripting, so it is a real destination rather than a second locked door.
+
+**The obvious shortcut I did not take:** simply un-hiding the invisible résumé on that page. It would not have worked.
+That text sits *behind* the driving scene, which covers the whole screen regardless — so it would still have been
+invisible, and it would have exposed some screen-reader-only announcements as stray text at the same time.
+
+**How I checked it, since this is a state I cannot simply click into:** I loaded the page in a frame with scripting
+genuinely switched off, and confirmed the panel renders, the button is really clickable, and it covers the dead
+opening screen. Then I confirmed that with JavaScript **on** it costs you nothing at all — it occupies zero pixels,
+produces no errors, and the drive is byte-for-byte the same.
 
 ---
 

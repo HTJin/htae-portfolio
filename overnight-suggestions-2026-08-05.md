@@ -384,4 +384,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** it would have been easy to raise the quality on the grounds that it probably looks better - which is a guess, not a finding.
   - **Outcome:** **Measured, and left alone.** Decoding q=75/85/90 against near-lossless q=95 at the delivered 1080px width: q=75 has a mean channel error of **1.73 out of 255** with 1.5% of pixels differing by more than 8; q=90 improves that to 1.25 while costing **+76% bytes** (129 KB -> 227 KB per arrival). Below any perceptual threshold, so the trade is not worth making.
 
+- [ ] **S70 - Does drive mode survive browser zoom and light theme?** - Status: Done (no defect) - Cycle: 44
+  - **Source:** widening the angle after two verification cycles - testing conditions rather than components.
+  - **Why / expected impact:** WCAG asks for usability at 200% zoom, which on a 1440x900 laptop means a 720x450 viewport - a size never tested. And the site's body is `bg-white` in light theme, which would show badly if the scene ever failed to cover it.
+  - **Outcome:** **Both clean.** At 150% and 200% zoom the panel renders with zero panel/dash overlap, all six controls inside the dash, smallest control 25px, nothing off-screen and no horizontal scroll. Drive mode uses no theme variants at all, and with light mode forced every viewport corner still hits a drive-mode element.
+
+- [ ] **S71 - With JavaScript off, /drive was a dead end** - Status: Done - Cycle: 44
+  - **Source:** the same pass, testing the no-JavaScript condition.
+  - **Why / expected impact:** the entire resume **is** in the served HTML, but wrapped in `sr-only`, which the stylesheet clips to nothing. The ignition splash renders as well - so a visitor without scripting saw "The resume, from the driver's seat" and a "Start engine" button that does nothing, with every word of the resume present and invisible. There was no `<noscript>` anywhere in the application.
+  - **Outcome:** **Shipped** in `a779878`. A `<noscript>` panel explaining that drive mode needs JavaScript and linking to the classic site, which renders its content server-side and visibly. Unclipping the hidden resume was rejected: it would land behind a fixed scene that still covers the viewport, and would unclip the arrival announcer too. Verified with scripting **genuinely disabled** (a sandboxed iframe without `allow-scripts`, so the no-JS render could be seen rather than inferred): the panel renders, the link is hit-testable, and it covers the dead-end splash. With JavaScript on it renders a 0x0 box, produces no hydration warnings, and leaves the drive unchanged.
+
 *(Check the box once you've reviewed the outcome.)*

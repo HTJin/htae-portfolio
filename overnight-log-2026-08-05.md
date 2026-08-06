@@ -1034,3 +1034,26 @@ A mean error of **1.73 out of 255** is below anything an eye resolves, and the 1
 **Outcome: nothing changed, and both results are worth having.** The 40× saving from cycle 41 costs neither sharpness nor legibility, and that is now a measurement rather than a hope.
 
 **Exit.** No commit to `src/`. -> `Cycle: 44 / Phase: Planner`.
+
+## Cycle 44
+
+**Suggester — widen the angle.** Two verification cycles in a row had found nothing, so this pass tested **conditions** rather than components: browser zoom, colour theme, and no JavaScript.
+
+**Zoom — clean.** WCAG 1.4.4 asks for usability at 200%, which on a 1440×900 laptop means a **720×450** CSS viewport, a size never tested. At 150% (960×600) and 200% (720×450): the panel renders, **panel/dash overlap 0**, all six controls inside the dash, smallest control **25px**, nothing off-screen, no horizontal scroll. At 200% the dash takes 42.2% of the height — its 190px floor — and EXIT 06 has 23px of scrollable content. Both expected.
+
+**Theme — clean.** `_document.jsx` puts `bg-white dark:bg-gray-950` on the body, and drive mode uses **no** theme variants at all. Forcing light mode turns the body white, but all four viewport corners still hit drive-mode elements: the scene is `fixed inset-0` and covers it.
+
+**No JavaScript — a real gap.** The whole résumé **is** in the served HTML — *"Senior MES DevOps Engineer"* and *"University of Pittsburgh"* both present — but inside `class="sr-only"`, which the shipped stylesheet resolves to `position:absolute;width:1px;height:1px;clip:rect(0,0,0,0)`. The ignition splash renders too. So a visitor without scripting met *"The résumé, from the driver's seat"* and a **"Start engine" button that does nothing**, with every word of the résumé in the page and invisible. And `grep -rn noscript src/` returned **nothing** — not one fallback anywhere in the application.
+
+**The fix I did not make.** Unclipping `.sr-only` under `<noscript>` is the tempting one-liner and it is wrong twice over: the résumé would land *behind* a `fixed` scene that still covers the viewport, and it would unclip the arrival announcer as well. Guardrail 151 was written before building for exactly that reason. The classic site renders its content server-side **and visibly** (same probes hit on `/`, one `sr-only` wrapper on the whole page), so there is a genuine destination to offer rather than a second dead end.
+
+**Verified with scripting genuinely disabled**, which is the part worth recording as method: an `iframe sandbox="allow-same-origin"` **without** `allow-scripts` disables JavaScript while leaving the DOM readable, so the no-JS rendering could be *seen* rather than inferred from an HTML string (guardrail 148).
+- `body.style.overflow` is `""` — the effect never ran, confirming scripting really is off
+- the panel renders, heading **"Drive mode needs JavaScript"**
+- the fallback link is **257×47** and **hit-testable at its own centre**
+- the centre of the screen hits the explanation, so the panel covers the dead-end splash
+- a screenshot confirms it
+
+**And with JavaScript on it costs nothing:** **zero console messages and zero hydration warnings** (the `<noscript>` uses `dangerouslySetInnerHTML` so server and client markup are identical — guardrail 149), the element renders a **0×0** box, its heading does not appear among the page's headings, and the drive is unchanged: card 928×214, dash 324px, overlap 0, centre still hitting the arrival panel.
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 21.1 kB). One commit: `a779878`. -> `Cycle: 45 / Phase: Planner`.

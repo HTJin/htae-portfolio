@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 44
+**Cycle:** 45
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -429,6 +429,22 @@
 147. **Measure bytes cache-cold.** A warm cache reports `transferSize: 0` and would make any change look like a win —
      it already did once this cycle. Bust the cache or read `content-length` from the server.
 
+### Cycle 44 pre-mortem (guardrails for this cycle's tasks)
+
+148. **Test it with scripting actually off.** An `<iframe sandbox="allow-same-origin">` (without `allow-scripts`)
+     disables JavaScript while still allowing the DOM to be read — so the no-JS rendering can be *seen* rather than
+     reasoned about. Reading the HTML string is not the same as rendering it.
+149. **`<noscript>` and hydration do not mix casually.** React treats `<noscript>` children oddly between server and
+     client; use `dangerouslySetInnerHTML` so the markup is identical on both sides, and confirm **no hydration
+     warning** appears in the console rather than assuming.
+150. **It must cost the JS path nothing.** Verify no visible box, no layout shift and no change to any measured
+     drive-mode geometry with scripting on. A fallback that perturbs the normal experience is a bad trade.
+151. **Do not unclip the itinerary to solve this.** Unclipping `.sr-only` under `<noscript>` would dump the whole
+     résumé behind a `fixed` scene that still covers it, and would also unclip the announcer. Offer the working
+     destination instead of trying to salvage the hidden copy.
+152. **Say what was not verified.** If any part of the no-JS experience cannot be exercised here, record that rather
+     than implying it was checked.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -444,9 +460,45 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 44
+## Tonight's tasks (in order) — CYCLE 45
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 44's list (resolved — kept for context)</summary>
+
+### CYCLE 44
+
+Backlog dry. This Suggester pass widened the angle after two verification cycles, testing conditions rather than
+components: browser zoom, colour theme, and no JavaScript. The first two came back clean; the third is a real gap.
+
+**Clean — browser zoom.** WCAG 1.4.4 asks for usability at 200%, which on a 1440×900 laptop means a **720×450** CSS
+viewport, a size never tested. At 150% (960×600) and 200% (720×450): the panel renders, **panel/dash overlap 0**, all
+six controls inside the dash, smallest control **25px**, nothing off-screen, no horizontal scroll. At 200% the dash
+takes 42.2% of the height (its 190px floor) and EXIT 06 has 23px of scrollable content — both expected.
+
+**Clean — colour theme.** `_document.jsx` puts `bg-white dark:bg-gray-950` on the body, and drive mode uses **no**
+theme variants at all. Forcing light mode turns the body white, but all four viewport corners still hit drive-mode
+elements — the scene is `fixed inset-0` and covers it. Nothing white shows.
+
+- [x] **1. With JavaScript off, `/drive` is a dead end — and the résumé is right there, clipped to nothing** — **DONE**
+  - **Evidence (from the served HTML):** the full résumé **is** in the SSR markup — *"Senior MES DevOps Engineer"* and
+    *"University of Pittsburgh"* are both present — but it sits inside `class="sr-only"`, which the shipped stylesheet
+    resolves to `position:absolute;width:1px;height:1px;clip:rect(0,0,0,0)`. The ignition splash also renders, so a
+    visitor without JavaScript sees *"The résumé, from the driver's seat"* and a **"Start engine" button that does
+    nothing**, with every word of the résumé present in the page and invisible.
+  - **And there is no fallback anywhere:** `grep -rn noscript src/` returns **nothing**. Not one `<noscript>` in the
+    application.
+  - **The fallback that should be offered already works.** The classic site renders its content server-side and
+    *visibly* — the same probes hit on `/`, with only one `sr-only` wrapper on the whole page. So there is a real
+    destination to send someone to, not a second dead end.
+  - **Files:** `src/components/drive/DriveScene.jsx`.
+  - **Done when:** the served HTML carries a `<noscript>` explaining that drive mode needs JavaScript and linking to
+    the classic site; rendered **with scripting genuinely disabled** it is visible and the link is reachable; with
+    JavaScript on it contributes **nothing** — no visible box, no layout shift, no hydration warning — and the drive is
+    unchanged.
+
+</details>
 
 <details>
 <summary>Cycle 43's list (resolved — kept for context)</summary>
@@ -1776,6 +1828,26 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C44.0 — Browser zoom and colour theme both hold** *(cycle 44 — verification)* — WCAG 1.4.4 asks for usability at
+  200%, which on a 1440×900 laptop is a **720×450** CSS viewport — a size never tested. At 150% and 200%: panel
+  renders, **panel/dash overlap 0**, all six controls inside the dash, smallest control **25px**, nothing off-screen,
+  no horizontal scroll. And drive mode uses **no** theme variants: forcing light mode turns the body white, but all
+  four viewport corners still hit drive-mode elements because the scene is `fixed inset-0`.
+- **C44.1 — `/drive` now says something when JavaScript does not run** *(cycle 44, commit `a779878`)* — the whole
+  résumé is already in the served HTML, but inside `.sr-only`, which the shipped stylesheet resolves to
+  `clip: rect(0,0,0,0)`. The ignition splash renders too — so without scripting a visitor met *"The résumé, from the
+  driver's seat"* and a **"Start engine" button that does nothing**, with every word of the résumé present and
+  invisible. `grep -rn noscript src/` returned **nothing**: not one fallback in the application. Unclipping `.sr-only`
+  would have been the wrong fix (guardrail 151) — it would dump the résumé behind a `fixed` scene that still covers
+  it, and unclip the announcer. The classic site renders its content server-side **and visibly**, so there is a real
+  destination. **Verified with scripting genuinely disabled** — an `iframe sandbox="allow-same-origin"` *without*
+  `allow-scripts`, so the no-JS render could be seen rather than reasoned about (guardrail 148): `body.style.overflow`
+  is `""` (the effect never ran), the panel renders with the heading **"Drive mode needs JavaScript"**, the fallback
+  link is **257×47 and hit-testable at its own centre**, and the centre of the screen hits the explanation, so it
+  covers the dead-end splash. **With JavaScript on it costs nothing** (guardrails 149, 150): **zero console messages,
+  zero hydration warnings**, the `<noscript>` renders a **0×0** box, its heading does not appear among the page's
+  headings, and the drive is unchanged (card 928×214, dash 324px, overlap 0).
 
 - **C43.0 — The optimised screenshots are not soft** *(cycle 43 — verification only)* — cycle 41 cut a project stop
   from 5,306 KB to 131 KB, and the obvious risk of "serve it at the size it is drawn" is a blurry image on a 2×
