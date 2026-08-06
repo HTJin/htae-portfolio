@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 32 · branch `feat/drive-mode` · 46 commits, nothing pushed
+**Last updated:** end of cycle 33 · branch `feat/drive-mode` · 47 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,36 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 33 — pressing Tab did nothing visible twenty-five times
+
+If someone opens `/drive` and navigates with the keyboard — no mouse, which is how a lot of people work, and how
+recruiters using assistive tech often work — the first thing they did was press **Tab twenty-five times with nothing
+happening on screen**.
+
+The cause is a feature, not an accident. Behind the driving scene there is a plain-text copy of your entire résumé,
+invisible to the eye but readable by screen readers and search engines. It contains a link for every stop — LinkedIn,
+GitHub, your résumé PDF, both certificates, the live site and source for all eight builds, and the four at the
+destination. Twenty-five links. They are hidden by clipping them to a zero-sized window, which hides them from *eyes*
+but not from the keyboard. So focus really was moving — onto things clipped down to nothing. The focus outline was
+being drawn where nobody could see it.
+
+The tempting fix is to make those links unreachable by keyboard. That would have solved it for sighted keyboard users
+by breaking it for screen-reader users, who need exactly those links — that block is their version of your résumé, and
+their only way to your project links without driving there.
+
+So there is now a **"Skip to the drive controls"** link: invisible until you Tab to it, at which point it appears in
+the top-left corner. One press and you are at the cockpit; the next press puts you on a real button. **Twenty-five
+presses down to one**, with the hidden résumé exactly as complete as it was.
+
+**Two things worth telling you about how this went.** First, my initial two attempts to verify the fix reported that it
+had failed — the link stayed invisible when I focused it. The code was fine: a browser only lights up `:focus`
+styling when the page itself is the focused window, and mine was not. I had to click into the page for real and press
+real Tab and Enter keys before the test meant anything. Second, I also checked something unrelated while I was in
+there — whether the page slowly accumulates work as you drive through the twenty-one exits. It does not: exactly 13
+per-frame subscribers at the start, and exactly 13 after twelve stops.
 
 ---
 

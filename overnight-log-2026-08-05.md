@@ -728,3 +728,28 @@ Most do not. `HOLD`, `IDLE_HZ`/`REV_HZ`, `SWEEP`/`START_ANGLE`, the sign's own d
 **Also deliberate:** the `?? MAX_SPEED` fallback is now unreachable, and was left alone. It is still a correct guard for a short array, and removing it would be a second change hiding inside a no-op commit (guardrail 114).
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.2 kB). One commit: `57cd6cc`. -> `Cycle: 33 / Phase: Planner`.
+
+## Cycle 33
+
+**Two Suggester probes. The first came back clean; the second found a real defect.**
+
+**Probe 1 — does the per-frame subscriber set leak?** `drive` is a `useMemo` whose identity changes on *every arrival*, so every consumer's effect tears down and re-subscribes 21 times across a drive. A single missing cleanup would grow the fan-out silently and cost a little more every frame for the rest of the session — the kind of fault nothing in the build would flag. Measured by patching `Set.prototype.forEach` and recording `this.size`: no other Set in drive code is iterated per frame, so that is exactly the listener count. **13 at MILE 0, and exactly 13 after twelve stop changes** across project stops, the toolbox and the destination, with one canvas and one status region throughout. No leak.
+
+**Probe 2 — what can a keyboard-only visitor actually reach?** Never tested end to end. Of **38** focusable elements at EXIT 13, **25 live inside the `sr-only` itinerary** — the screen-reader and crawler copy of the résumé, which carries a link for every stop. That container is `position: absolute; clip: rect(0px, 0px, 0px, 0px)`: hidden visually, **fully present in the tab order**. So `Tab` from the top of `/drive` walked LinkedIn, GitHub, Résumé, two certificates, *Live site / Source* for all eight builds, and the destination's four links — **25 presses** — before the first control a sighted person could see. Worse than "hard to follow": those elements have real layout boxes, up to 195×19.5, clipped to nothing, so the focus ring was painted on clipped-away content. Focus was **nowhere**.
+
+**The fix had to serve two audiences at once.** The obvious move — `tabindex="-1"` on those 25 links — would fix the sighted keyboard user by robbing the screen-reader one, for whom that block *is* the résumé and the only route to a stop's links without driving (guardrail 115, written before building). A skip link costs them nothing: first in the tab order, hidden until focused, one press to the cockpit.
+
+**Verifying it took three attempts, and the first two were the interesting part.** `skip.focus()` set `document.activeElement` correctly but `element.matches(':focus')` was **false**, so the link stayed clipped and the measurement said the fix had failed. The CSS was fine — `:focus` does not match while the *document* is unfocused, which was true inside the probe iframe and then true at top level too (`document.hasFocus()` had gone false since cycle 20). This is guardrail 45's trap wearing a new hat. The honest test needed a **real click to focus the page and real `Tab`/`Enter` keys**, and a fresh load so the click did not leave a focus starting point mid-page.
+
+**Measured, with real key presses:**
+
+| step | result |
+|---|---|
+| `Tab` | **"Skip to the drive controls"** — `clip: auto`, box **171×22** at (12,12), was 34×18 clipped to nothing, `:focus-visible` |
+| `Enter` | focus on `#drive-controls` |
+| `Tab` | **"Back to the previous exit"**, inside the target, 78×31, visible |
+| after | the skip link clips itself away again |
+
+**Presses to the first visible control: 25 -> 1.** The itinerary still carries all 25 links, text unchanged, and the target has `tabindex="-1"` with six controls inside it at 390×844, 844×390 and 1440×900.
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.3 kB). One commit: `de9a7da`. -> `Cycle: 34 / Phase: Planner`.

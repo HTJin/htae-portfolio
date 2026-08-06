@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 33
+**Cycle:** 34
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -327,6 +327,21 @@
      `?? MAX_SPEED` in `gearCeiling` can no longer fire. It is a correct guard for an empty/short array and removing
      it would be a second change hiding inside a no-op commit.
 
+### Cycle 33 pre-mortem (guardrails for this cycle's tasks)
+
+115. **Do not take the itinerary out of the tab order.** The obvious "fix" is `tabindex="-1"` on those 25 links, and
+     it would trade a sighted keyboard user's problem for a screen-reader user's — that block is their résumé and
+     their only path to a stop's links without driving. Verify the count is still 25 afterwards.
+116. **A skip link that is invisible when focused is worse than none.** It has to have a real, measurable box once
+     focused — check `getBoundingClientRect()` in both states, not just that the class list changed.
+117. **The target must actually receive focus.** An `href="#id"` to a container without `tabindex="-1"` moves the
+     scroll position but not focus in several browsers. Measure `document.activeElement` after activation, and
+     measure that the *next* Tab reaches a real control rather than going back to the top.
+118. **Do not disturb the crawlable copy.** The itinerary is the only machine-readable version of the résumé
+     (guardrail 19/21). Its text and link count must be byte-identical after this change.
+119. **Check both layouts.** The cockpit renders a phone stack and a desktop grid; the skip target must land somewhere
+     real in both, so verify at 390×844 as well as desktop.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -342,9 +357,44 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 33
+## Tonight's tasks (in order) — CYCLE 34
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 33's list (resolved — kept for context)</summary>
+
+### CYCLE 33
+
+Two Suggester probes this cycle. The first came back clean and is recorded as such; the second found a real defect.
+
+**Probe 1 — the per-frame subscriber set does not leak.** `drive` is a `useMemo` whose identity changes on *every
+arrival*, so every consumer's effect tears down and re-subscribes 21 times across a drive — one missing cleanup would
+grow the fan-out silently and cost a little more every frame, forever. Measured by recording the size of the Set being
+`forEach`-ed each frame: **13 subscribers at MILE 0, and exactly 13 after twelve stop changes** covering project
+stops, the toolbox and the destination, with a single canvas and a single status region throughout. No leak.
+
+- [x] **1. A keyboard user meets 25 invisible links before reaching a single control** — **DONE**
+  - **Evidence (measured at EXIT 13, desktop):** of **38** focusable elements on the page, **25** live inside the
+    `sr-only` itinerary — the screen-reader and crawler copy of the résumé. That container is
+    `position: absolute; clip: rect(0px, 0px, 0px, 0px)`, which hides content **visually but not from the tab order**.
+    So `Tab` from the top of `/drive` moves through *LinkedIn, GitHub, Résumé (PDF)*, two certificates, then
+    *Live site / Source* for all eight builds, then the destination's four links — **25 presses** — before the first
+    control a sighted person can see. The elements have real layout boxes (up to 195×19.5) that are clipped to
+    nothing, so the focus ring is painted on clipped-away content: focus is not merely hard to see, it is **nowhere**.
+  - **Who this hurts, and who it must not:** it is the sighted keyboard user who is stranded. A screen-reader user
+    *wants* those links — the itinerary is their version of the résumé and their only route to a stop's links without
+    driving. So the fix must not remove them from the tab order.
+  - **The standard answer, and the reason it fits here:** a skip link — hidden until focused, first in the tab order,
+    jumping past the itinerary to the cockpit. One press and you are at the controls; the itinerary stays exactly as
+    reachable as it is now for anyone who wants it.
+  - **Files:** `src/components/drive/DriveScene.jsx`, `src/components/drive/Dashboard.jsx` (a target id only).
+  - **Done when:** the skip link is the **first** focusable element; it is invisible until focused and has a real
+    visible box once focused; activating it puts focus on the drive controls and the **next** `Tab` lands on a real
+    control; presses-to-first-visible-control drops **25 -> 1**; the itinerary still contains all 25 links and its
+    text is unchanged; and nothing regresses at phone width.
+
+</details>
 
 <details>
 <summary>Cycle 32's list (resolved — kept for context)</summary>
@@ -1361,6 +1411,26 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C33.0 — The per-frame subscriber set does not leak** *(cycle 33 — verification only)* — `drive` is a `useMemo`
+  whose identity changes on **every arrival**, so every consumer's effect tears down and re-subscribes across a drive;
+  one missing cleanup would grow the fan-out silently and cost more every frame for the rest of the session. Measured
+  by recording the size of the Set being `forEach`-ed each frame: **13 subscribers at MILE 0 and exactly 13 after
+  twelve stop changes**, covering project stops, the toolbox and the destination, with a single canvas and a single
+  status region throughout.
+- **C33.1 — A keyboard user reaches the cockpit in one press instead of twenty-five** *(cycle 33, commit `de9a7da`)*
+  — the `sr-only` itinerary carries a link for every stop: measured, **25 of the 38** focusable elements on the page.
+  Its container is `position: absolute; clip: rect(0px, 0px, 0px, 0px)` — hidden visually but **not** from the tab
+  order — so `Tab` from the top spent **25 presses** on links whose layout boxes (up to 195×19.5) are clipped to
+  nothing, meaning the focus ring was painted on clipped-away content and focus was **nowhere**, before reaching a
+  control anyone could see. Removing them from the tab order would have fixed the sighted keyboard user by robbing the
+  screen-reader one (guardrail 115), so a skip link was added instead. **Verified with real key presses on a genuinely
+  focused document:** `Tab` -> *"Skip to the drive controls"*, `clip: auto`, box **171×22** at (12,12) from 34×18
+  clipped to nothing, `:focus-visible` matching (guardrail 116); `Enter` -> focus on `#drive-controls` (guardrail 117);
+  `Tab` -> *"Back to the previous exit"* inside the target, 78×31, visible; the skip link clips itself away again.
+  **Presses to the first visible control: 25 -> 1.** The itinerary still carries all **25** links with unchanged text
+  (guardrail 118), and the target exists with `tabindex="-1"` and six controls inside it at 390×844, 844×390 and
+  1440×900 (guardrail 119).
 
 - **C32.1 — The last three copies of a number that lives elsewhere** *(cycle 32, commit `57cd6cc`)* — with every
   drive file audited, this pass hunted the **pattern**: every module-level numeric constant in
