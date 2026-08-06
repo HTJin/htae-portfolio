@@ -9,7 +9,7 @@ import { RoadCanvas } from './RoadCanvas'
 import { RouteMap } from './RouteMap'
 import { Sky } from './Sky'
 import { StopCard } from './StopCard'
-import { route } from './route'
+import { legsOf, route } from './route'
 import { useDrive } from './useDrive'
 import styles from '@/styles/drive.module.css'
 
@@ -22,38 +22,65 @@ const CONTROLS = [
   ['M', 'route map'],
 ]
 
-/** Everything readable on the page, for screen readers and crawlers. */
+const LEGS = legsOf(route)
+
+/**
+ * Everything readable on the page, for screen readers and crawlers.
+ *
+ * This is the only version of the résumé a crawler or a screen reader can
+ * actually consume — the rest of the page is a canvas and a cockpit. So it
+ * carries the full heading hierarchy (route -> leg -> stop) and the year of
+ * every stop that has one in the content. Stops without a date get no year;
+ * nothing here invents one.
+ */
 function Itinerary() {
   return (
     <div className="sr-only">
       <h1>Drive mode — the résumé of Hyun-Tae Jin as a road trip</h1>
-      {route.map((stop) => (
-        <section key={stop.id} aria-label={`${stop.exitLabel}: ${stop.title}`}>
-          <h2>
-            {stop.exitLabel} — {stop.title}
-          </h2>
-          {stop.subtitle ? <p>{stop.subtitle}</p> : null}
-          {stop.meta ? <p>{stop.meta}</p> : null}
-          {stop.paragraphs?.map((paragraph) => (
-            <p key={paragraph.slice(0, 40)}>{paragraph}</p>
-          ))}
-          {stop.bullets?.length ? (
-            <ul>
-              {stop.bullets.map((bullet) => (
-                <li key={bullet.slice(0, 40)}>{bullet}</li>
+      {LEGS.map((leg) => (
+        <section key={leg.name} aria-label={leg.name}>
+          <h2>{leg.name}</h2>
+          {leg.stops.map((stop) => (
+            <article
+              key={stop.id}
+              aria-label={`${stop.exitLabel}: ${stop.title}`}
+            >
+              <h3>
+                {stop.exitLabel} — {stop.title}
+                {stop.year ? (
+                  <>
+                    {' ('}
+                    <time dateTime={String(stop.year)}>{stop.year}</time>
+                    {')'}
+                  </>
+                ) : null}
+              </h3>
+              {stop.subtitle ? <p>{stop.subtitle}</p> : null}
+              {stop.meta ? <p>{stop.meta}</p> : null}
+              {stop.paragraphs?.map((paragraph) => (
+                <p key={paragraph.slice(0, 40)}>{paragraph}</p>
               ))}
-            </ul>
-          ) : null}
-          {stop.tags?.length ? <p>Built with {stop.tags.join(', ')}.</p> : null}
-          {stop.groups?.map((group) => (
-            <p key={group.id}>
-              {group.title}: {group.items}
-            </p>
-          ))}
-          {stop.links?.map((link, position) => (
-            <p key={`${link.label}-${position}`}>
-              <a href={link.href}>{link.label}</a>
-            </p>
+              {stop.bullets?.length ? (
+                <ul>
+                  {stop.bullets.map((bullet) => (
+                    <li key={bullet.slice(0, 40)}>{bullet}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {stop.tags?.length ? (
+                <p>Built with {stop.tags.join(', ')}.</p>
+              ) : null}
+              {stop.groups?.map((group) => (
+                <p key={group.id}>
+                  {group.title}: {group.items}
+                </p>
+              ))}
+              {stop.links?.map((link, position) => (
+                <p key={`${link.label}-${position}`}>
+                  <a href={link.href}>{link.label}</a>
+                </p>
+              ))}
+            </article>
           ))}
         </section>
       ))}
