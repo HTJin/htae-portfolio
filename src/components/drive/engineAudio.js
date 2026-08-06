@@ -119,6 +119,38 @@ export function createEngineAudio() {
     },
 
     /**
+     * Stop the graph while nobody is listening, and pick it up again after.
+     *
+     * `disable()` is the wrong tool for this: it ramps the gain to silence but
+     * leaves the context running, so a hidden tab would still be doing the
+     * work. `update()` stops on its own when `requestAnimationFrame` pauses,
+     * which is worse than it sounds — the oscillators simply hold whatever revs
+     * they were last given. Suspending stops the clock instead.
+     *
+     * Deliberately separate from enable/disable so the toggle's own state is
+     * never touched: coming back to the tab must restore what the visitor
+     * chose, not decide for them.
+     */
+    async pause() {
+      if (closed) return
+      try {
+        if (ctx.state === 'running') await ctx.suspend()
+      } catch {
+        // Nothing to do — a context that will not suspend is still silent-ish.
+      }
+    },
+
+    async unpause() {
+      if (closed) return false
+      try {
+        if (ctx.state === 'suspended') await ctx.resume()
+      } catch {
+        return false
+      }
+      return !closed && ctx.state === 'running'
+    },
+
+    /**
      * Follow the simulation. Driven from `drive.subscribe`, so this runs at
      * frame rate — it must only touch AudioParams, never React state.
      */

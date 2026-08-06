@@ -695,6 +695,30 @@ function AudioToggle({ drive }) {
     return drive.subscribe((sim) => engineRef.current?.update(sim))
   }, [on, drive])
 
+  /**
+   * Leave the tab and the engine goes quiet with it.
+   *
+   * Nothing here used to watch visibility, and the failure is not that the
+   * sound carries on as normal — it is that `update()` rides on
+   * `requestAnimationFrame`, which pauses on a hidden tab, so the oscillators
+   * hold the revs you left at while the master gain is still up.
+   *
+   * Gated on `on` so the listener only exists once sound has been asked for:
+   * this component's rule is that noise can only ever follow a deliberate
+   * gesture, and returning to the tab must never start it for someone who had
+   * it off.
+   */
+  useEffect(() => {
+    if (!on) return undefined
+    const onVisibilityChange = () => {
+      if (document.hidden) engineRef.current?.pause()
+      else engineRef.current?.unpause()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    return () =>
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+  }, [on])
+
   const toggle = useCallback(async () => {
     if (!engineRef.current) {
       engineRef.current = createEngineAudio()
