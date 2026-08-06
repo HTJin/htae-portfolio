@@ -583,8 +583,19 @@ export function DriveScene() {
       <ExitSign drive={drive} stop={stop} />
       <CarInterior passedStop={passedStop} />
 
-      {/* Heads-up display floats on the glass: below the mirror, above the dash. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[var(--dash)] top-[14%] z-30 flex items-center justify-center px-4">
+      {/* Heads-up display floats on the glass: below the mirror, above the dash.
+          "Below the mirror" was only true on a tall window. The mirror hangs
+          from the headliner by a fixed drop — a 12px stalk and a 38px chip, 50px
+          that does not shrink — while this band's top was a flat 14%. Percentage
+          against pixels: they cross below 769px tall, and the panel then drew
+          its bright top border straight through the chip, putting the HUD in
+          front of a mirror bolted to the roof. Measured gap before this: +9px at
+          1440x900, 0 at 1366x768, -3 at 1280x720, and -25 on a landscape phone.
+          The mirror cannot move up (the headliner is right above it), so the
+          floor keeps the band clear of it: 7.5% is the mirror's own offset, 58px
+          is its 50px drop plus 8px of daylight. Above ~892px tall the 14% wins
+          and nothing changes. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-[var(--dash)] top-[max(14%,calc(7.5%+58px))] z-30 flex items-center justify-center px-4">
         <StopCard
           stop={stop}
           visible={started && parked && !mapOpen}
