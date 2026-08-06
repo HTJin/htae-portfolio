@@ -228,9 +228,21 @@ export function StopCard({ stop, visible, position, total }) {
           // AnimatePresence, so it is destroyed and rebuilt on every arrival and
           // could never announce anything. `ArrivalAnnouncer` in DriveScene is
           // mounted for the life of the page and does the announcing.
+          // A text-only stop keeps widening past `lg`, where a picture stop
+          // stops at 58rem. The card used to cap there at every width, so a
+          // 1920-wide monitor left 992px of the band — more than half — empty
+          // while the longest entry on the résumé was still cut off. The extra
+          // width buys a third column rather than longer lines; see below.
+          //
+          // Two separate interpolations on purpose: writing them as one
+          // comma-separated expression makes it the comma operator, which
+          // evaluates the first and throws it away. That silently dropped the
+          // picture stops back to 44rem, and only the measurements caught it.
           className={`pointer-events-auto relative flex max-h-full w-[min(94vw,44rem)] flex-col rounded-xl px-4 py-3 sm:px-7 sm:py-5 ${
-            shots || roomy ? 'lg:w-[min(94vw,58rem)]' : ''
-          } ${styles.hud}`}
+            shots ? 'lg:w-[min(94vw,58rem)]' : ''
+          } ${roomy ? 'lg:w-[min(94vw,58rem)] 2xl:w-[min(94vw,76rem)]' : ''} ${
+            styles.hud
+          }`}
         >
           <CornerBrackets />
 
@@ -287,7 +299,14 @@ export function StopCard({ stop, visible, position, total }) {
               // balance and the content gets *taller*: measured, the toolbox
               // went from 84px hidden to 261px. Only the small items are
               // protected from breaking mid-item.
-              <div className="lg:columns-2 lg:gap-x-8 [&_li]:break-inside-avoid">
+              // Three columns once there is room for them. Measured at
+              // 1920x900 on the sabbatical, the longest entry: widening alone
+              // to 1088px left 22px hidden and pushed the measure to 492px
+              // (~76 characters), while 1216px with a third column hides
+              // nothing and *narrows* the measure to 363px (~56). Better on
+              // both axes, which is the same trade that chose two columns
+              // over a plain widening in the first place.
+              <div className="lg:columns-2 lg:gap-x-8 2xl:columns-3 [&_li]:break-inside-avoid">
                 <StopProse stop={stop} />
               </div>
             ) : (
