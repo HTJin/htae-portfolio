@@ -753,3 +753,26 @@ Most do not. `HOLD`, `IDLE_HZ`/`REV_HZ`, `SWEEP`/`START_ANGLE`, the sign's own d
 **Presses to the first visible control: 25 -> 1.** The itinerary still carries all 25 links, text unchanged, and the target has `tabindex="-1"` with six controls inside it at 390×844, 844×390 and 1440×900.
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.3 kB). One commit: `de9a7da`. -> `Cycle: 34 / Phase: Planner`.
+
+## Cycle 34
+
+**Suggester.** Cycle 33 made real keyboard focus measurable for the first time. This pass spent that capability on two things: a question left open since cycle 12, and the residue cycle 33 deliberately did not finish.
+
+**Settled — the controls do have a focus indicator.** Cycle 12 measured "no focus indicator anywhere", correctly identified it as an artefact of programmatic focus (which never matches `:focus-visible`), and could not prove the negative. Fourteen real `Tab` presses on a focused document, recording `getComputedStyle` at every stop: **all fourteen** report `outline: auto 1px` with `:focus-visible` true, **none** suppressed. The alarm was false and is now closed on evidence rather than reasoning.
+
+**The finding.** Of those fourteen stops, **13 were off-screen** — every itinerary link. They carry the ring; it is painted on content clipped to nothing. The skip link rescues anyone who takes it, but anyone who keeps tabbing still walks 25 blind stops.
+
+**The fix I expected to make turned out to be impossible, and proving that was the useful part.** The standard treatment is `focus:not-sr-only` — which is exactly what makes the skip link appear at 171×22, because the skip link is *itself* `sr-only`. It cannot work for a **descendant** of an `sr-only` container. Rather than assume, I forced a focused itinerary link to `position: fixed; clip: auto` at (16, 64): it took a correct **85×38** layout box, and `document.elementFromPoint` at its own centre returned the **canvas**. A fixed descendant does not escape an ancestor's `clip: rect(0,0,0,0)`.
+
+That ruled out revealing the link in place. Unclipping the container on `focus-within` would drop the entire résumé over the driving scene; re-hiding the block by off-screen positioning instead of clipping would restructure the only machine-readable copy of the résumé on a hunch about screen-reader behaviour I cannot test here (guardrail 121). So the answer is not to move the link out but to **report where focus is, from outside the clip**: a small chip naming the focused link, `aria-hidden` and deliberately not a live region — a screen reader already announces it, and twice is worse than not at all (guardrail 122).
+
+**A method note that matters.** My first hit test said the chip was painted *behind* the canvas. It was not: `pointer-events-none` — which the chip needs so it can never intercept a click — also removes an element from hit testing, so `elementFromPoint` skipped it. Lifting that property *only for the measurement* returns the chip itself. Guardrail 120 said a layout box is not visibility; it turns out a hit test is not either, unless you account for what you have done to the element.
+
+**Verified with real key presses on a focused document:**
+- `Tab`×3 -> chip reads **"Résumé outline: GitHub"**, box **183×34** at (12,12), `z-index: 50` over the canvas' `auto`; screenshot confirms it on screen
+- `Tab`×2 more -> tracks to **"Résumé outline: Coding Temple certificate"**
+- focus a real control -> chip **disappears**
+- itinerary still **25** links; skip link still first in the tab order
+- chip **absent** on a plain load, after clicking around with the mouse, and on the phone layout
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.4 kB). One commit: `ed61397`. -> `Cycle: 35 / Phase: Planner`.

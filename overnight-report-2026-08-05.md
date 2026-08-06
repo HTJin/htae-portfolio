@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 33 · branch `feat/drive-mode` · 47 commits, nothing pushed
+**Last updated:** end of cycle 34 · branch `feat/drive-mode` · 48 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,40 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 34 — finishing the keyboard story, and closing an old question
+
+Last cycle added a "Skip to the drive controls" link, which helps anyone who takes it. But someone who keeps pressing
+Tab still walked twenty-five stops through the invisible résumé with nothing on screen to show where they were. This
+cycle finished that, and settled something that had been sitting unanswered since cycle 12.
+
+**First, the old question: do your controls show a focus outline?** Back in cycle 12 a check reported that none of them
+did. I suspected the test was at fault rather than the site — browsers only draw that outline for genuine keyboard
+use, and my test was faking it — but I could not prove it either way and left it open. Now I can: fourteen real Tab
+presses, and **every single control shows the browser's focus ring**. Nothing on the page suppresses it. That alarm
+was false, and it is now closed properly rather than assumed away.
+
+**Second, the invisible stretch.** The obvious fix is the same trick the skip link uses — let the focused item pop into
+view. It turns out that cannot work here, and finding out why was the useful part. The skip link can reveal itself
+because *it* is the hidden element. The résumé links are hidden by their **container**, and a child cannot climb out of
+its parent's hiding. I tested it directly rather than guessing: forced one of those links to jump to the top-left
+corner, and while the browser agreed it was now an 85×38 box at that spot, checking what is actually painted there
+returns the road behind it. The link was still nowhere.
+
+The alternatives were worse: unhiding the container dumps your entire résumé across the driving scene, and changing how
+that block is hidden means rebuilding the one machine-readable copy of your résumé on a hunch.
+
+So instead of dragging the link into view, the page now **tells you where you are**: a small label in the corner reading
+*"Résumé outline: GitHub"*, which follows along as you tab and disappears the moment you reach a real control. Screen
+reader users are unaffected — they already hear each link, and the label is deliberately silent so they do not hear it
+twice. Mouse users never see it at all.
+
+**One thing I nearly got wrong.** My first check said the new label was hidden behind the road. It was not — I had made
+it click-through, so that it could never block a button, and click-through also makes it invisible to the *test* I was
+using. The label was on screen the whole time. Worth mentioning because it is the second time this run that a
+measurement, not the code, was the thing that was broken.
 
 ---
 

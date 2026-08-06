@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 34
+**Cycle:** 35
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -342,6 +342,22 @@
 119. **Check both layouts.** The cockpit renders a phone stack and a desktop grid; the skip target must land somewhere
      real in both, so verify at 390×844 as well as desktop.
 
+### Cycle 34 pre-mortem (guardrails for this cycle's tasks)
+
+120. **A layout box is not visibility.** This cycle's own experiment showed an element with a correct
+     `getBoundingClientRect` that was still painted nowhere. Every visibility claim here must be a hit test
+     (`document.elementFromPoint` returning the element at its own centre), not a rectangle.
+121. **Do not restructure the crawlable résumé.** The itinerary is the only machine-readable copy (guardrails 19,
+     21, 118). Changing how it is hidden — off-screen positioning instead of clipping, or `sr-only` moved onto every
+     child — is a bigger change than this finding justifies, and would be made on a hunch about screen-reader
+     behaviour that cannot be tested here.
+122. **The chip must never speak.** It duplicates what a screen reader already announces, so it is `aria-hidden` and
+     must not be a live region — two announcements of the same link is worse than none.
+123. **It must not appear for mouse users.** Bind it to focus inside the itinerary only; verify it is absent on a
+     normal load and after clicking around.
+124. **Verify with real keys.** Programmatic focus does not match `:focus-visible` on an unfocused document — the trap
+     that made two cycle-33 attempts report a false failure. Use real `Tab` presses and a focused window.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -357,9 +373,46 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 34
+## Tonight's tasks (in order) — CYCLE 35
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 34's list (resolved — kept for context)</summary>
+
+### CYCLE 34
+
+Cycle 33 made real keyboard focus measurable for the first time. This pass used it to answer a question left open since
+cycle 12 and to finish what cycle 33 started.
+
+**Settled: every control does have a focus indicator.** Fourteen real `Tab` presses on a genuinely focused document,
+recording `getComputedStyle` at each stop: **all fourteen** report `outline: auto 1px` with `:focus-visible` true, and
+**none** has its outline suppressed. Cycle 12 dismissed a "no focus indicator" alarm as an artefact of programmatic
+focus and could not prove it either way; it can now be closed as correct.
+
+- [x] **1. Focus still vanishes for 25 presses inside the itinerary, and the usual fix provably cannot work** — **DONE**
+  - **Evidence:** of the 14 recorded stops, **13 were off-screen** — every itinerary link. They carry the browser's
+    focus ring, but on content clipped to nothing, so the ring is painted where nobody can see it. The skip link from
+    cycle 33 rescues anyone who takes it; anyone who keeps tabbing still walks 25 blind stops.
+  - **Why the standard reveal is unavailable, established by experiment rather than assumed:** the usual treatment is
+    `focus:not-sr-only`, which works on an element that is *itself* `sr-only` — that is exactly why the skip link
+    appears at 171×22. It cannot work for a **descendant** of an `sr-only` container. Tested directly: a focused
+    itinerary link forced to `position: fixed; clip: auto` at (16, 64) has the right layout box (85×38) but
+    `document.elementFromPoint` at its own centre returns the **canvas**, not the link. A fixed descendant does not
+    escape the ancestor's `clip: rect(0px, 0px, 0px, 0px)`.
+  - **What that rules out:** revealing the link in place. Unclipping the container on `focus-within` would drop the
+    entire résumé over the driving scene; changing how that block is hidden would mean restructuring the one
+    machine-readable copy of the résumé (guardrail 118) on a hunch.
+  - **What is left, and it is small:** show *where focus is* rather than trying to reveal the element — a chip outside
+    the clipped container, `aria-hidden`, that appears only while focus is inside the itinerary and names the focused
+    link. Screen-reader users are unaffected (they already hear it); the block's markup and text are untouched.
+  - **Files:** `src/components/drive/DriveScene.jsx`.
+  - **Done when:** tabbing into the itinerary shows an on-screen chip naming the focused link, proven with
+    `document.elementFromPoint` returning the chip at its own centre (a layout box is not enough — that is what the
+    experiment above disproved); the chip names each link as focus moves; it disappears when focus leaves the block;
+    it is `aria-hidden`; the itinerary still holds **25** links with unchanged text; and the skip link still works.
+
+</details>
 
 <details>
 <summary>Cycle 33's list (resolved — kept for context)</summary>
@@ -1411,6 +1464,25 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C34.0 — Every control does have a focus indicator** *(cycle 34 — closes a question open since cycle 12)* — cycle
+  12 dismissed a "no focus indicator anywhere" alarm as an artefact of programmatic focus but could not prove it.
+  With real keyboard focus available (cycle 33), fourteen genuine `Tab` presses were recorded on a focused document:
+  **all fourteen** report `outline: auto 1px` with `:focus-visible` **true**, and **none** has its outline suppressed.
+  Closed as correct.
+- **C34.1 — Focus is now locatable while tabbing the hidden résumé** *(cycle 34, commit `ed61397`)* — of those
+  fourteen stops, **13 were off-screen** — every itinerary link, carrying a focus ring painted on content clipped to
+  nothing. **The usual reveal was proven impossible rather than assumed:** `focus:not-sr-only` works on an element
+  that is *itself* `sr-only` (which is why the skip link appears at 171×22), but not on a **descendant** of an
+  `sr-only` container. Tested — a focused itinerary link forced to `position: fixed; clip: auto` at (16, 64) keeps a
+  correct **85×38** layout box while `document.elementFromPoint` at its own centre returns the **canvas**. A fixed
+  descendant does not escape `clip: rect(0,0,0,0)`. Unclipping on `focus-within` would drop the whole résumé over the
+  scene, and re-hiding that block differently would restructure the only machine-readable copy on a hunch (guardrail
+  121). So the fix reports *where focus is* from outside the clip: an `aria-hidden` chip naming the focused link,
+  deliberately not a live region (guardrail 122). **Verified with real keys:** chip reads *"Résumé outline: GitHub"* at
+  **183×34** (12,12) with a screenshot confirming it on screen; tracks to *"Coding Temple certificate"* two presses
+  later; **disappears** when focus reaches a control; itinerary still **25** links; skip link still first; and the chip
+  is **absent** on a plain load, after mouse clicking, and on the phone layout (guardrail 123).
 
 - **C33.0 — The per-frame subscriber set does not leak** *(cycle 33 — verification only)* — `drive` is a `useMemo`
   whose identity changes on **every arrival**, so every consumer's effect tears down and re-subscribes across a drive;
