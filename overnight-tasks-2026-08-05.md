@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 14
+**Cycle:** 15
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -118,7 +118,46 @@
 
 ## Tonight's tasks (in order)
 
+*(cycle 14's list is fully resolved — see Done. The Planner fills this for cycle 15.)*
+
+<details>
+<summary>Cycle 14's list (resolved — kept for context)</summary>
+
+### CYCLE 14
+
+Backlog is dry (S15 blocked, S13b closed by the owner), so a **Suggester** pass. It started by re-checking cycle 13's
+own change for regressions, then re-read the owner's original priority **(b) "the destination-arrival panel needs
+work"** — and looked at the *destination* stop specifically, which no cycle had ever examined on its own.
+
+- [ ] **0. Regression check on cycle 13** *(done during the Suggester pass)*
+  - Cycle 13 changed camera lateral maths in four places, and `ExitSign` is a DOM overlay positioned independently of
+    the canvas — the obvious thing to break. **Checked at EXIT 07: no regression** — the sign's twin posts meet the
+    ground at the roadside and the lane markings read correctly (yellow centre line left, white edge line right, car
+    between them). The first-run flow was exercised end to end too: Start engine -> hold accelerator -> depart ->
+    arrive at EXIT 01 with the panel open. No defect.
+- [ ] **1. Give the destination the weight of an arrival** (priority (b))
+  - **Why:** the destination is the conversion moment — a recruiter who has driven 21 exits to reach it — but it is
+    shaped exactly like every other stop.
+  - **Evidence (observed at `?exit=20`):** all four actions render identically, so **"Email hytjin@gmail.com" carries
+    the same visual weight as "Back to the classic site"** — the goal and the exit door are indistinguishable, and the
+    eye has nothing to land on. Nothing about the panel marks the end of a journey.
+  - **Design:** a primary action (email) that actually looks primary; "back to the classic site" demoted to a quiet
+    exit rather than a peer of the contact actions; and a short summary of the trip just driven.
+  - **Hard constraint (guardrail 13):** every number in that summary must be **derived from the real content** —
+    counts of roles and builds, the first dated year, the route's own length. Nothing typed in, nothing estimated. The
+    owner's existing prose is **not** to be rewritten; the summary sits alongside it.
+  - **Files:** `src/components/drive/route.js`, `src/components/drive/StopCard.jsx`.
+  - **Done when:** the destination shows a derived trip summary whose numbers match the content, the email action is
+    visually primary and the classic-site link is not, and no other stop's appearance changes.
+
+</details>
+
+<details>
+<summary>Cycle 13's list (owner feedback — resolved; see Done C13-1/C13-2)</summary>
+
 *(cycle 12's list is fully resolved — see Done. The Planner fills this for cycle 13.)*
+
+</details>
 
 <details>
 <summary>Cycle 12's list (resolved — kept for context)</summary>
@@ -512,6 +551,10 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **5b. Title clamping at phone width** *(cleared cycle 2)* — proven working, and it exposed a real cache fault on the way (see the log). At 386x840 on EXIT 11 the h2 computes `-webkit-line-clamp: 2`, `-webkit-box-orient: vertical`, `overflow: hidden`; the real title renders on exactly 2 lines unclipped, and an injected 113-character title still renders at exactly 2 lines (45px = 2 x 22.5px line-height) with `scrollHeight > clientHeight` — i.e. genuinely clamped, not merely short enough.
 - **C2-1. Time-of-day lighting along the route** — proven working. Live state read at four points: MILE 0 `starOpacity=0` with a warm `rgb(226,140,84)` horizon; Coding Temple `0.2303`; Weather Window `0.9475`; destination `0.6` (dawn dims them again). Screenshots confirm golden-hour dusk at MILE 0, full night at the toolbox, first light at the destination. Performance measured both ways rather than assumed: **34.2fps median with the palette vs 26.6fps at baseline** (same machine, same 180-frame method, baseline obtained by stashing only the cycle-2 drive files) — no regression. Cold load has no hydration warning. Commit `dd4b28b`.
 - **C2-2. Exit-sign realism pass** — proven working: mid-approach at dusk the sign shows its MUTCD exit plaque, twin posts, leg name, live distance countdown ("38 M"), title and sub, with the retroreflective face flaring as it nears; frozen mid-approach at night (brake held) it keeps good contrast against the dark sky. Commit `86d0174`.
+- **C14-0. Regression check on cycle 13's camera change** — cycle 13 rewrote camera lateral maths in four places, and `ExitSign` positions itself independently of the canvas, so it was the likeliest casualty. **No regression:** at EXIT 07 the sign's twin posts still meet the ground at the roadside and the lane markings read correctly (yellow centre line left, white edge line right, car between them). The first-run flow was also exercised end to end — Start engine -> hold accelerator -> depart -> arrive at EXIT 01 with the panel open.
+- **C14-1. The destination now reads as an arrival** — priority (b) named this panel and no cycle had examined the destination stop on its own. It was shaped like every other stop: all four actions rendered identically, so **"Email hytjin@gmail.com" carried the same weight as "Back to the classic site"** — goal and exit door indistinguishable. The email is now primary, LinkedIn and the résumé stay secondary, the classic-site link drops to quiet text, and a derived summary of the trip sits above them. Commit `b6f444f`.
+  - **Every number is derived, none written down (guardrail 13):** rendered **2016 / 9 / 8 / 2.7**, checked against the content itself — 9 ids in `experience.js`, 8 names in `projects.js`, `education.date` 2016, and 21 stops x 220m = 2.7 mi. Add a role or a build and they follow automatically. The owner's prose was not touched.
+  - **No collateral change:** EXIT 11 re-checked — no summary, both links still secondary.
 - **C13-1. Oncoming traffic removed** — at the owner's direct request: *"you've put unnecessary opposing traffic in a portfolio site that should represent me."* Removed the constants, the per-frame car state, `drawOncoming`, and the `reducedMotion` prop that existed only to suppress it. Recorded at the top of the Guardrails block as standing law so no future Suggester pass re-proposes it; S13b (drifting haze) closed as unwanted for the same reason. Commit `d76e0bd`.
 - **C13-2. The car now drives in a lane, not down the centre line** — also at the owner's request, twice: *"i dislike how the car starts in the middle of the road"* and *"you also make me steer right back into the middle of the road instead of the middle of the lane of traffic im supposed to be in."* Both symptoms had one cause: the camera sat at lateral **0**, which **is** the centre line, and `sim.x` decays to 0 — so releasing the steering keys actively walked you back onto it. The camera now sits at `cameraX(sim) = LANE_OFFSET + sim.x` with `LANE_OFFSET = 2.7`, the midpoint of the right-hand lane (road spans -5.5..5.5, centre line at 0, so the right lane's midpoint is 2.75). `sim.x` is now drift *within* the lane, so re-centring returns you to your lane. Steering clamp tightened ±3.4 -> ±2.3 so full-left is 0.4m (just inside the centre line) and full-right is 5.0m (on the edge line) — you can no longer stray onto the oncoming side or the shoulder. Expressed once in `world.js` and consumed by all four camera-relative call sites (road ribbon, roadside furniture, exit signs, `project()`). Commit `d76e0bd`.
   - **Verified against a production build:** the yellow centre line now runs down the **left** of the view with the white edge line on the right, and the vanishing point sits slightly left of screen centre — exactly where it belongs when seated right of the road's centreline.

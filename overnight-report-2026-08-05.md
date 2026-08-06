@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 13 · branch `feat/drive-mode` · 24 commits, nothing pushed
+**Last updated:** end of cycle 14 · branch `feat/drive-mode` · 26 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,32 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 14 — the destination now reads as an arrival
+
+Your priority (b) was *"the destination-arrival panel needs work."* Cycle 1 rebuilt the arrival panel **in general** —
+but nobody had ever looked at the **destination stop itself**, which is the whole point of the drive: the moment a
+recruiter reaches after twenty-one exits.
+
+It was shaped like every other stop. All four actions rendered identically, so **"Email hytjin@gmail.com" carried
+exactly the same visual weight as "Back to the classic site"** — the thing you want them to do and the door out looked
+the same, and the eye had nothing to land on.
+
+Now the email is the primary action and looks it, LinkedIn and the résumé sit behind it, and "back to the classic site"
+drops to a quiet text link rather than competing with them. Above the actions there's a short summary of the drive:
+
+> **Driving since** 2016 · **Roles** 9 · **Side builds** 8 · **Miles driven** 2.7
+
+Every one of those is **derived from your own content** — the counts come from the route's stops, the year from
+`education.date`, the distance from the route's length. Nothing is typed in, so adding a role or a build updates them
+by itself. That's deliberate: a hardcoded number on a résumé goes stale silently, which is the worst kind of wrong.
+I left your prose exactly as you wrote it; the summary sits alongside it.
+
+I also checked my own cycle-13 change for damage before touching anything: the exit signs still land correctly at the
+roadside after the camera moved into the lane, and the first-run flow (start engine → hold accelerator → arrive) works
+end to end.
 
 ---
 
@@ -88,7 +114,7 @@ a driver's-POV cockpit with working instruments · an arrival panel with auto-cy
 dusk-to-dawn light that advances with your career · real interstate guide signs · per-leg roadside character ·
 a trip computer counting the actual years · deep links to any exit · mile markers ·
 resume-where-you-left-off · opt-in engine sound · a keyboard-accessible route map · a reduced-motion path that holds
-together · and a cockpit that now fits a landscape phone.
+together · a cockpit that fits a landscape phone · and a destination that finally reads as an arrival.
 
 ---
 

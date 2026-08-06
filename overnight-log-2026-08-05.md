@@ -306,3 +306,21 @@ An in-browser measurement was attempted first but was inconclusive — the image
 - Expressed **once** in `world.js` and consumed by all four camera-relative call sites — road ribbon, roadside furniture, exit signs, `project()` — so nothing can disagree about where the car is (the same discipline that fixed cycle 12's dash-height bug).
 
 **Verified against a production build:** the yellow centre line now runs down the **left** of the view with the white edge line on the right, and the road's vanishing point sits slightly left of screen centre — which is where it belongs when you are seated to the right of the road's centreline, and incidentally makes the left-of-centre steering wheel read correctly for the first time. `next lint` clean, `npm run build` compiles (`/drive` 19 kB, down from 19.3). Commit `d76e0bd`.
+
+---
+
+## Cycle 14
+
+**02:03 local — Relief shift took the baton.** `Phase: Planner`, `Cycle: 15`... read as `Cycle: 14`. Backlog dry (S15 blocked, S13b closed by the owner), so a **Suggester** pass — but it began with a self-check rather than a hunt for new work.
+
+**02:05 — Regression check on my own cycle-13 change first.** Cycle 13 rewrote camera lateral maths in four places at the owner's request, and `ExitSign` is a DOM overlay positioned independently of the canvas — the likeliest thing to have broken silently. **No regression:** at EXIT 07 the sign's twin posts still meet the ground at the roadside, and the lane markings read correctly with the yellow centre line to the left and the white edge line to the right. The first-run flow was exercised end to end too — Start engine, hold the accelerator as the screen instructs, depart, arrive at EXIT 01 with the panel open.
+
+**02:12 — Re-read the owner's original priorities and found (b) under-served.** Priority (b) was *"the destination-arrival panel needs work"*. Cycle 1 rebuilt the arrival panel **in general**, but nobody had ever looked at the **destination stop itself** — which is the conversion moment, the thing a recruiter reaches after driving twenty-one exits.
+- **The defect, observed at `?exit=20`:** all four actions rendered identically, so **"Email hytjin@gmail.com" carried exactly the same visual weight as "Back to the classic site"**. The goal and the exit door were indistinguishable and the eye had nothing to land on. Nothing about the panel marked the end of a journey either.
+- **Fixed:** the email is now the primary action and looks it; LinkedIn and the résumé stay secondary; the classic-site link drops to a quiet text link rather than a peer of the contact actions; and a short summary of the trip sits above them.
+
+**The constraint that shaped the summary:** guardrail 13 — never put a number on someone's résumé that was not derived from their content. So the figures come from the route itself (counts of `kind === 'experience'` and `kind === 'project'` stops), from `education.date`, and from `routeLength`. Nothing is typed in, and adding a role or a build updates them automatically. The owner's own prose was left exactly as written; the summary sits alongside it rather than replacing it.
+
+**Verified against a production build:** rendered **2016 / 9 / 8 / 2.7**, checked independently against the content — 9 ids in `experience.js`, 8 names in `projects.js`, `education.date` 2016, 21 stops x 220m = 2.7 mi. All four match. Link hierarchy reads PRIMARY / secondary / secondary / quiet. EXIT 11 re-checked to confirm no collateral change: no summary, both links still secondary.
+
+**02:30 — Builder exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.3 kB). One commit: `b6f444f`. -> **Phase: Reviewer**, then the controller advanced to `Cycle: 15 / Phase: Planner`.

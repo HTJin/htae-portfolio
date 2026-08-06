@@ -174,4 +174,9 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Why / expected impact:** the camera sat at lateral 0, which is the centre line, and `sim.x` decays to 0 - so the game actively steered you back onto the centre line whenever you let go.
   - **Outcome:** **Shipped** in `d76e0bd`. `cameraX(sim) = LANE_OFFSET + sim.x`, `LANE_OFFSET = 2.7` (midpoint of the right-hand lane); `sim.x` is now drift within the lane. Steering clamp tightened to keep the car between the centre line and the edge line. Verified: the centre line now runs down the left of the view.
 
+- [ ] **S29 - The destination did not read as an arrival** - Status: Done - Cycle: 14
+  - **Source:** re-reading the owner's priority (b), *"the destination-arrival panel needs work"*, and noticing that the **destination stop itself** had never been examined - only the arrival panel in general (cycle 1).
+  - **Why / expected impact:** it is the conversion moment. All four actions rendered identically, so the email and "back to the classic site" were visually indistinguishable; the eye had nothing to land on after twenty-one exits.
+  - **Outcome:** **Shipped** in `b6f444f`. Email primary, classic-site link demoted to quiet text, and a trip summary above them whose every figure is derived from the content (rendered 2016 / 9 / 8 / 2.7, matching 9 roles, 8 builds, education 2016, 21 stops x 220m). Owner's prose untouched; EXIT 11 confirmed unchanged.
+
 *(Check the box once you've reviewed the outcome.)*
