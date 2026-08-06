@@ -239,7 +239,9 @@ export function StopCard({ stop, visible, position, total }) {
           // evaluates the first and throws it away. That silently dropped the
           // picture stops back to 44rem, and only the measurements caught it.
           className={`pointer-events-auto relative flex max-h-full w-[min(94vw,44rem)] flex-col rounded-xl px-4 py-3 sm:px-7 sm:py-5 ${
-            shots ? 'lg:w-[min(94vw,58rem)]' : ''
+            shots
+              ? 'lg:w-[min(94vw,58rem)] [@media(min-width:1536px)_and_(min-height:1120px)]:w-[min(94vw,76rem)]'
+              : ''
           } ${roomy ? 'lg:w-[min(94vw,58rem)] 2xl:w-[min(94vw,76rem)]' : ''} ${
             styles.hud
           }`}
@@ -277,7 +279,19 @@ export function StopCard({ stop, visible, position, total }) {
             className={`min-h-0 flex-1 overflow-y-auto pr-1 ${styles.hudScroll}`}
           >
             {shots ? (
-              <div className="gap-x-5 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+              // The screenshot is the point of a project stop, so on a screen
+              // with room it takes more of the split. Measured: 451x225 from a
+              // 1899x970 source is 23.7% of native at every width, because the
+              // card used to cap at 58rem — a whole page rendered at a quarter
+              // size, where the layout reads and nothing else does.
+              //
+              // Gated on height as well as width, and that is not caution but
+              // arithmetic: the frame is a fixed 2:1, so widening grows the
+              // height too, and the band's height belongs to the cockpit.
+              // Trialled at 1216px — 1920x900 hid 83px and 1920x1000 hid 33px,
+              // while 1080 and above hid nothing. Below the gate the layout is
+              // untouched, because the room genuinely is not there.
+              <div className="gap-x-5 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] [@media(min-width:1536px)_and_(min-height:1120px)]:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
                 <ProjectShots
                   images={shots}
                   title={stop.title}
