@@ -9,6 +9,7 @@ import { RoadCanvas } from './RoadCanvas'
 import { RouteMap } from './RouteMap'
 import { Sky } from './Sky'
 import { StopCard } from './StopCard'
+import { clearProgress, readProgress, writeProgress } from './progress'
 import { legsOf, route } from './route'
 import { useDrive } from './useDrive'
 import styles from '@/styles/drive.module.css'
@@ -88,7 +89,7 @@ function Itinerary() {
   )
 }
 
-function Ignition({ onStart }) {
+function Ignition({ onStart, resume, onResume, onForget }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -111,13 +112,42 @@ function Ignition({ onStart }) {
         accelerator, roll up to the sign, read, then drive on.
       </p>
 
-      <button
-        type="button"
-        onClick={onStart}
-        className={`mt-8 rounded-full border border-yellow-300/60 bg-yellow-300/10 px-8 py-3 font-display text-sm font-semibold uppercase tracking-[0.2em] text-yellow-200 transition hover:bg-yellow-300/20 ${styles.ignition}`}
-      >
-        Start engine
-      </button>
+      <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row">
+        <button
+          type="button"
+          onClick={onStart}
+          className={`rounded-full border border-yellow-300/60 bg-yellow-300/10 px-8 py-3 font-display text-sm font-semibold uppercase tracking-[0.2em] text-yellow-200 transition hover:bg-yellow-300/20 ${styles.ignition}`}
+        >
+          Start engine
+        </button>
+
+        {/* Offered, never applied. Someone who read a few exits last time gets
+            back to them in one click; everyone else sees nothing new. */}
+        {resume ? (
+          <button
+            type="button"
+            onClick={onResume}
+            className="max-w-[18rem] rounded-full border border-sky-400/50 bg-sky-400/10 px-6 py-3 text-left text-sm text-sky-200 transition hover:bg-sky-400/20"
+          >
+            <span className="block text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-sky-300/70">
+              Resume · {resume.label}
+            </span>
+            <span className="mt-0.5 block truncate font-display">
+              {resume.title}
+            </span>
+          </button>
+        ) : null}
+      </div>
+
+      {resume ? (
+        <button
+          type="button"
+          onClick={onForget}
+          className="text-white/35 mt-3 text-[0.6875rem] uppercase tracking-[0.18em] transition hover:text-sky-300"
+        >
+          Forget my progress
+        </button>
+      ) : null}
 
       <dl className="mt-10 grid max-w-lg grid-cols-2 gap-x-6 gap-y-1.5 text-left text-[0.6875rem] sm:grid-cols-3">
         {CONTROLS.map(([key, action]) => (
@@ -146,6 +176,10 @@ export function DriveScene() {
   const drive = useDrive(route, { reducedMotion: Boolean(reducedMotion) })
   const [mapOpen, setMapOpen] = useState(false)
   const deepLinked = useRef(false)
+  // Starts null and is filled in after mount: the server has no storage, so
+  // reading it during render would make the first client paint disagree with
+  // the server markup.
+  const [resume, setResume] = useState(null)
 
   const { started, start, index, parked, setThrottle, setBrake, setSteer } =
     drive
@@ -197,6 +231,36 @@ export function DriveScene() {
     drive.goTo(target)
     drive.start()
   }, [router.isReady, router.query.exit, router, drive])
+
+  /**
+   * Offer to pick up where they left off — but only where an explicit link has
+   * not already asked for an exit, and only once mounted (guardrail 28).
+   */
+  useEffect(() => {
+    if (!router.isReady) return
+    const asked = Array.isArray(router.query.exit)
+      ? router.query.exit[0]
+      : router.query.exit
+    if (asked != null && asked !== '') return
+    setResume(readProgress())
+  }, [router.isReady, router.query.exit])
+
+  /** Remember the furthest exit reached. Never from inside the frame loop. */
+  useEffect(() => {
+    if (!started) return
+    writeProgress(index)
+  }, [started, index])
+
+  const resumeDrive = useCallback(() => {
+    if (!resume) return
+    drive.goTo(resume.index)
+    drive.start()
+  }, [drive, resume])
+
+  const forgetProgress = useCallback(() => {
+    clearProgress()
+    setResume(null)
+  }, [])
 
   /** Keep the URL on the exit you are parked at, so it can be copied. */
   useEffect(() => {
@@ -378,7 +442,14 @@ export function DriveScene() {
       />
 
       <AnimatePresence>
-        {started ? null : <Ignition onStart={start} />}
+        {started ? null : (
+          <Ignition
+            onStart={start}
+            resume={resume}
+            onResume={resumeDrive}
+            onForget={forgetProgress}
+          />
+        )}
       </AnimatePresence>
     </div>
   )
