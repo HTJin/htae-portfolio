@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { paletteAt, withAlpha } from './daylight'
+import { paletteAt } from './daylight'
 import { METERS_PER_MILE, routeLength } from './route'
 import { CAM_HEIGHT, ROAD_HALF, curveAt, hillAt, makeCamera } from './world'
 import styles from '@/styles/drive.module.css'

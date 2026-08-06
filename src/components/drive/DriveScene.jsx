@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/router'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { CarInterior } from './CarInterior'
 import { Dashboard } from './Dashboard'
@@ -110,9 +111,11 @@ function Ignition({ onStart }) {
 }
 
 export function DriveScene() {
+  const router = useRouter()
   const reducedMotion = useReducedMotion()
   const drive = useDrive(route, { reducedMotion: Boolean(reducedMotion) })
   const [mapOpen, setMapOpen] = useState(false)
+  const deepLinked = useRef(false)
 
   const { started, start, index, parked, setThrottle, setBrake, setSteer } =
     drive
@@ -136,6 +139,51 @@ export function DriveScene() {
       document.body.style.overflow = previousOverflow
     }
   }, [])
+
+  /**
+   * `/drive?exit=11` drops you at that exit with the engine already running.
+   * Someone following a shared link asked for the exit, not the ignition
+   * screen. Junk and out-of-range values are ignored and you start at MILE 0.
+   */
+  useEffect(() => {
+    if (!router.isReady || deepLinked.current) return
+    deepLinked.current = true
+
+    const raw = Array.isArray(router.query.exit)
+      ? router.query.exit[0]
+      : router.query.exit
+    if (raw == null || raw === '') return
+
+    const target = Number.parseInt(raw, 10)
+    if (
+      !Number.isInteger(target) ||
+      target < 0 ||
+      target > route.length - 1 ||
+      String(target) !== String(raw).trim()
+    ) {
+      return
+    }
+
+    drive.goTo(target)
+    drive.start()
+  }, [router.isReady, router.query.exit, router, drive])
+
+  /** Keep the URL on the exit you are parked at, so it can be copied. */
+  useEffect(() => {
+    if (!router.isReady || !started) return
+
+    const current = Array.isArray(router.query.exit)
+      ? router.query.exit[0]
+      : router.query.exit
+    const next = index === 0 ? undefined : String(index)
+    if (current === next) return
+
+    router.replace(
+      { pathname: '/drive', query: next ? { exit: next } : {} },
+      undefined,
+      { shallow: true }
+    )
+  }, [router, index, started])
 
   useEffect(() => {
     if (!started) return undefined
