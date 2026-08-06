@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { paletteAt, withAlpha } from './daylight'
-import { routeLength } from './route'
+import { roadsideAt, routeLength } from './route'
 import {
   CAM_HEIGHT,
   ROAD_HALF,
@@ -85,6 +85,48 @@ export function RoadCanvas({ drive, className }) {
       }
     }
 
+    /**
+     * A rail standing above the verge, filled as one continuous shape between
+     * two heights. Same reason `stripes` exists: filling each segment on its
+     * own leaves anti-aliasing seams down the length of it.
+     */
+    function rail(first, last, lateral, low, high, fill) {
+      if (last <= first) return
+      ctx.fillStyle = fill
+      ctx.beginPath()
+      for (let i = first; i <= last; i += 1) {
+        const point = points[i]
+        const x = point.cx + lateral * point.scale
+        const y = point.y - high * point.scale
+        if (i === first) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      for (let i = last; i >= first; i -= 1) {
+        const point = points[i]
+        ctx.lineTo(
+          point.cx + lateral * point.scale,
+          point.y - low * point.scale
+        )
+      }
+      ctx.closePath()
+      ctx.fill()
+    }
+
+    /** Every contiguous run of segments where `test` holds, as one rail. */
+    function railRuns(lateral, low, high, fill, test) {
+      let runStart = -1
+      for (let i = 0; i <= SEGMENTS; i += 1) {
+        const on = test(points[i].s)
+        if (on && runStart < 0) runStart = i
+        if (runStart >= 0 && (!on || i === SEGMENTS)) {
+          rail(runStart, i, lateral, low, high, fill)
+          runStart = -1
+        }
+      }
+    }
+
+    const hasGuardrail = (s) => roadsideAt(s).guardrail
+
     function drawRoadside(sim, colors) {
       const { focal, horizon, width, height } = camera
       const baseCurve = curveAt(sim.travel)
@@ -105,7 +147,11 @@ export function RoadCanvas({ drive, className }) {
       const lastLamp = Math.floor((sim.travel + 320) / LAMP_SPACING)
       for (let n = lastLamp; n >= firstLamp; n -= 1) {
         const s = n * LAMP_SPACING
-        const side = n % 2 === 0 ? 1 : -1
+        // Which leg this mast stands on decides whether it stands at all.
+        const every = roadsideAt(s).lampEvery
+        if (n % every !== 0) continue
+        // Keep alternating sides even where the line has been thinned.
+        const side = Math.floor(n / every) % 2 === 0 ? 1 : -1
         const foot = place(s, side * (ROAD_HALF + 2.6), 0)
         const head = place(s, side * (ROAD_HALF + 2.6), 8.6)
         const arm = place(s, side * (ROAD_HALF - 0.4), 8.2)
@@ -197,6 +243,23 @@ export function RoadCanvas({ drive, className }) {
       band(ROAD_HALF - 0.55, ROAD_HALF - 0.25, paint)
 
       stripes(-0.16, 0.16, DASH_PERIOD, withAlpha(colors.centreLine, 0.85))
+
+      // Guardrail along the scenic overlook — the one leg with a drop beside
+      // it. Painted before the roadside furniture so lamps stand in front.
+      railRuns(
+        ROAD_HALF + 1.9,
+        0.42,
+        0.78,
+        withAlpha(colors.paint, 0.5),
+        hasGuardrail
+      )
+      railRuns(
+        ROAD_HALF + 1.9,
+        0.2,
+        0.44,
+        withAlpha(colors.vergeDark, 0.95),
+        hasGuardrail
+      )
 
       drawRoadside(sim, colors)
 

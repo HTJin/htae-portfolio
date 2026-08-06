@@ -181,6 +181,49 @@ export const route = [
 
 export const routeLength = (route.length - 1) * LEG_LENGTH
 
+/**
+ * What the roadside looks like on each leg. Every mile used to carry identical
+ * lamps and delineators, so you could not tell the school zone from the scenic
+ * overlook without reading a sign. The furniture now varies, which makes where
+ * you are legible at a glance.
+ *
+ * `lampEvery` thins the lamp line (1 = every mast, 3 = one in three).
+ */
+const ROADSIDE_BY_LEG = {
+  'Start line': { lampEvery: 1, guardrail: false },
+  'School zone': { lampEvery: 1, guardrail: false },
+  'Career highway': { lampEvery: 1, guardrail: false },
+  'Scenic overlook': { lampEvery: 2, guardrail: true },
+  'Pit stop': { lampEvery: 1, guardrail: false },
+  Destination: { lampEvery: 1, guardrail: false },
+}
+
+const DEFAULT_ROADSIDE = { lampEvery: 1, guardrail: false }
+
+/**
+ * Resolved once at module load, indexed by stop. The canvas paints this 60
+ * times a second and must never build it per frame.
+ */
+const ROADSIDE = route.map((stop) => {
+  const base = ROADSIDE_BY_LEG[stop.leg] ?? DEFAULT_ROADSIDE
+  // The sabbatical really was a quiet stretch of road. Thin the lights out.
+  if (stop.id === 'experience-sabbatical') {
+    return { lampEvery: 3, guardrail: false }
+  }
+  return base
+})
+
+/**
+ * The roadside style at a world position. Keyed off the object's own distance,
+ * never the camera's, so a lamp does not change character as you approach it.
+ */
+export function roadsideAt(s) {
+  const index = Math.round(s / LEG_LENGTH)
+  if (index < 0) return ROADSIDE[0]
+  if (index >= ROADSIDE.length) return ROADSIDE[ROADSIDE.length - 1]
+  return ROADSIDE[index]
+}
+
 export function legsOf(stops) {
   return stops.reduce((legs, stop) => {
     const current = legs[legs.length - 1]
