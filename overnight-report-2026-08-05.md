@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 28 · branch `feat/drive-mode` · 43 commits, nothing pushed
+**Last updated:** end of cycle 29 · branch `feat/drive-mode` · 43 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,36 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 29 — checking that eight cycles of changes didn't quietly break something
+
+No new work this cycle — deliberately. Some visitors set their device to "reduce motion" (people who get motion
+sickness, migraines, or vestibular symptoms from things sliding around). The site respects that: no auto-playing
+screenshot carousel, no panel swooping in, and pressing **Next** jumps straight to the exit instead of driving there.
+
+I last actually tested that in cycle 11. Since then I have rebuilt the paint loop, the dashboard layout twice, the
+start screen, the route map and the arrival panel. That is a lot of ground to move under a promise without re-checking
+it, so this cycle re-checked it.
+
+**It all still works:**
+
+| what should happen | with reduce-motion on | normally (my control) |
+|---|---|---|
+| screenshots don't auto-play | held on the first one for 9 seconds | cycled through three |
+| panel doesn't swoop | faded in, no movement at all | tilts and slides in as designed |
+| Next doesn't drive you | jumped there in **0.1 seconds** | drove the leg in **9.9 seconds** |
+| road stops redrawing when parked | 0 redraws in 9 seconds | — |
+
+The control column is the part that makes this trustworthy. "No animation happened" is exactly what you'd also see if
+my test simply hadn't worked, so I ran the same checks with motion allowed and confirmed the same code does animate.
+It does.
+
+**Nothing was changed, and I'd rather say that plainly than dress it up as work.** The result is the finding: eight
+cycles of layout and rendering changes left that promise intact. I also wrote the test method down — including a
+trap that made my first attempt silently report success while actually testing nothing — so a future pass can re-run
+it cheaply.
 
 ---
 

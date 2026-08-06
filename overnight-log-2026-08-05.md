@@ -620,3 +620,26 @@ The stop with *pictures* got the room and the stop with *prose* did not, while *
 **Honest residual:** EXIT 04 still hides 22.4%. Closing that would mean cutting the owner's own résumé copy, which is not this loop's call.
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.1 kB). One commit: `6dcdd2e`. -> `Cycle: 29 / Phase: Planner`.
+
+## Cycle 29
+
+**Suggester — pointed backwards on purpose.** Backlog dry. Instead of opening a new surface, this pass re-exercised something already shipped: the **reduced-motion contract**, last verified end to end in cycle 11. Since then the paint loop (21), the dash layout (24, 25), the ignition splash (26), the route map (27) and the stop card (28) have all been rebuilt underneath it. Guardrail 42 is explicit that each of those mechanisms is an assertion until exercised, and eight cycles is long enough for an assertion to go stale.
+
+**Getting the harness right took two attempts, and the first failure is worth recording.** `prefers-reduced-motion` cannot be toggled from here, so `matchMedia` has to be patched inside the iframe before React mounts. Patching *before* setting `src` does nothing useful: navigation replaces the window, so the patch lands on the `about:blank` window and `matchMedia('(prefers-reduced-motion: reduce)').matches` came back **false** even though the patch reported success. The working version sets `src` first, then polls `contentWindow` and patches the moment `location.href` is the real URL — which happens while `readyState` is still `loading`, before hydration. The probe reports the readyState at patch time so this cannot silently regress.
+
+**All four mechanisms hold, each against a control:**
+
+| mechanism | reduced motion ON | control, motion allowed |
+|---|---|---|
+| project carousel | held frame 0 for **9s**; 4 dots still present | cycled frames **0 -> 1 -> 2** in 11s |
+| arrival panel transition | `transform: none` in **all 26 samples**; opacity animated 0->1 | **15** non-identity samples, e.g. `matrix3d(0.993956, 0, 0, 0, ...)` |
+| Next -> arrival | **102ms**, teleported | **9,887ms**, drove the leg |
+| idle canvas repaints | **0** in 9s | — |
+
+The control matters as much as the measurement: without it, "the panel used no transforms" is indistinguishable from "the harness never took effect". The control run shows the same code producing 3D transforms, an advancing carousel and a ten-second drive, so the reduced-motion readings are real.
+
+**One interaction that did not exist in cycle 11.** Cycle 21 added the canvas dirty-check; cycle 11's reduced-motion path teleports rather than drives. Composed, they behave correctly: the teleport repainted the canvas exactly **2 times** and then **0** more once settled — the road is redrawn for the jump without falling back to painting an identical frame every tick. URL, document title and the arrival announcer all updated (`?exit=13 -> 14`).
+
+**Outcome: no defect, and nothing changed.** Worth stating plainly rather than dressing up as work: eight cycles of layout and paint changes left the accessibility contract intact. The probe itself is now written into the tasks file so a future cycle can re-run it without rediscovering the navigation trap.
+
+**Exit.** No commit to `src/` — there was nothing to fix. -> `Cycle: 30 / Phase: Planner`.

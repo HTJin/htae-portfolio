@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 29
+**Cycle:** 30
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -299,9 +299,28 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 29
+## Tonight's tasks (in order) — CYCLE 30
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 29's list (resolved — kept for context)</summary>
+
+### CYCLE 29
+
+Backlog dry. Rather than a new feature surface, this pass re-exercised something **already shipped**: the
+reduced-motion contract, last verified end to end in **cycle 11**. Eight cycles have changed the code underneath it
+since — the paint loop (21), the dash layout (24, 25), the ignition splash (26), the route map (27) and the stop card
+(28) — and guardrail 42 says every one of those mechanisms is an assertion until it is exercised.
+
+- [x] **1. Re-verify the whole reduced-motion contract against the current build** — **DONE (no defect found)**
+  - **Method:** `prefers-reduced-motion` cannot be toggled from here, so `matchMedia` is patched inside a sized
+    same-origin iframe **before React mounts** — the patch is applied once the real document has committed but while
+    `readyState` is still `loading`, confirmed by reporting the readyState at patch time.
+  - **Done when:** all four mechanisms are observed under reduced motion **and** a control run with motion allowed
+    shows each one behaving differently — otherwise a "pass" could just mean the harness did nothing.
+
+</details>
 
 <details>
 <summary>Cycle 28's list (resolved — kept for context)</summary>
@@ -1205,6 +1224,24 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Done (proven by the autonomous Reviewer)
 
+- **C29.1 — The reduced-motion contract still holds, eight cycles on** *(cycle 29 — verification only, no code
+  changed)* — last exercised in cycle 11; the paint loop, dash, ignition splash, route map and stop card have all
+  been rebuilt since. `matchMedia` was patched inside a same-origin iframe **before hydration** (applied at
+  `readyState: "loading"`, verified by reporting the readyState at patch time), and every mechanism was observed
+  against a **control run with motion allowed**, so a pass cannot mean the harness simply did nothing:
+  | mechanism | reduced motion ON | control, motion allowed |
+  |---|---|---|
+  | project carousel | held frame 0 for **9s**, 4 dots still present | cycled frames **0 -> 1 -> 2** in 11s |
+  | arrival panel transition | `transform: none` in **all 26 samples**, opacity animated 0->1 | **15** non-identity samples, e.g. `matrix3d(0.993956, ...)` |
+  | Next -> arrival | **102ms** — teleported | **9,887ms** — drove the leg |
+  | idle canvas repaints | **0** in 9s | (cycle 21 covers this) |
+  **New interaction checked, because it did not exist in cycle 11:** cycle 21's dirty-check and the reduced-motion
+  teleport compose correctly — the jump repainted the canvas exactly **2 times** and then **0** more once settled,
+  so the road is redrawn for the teleport without going back to painting an idle frame every tick. URL, document title
+  and the arrival announcer all updated on the teleport (`?exit=13 -> 14`).
+  **No defect found, and nothing was changed** — recorded as a result rather than a non-event: it is the first
+  evidence that eight cycles of layout and paint work left the accessibility contract intact.
+
 - **C28.0 — All 21 exits swept, and they are clean** *(cycle 28)* — the first exhaustive pass of the route; about
   seven stops had ever been opened individually across 27 cycles. Every stop renders its card, counters run **1/21
   through 21/21**, all **28 screenshots across the 8 project stops load (0 broken)**, links are present where the
@@ -1610,6 +1647,13 @@ biggest lever available: making the drive pass **time**, not just distance.
 - **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
 
 ---
+
+**Reusable probe (added cycle 29) — testing `prefers-reduced-motion` from here.** The preference cannot be toggled
+in this environment, and patching `matchMedia` on the iframe *before* setting `src` is useless — navigation replaces the
+window, so the patch goes to the `about:blank` window and `matches` comes back false. What works: set `src`, then poll
+`contentWindow` and patch as soon as `location.href` is the real URL, which lands while `readyState` is still
+`loading` — before React mounts. Always report the readyState at patch time, and always run a **control with motion
+allowed**: without one, "no animation" is indistinguishable from "the harness did nothing".
 
 **Standing verification note (added cycle 6):** browser verification works again, but **use a production build**, not
 `next dev`: `npm run build` then `PORT=3008 npm run start`, and load `http://127.0.0.1:3008/drive`. Confirm hydration
