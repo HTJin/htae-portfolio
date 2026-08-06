@@ -11,6 +11,47 @@ const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])'
 export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
   const panelRef = useRef(null)
   const returnFocusRef = useRef(null)
+  const currentRef = useRef(null)
+  const scrollRef = useRef(null)
+
+  /**
+   * Open the list at the exit you are actually at.
+   *
+   * The map highlights the current exit, which is its own admission that
+   * "where you are" is the useful thing — and then it opened at MILE 0 every
+   * time. On a landscape phone that means three visible rows out of
+   * twenty-one, with the current one 800px down.
+   *
+   * The scroller's own `scrollTop` is set rather than calling
+   * `scrollIntoView`, which walks up the tree and can move ancestors it was
+   * never asked to. It is instant on purpose: a smooth scroll would be motion
+   * nobody requested, and would need a reduced-motion branch to be honest.
+   * Deliberately does not touch focus — the effect below owns that.
+   *
+   * The measurement is a rect delta rather than `offsetTop`: the scroll
+   * container is not positioned, so a row's `offsetParent` is the dialog
+   * backdrop and its `offsetTop` is measured from there — 111px out, which
+   * scrolled the current row clean past the top of the window.
+   */
+  useEffect(() => {
+    if (!open) return
+    const scroller = scrollRef.current
+    const current = currentRef.current
+    if (!scroller || !current) return
+
+    const box = scroller.getBoundingClientRect()
+    const row = current.getBoundingClientRect()
+    // Where the row sits now, relative to the window, minus where it should
+    // sit to be centred. At MILE 0 this clamps to 0 and nothing moves.
+    const delta = row.top - box.top - (box.height - row.height) / 2
+    scroller.scrollTop = Math.max(
+      0,
+      Math.min(
+        scroller.scrollTop + delta,
+        scroller.scrollHeight - scroller.clientHeight
+      )
+    )
+  }, [open, currentIndex])
 
   /**
    * This dialog says `aria-modal`, which promises assistive technology that
@@ -94,7 +135,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
               </button>
             </div>
 
-            <div className="overflow-y-auto px-5 py-4">
+            <div ref={scrollRef} className="overflow-y-auto px-5 py-4">
               {LEGS.map((leg) => (
                 <div key={leg.name} className="mb-5 last:mb-0">
                   <div className="mb-2 text-[0.625rem] uppercase tracking-[0.24em] text-sky-300/70">
@@ -105,6 +146,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                       <li key={stop.id}>
                         <button
                           type="button"
+                          ref={stop.index === currentIndex ? currentRef : null}
                           onClick={() => onSelect(stop.index)}
                           className={clsx(
                             'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
