@@ -776,3 +776,28 @@ That ruled out revealing the link in place. Unclipping the container on `focus-w
 - chip **absent** on a plain load, after clicking around with the mouse, and on the phone layout
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20.4 kB). One commit: `ed61397`. -> `Cycle: 35 / Phase: Planner`.
+
+## Cycle 35
+
+**Suggester — auditing the run's own output.** Backlog dry. The three **Needs human** items are the highest-value work left in this run and the only things waiting on the owner — and they were written around cycles 4 and 10, **25 cycles ago**, against files the owner has been editing since (the working tree still carries their uncommitted changes under `src/components/sections/` and `src/content/`). A patch that no longer applies is worse than no patch, because it costs the owner time and then makes the analysis look wrong. So this pass re-checked all three against the current files and the served HTML rather than against the notes that recorded them.
+
+**A wrong turn worth recording, because it nearly became the finding.** Checking whether `Projects.jsx` was still the live component, I grepped for its importers and filtered the results with `grep -v "sections/"` — which excluded the one line that mattered, because the import lives *in* `sections/ProjectsSection.jsx`. For a moment the conclusion looked dramatic: the starred item aimed at dead code. It is not. The chain is `pages/index.jsx` -> `ProjectsSection` -> `<Projects />`, and the patch is correctly targeted. My filter was the broken thing — the third time this run a measurement rather than the code has been at fault (after the frozen-transform overlap in cycle 9 and the pointer-events hit test in cycle 34).
+
+**All three items re-verified, all three still valid:**
+
+**1. The classic site's project photos.** Still live, and both faults intact: `aspect-video` at `:97`, `object-cover` at `:120`, and no `useEffect` or timer anywhere in the file — advancing is only `handleScreenshotClick` at `:61`. Every line reference in the parked patch is confirmed against the current file. The crop was recomputed from the PNG headers rather than trusted: **28 of 28** screenshots are wider than 16:9, average width discarded **10.2%**, worst **14.2%** (`rift/2.png`). The recorded figure said 10.1%; corrected.
+
+**2. The duplicate canonical.** Confirmed from the **served HTML** this time, rather than from reasoning about `next/head` key-deduping. `/drive` really does ship two:
+
+```
+<link rel="canonical" href="https://htae.dev"/>
+<link rel="canonical" href="https://htae.dev/drive"/>
+```
+
+with `og:url` and `og:title` doubled the same way (homepage values first, drive values second). `/` ships exactly one. The cost is sharper than "duplicate tags": crawlers honour the **first** one, so `/drive` is currently telling them it *is* the homepage.
+
+**3. The sitemap.** Confirmed: `public/sitemap.xml` holds **exactly one** `<loc>`, `https://htae.dev/`. Worth restating in proportion — the site has exactly two indexable routes, `/` and `/drive`, so this is **half the site** missing rather than one page among many. `robots.txt` correctly points at the sitemap, so the omission is the only thing standing between `/drive` and discovery. It compounds with the canonical: even if a crawler found the page, the first canonical would send it away.
+
+**Outcome: no code changed, and none should have been.** All three live outside this run's write scope, which is why they were parked in the first place. The deliverable is that the owner's three patches are trustworthy **today**, with confirmed line numbers and one corrected figure, rather than 25 cycles stale.
+
+**Exit.** No commit to `src/`. -> `Cycle: 36 / Phase: Planner`.

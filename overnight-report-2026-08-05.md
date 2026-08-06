@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 34 · branch `feat/drive-mode` · 48 commits, nothing pushed
+**Last updated:** end of cycle 35 · branch `feat/drive-mode` · 48 commits, nothing pushed
 
 ---
 
@@ -16,8 +16,8 @@ I fixed that in **drive mode** in cycle 1. The **main portfolio page** — the o
 **both** faults:
 
 - **Every screenshot is cropped.** `src/components/Projects.jsx` puts them in a 16:9 frame with `object-cover`.
-  Computed against your actual files: **all 28 screenshots** are wider than 16:9, so **10.1% of each image's width is
-  thrown away** on average, 14.2% at worst.
+  Computed against your actual files: **all 28 screenshots** are wider than 16:9, so **10.2% of each image's width is
+  thrown away** on average, 14.2% at worst (`rift/2.png`). Re-verified in cycle 35.
 - **They only advance if you click them.** There is no timer anywhere in that file, so a visitor who doesn't think to
   click sees screenshot 1 of up to 5.
 
@@ -27,6 +27,41 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 35 — checking that the three things I'm asking *you* to do are still true
+
+The three items waiting on you have been sitting there since cycles 4 and 10 — about 25 cycles. In that time you have
+had your own uncommitted edits in that part of the tree. Notes go stale, and a patch that no longer applies is worse
+than no patch: it costs you an hour and then makes the whole analysis look unreliable. So this cycle re-checked all
+three against the files as they are **today**, not against my own notes.
+
+**All three still hold.**
+
+**Your project photos on the main site.** Still cropped, still click-only. I re-measured the crop from the image files
+themselves rather than trusting the earlier number: **28 of 28 screenshots** are wider than the 16:9 frame they are
+forced into, losing an average of **10.2%** of their width — worst case 14.2%, on `rift/2.png`. (My earlier note said
+10.1%; corrected.) Every line number in the suggested patch still points where it should.
+
+**The duplicate canonical tag.** This time I read the HTML your server actually sends rather than reasoning about how
+Next.js merges tags, and it is worse than "there are two of them". `/drive` sends the **homepage's** canonical first
+and its own second — and search engines honour the first one they see. So right now the drive page is telling Google
+*"I am the homepage"*.
+
+**The sitemap.** It contains exactly one URL. Your site has exactly two pages worth indexing, `/` and `/drive`, so this
+is not one page missing from a long list — it is half the site. And it compounds with the tag above: even if a
+crawler stumbled onto `/drive`, that first canonical would send it away again.
+
+**Nothing was changed this cycle, and nothing should have been** — all three live in files outside the boundary you set
+for this run, which is exactly why they are parked for you rather than done by me. The point of the cycle is that when
+you do sit down with them, the line numbers and the numbers are right.
+
+**One thing I got wrong along the way,** since I would rather tell you than not: while checking whether that Projects
+file was even still in use, my own search command excluded the one line that proved it was, and for a few minutes I
+believed I had found something dramatic — that the most important item on your list pointed at dead code. It does not.
+The file is live and the patch is aimed correctly. That is the third time in this run that my *measurement* was the
+broken thing rather than the code.
 
 ---
 

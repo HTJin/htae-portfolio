@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 35
+**Cycle:** 36
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -373,9 +373,24 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 35
+## Tonight's tasks (in order) — CYCLE 36
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 35's list (resolved — kept for context)</summary>
+
+### CYCLE 35
+
+Backlog dry. This Suggester pass audited the run's **own output** rather than the code: the three **Needs human**
+items are the highest-value work left, they are the only things waiting on the owner, and they were written
+**25 cycles ago** against files the owner has been editing since. A stale patch is worse than no patch.
+
+- [x] **1. Re-verify the three parked Needs-human patches against today's files** — **DONE (all three still valid)**
+  - **Done when:** each claim is checked against the current file or the served HTML, not the note that recorded it;
+    every line reference is confirmed; and any figure that has drifted is corrected.
+
+</details>
 
 <details>
 <summary>Cycle 34's list (resolved — kept for context)</summary>
@@ -1852,6 +1867,21 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Needs human (parked — requires a person; the loop will NOT guess these)
 
+> **All three re-verified at cycle 35 against the current files and the served HTML** — they were first measured
+> around cycles 4 and 10, and the working tree has changed since, so they were re-checked rather than trusted:
+> - **Projects.jsx** — still live (`index.jsx` -> `ProjectsSection` -> `Projects`), still `aspect-video` at `:97` and
+>   `object-cover` at `:120`, still no `useEffect`/timer anywhere in the file, still click-only at `:61`,
+>   `AnimatePresence` still at `:104`. Every line reference in the patch below is confirmed. The crop was recomputed
+>   from the PNG headers: **28 of 28** files are wider than 16:9, average width lost **10.2%**, worst **14.2%**
+>   (`rift/2.png`) — the recorded 10.1% was a rounding difference and has been corrected above.
+> - **Duplicate canonical** — confirmed from the **served HTML**, not from reasoning about how `next/head` dedupes:
+>   `/drive` ships `<link rel="canonical" href="https://htae.dev"/>` **followed by**
+>   `<link rel="canonical" href="https://htae.dev/drive"/>`. `og:url` and `og:title` are doubled the same way. `/`
+>   ships exactly one. Crawlers honour the **first**, so `/drive` currently tells them it is the homepage.
+> - **Sitemap** — confirmed: `public/sitemap.xml` contains **exactly one** `<loc>`, `https://htae.dev/`. The site has
+>   exactly two indexable routes (`/` and `/drive`), so this is **half the site** missing, not one page among many.
+>   `robots.txt` does point at the sitemap correctly.
+
 - [ ] **⭐ The CLASSIC site still crops project photos and never cycles them — this is priority (c), only half-fixed** —
   Needs human because `src/components/Projects.jsx` is outside this run's write scope.
 
@@ -1862,8 +1892,8 @@ biggest lever available: making the drive pass **time**, not just distance.
 
   **Fault 1 — photos are cropped.** `src/components/Projects.jsx:97` wraps the image in an `aspect-video` box
   (16:9 = 1.778) and `:120` renders it with `object-cover`. Computed against the real files: **all 28 screenshots** in
-  `public/images/projects/` are wider than 16:9, so `object-cover` discards an average of **10.1%** of each image's
-  width — worst case **14.2%**. Both edges of every screenshot are cut off.
+  `public/images/projects/` are wider than 16:9, so `object-cover` discards an average of **10.2%** of each image's
+  width — worst case **14.2%** (`rift/2.png`). Both edges of every screenshot are cut off.
 
   **Fault 2 — cycling is click-only.** `grep -nE "setInterval|setTimeout|useEffect" src/components/Projects.jsx`
   returns **nothing**. Advancing happens solely in `handleScreenshotClick` (`:61`), so a visitor who never thinks to
