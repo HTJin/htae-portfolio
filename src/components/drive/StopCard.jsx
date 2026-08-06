@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ProjectShots } from './ProjectShots'
+import { tripSummary } from './route'
 import styles from '@/styles/drive.module.css'
 
 function CornerBrackets() {
@@ -32,11 +33,27 @@ function ExitShield({ stop }) {
   )
 }
 
+/**
+ * Actions carry weight in proportion to what they are for. At the destination
+ * the point is to start a conversation, so the email is the loud one and the
+ * way back out is quiet — otherwise the goal and the exit door look identical
+ * and the eye has nothing to land on.
+ */
+function linkClass(link) {
+  if (link.primary) {
+    return 'rounded-md border border-sky-300/70 bg-sky-400/25 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_24px_-8px_rgba(56,189,248,0.9)] transition hover:bg-sky-400/40'
+  }
+  if (link.quiet) {
+    return 'rounded-md px-2 py-1.5 text-xs font-medium text-white/45 underline-offset-4 transition hover:text-sky-200 hover:underline'
+  }
+  return 'rounded-md border border-sky-400/40 bg-sky-400/10 px-3 py-1.5 text-xs font-medium text-sky-200 transition hover:bg-sky-400/20'
+}
+
 function StopLinks({ links }) {
   if (!links?.length) return null
 
   return (
-    <div className="mt-4 flex flex-wrap gap-2">
+    <div className="mt-4 flex flex-wrap items-center gap-2">
       {links.map((link, position) =>
         link.external ? (
           <a
@@ -44,7 +61,7 @@ function StopLinks({ links }) {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-md border border-sky-400/40 bg-sky-400/10 px-3 py-1.5 text-xs font-medium text-sky-200 transition hover:bg-sky-400/20"
+            className={linkClass(link)}
           >
             {link.label}
           </a>
@@ -52,13 +69,34 @@ function StopLinks({ links }) {
           <Link
             key={`${link.label}-${position}`}
             href={link.href}
-            className="rounded-md border border-sky-400/40 bg-sky-400/10 px-3 py-1.5 text-xs font-medium text-sky-200 transition hover:bg-sky-400/20"
+            className={linkClass(link)}
           >
             {link.label}
           </Link>
         )
       )}
     </div>
+  )
+}
+
+/**
+ * The trip, in numbers, at the destination only. Every figure comes from
+ * `route.js`, derived from the content itself — nothing here is written down.
+ */
+function TripSummary() {
+  return (
+    <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 border-y border-sky-400/15 py-3 sm:grid-cols-4">
+      {tripSummary.map((item) => (
+        <div key={item.label}>
+          <dt className="text-[0.625rem] uppercase tracking-[0.18em] text-sky-300/60">
+            {item.label}
+          </dt>
+          <dd className="mt-0.5 font-display text-xl font-semibold leading-none text-white">
+            {item.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   )
 }
 
@@ -122,6 +160,8 @@ function StopProse({ stop }) {
           ))}
         </div>
       ) : null}
+
+      {stop.kind === 'destination' ? <TripSummary /> : null}
 
       <StopLinks links={stop.links} />
 

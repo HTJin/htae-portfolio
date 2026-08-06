@@ -151,10 +151,16 @@ function destinationStop() {
         label: `Email ${meta.email}`,
         href: `mailto:${meta.email}`,
         external: true,
+        primary: true,
       },
       { label: 'LinkedIn', href: meta.links.linkedin, external: true },
       { label: 'Download résumé', href: meta.resumePath, external: true },
-      { label: 'Back to the classic site', href: '/', external: false },
+      {
+        label: 'Back to the classic site',
+        href: '/',
+        external: false,
+        quiet: true,
+      },
     ],
   }
 }
@@ -250,6 +256,30 @@ const DATED = route
   .map((stop) => ({ s: stop.s, year: stop.year }))
 
 const LAST_DATED_S = DATED.length ? DATED[DATED.length - 1].s : 0
+
+/**
+ * The trip you just drove, in numbers — shown only at the destination.
+ *
+ * Every figure is derived from the content, never written down: the counts come
+ * from the arrays themselves and the distance from the route's own length. Add
+ * a role or a build and these follow automatically, which is the only way a
+ * number on someone's résumé is safe to display (guardrail 13).
+ */
+export const tripSummary = [
+  {
+    label: 'Driving since',
+    value: DATED.length ? String(DATED[0].year) : '—',
+  },
+  {
+    label: 'Roles',
+    value: String(route.filter((stop) => stop.kind === 'experience').length),
+  },
+  {
+    label: 'Side builds',
+    value: String(route.filter((stop) => stop.kind === 'project').length),
+  },
+  { label: 'Miles driven', value: formatMiles(routeLength) },
+]
 
 /**
  * What year you are driving through. Interpolates between dated stops so the
