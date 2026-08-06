@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 26 · branch `feat/drive-mode` · 41 commits, nothing pushed
+**Last updated:** end of cycle 27 · branch `feat/drive-mode` · 42 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,34 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 27 — the route map didn't show you where you were
+
+The route map — the list of all twenty-one exits you can jump to — highlights the exit you are currently at. That
+highlight is the map saying *this is the bit you care about*. And then it opened at the top of the list every single
+time, with your actual position somewhere off-screen below.
+
+| screen | you are at | rows you can see | how far down you were |
+|---|---|---|---|
+| phone, sideways | exit 13 | **3** of 21 | 803 pixels |
+| phone, upright | exit 13 | 11 of 21 | 357 pixels |
+| desktop | exit 20 | 12 of 21 | 791 pixels |
+
+On a phone held sideways you could see three rows out of twenty-one, so finding yourself meant scrolling most of the
+list before you could even decide where to go next. It now opens centred on the exit you're at, with its neighbours
+either side. Mile 0 still opens at the top, because that is already where you are.
+
+**I got this wrong on the first attempt, and I want to be straight about how it got caught.** The obvious way to
+measure "where is this row" gave an answer that was 111 pixels off, because of a detail about how the list is
+positioned — so the first build scrolled your exit clean *past the top* of the window instead of to the middle. What
+exposed it was two of my own checks disagreeing: one said the row wasn't below the fold, the other said it wasn't
+visible. Both were true, which meant it had gone the other way. I rewrote the calculation to use a measurement that
+can't drift like that rather than nudging a number until it looked right.
+
+I also re-checked the things this change sits next to rather than assuming they still worked: opening the map still
+puts focus on the dialog itself, Escape still closes it, and focus still returns to the button you opened it with.
 
 ---
 

@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 27
+**Cycle:** 28
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -255,6 +255,21 @@
 90. **Verify with saved progress present.** The fault only appears for a returning visitor, so every measurement in
     this cycle seeds `htae.drive.progress.v1` first. A clean-storage run would show the bug as fixed when it is not.
 
+### Cycle 27 pre-mortem (guardrails for this cycle's tasks)
+
+91. **Do not let scrolling touch focus.** The open effect already moves focus to the panel so a screen reader reads
+    the dialog label first (cycle 10, guardrail 38). Scrolling must not call `.focus()` on a row, and must run
+    alongside that effect without racing it — verify focus still lands on the panel, not on a list item.
+92. **`scrollIntoView` can scroll ancestors.** Setting the scroller's own `scrollTop` is bounded and predictable;
+    `scrollIntoView` walks up the tree and can move things it was never asked to. Prefer the explicit calculation, and
+    verify the document itself did not scroll.
+93. **Instant, never animated.** A smooth scroll would be motion the visitor did not ask for and would need a
+    `prefers-reduced-motion` branch to be honest about. Jumping straight there needs no branch (guardrail 40's family).
+94. **Re-verify the cycle-10/20 behaviour, do not assume it.** This edits the same effect that owns the focus trap and
+    focus restore. Escape must still close the map and focus must still return to the trigger — measured, as in C20.2.
+95. **MILE 0 must stay put.** At index 0 the correct scroll position is 0; a fix that always centres would push the
+    top of the list under the header for the one case that was already right.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -270,9 +285,38 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 27
+## Tonight's tasks (in order) — CYCLE 28
 
 _Not yet planned — the Planner writes this list next._
+
+<details>
+<summary>Cycle 27's list (resolved — kept for context)</summary>
+
+### CYCLE 27
+
+Backlog dry, so a **Suggester** pass on the **route map** — the drive's primary navigation, built in cycle 10, focus-
+verified in cycle 20, but never measured at phone size. Its layout turned out to be sound at 390×844 and 844×390
+(panel inside the viewport, close and exit both visible, 56px rows, scrolls, no horizontal overflow). What it does on
+*opening* is not.
+
+- [x] **1. The route map opens without showing you where you are** — **DONE**
+  - **Evidence (measured on the production build, `scrollTop` on open and the highlighted row's position):**
+    | viewport | at exit | visible rows | current row | below the fold |
+    |---|---|---|---|---|
+    | 844×390 landscape | 13 | **3** of 21 | index 13 | **803px** |
+    | 390×844 portrait | 13 | 11 of 21 | index 13 | **357px** |
+    | 1440×900 desktop | 20 | 12 of 21 | index 20 | **791px** |
+    `scrollTop` is **0** in every case, so the list always opens at MILE 0.
+  - **Why it matters:** the map already highlights the current exit — that is its own statement that "where you are"
+    is the useful thing — and then opens somewhere else. On a landscape phone, three rows of twenty-one are visible,
+    so a visitor at EXIT 13 must scroll most of the list to find themselves before they can navigate relative to it.
+  - **Files:** `src/components/drive/RouteMap.jsx`.
+  - **Done when:** opening the map at any exit leaves the highlighted row **inside the scroll window** at 844×390,
+    390×844 and 1440×900; MILE 0 still opens at `scrollTop` 0 (nothing to scroll to); the focus behaviour and the
+    Escape path from cycles 10 and 20 are **unchanged**, re-verified rather than assumed; and the page itself never
+    scrolls as a side effect.
+
+</details>
 
 <details>
 <summary>Cycle 26's list (resolved — kept for context)</summary>
@@ -1102,6 +1146,21 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C27.1 — The route map opens at the exit you are at** *(cycle 27, commit `89803a6`)* — the map highlights the
+  current exit and then opened at MILE 0 every time. Measured, `scrollTop` on open was **0** and the highlighted row
+  was below the fold at every viewport: 844×390 at exit 13, **3 of 21 rows visible, 803px below**; 390×844,
+  357px below; 1440×900 at exit 20, 791px below. The scroller's own `scrollTop` is now set — not `scrollIntoView`,
+  which walks up the tree (guardrail 92) — instantly rather than smoothly, so it needs no reduced-motion branch
+  (guardrail 93), and without touching focus (guardrail 91). **Verified across seven cases** (exits 1, 6, 13, 20 at
+  three viewports): the highlighted row is inside the scroll window every time, **MILE 0 still opens at `scrollTop` 0**
+  (guardrail 95), and exit 20 on a landscape phone clamps to the maximum rather than overscrolling. **Cycle 10/20
+  behaviour re-verified, not assumed** (guardrail 94): focus lands on the panel and **not** on a row, Escape still
+  closes the map, focus returns to the trigger, and document scroll stays 0 throughout.
+  **A wrong first attempt, caught by verification:** it used `offsetTop`, but the scroll container is not positioned,
+  so a row's `offsetParent` is the dialog backdrop — `offsetTop` was 111px out and scrolled the current row clean
+  *past the top* of the window. Two checks disagreeing (in-view by one measure, above-window by another) exposed it;
+  the calculation is now a `getBoundingClientRect` delta, which is origin-independent.
 
 - **C26.1 — The ignition splash fits, and keeps the way out on screen** *(cycle 26, commit `d2d0484`)* — the first
   screen every visitor sees had never been measured on a phone. **With saved progress present** — a returning visitor,

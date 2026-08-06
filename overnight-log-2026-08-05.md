@@ -559,3 +559,32 @@ With storage clear it fits at 844×390 (343px), which is exactly why this had ne
 - screenshot at 844×390 confirms kicker, heading, blurb, both buttons, the legend and the exit link all on screen
 
 **Exit.** `next lint` clean, `npm run build` compiles (`/drive` 19.9 kB). One commit: `d2d0484`. -> `Cycle: 27 / Phase: Planner`.
+
+## Cycle 27
+
+**Suggester.** Backlog dry. The route map is the drive's primary navigation — built in cycle 10, focus-verified in cycle 20 — and had never been measured at phone size. Given cycles 23, 25 and 26 each turned up a phone-layout defect, it was the obvious next place to look.
+
+**Its layout is actually fine.** At 390×844 and 844×390 the panel sits inside the viewport, the Close button and the exit link are both visible, rows are 56px tall, the list scrolls and there is no horizontal overflow. Nothing to fix there.
+
+**What it does on opening is not fine.** `scrollTop` is **0** every time, so the list always opens at MILE 0 — while the map's own highlight says the current exit is the interesting one:
+
+| viewport | at exit | visible rows | current row below the fold |
+|---|---|---|---|
+| 844×390 | 13 | **3** of 21 | **803px** |
+| 390×844 | 13 | 11 of 21 | 357px |
+| 1440×900 | 20 | 12 of 21 | 791px |
+
+On a landscape phone that is scrolling most of a twenty-one row list to find yourself before you can navigate relative to yourself.
+
+**Built.** The open effect sets the scroller's own `scrollTop` so the current row is centred where there is room. Not `scrollIntoView` (it walks up the tree and can move ancestors it was never asked to, guardrail 92); instant rather than smooth (no reduced-motion branch needed to be honest about it, guardrail 93); and it does not touch focus — the existing effect owns that (guardrail 91).
+
+**The first attempt was wrong, and the verification is what caught it.** It used `current.offsetTop`. But the scroll container is not positioned, so a row's `offsetParent` is the **dialog backdrop**, and `offsetTop` came back 1047 against a scroller sitting at `offsetTop` 111 — 111px of error, which scrolled the current row clean *past the top* of the window. The tell was two checks disagreeing: "pixels below the fold" said 0 while "row inside the window" said false. Rather than adjust a constant, the measurement became a `getBoundingClientRect` delta, which is origin-independent and cannot drift if the DOM gains a positioned ancestor later.
+
+**Verified on the production build across seven cases** (exits 1, 6, 13 and 20 at 844×390, 390×844 and 1440×900):
+- the highlighted row is **inside the scroll window every time**
+- **MILE 0 still opens at `scrollTop` 0** (guardrail 95 — the one case that was already right)
+- exit 20 on a landscape phone clamps to the maximum (1316) rather than overscrolling
+- **cycle 10/20 behaviour re-verified** (guardrail 94): focus lands on the **panel**, not a row; Escape closes the map; focus returns to the trigger; `document.scrollTop` is 0 before, during and after
+- screenshot at 844×390 shows EXIT 13 centred with EXIT 12 and EXIT 14 either side
+
+**Exit.** `next lint` clean, `npm run build` compiles (`/drive` 20 kB). One commit: `89803a6`. -> `Cycle: 28 / Phase: Planner`.
