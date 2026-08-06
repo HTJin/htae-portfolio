@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Head from 'next/head'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -12,6 +13,7 @@ import { StopCard } from './StopCard'
 import { clearProgress, readProgress, writeProgress } from './progress'
 import { legsOf, route } from './route'
 import { useDrive } from './useDrive'
+import { meta } from '@/content'
 import styles from '@/styles/drive.module.css'
 
 const CONTROLS = [
@@ -24,6 +26,52 @@ const CONTROLS = [
 ]
 
 const LEGS = legsOf(route)
+
+/**
+ * What the browser tab says while you drive.
+ *
+ * Every exit used to share one title, so twenty-one different pages produced
+ * one bookmark name and one history entry — and, less obviously, one *spoken*
+ * string: Next's route announcer reads `document.title` aloud, assertively, on
+ * every shallow URL change, which here is every departure. A screen-reader user
+ * was therefore interrupted twenty times with the same sentence and never told
+ * which exit it was. Putting the exit in the title fixes the tab and that
+ * announcement at once.
+ *
+ * The `<title>` in `src/pages/drive.jsx` is deliberately left alone: that is
+ * the one a crawler sees in the served HTML (guardrail 46).
+ */
+function titleFor(stop) {
+  // MILE 0's own title *is* the name, so appending the brand would read
+  // "MILE 0 · Hyun-Tae Jin | Hyun-Tae Jin" on the tab and in the bookmark.
+  const brand = stop.title === meta.name ? '' : ` | ${meta.name}`
+  return `${stop.exitLabel} · ${stop.title}${brand}`
+}
+
+/**
+ * The one announcement channel that actually works.
+ *
+ * `StopCard` used to carry `aria-live="polite"` itself, but it is keyed by stop
+ * inside `AnimatePresence`: the node is destroyed and rebuilt on every arrival,
+ * and between exits there is no region on the page at all. A live region has to
+ * exist *before* its content changes, so that one announced nothing. This one
+ * is mounted for the life of the page and only its text changes.
+ */
+function ArrivalAnnouncer({ started, parked, stop }) {
+  // MILE 0 is where you start, not somewhere you arrived (guardrail 48), and
+  // nothing is announced while the car is still moving.
+  const text = !(started && parked)
+    ? ''
+    : stop.index === 0
+    ? `At the start line — ${stop.title}`
+    : `Arrived at ${stop.exitLabel} — ${stop.title}`
+
+  return (
+    <p className="sr-only" role="status" aria-live="polite">
+      {text}
+    </p>
+  )
+}
 
 /**
  * Everything readable on the page, for screen readers and crawlers.
@@ -386,7 +434,16 @@ export function DriveScene() {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-[#03060c] text-white">
+      {/* Only once under way: before that the ignition splash is the page, and
+          the crawler's title from `drive.jsx` is the honest one. */}
+      {started ? (
+        <Head>
+          <title>{titleFor(stop)}</title>
+        </Head>
+      ) : null}
+
       <Itinerary />
+      <ArrivalAnnouncer started={started} parked={parked} stop={stop} />
 
       <Sky drive={drive} />
       <RoadCanvas drive={drive} className="absolute inset-0 h-full w-full" />

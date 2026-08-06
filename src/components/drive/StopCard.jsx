@@ -200,7 +200,10 @@ export function StopCard({ stop, visible, position, total }) {
           }
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           style={{ transformOrigin: 'bottom center', perspective: 1200 }}
-          aria-live="polite"
+          // Deliberately not a live region: this node is keyed by stop inside
+          // AnimatePresence, so it is destroyed and rebuilt on every arrival and
+          // could never announce anything. `ArrivalAnnouncer` in DriveScene is
+          // mounted for the life of the page and does the announcing.
           className={`pointer-events-auto relative flex max-h-full w-[min(94vw,44rem)] flex-col rounded-xl px-5 py-4 sm:px-7 sm:py-5 ${
             shots ? 'lg:w-[min(94vw,58rem)]' : ''
           } ${styles.hud}`}
