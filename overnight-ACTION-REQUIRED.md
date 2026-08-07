@@ -6,7 +6,12 @@ alone: they are either outside its write scope, or judgement calls it declined t
 The full history is in `overnight-report-2026-08-05.md` and the ledgers beside it. This file exists because those
 have grown past the point where the actionable parts are findable.
 
-_Last confirmed: cycle 75, 2026-08-07. All file/line references re-verified in cycle 73._
+_Last confirmed: cycle 83, 2026-08-07. File/line references re-verified in cycle 73; the S107 pixel figures
+re-measured in cycle 77 after later changes to the dash and road._
+
+**Nothing on this page was caused by the recent side-profile work** — the exit's missing ground, the see-through
+barrier and the 90-degree bank were all reported by you, fixed, and independently verified (cycles 79–82). They are
+not listed here because they are done.
 
 ---
 
