@@ -208,10 +208,7 @@ export function RoadCanvas({ drive, className }) {
       // flank. The mainline is an infinitely thin ribbon otherwise, and a road
       // with no side floats.
       const footOf = (point) =>
-        Math.max(
-          TOP + 0.25,
-          LANE_OFFSET + point.ramp - RAMP_WIDTH / 2 - 1.2
-        )
+        Math.max(TOP + 0.25, LANE_OFFSET + point.ramp - RAMP_WIDTH / 2 - 1.2)
 
       // Gated on **elevation difference**, not on lateral separation. Gating it
       // on separation was the bug: the ramp starts falling long before it moves
@@ -244,6 +241,64 @@ export function RoadCanvas({ drive, className }) {
             ctx.fill()
           }
           runStart = -1
+        }
+      }
+    }
+
+    /**
+     * Grass and wildflowers on the embankment face.
+     *
+     * Deterministic, not random: the offsets come from the tuft's own index,
+     * so the same plant is in the same place every frame and on every machine
+     * (guardrail 25 — `Math.random` in the paint loop makes the scene
+     * non-reproducible and can differ between server and client). Nothing is
+     * allocated per tuft beyond the two `project` results the rest of the
+     * roadside furniture already costs.
+     */
+    function vegetation(sim, colors) {
+      const SPACING = 6
+      const first = Math.ceil((sim.travel + Z_NEAR) / SPACING)
+      const last = Math.floor((sim.travel + 190) / SPACING)
+      const place = (s, x, y) => project(camera, sim, s - sim.travel, x, y)
+
+      for (let n = last; n >= first; n -= 1) {
+        const s = n * SPACING
+        const drop = rampDropAt(s)
+        if (drop > -0.35) continue // no slope here, nothing to plant on
+        const top = CARRIAGEWAY + 2.4
+        const foot = Math.max(
+          top + 0.25,
+          LANE_OFFSET + rampAt(s) - RAMP_WIDTH / 2 - 1.2
+        )
+
+        for (let k = 0; k < 4; k += 1) {
+          // Spread across the face, biased away from both edges.
+          const t = 0.12 + (((n * 7 + k * 23) % 76) / 76) * 0.76
+          const x = top + (foot - top) * t
+          const ground = drop * t // the face falls linearly between the grades
+          const height = 0.34 + (((n + k * 5) % 7) / 7) * 0.3
+          const base = place(s, x, ground)
+          const tip = place(s, x, ground + height)
+          if (base.y < camera.horizon || base.scale <= 0) continue
+
+          ctx.strokeStyle = withAlpha(colors.vergeLight, 0.85)
+          ctx.lineWidth = Math.max(0.6, 0.05 * base.scale)
+          ctx.beginPath()
+          ctx.moveTo(base.x, base.y)
+          ctx.lineTo(tip.x + 0.12 * base.scale, tip.y)
+          ctx.stroke()
+
+          // One tuft in five carries a flower, warm against the grass.
+          if ((n + k) % 5 === 0) {
+            const petal = Math.max(0.7, 0.075 * base.scale)
+            ctx.fillStyle =
+              (n + k) % 10 === 0
+                ? 'rgba(244, 208, 122, 0.9)'
+                : 'rgba(226, 170, 196, 0.85)'
+            ctx.beginPath()
+            ctx.arc(tip.x + 0.12 * base.scale, tip.y, petal, 0, Math.PI * 2)
+            ctx.fill()
+          }
         }
       }
     }
@@ -467,7 +522,11 @@ export function RoadCanvas({ drive, className }) {
 
       // Wide enough to cover both carriageways, the median, and the ramp at
       // full offset — the ground beneath everything the road is made of.
-      band(-(OPPOSING_EDGE + 22), CARRIAGEWAY + RAMP_OFFSET + 22, colors.vergeDark)
+      band(
+        -(OPPOSING_EDGE + 22),
+        CARRIAGEWAY + RAMP_OFFSET + 22,
+        colors.vergeDark
+      )
 
       // The ground **at the ramp's own grade**, following it down.
       //
@@ -478,12 +537,7 @@ export function RoadCanvas({ drive, className }) {
       // empty void either side of it, for the whole descent. The embankment
       // only ever filled the wedge between the highway and the ramp; it never
       // gave the ramp any ground of its own.
-      band(
-        -(CARRIAGEWAY + 26),
-        CARRIAGEWAY + 26,
-        colors.vergeDark,
-        true
-      )
+      band(-(CARRIAGEWAY + 26), CARRIAGEWAY + 26, colors.vergeDark, true)
 
       // Rumble bands on the two outer verges, alternating with distance. The
       // right-hand one follows the ramp, because the right-hand verge is the
@@ -507,7 +561,12 @@ export function RoadCanvas({ drive, className }) {
       // stop it slides right and peels out of the carriageway, opening a wedge
       // of verge between the two. That wedge is the gore, and it comes out of
       // the geometry rather than being drawn as a special case.
-      band(LANE_OFFSET - RAMP_WIDTH / 2, LANE_OFFSET + RAMP_WIDTH / 2, tarmac, true)
+      band(
+        LANE_OFFSET - RAMP_WIDTH / 2,
+        LANE_OFFSET + RAMP_WIDTH / 2,
+        tarmac,
+        true
+      )
 
       const paint = withAlpha(colors.paint, 0.82)
       // Median-side lines are yellow, outer edges white — the same convention
@@ -559,6 +618,7 @@ export function RoadCanvas({ drive, className }) {
 
       // The face between the two grades, filling what the clip just opened up.
       embankment(colors.vergeDark)
+      vegetation(sim, colors)
       // The highway's outer barrier, running its full length. **This is what
       // closes the void beside the road, and an 0.18m lip did not.**
       //
@@ -572,9 +632,14 @@ export function RoadCanvas({ drive, className }) {
       // because its barrier stands against the sky. So the shoulder carries
       // one, the full length of the road, the same two-tone treatment as the
       // median barrier: a solid body and a lit cap.
+      // **Opaque.** This was `withAlpha(..., 0.9)` over a `0.5` cap, and a
+      // barrier you can see the sky through is not a barrier — the owner:
+      // "why the hell am I able to see through the road???". Concrete is not
+      // 90% opaque. Only the highlight along the top keeps any alpha, because
+      // a lit edge is a reflection rather than a material.
       const shoulder = CARRIAGEWAY + 2.4
-      railRuns(shoulder, 0, 0.92, withAlpha(colors.vergeLight, 0.9), () => true)
-      railRuns(shoulder, 0.74, 0.92, withAlpha(colors.paint, 0.5), () => true)
+      railRuns(shoulder, 0, 0.92, colors.vergeLight, () => true)
+      railRuns(shoulder, 0.74, 0.92, withAlpha(colors.paint, 0.85), () => true)
 
       // The median barrier. This is what makes it a divided highway rather than
       // a road you may legally overtake into oncoming traffic on: the traffic

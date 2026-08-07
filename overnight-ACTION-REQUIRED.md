@@ -6,7 +6,7 @@ alone: they are either outside its write scope, or judgement calls it declined t
 The full history is in `overnight-report-2026-08-05.md` and the ledgers beside it. This file exists because those
 have grown past the point where the actionable parts are findable.
 
-*Last confirmed: cycle 75, 2026-08-07. All file/line references re-verified in cycle 73.*
+_Last confirmed: cycle 75, 2026-08-07. All file/line references re-verified in cycle 73._
 
 ---
 
@@ -16,11 +16,11 @@ have grown past the point where the actionable parts are findable.
 and paints over the brake pedal: **1px overlap at 1280×1024, 52px at 1024×1180**, and over the door card at both. It
 is `pointer-events-none`, so it does not block the press — it covers it. At 1920×1080 it clears by 36px.
 
-*(First measured in cycle 63 as 2px / 53px. Re-checked here because cycles 61 and 65 changed the dash and the road
+_(First measured in cycle 63 as 2px / 53px. Re-checked here because cycles 61 and 65 changed the dash and the road
 afterwards and this page is written to be acted on — the defect survives both, and the difference is sub-pixel
-rounding, not movement.)*
+rounding, not movement.)_
 
-**I did not fix it, deliberately.** The wheel rotates via a transform about the *box* centre. Every one-line fix
+**I did not fix it, deliberately.** The wheel rotates via a transform about the _box_ centre. Every one-line fix
 (`max-w-full` and relatives) makes the wrapper non-square, at which point the wheel's content no longer shares that
 centre and it would **orbit instead of spin** — invisible in a screenshot, so it would have shipped. The fix that
 keeps rotation correct re-centres the wheel out of its tuned position, and no constant fraction works because the
@@ -59,12 +59,12 @@ project.
 
 Each is seconds of work with DevTools open, and each is currently an unknown rather than a pass:
 
-| What | How |
-|---|---|
-| **Cold page weight** | Network tab → *Disable cache* → reload `/drive`. Last real figure was 208 KB in cycle 42, before the ramp geometry, embankment and two-lane road. |
-| **Forced-colors rendering** | Rendering tab → *Emulate CSS media feature forced-colors: active*. The pedals were fixed for this in cycle 64 by inventory, but the render was never seen. |
-| **The printed page** | Ctrl+P on `/drive`. Print styling was added in cycle 67 and its rules verified, but the paper was never observed. |
-| **Frame rate** | Any real profiler. Unmeasurable here since cycle 52 — a blank page benchmarks the same as the drive. |
+| What                        | How                                                                                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Cold page weight**        | Network tab → _Disable cache_ → reload `/drive`. Last real figure was 208 KB in cycle 42, before the ramp geometry, embankment and two-lane road.          |
+| **Forced-colors rendering** | Rendering tab → _Emulate CSS media feature forced-colors: active_. The pedals were fixed for this in cycle 64 by inventory, but the render was never seen. |
+| **The printed page**        | Ctrl+P on `/drive`. Print styling was added in cycle 67 and its rules verified, but the paper was never observed.                                          |
+| **Frame rate**              | Any real profiler. Unmeasurable here since cycle 52 — a blank page benchmarks the same as the drive.                                                       |
 
 ## 5. One preference
 
@@ -100,4 +100,4 @@ git diff --name-only 6c19c99..HEAD -- src/          # the nine files
 git diff --numstat -- src/content src/lib           # empty
 ```
 
-*(Deliberately no commit count here — it only goes stale. The commands above are always current.)*
+_(Deliberately no commit count here — it only goes stale. The commands above are always current.)_

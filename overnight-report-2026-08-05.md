@@ -17,25 +17,25 @@ instructions mid-run, and those outrank anything the loop picks for itself. Cycl
 
 ## Shipped since cycle 57
 
-| | What | Commit |
-|---|---|---|
-| 57 | Every stop is a real interchange, on a divided highway — median barrier and an empty opposing carriageway replace the dashed centre line; deceleration ramp in, acceleration ramp out | `a511ce0` |
-| 58 | The driver sits on the left — the dash stopped being symmetric and the wheel moved off the screen centre line | `f1c5b4f` |
-| 58 | Pedals right of the wheel, pinned out of the flow so the console keeps its position; console capped so it stops stretching toward the passenger door | `6d2e3aa`, `5ee5782` |
-| 58 | Two lanes each way, and an exit that leaves the highway properly — 14m clear, 136m long, and descending | `694c4f6` |
-| 58 | Continuous prose stopped being set in newspaper columns | `4195b71` |
+|     | What                                                                                                                                                                                  | Commit               |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| 57  | Every stop is a real interchange, on a divided highway — median barrier and an empty opposing carriageway replace the dashed centre line; deceleration ramp in, acceleration ramp out | `a511ce0`            |
+| 58  | The driver sits on the left — the dash stopped being symmetric and the wheel moved off the screen centre line                                                                         | `f1c5b4f`            |
+| 58  | Pedals right of the wheel, pinned out of the flow so the console keeps its position; console capped so it stops stretching toward the passenger door                                  | `6d2e3aa`, `5ee5782` |
+| 58  | Two lanes each way, and an exit that leaves the highway properly — 14m clear, 136m long, and descending                                                                               | `694c4f6`            |
+| 58  | Continuous prose stopped being set in newspaper columns                                                                                                                               | `4195b71`            |
 
 | 59 | The exit ramp's descent is no longer capped by the renderer — flat surfaces clip at the eyeline, an embankment fills the gap, and the hill went 1.15m → 3m | `8264530` |
 | 60 | The pedals, driven with touch for the first time: a disabled pedal no longer moves the sim, and pointer capture can no longer swallow a press | `ae31e76` |
 | 61 | The centre display was a 6.2:1 letterbox; it is now 16:9 like a real one. The exit panel narrowed from 76rem/3 columns to 60rem/2 | `664def6` |
 
-| 62 | *Audit only — nothing shipped.* The rest of the cockpit's proportions checked; two suspected defects disproved, one real one measured and filed rather than rushed | — |
-| 63 | *Audit only — nothing shipped.* The proportion mechanism proven, and a confirmed defect found: the wheel draws over the brake pedal on tall-narrow windows. Fix attempted and abandoned — see the decision section below | — |
+| 62 | _Audit only — nothing shipped._ The rest of the cockpit's proportions checked; two suspected defects disproved, one real one measured and filed rather than rushed | — |
+| 63 | _Audit only — nothing shipped._ The proportion mechanism proven, and a confirmed defect found: the wheel draws over the brake pedal on tall-narrow windows. Fix attempted and abandoned — see the decision section below | — |
 | 64 | The BRAKE and GO pedals would have disappeared entirely in Windows high-contrast mode; they now keep a visible edge | `dd32f65` |
 | 65 | The highway got a flank, so the gap under the elevation is gone. Plus a thicker road, the exit 22m out, a 5.5m drop and 420m legs | `b7cfa73` |
-| 66 | *Sweep only — no defect.* All 21 exits re-checked after the road overhaul; the derived route distance followed correctly to 5.2 mi | — |
+| 66 | _Sweep only — no defect._ All 21 exits re-checked after the road overhaul; the derived route distance followed correctly to 5.2 mi | — |
 | 67 | The page had no print styling at all and would have printed a page of dashboard with no résumé. It now prints the résumé that was already in the DOM | `1dde62c` |
-| 68 | *Measurement only.* No heap leak over the full route (+0.62 MB across 21 stops). Cold page weight reclassified as unmeasurable from here | — |
+| 68 | _Measurement only._ No heap leak over the full route (+0.62 MB across 21 stops). Cold page weight reclassified as unmeasurable from here | — |
 
 **One trade to be aware of, from your "a bit longer" request.** A leg now takes **14.1 seconds**, so driving the
 whole route on the accelerator is about **4.7 minutes** — up from ~3.8 min at the previous leg length and ~3.1 min
@@ -62,14 +62,14 @@ the sky.
 
 With the flank drawn continuously, **5.5m renders cleanly** — no wedge, sky intact — and no clipping work was needed
 at all. **S104's premise is retired.** The lesson is recorded in the run's own notes: "a renderer limit is a strong
-claim, and the bar for it should be higher than *my first fix looked bad*."
+claim, and the bar for it should be higher than _my first fix looked bad_."
 
 ## ⚠ This needs a decision from you, not another audit
 
 Cycles 62 and 63 both went at the cockpit proportions and **both shipped nothing.** That is two in a row on one
 thread, so I am stopping and asking rather than starting a third.
 
-**What is confirmed.** The steering wheel's width *is* the dash height (`aspect-square h-full`, measured
+**What is confirmed.** The steering wheel's width _is_ the dash height (`aspect-square h-full`, measured
 `dashH − 19px` in six of six samples), the column holding it is sized by viewport **width**, and the gauges use the
 height basis with a pixel cap that freezes them past ~971px tall. Three rules for what a real car builds as one
 assembly.
@@ -78,7 +78,7 @@ assembly.
 brake pedal** — overlapping by 2px at 1280×1024 and by 53px at 1024×1180, and over the door card at both. It is
 `pointer-events-none`, so it does not block the press; it covers it.
 
-**Why I did not just fix it.** The wheel rotates via a transform about the *box* centre. Every one-line fix
+**Why I did not just fix it.** The wheel rotates via a transform about the _box_ centre. Every one-line fix
 (`max-w-full` and friends) leaves the wrapper non-square, at which point the wheel's content no longer shares that
 centre and it would **orbit instead of spin** — a bug that does not show up in a screenshot and would have shipped.
 The alternative that keeps rotation correct re-centres the wheel vertically out of its tuned position, and no
@@ -90,15 +90,15 @@ landscape-phone viewports — the kind of change this run's guardrails say not t
 rejected inventions of mine. **Tell me to do it and it gets a full cycle with those guardrails loaded; otherwise it
 stays parked and the loop moves to other work.**
 
-## Two cockpit things that are *not* defects
+## Two cockpit things that are _not_ defects
 
 Recorded so a later pass does not "fix" either. **The instrument cluster is exactly centred on the wheel axis** —
 offset 0 at both 1920×1080 and 1440×900. My first reading said 40px off, and that was me measuring two of the gauge
 row's three children and forgetting the gear block. And the gauges overflowing their inner flex row by ~9px a side
 is invisible, because the element that paints the binnacle housing is a wider parent.
 
-*(Cycle 62 also reported here that the wheel was sized from a viewport-width column. Cycle 63 measured it properly
-and that was wrong — the wheel is sized from the dash **height**. The corrected mechanism is in the section above.)*
+_(Cycle 62 also reported here that the wheel was sized from a viewport-width column. Cycle 63 measured it properly
+and that was wrong — the wheel is sized from the dash **height**. The corrected mechanism is in the section above.)_
 
 ## Parked — needs you
 
@@ -110,7 +110,7 @@ and that was wrong — the wheel is sized from the dash **height**. The correcte
   main portfolio page still has both faults. `src/components/Projects.jsx` is outside this run's write scope, and the
   working tree already carries uncommitted edits of yours in that area. The exact patch is written out in the task
   file.
-- **`/drive` ships two canonical tags**, the first pointing at the homepage, so crawlers are told `/drive` *is* the
+- **`/drive` ships two canonical tags**, the first pointing at the homepage, so crawlers are told `/drive` _is_ the
   homepage. The fix is in `_app.jsx`, outside the write scope. **`/drive` is also missing from the sitemap**, which is
   half the site's indexable routes.
 
@@ -129,7 +129,7 @@ Cycle 60 found two real pedal defects, but its first two "failures" were the **h
 synthesises `onPointerLeave` from `pointerout`, so a raw `pointerleave` proved nothing; and React's scheduler is not
 driven by `requestAnimationFrame`, so pumping frames does not flush a re-render — which briefly made a working
 cycle-45 fix look broken. Both were caught and thrown out rather than reported. Where a browser-behaviour question
-actually decided whether a defect was real — *does Chrome fire pointer events at a disabled button?* — it was
+actually decided whether a defect was real — _does Chrome fire pointer events at a disabled button?_ — it was
 settled with a **real click and a control that proved the click landed**, not with an assumption.
 
 ## Health
