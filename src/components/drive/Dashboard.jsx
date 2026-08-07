@@ -711,8 +711,20 @@ function AudioToggle({ drive }) {
   useEffect(() => {
     if (!on) return undefined
     const onVisibilityChange = () => {
-      if (document.hidden) engineRef.current?.pause()
-      else engineRef.current?.unpause()
+      if (document.hidden) {
+        engineRef.current?.pause()
+        return
+      }
+      // `unpause()` answers whether the context actually came back, and the
+      // answer has to be honoured: a browser can refuse to resume, and the
+      // first version of this handler dropped the result on the floor, so a
+      // refused resume left the toggle lit over silence — the exact lie
+      // `enable()` is written to avoid. Only `false` means it really failed;
+      // `undefined` is "there is no engine", which is not a reason to change
+      // what the visitor chose.
+      Promise.resolve(engineRef.current?.unpause()).then((resumed) => {
+        if (resumed === false) setOn(false)
+      })
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
     return () =>
