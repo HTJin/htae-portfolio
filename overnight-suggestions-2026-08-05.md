@@ -648,3 +648,11 @@ this before each Suggester pass so it never re-proposes an idea already here.
 - [ ] **S113 - Cold page weight** - Status: **Not measurable in this environment** - Cycle: 68
   - Cache-busting the document URL is not enough: the JS and CSS chunks are content-hashed and already cached, so 11 of 13 resources report `transferSize: 0`, and the browser cache cannot be cleared through this bridge. The 22.6 KB measured is the **document alone**.
   - Joins the list of things this environment cannot see: frame rate (cycle 52), forced-colors rendering (cycle 64), the printed page (cycle 67). All need a human with DevTools, where "Disable cache" plus a reload answers it in seconds. The last real figure was 208 KB in cycle 42.
+
+- [ ] **S112 - Time-to-content: does the drive bury the resume?** - Status: Done (no defect) - Cycle: 69
+  - **Measured, and the worry does not hold.** The idea came from market research ("do not bury the case studies behind animations"), but on this site:
+    - the **origin card - name, role, tagline - renders on the first click**, not after a drive;
+    - the splash offers **"back to the classic site"** for anyone who does not want the drive at all;
+    - the **route map is a cockpit control and is named on the splash**: three clicks reaches any of the 21 stops instantly.
+  - The only slow route is the intended one: 2 clicks and **14.1s** to EXIT 01. That is the owner's deliberate design, and S112 was scoped as a measurement, not a redesign proposal. **No change recommended.**
+  - **Caveat found while measuring:** a `width > 8 && height > 8` "visible control" filter counts the sr-only itinerary's links, because `clip: rect(0,0,0,0)` on the ancestor does not zero descendants' rects. Did not affect this result or cycle 64's, but future probes should test the clipped ancestor.

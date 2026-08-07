@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
-**Cycle:** 69
+**Phase:** Suggester
+**Cycle:** 70
 
 ## Project orientation (so a fresh agent can start cold)
 

@@ -1491,3 +1491,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **S114 (heap over a long drive): DONE, no leak.** Full route driven - 20 legs, travel 8400, 16,780 frames - settled heap +0.62 MB total, 0.031 MB a leg. The validity gate (`travel > 0` before trusting anything) is what made this run trustworthy where the last was not.
 - **S113 (cold page weight): PARKED - not measurable through this bridge.** Content-hashed chunks stay cached and report `transferSize: 0`; the browser cache cannot be cleared from here. Joins frame rate (cycle 52), forced colors (cycle 64) and the printed page (cycle 67) on the list of things this environment genuinely cannot see.
 - **Progress flag:** yes - one backlog item closed with a real answer, one honestly reclassified as unmeasurable.
+
+## Cycle 69 (2026-08-07)
+
+- **Phase: Planner -> Reviewer** on S112 (time-to-content), the last unstarted backlog item. **Measurement only, per its own scope - nothing shipped.**
+- **Result: no defect, and the premise behind the idea was wrong.** Content appears on click one (the origin card), the classic site is offered on the splash, and the route map is in the cockpit and named on the splash: three clicks to any of 21 stops. Only the intended path is slow (2 clicks + 14.1s), which is deliberate.
+- **Recorded a standing measurement caveat:** a `width > 8 && height > 8` filter counts the sr-only itinerary's links, because `clip` on the ancestor does not zero descendants' rects. Affects any future "count the visible controls" probe.
+- **Backlog now dry again** -> cycle 70 goes to the Suggester.
+- **Progress flag:** no shipped change; last backlog item closed with a measured answer.
