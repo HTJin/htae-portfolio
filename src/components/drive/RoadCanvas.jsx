@@ -469,6 +469,22 @@ export function RoadCanvas({ drive, className }) {
       // full offset — the ground beneath everything the road is made of.
       band(-(OPPOSING_EDGE + 22), CARRIAGEWAY + RAMP_OFFSET + 22, colors.vergeDark)
 
+      // The ground **at the ramp's own grade**, following it down.
+      //
+      // The band above is drawn at mainline grade, so the moment the ramp
+      // descends it sits above the eyeline and the clip removes it — correctly,
+      // since you cannot see ground that is above you. But nothing replaced it,
+      // so the ramp became tarmac floating over the background gradient with an
+      // empty void either side of it, for the whole descent. The embankment
+      // only ever filled the wedge between the highway and the ramp; it never
+      // gave the ramp any ground of its own.
+      band(
+        -(CARRIAGEWAY + 26),
+        CARRIAGEWAY + 26,
+        colors.vergeDark,
+        true
+      )
+
       // Rumble bands on the two outer verges, alternating with distance. The
       // right-hand one follows the ramp, because the right-hand verge is the
       // shoulder of whichever road you are actually on.
@@ -543,15 +559,22 @@ export function RoadCanvas({ drive, className }) {
 
       // The face between the two grades, filling what the clip just opened up.
       embankment(colors.vergeDark)
-      // A lit lip along the top of it, so the highway reads as sitting on an
-      // embankment rather than floating above a gap.
-      railRuns(
-        CARRIAGEWAY + 2.4,
-        0,
-        0.18,
-        withAlpha(colors.vergeLight, 0.5),
-        () => true
-      )
+      // The highway's outer barrier, running its full length. **This is what
+      // closes the void beside the road, and an 0.18m lip did not.**
+      //
+      // From the ramp you are *below* the mainline, so every flat surface it
+      // has is correctly invisible — you cannot see the top of a road that is
+      // above your eye. The embankment gave the highway a side; but above that
+      // side there was nothing at all, because the deck itself is edge-on and
+      // unseen. The eye reads that as a hole where the road should be.
+      //
+      // A real highway on an embankment is legible from beside it precisely
+      // because its barrier stands against the sky. So the shoulder carries
+      // one, the full length of the road, the same two-tone treatment as the
+      // median barrier: a solid body and a lit cap.
+      const shoulder = CARRIAGEWAY + 2.4
+      railRuns(shoulder, 0, 0.92, withAlpha(colors.vergeLight, 0.9), () => true)
+      railRuns(shoulder, 0.74, 0.92, withAlpha(colors.paint, 0.5), () => true)
 
       // The median barrier. This is what makes it a divided highway rather than
       // a road you may legally overtake into oncoming traffic on: the traffic
