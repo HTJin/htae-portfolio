@@ -600,3 +600,11 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Fix:** `border border-transparent` on the pedal - invisible normally, painted in a system colour under forced colors.
   - **Evidence:** pedal outer rects identical before and after at 1920/1440/1280 (border-box, so no layout cost); post-fix audit returns an empty at-risk list; console row on one line; no horizontal scroll; phone and landscape-phone checked. Commit `dd32f65`.
   - **Not claimed:** forced colors cannot be emulated through this browser bridge, so the rendering itself was not observed - only the inventory and the layout neutrality were measured. Worth a human eye on a real high-contrast setup.
+
+- [ ] **S109 - The highway had no flank, so there was a gap under the elevation** - Status: Done - Cycle: 65
+  - **Source:** the owner: "you failed to give the profile of the highway road any existence so I literally see an empty gap between the elevation ... it looks very unnatural when you get back on the highway road as the road just flattens out to 0 elevation".
+  - **Cause:** `embankment()` was gated on lateral separation. The ramp starts falling long before it moves sideways, so the whole first half of each taper had a real height difference with nothing drawn to fill it. And the mainline itself was an infinitely thin ribbon - no side face - so it floated.
+  - **Fix:** gate on elevation difference; clamp the face's foot so it can never sit inboard of its top, which collapses the quad to a vertical face - the highway's flank - when the ramp has dropped but not yet moved aside.
+  - **Knock-on:** retired the premise of S104. 5.5m drop now renders cleanly where 6.5m and 7.5m previously did not.
+  - **Evidence:** three legs pumped, arrivals exactly on 840/1260/1680, drop -5.5 and ramp 30.2 at every stop, drop/ramp constant (spread 8.3e-17), 387 frames on open mainline, zero errors; mid-taper and bottom-of-ramp inspected. Commit `b7cfa73`.
+  - **Also delivered:** lane width 3.7 -> 4.1m, ramp offset +14 -> +22m, drop 3 -> 5.5m, leg length 340 -> 420m.

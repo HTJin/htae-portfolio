@@ -1,11 +1,11 @@
-# Overnight session — tasks (overnight-tasks-2026-08-05.md)
+﻿# Overnight session — tasks (overnight-tasks-2026-08-05.md)
 
 > **For the executing agent:** You're picking this up fresh. This document is your entire brief. Read it top to bottom, follow the operating rules, work the tasks in order, log to `overnight-log-2026-08-05.md`, journal to `overnight-journal-2026-08-05.md`, and rewrite `overnight-report-2026-08-05.md` at the end of every cycle. This run **loops** Suggester -> Planner -> Critic -> Builder -> Reviewer autonomously and endlessly until the user stops it. If something is ambiguous, make the most reasonable documented assumption and keep moving — do **not** stop and wait for a human.
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 65
+**Cycle:** 66
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -2340,6 +2340,30 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 </details>
 
+### CYCLE 65
+
+**Owner-directed, and the owner found a genuine bug that also unblocked S104.**
+
+- [x] **1. The highway had no flank, so there was a gap under it** — **DONE** — `b7cfa73`
+  - *"you failed to give the profile of the highway road any existence so I literally see an empty gap between the
+    elevation ... the road just flattens out to 0 elevation."* Correct diagnosis.
+  - **The bug:** `embankment()` was gated on **lateral separation**. The ramp starts falling long before it moves
+    aside, so across the first half of every taper there was a real height difference with **nothing drawn** — a gap
+    under the highway, and an apparent snap back to grade 0 on the way up.
+  - **Fix:** gate on **elevation difference** (`point.drop`), so the face exists wherever the grades differ and
+    shrinks to nothing as they converge; and clamp its foot so it can never be inboard of its top — when the ramp
+    has dropped but not moved aside, the quad collapses to a near-vertical face, which **is** the highway's flank.
+    The mainline was an infinitely thin ribbon before, and a road with no side floats.
+  - **This retires the premise of S104.** `RAMP_DROP` was capped at 3m because 6.5m and 7.5m rendered as a black
+    wedge across the sky, and I filed per-polygon near-plane clipping as the fix. **That was the wrong diagnosis** —
+    the missing flank was the actual cause. With the face continuous, 5.5m renders cleanly: sky intact, no wedge.
+  - **Tuning, all requested:** lane width 3.7 → 4.1m; `RAMP_OFFSET` +14 → +22m (30.2m total); `RAMP_DROP` 3 → 5.5m;
+    `LEG_LENGTH` 340 → 420m. `RAMP_LENGTH` follows at 0.4, so ramps grow 136 → 168m with 84m of open mainline still
+    between consecutive ramps.
+  - **Verified:** three legs pumped — arrivals exactly on 840/1260/1680, drop −5.5 and ramp 30.2 at every stop,
+    `drop/ramp` constant at −0.18211920529801326 (spread 8.3e-17), **387 frames on open mainline**, zero errors.
+    Inspected mid-taper (drop −1.61) and at the bottom (drop −5.5): flank continuous in both, no gap.
+
 ### CYCLE 64
 
 **S95 at last** — queued unreached since cycle 57. S107 stays parked awaiting the owner's decision and was not touched.
@@ -3623,7 +3647,13 @@ technique generalises.)*
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
 - **S102 — A real embankment** — **DONE in cycle 59** (`8264530`). Drop 1.15 → 3m. Left here only as a pointer.
-- **S104 — Per-polygon near-plane clipping, if the ramp should drop further than 3m** *(new, cycle 59)* — cycle 59
+- **S104 — Per-polygon near-plane clipping** — **PREMISE RETIRED in cycle 65.** This was filed because 6.5m and 7.5m
+  drops rendered as a wedge across the sky, and I concluded the projection needed real 3D clipping. **Wrong
+  diagnosis.** The cause was the missing embankment flank — the highway was a thin ribbon with no side, so from below
+  it floated and the fill swept across the sky. With the flank continuous, 5.5m renders cleanly with no clipping work
+  at all. Keep this filed only if a drop deep enough to put the *mainline surface itself* far above the eye is ever
+  wanted; the ordinary case no longer needs it. *(Original text below.)*
+- **S104 (original) — Per-polygon near-plane clipping, if the ramp should drop further than 3m** *(cycle 59)* — cycle 59
   built the embankment and the eyeline clip, which bought 2.6x the descent, and then **tried 7.5m and rejected it by
   looking at it**: with the camera ~6m below and ~17m to the side of the highway, the embankment's near field is off
   the left of the screen and its polygon sweeps in as a black wedge over the sky. Nothing short of real 3D clipping

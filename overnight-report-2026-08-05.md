@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 64 (2026-08-07).
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 65 (2026-08-07).
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -11,7 +11,7 @@ This file is rewritten every cycle. The full history lives in `overnight-tasks-2
 
 ## Where the run is
 
-64 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
+65 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
 against comparable sites, then built and verified them. **Cycles 57, 58, 59 and 61 were owner-directed** — you gave
 instructions mid-run, and those outrank anything the loop picks for itself. Cycle 60 came off the loop's own backlog.
 
@@ -32,6 +32,7 @@ instructions mid-run, and those outrank anything the loop picks for itself. Cycl
 | 62 | *Audit only — nothing shipped.* The rest of the cockpit's proportions checked; two suspected defects disproved, one real one measured and filed rather than rushed | — |
 | 63 | *Audit only — nothing shipped.* The proportion mechanism proven, and a confirmed defect found: the wheel draws over the brake pedal on tall-narrow windows. Fix attempted and abandoned — see the decision section below | — |
 | 64 | The BRAKE and GO pedals would have disappeared entirely in Windows high-contrast mode; they now keep a visible edge | `dd32f65` |
+| 65 | The highway got a flank, so the gap under the elevation is gone. Plus a thicker road, the exit 22m out, a 5.5m drop and 420m legs | `b7cfa73` |
 
 **One reported problem was not a defect.** The "gap spilling out the road on the right side of the UI" was a 1440px
 measurement iframe I had overlaid on the live 1920px page — the page showing through beside my own harness. Removed
@@ -45,18 +46,15 @@ the road, so whatever is in front of the driver lands in the middle of the image
 is — but it renders a car with the driver sitting in the middle of it. Guardrail 50 now records the new target (wheel
 **left** of centre) and keeps the original text for the record.
 
-**The hill you asked for is now 3m rather than 1.15m, and it stops there for a reason I checked rather than assumed.**
-Cycle 58 capped the descent because a deeper drop lifted the whole highway above the horizon and painted it across
-the sky. Cycle 59 fixed the cause: flat road surfaces are now clipped at the eyeline (you cannot see a horizontal
-plane above your eye) while standing objects — lamp masts, the barrier, the embankment — are left alone, and a new
-embankment face fills the gap between the highway and the dropped ramp. That bought 2.6× the descent.
+**I was wrong twice about the hill, and you found why.** I capped the ramp's descent at 3m and told you a deeper
+drop was impossible without real 3D clipping — that the projection had "run out of road". That diagnosis was wrong.
+The black wedge I kept seeing at 6.5m and 7.5m was not a clipping limit: it was the **missing embankment flank** you
+spotted. The highway was an infinitely thin ribbon with no side, so from below it floated and the fill swept across
+the sky.
 
-**I then tried 7.5m and rejected it by looking at it.** At that depth the camera sits about 6m below and 17m to the
-side of the highway, so the embankment's near field falls off the left of the screen and its polygon sweeps in as a
-black wedge over the sky. That is this projection running out of road — flat ribbons, no depth buffer, no
-per-polygon near-plane clipping — not a number to nudge. Going deeper is filed as **S104** and is a genuinely large
-job; 3m already reads as a hill. **`RAMP_DROP` has now been raised too far twice and reverted twice**, so the
-constant carries that history.
+With the flank drawn continuously, **5.5m renders cleanly** — no wedge, sky intact — and no clipping work was needed
+at all. **S104's premise is retired.** The lesson is recorded in the run's own notes: "a renderer limit is a strong
+claim, and the bar for it should be higher than *my first fix looked bad*."
 
 ## ⚠ This needs a decision from you, not another audit
 

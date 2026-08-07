@@ -1452,3 +1452,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Reviewer** -> layout neutrality measured at three widths (outer rects identical), audit re-run to an empty at-risk list, phone and landscape-phone checked.
 - **A limitation stated rather than papered over:** forced-colors is not emulatable through this browser bridge. The inventory and the layout-neutrality are measured; the forced-colors rendering is not, and the commit says so.
 - **Progress flag:** yes - one real accessibility defect fixed, backlog item closed.
+
+## Cycle 65 (2026-08-07)
+
+- **Owner-directed**, five items: thicker road, exit further out, lower elevation, longer legs, and a reported flaw - "you failed to give the profile of the highway road any existence".
+- **The reported flaw was real and was mine.** The embankment was gated on lateral separation rather than elevation difference, leaving an undrawn gap across the first half of every taper, and the mainline had no side face at all.
+- **It also retired S104's premise.** The 3m cap on `RAMP_DROP` and the filed "needs real 3D clipping" both rested on a wrong diagnosis: the black wedge at 6.5m and 7.5m came from the missing flank, not from the projection. 5.5m is now clean with no clipping work.
+- **Verified:** three legs pumped with exact arrivals and a constant drop/ramp ratio; mid-taper and bottom-of-ramp inspected directly.
+- **Progress flag:** yes - one real defect fixed, four tuning requests delivered, one backlog premise retired.
