@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 90 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 91 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -22,29 +22,27 @@ the commit count did in cycle 78.)_
 
 ## Shipped since cycle 57
 
-|     | What                                                                                                                                                                                  | Commit               |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| 57  | Every stop is a real interchange, on a divided highway — median barrier and an empty opposing carriageway replace the dashed centre line; deceleration ramp in, acceleration ramp out | `a511ce0`            |
-| 58  | The driver sits on the left — the dash stopped being symmetric and the wheel moved off the screen centre line                                                                         | `f1c5b4f`            |
-| 58  | Pedals right of the wheel, pinned out of the flow so the console keeps its position; console capped so it stops stretching toward the passenger door                                  | `6d2e3aa`, `5ee5782` |
-| 58  | Two lanes each way, and an exit that leaves the highway properly — 14m clear, 136m long, and descending                                                                               | `694c4f6`            |
-| 58  | Continuous prose stopped being set in newspaper columns                                                                                                                               | `4195b71`            |
-
-| 59 | The exit ramp's descent is no longer capped by the renderer — flat surfaces clip at the eyeline, an embankment fills the gap, and the hill went 1.15m → 3m | `8264530` |
-| 60 | The pedals, driven with touch for the first time: a disabled pedal no longer moves the sim, and pointer capture can no longer swallow a press | `ae31e76` |
-| 61 | The centre display was a 6.2:1 letterbox; it is now 16:9 like a real one. The exit panel narrowed from 76rem/3 columns to 60rem/2 | `664def6` |
-
-| 62 | _Audit only — nothing shipped._ The rest of the cockpit's proportions checked; two suspected defects disproved, one real one measured and filed rather than rushed | — |
-| 63 | _Audit only — nothing shipped._ The proportion mechanism proven, and a confirmed defect found: the wheel draws over the brake pedal on tall-narrow windows. Fix attempted and abandoned — see the decision section below | — |
-| 64 | The BRAKE and GO pedals would have disappeared entirely in Windows high-contrast mode; they now keep a visible edge | `dd32f65` |
-| 65 | The highway got a flank, so the gap under the elevation is gone. Plus a thicker road, the exit 22m out, a 5.5m drop and 420m legs | `b7cfa73` |
-| 66 | _Sweep only — no defect._ All 21 exits re-checked after the road overhaul; the derived route distance followed correctly to 5.2 mi | — |
-| 67 | The page had no print styling at all and would have printed a page of dashboard with no résumé. It now prints the résumé that was already in the DOM | `1dde62c` |
-| 79 | **The exit had no ground beside it.** The verge is drawn at mainline grade, so once the ramp descends the eyeline clip removed it and nothing replaced it — the ramp was tarmac over empty gradient for the whole descent | `1e1445a` |
-| 79 | **The barrier was see-through** (drawn at 0.9 alpha over a 0.5 cap) and the highway had no edge standing against the sky. Both fixed; planting added on the bank | `f3a85d7` |
-| 79 | **The bank was a 90° wall.** A clamp of mine pinned its foot beside the top for the first half of every descent — with a comment claiming that was correct. It now lies back ~1:2.6 from the drop, and the shoulder parapet came down to a guardrail | `97c1012` |
-| 81 | Verified the planting only appears where there is a slope, using a marker colour no palette contains — 0 on the mainline, 7 mid-descent | — |
-| 68 | _Measurement only._ No heap leak over the full route (+0.62 MB across 21 stops). Cold page weight reclassified as unmeasurable from here | — |
+|     | What                                                                                                                                                                                                                                                 | Commit               |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| 57  | Every stop is a real interchange, on a divided highway — median barrier and an empty opposing carriageway replace the dashed centre line; deceleration ramp in, acceleration ramp out                                                                | `a511ce0`            |
+| 58  | Two lanes each way, and an exit that leaves the highway properly — 14m clear, 136m long, and descending                                                                                                                                              | `694c4f6`            |
+| 58  | Continuous prose stopped being set in newspaper columns                                                                                                                                                                                              | `4195b71`            |
+| 58  | The driver sits on the left — the dash stopped being symmetric and the wheel moved off the screen centre line                                                                                                                                        | `f1c5b4f`            |
+| 58  | Pedals right of the wheel, pinned out of the flow so the console keeps its position; console capped so it stops stretching toward the passenger door                                                                                                 | `6d2e3aa`, `5ee5782` |
+| 59  | The exit ramp's descent is no longer capped by the renderer — flat surfaces clip at the eyeline, an embankment fills the gap, and the hill went 1.15m → 3m                                                                                           | `8264530`            |
+| 60  | The pedals, driven with touch for the first time: a disabled pedal no longer moves the sim, and pointer capture can no longer swallow a press                                                                                                        | `ae31e76`            |
+| 61  | The centre display was a 6.2:1 letterbox; it is now 16:9 like a real one. The exit panel narrowed from 76rem/3 columns to 60rem/2                                                                                                                    | `664def6`            |
+| 62  | _Audit only — nothing shipped._ The rest of the cockpit's proportions checked; two suspected defects disproved, one real one measured and filed rather than rushed                                                                                   | —                    |
+| 63  | _Audit only — nothing shipped._ The proportion mechanism proven, and a confirmed defect found: the wheel draws over the brake pedal on tall-narrow windows. Fix attempted and abandoned — see the decision section below                             | —                    |
+| 64  | The BRAKE and GO pedals would have disappeared entirely in Windows high-contrast mode; they now keep a visible edge                                                                                                                                  | `dd32f65`            |
+| 65  | The highway got a flank, so the gap under the elevation is gone. Plus a thicker road, the exit 22m out, a 5.5m drop and 420m legs                                                                                                                    | `b7cfa73`            |
+| 66  | _Sweep only — no defect._ All 21 exits re-checked after the road overhaul; the derived route distance followed correctly to 5.2 mi                                                                                                                   | —                    |
+| 67  | The page had no print styling at all and would have printed a page of dashboard with no résumé. It now prints the résumé that was already in the DOM                                                                                                 | `1dde62c`            |
+| 68  | _Measurement only._ No heap leak over the full route (+0.62 MB across 21 stops). Cold page weight reclassified as unmeasurable from here                                                                                                             | —                    |
+| 79  | **The exit had no ground beside it.** The verge is drawn at mainline grade, so once the ramp descends the eyeline clip removed it and nothing replaced it — the ramp was tarmac over empty gradient for the whole descent                            | `1e1445a`            |
+| 79  | **The bank was a 90° wall.** A clamp of mine pinned its foot beside the top for the first half of every descent — with a comment claiming that was correct. It now lies back ~1:2.6 from the drop, and the shoulder parapet came down to a guardrail | `97c1012`            |
+| 79  | **The barrier was see-through** (drawn at 0.9 alpha over a 0.5 cap) and the highway had no edge standing against the sky. Both fixed; planting added on the bank                                                                                     | `f3a85d7`            |
+| 81  | Verified the planting only appears where there is a slope, using a marker colour no palette contains — 0 on the mainline, 7 mid-descent                                                                                                              | —                    |
 
 **One trade to be aware of, from your "a bit longer" request:** the legs got measurably slower to drive. The figures
 live in `overnight-ACTION-REQUIRED.md` §5 and are deliberately **not repeated here** — cycle 87 found the S107

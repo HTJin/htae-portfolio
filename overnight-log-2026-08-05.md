@@ -1687,3 +1687,9 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Suggester** -> removed the hard cycle count and the stale owner-directed list from the report header; it now points at the tasks file's phase marker, which the loop updates every cycle.
 - **Named the shared root cause** behind cycles 78, 87, 88, 89 and 90: a figure copied into a summary is a figure that will be wrong later. A summary should point at what changes, not restate it.
 - **Progress flag:** no shipped change; the last drifting figure in the owner-facing docs removed at its cause.
+
+## Cycle 91 (2026-08-07)
+
+- **Phase: Planner** -> found the report's shipped table broken into four fragments by blank lines between rows (a blank line ends a Markdown table), three fragments headerless, and rows out of cycle order. Rebuilt as one contiguous sorted table, 19 rows, 57 through 81.
+- **Root cause noted:** every prior inspection read the file as raw text, where the defect is invisible. Same class as the canvas measurement failures - checking the artefact in a form the reader never sees.
+- **Progress flag:** no shipped change; the owner-facing summary now actually renders.
