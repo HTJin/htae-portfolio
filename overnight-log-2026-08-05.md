@@ -1460,3 +1460,12 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **It also retired S104's premise.** The 3m cap on `RAMP_DROP` and the filed "needs real 3D clipping" both rested on a wrong diagnosis: the black wedge at 6.5m and 7.5m came from the missing flank, not from the projection. 5.5m is now clean with no clipping work.
 - **Verified:** three legs pumped with exact arrivals and a constant drop/ramp ratio; mid-taper and bottom-of-ramp inspected directly.
 - **Progress flag:** yes - one real defect fixed, four tuning requests delivered, one backlog premise retired.
+
+## Cycle 66 (2026-08-07)
+
+- **Phase: Planner** -> actionable backlog dry (S107 parked on the owner, S104 premise retired, S15/S17 need `_app.jsx`), so took a regression sweep of cycle 65's road overhaul instead. Justified: `LEG_LENGTH` moved 24% and several quantities derive from it.
+- **Phase: Reviewer** -> **no defect found.** 21/21 exits clean, 28/28 images, no horizontal scroll, derived route distance correct at 5.2 mi.
+- **Recorded as a trade, not a bug:** a leg now takes 14.1s and the full route ~4.7 minutes of held accelerator, up from ~3.1 min originally.
+- **Third instance this run of a bad selector masquerading as a defect** - noted in the journal, since it keeps happening and the pattern is worth naming.
+- **Backlog now genuinely dry** -> next cycle goes to the Suggester for a fresh audit and market-research pass.
+- **Progress flag:** no shipped change; a change-set verified and one consequence quantified.

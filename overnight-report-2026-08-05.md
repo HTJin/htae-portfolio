@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 65 (2026-08-07).
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 66 (2026-08-07).
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -11,7 +11,7 @@ This file is rewritten every cycle. The full history lives in `overnight-tasks-2
 
 ## Where the run is
 
-65 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
+66 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
 against comparable sites, then built and verified them. **Cycles 57, 58, 59 and 61 were owner-directed** — you gave
 instructions mid-run, and those outrank anything the loop picks for itself. Cycle 60 came off the loop's own backlog.
 
@@ -33,6 +33,12 @@ instructions mid-run, and those outrank anything the loop picks for itself. Cycl
 | 63 | *Audit only — nothing shipped.* The proportion mechanism proven, and a confirmed defect found: the wheel draws over the brake pedal on tall-narrow windows. Fix attempted and abandoned — see the decision section below | — |
 | 64 | The BRAKE and GO pedals would have disappeared entirely in Windows high-contrast mode; they now keep a visible edge | `dd32f65` |
 | 65 | The highway got a flank, so the gap under the elevation is gone. Plus a thicker road, the exit 22m out, a 5.5m drop and 420m legs | `b7cfa73` |
+| 66 | *Sweep only — no defect.* All 21 exits re-checked after the road overhaul; the derived route distance followed correctly to 5.2 mi | — |
+
+**One trade to be aware of, from your "a bit longer" request.** A leg now takes **14.1 seconds**, so driving the
+whole route on the accelerator is about **4.7 minutes** — up from ~3.8 min at the previous leg length and ~3.1 min
+when the run started. That is the direct cost of the change and it is yours to judge; `Next` still autopilots for
+anyone who would rather not hold a pedal. Say the word if you want the legs pulled back.
 
 **One reported problem was not a defect.** The "gap spilling out the road on the right side of the UI" was a 1440px
 measurement iframe I had overlaid on the live 1920px page — the page showing through beside my own harness. Removed

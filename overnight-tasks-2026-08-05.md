@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
-**Cycle:** 66
+**Phase:** Suggester
+**Cycle:** 67
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -2339,6 +2339,26 @@ biggest lever available: making the drive pass **time**, not just distance.
     MILE 0 without throwing, and the URL tracks the current exit so it can be copied.
 
 </details>
+
+### CYCLE 66
+
+**Regression sweep after cycle 65's road overhaul. No defect found.** The actionable backlog was dry (S107 parked on
+the owner's decision, S104's premise retired, S15/S17 need `_app.jsx`), and cycle 65 had just moved `LEG_LENGTH` by
+24% — which several quantities derive from. Cycles 28 and 42 ran the same sweep after multi-cycle change runs and
+both found bugs, so it earns its place.
+
+- **All 21 exits swept by deep link:** every one hydrated, every one has its heading and its `n/21` counter, **28 of
+  28 images load**, and **no horizontal scroll at any exit**.
+- **The derived route distance followed correctly.** `LEG_LENGTH` 340 → 420 should give 20 × 420 / 1609.34 =
+  **5.2 mi**, and the destination reads **5.2 MI**. No stale constant — cycle 32's derivation work still holding.
+- **Measured consequence, not a defect: the drive is now materially longer.** A leg takes **14.1s** at a pumped
+  16.7ms/frame (842 frames), so the whole route is about **4.7 minutes** of holding the accelerator — up from ~11.5s
+  a leg / 3.8 min at 340m, and ~9.3s / 3.1 min at the original 220m. That is the direct cost of the owner's "a bit
+  longer" request and it is theirs to judge; `Next` still autopilots for anyone who does not want to hold a pedal.
+- **A wrong reading of my own, corrected before reporting:** my first pass said the trip summary was missing
+  entirely (all four stats `null`). The regex was wrong and the element I had grabbed was the mirror chip, not the
+  stat band. Dumping the panel text directly showed `5.2 MI` present and correct. **A selector that finds nothing is
+  not evidence that nothing is there.**
 
 ### CYCLE 65
 

@@ -608,3 +608,8 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Knock-on:** retired the premise of S104. 5.5m drop now renders cleanly where 6.5m and 7.5m previously did not.
   - **Evidence:** three legs pumped, arrivals exactly on 840/1260/1680, drop -5.5 and ramp 30.2 at every stop, drop/ramp constant (spread 8.3e-17), 387 frames on open mainline, zero errors; mid-taper and bottom-of-ramp inspected. Commit `b7cfa73`.
   - **Also delivered:** lane width 3.7 -> 4.1m, ramp offset +14 -> +22m, drop 3 -> 5.5m, leg length 340 -> 420m.
+
+- [ ] **S110 - Regression sweep after the road overhaul** - Status: Done (no defect) - Cycle: 66
+  - All 21 exits deep-linked and checked: hydrated, heading present, `n/21` counter correct, 28 of 28 images loading, no horizontal scroll at any exit.
+  - Derived route distance followed `LEG_LENGTH` correctly: 20 x 420 / 1609.34 = 5.2 mi, destination reads `5.2 MI`.
+  - **Consequence quantified, for the owner to judge:** a leg is now 14.1s and the whole route about 4.7 minutes of held accelerator, up from ~3.1 minutes before the run started widening the legs. Not a defect - the direct result of "I want the ride to the next exit a bit longer".
