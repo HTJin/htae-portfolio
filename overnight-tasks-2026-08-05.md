@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 64
+**Cycle:** 65
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -2339,6 +2339,26 @@ biggest lever available: making the drive pass **time**, not just distance.
     MILE 0 without throwing, and the URL tracks the current exit so it can be copied.
 
 </details>
+
+### CYCLE 64
+
+**S95 at last** — queued unreached since cycle 57. S107 stays parked awaiting the owner's decision and was not touched.
+
+- [x] **1. The pedals would have vanished in forced-colors mode** — **DONE** — `dd32f65`
+  - **Researched first, then audited the live page against it.** Forced colors reverts `box-shadow` and collapses
+    gradients to flat system colours.
+  - **Inventory of 35 on-screen controls:** 27 plain text links (forced colors handles these well — system colour
+    plus a text backplate), 6 with a real border (recoloured, fine), and **exactly 2 painted boxes with no border:
+    BRAKE and GO.** Their whole shape is a `background-image` gradient plus a `box-shadow` over a *transparent*
+    background colour, so both would have collapsed and left the primary driving controls as bare floating labels.
+  - **Fix:** `border border-transparent` — invisible normally, painted in a system colour under forced colors.
+  - **Layout neutrality measured, not assumed** (border-box): pedal outer rects identical at 1920/1440/1280 —
+    brake x 822/661/592 before and after. Re-running the audit returns an **empty** at-risk list. Console row still
+    one line, no horizontal scroll, phone and landscape-phone checked.
+  - **NOT proven, and not claimed:** forced-colors cannot be emulated through this browser bridge (it needs the
+    DevTools rendering flag or the OS setting). This is documented UA behaviour applied to a **measured inventory**,
+    not an observation of the page rendered in forced colors. The inventory and the layout-neutrality are measured;
+    the rendering itself still deserves a human eye.
 
 ### CYCLE 63
 

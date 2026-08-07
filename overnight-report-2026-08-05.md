@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 63 (2026-08-06).
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 64 (2026-08-07).
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -11,7 +11,7 @@ This file is rewritten every cycle. The full history lives in `overnight-tasks-2
 
 ## Where the run is
 
-63 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
+64 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
 against comparable sites, then built and verified them. **Cycles 57, 58, 59 and 61 were owner-directed** — you gave
 instructions mid-run, and those outrank anything the loop picks for itself. Cycle 60 came off the loop's own backlog.
 
@@ -31,6 +31,7 @@ instructions mid-run, and those outrank anything the loop picks for itself. Cycl
 
 | 62 | *Audit only — nothing shipped.* The rest of the cockpit's proportions checked; two suspected defects disproved, one real one measured and filed rather than rushed | — |
 | 63 | *Audit only — nothing shipped.* The proportion mechanism proven, and a confirmed defect found: the wheel draws over the brake pedal on tall-narrow windows. Fix attempted and abandoned — see the decision section below | — |
+| 64 | The BRAKE and GO pedals would have disappeared entirely in Windows high-contrast mode; they now keep a visible edge | `dd32f65` |
 
 **One reported problem was not a defect.** The "gap spilling out the road on the right side of the UI" was a 1440px
 measurement iframe I had overlaid on the live 1920px page — the page showing through beside my own harness. Removed
@@ -109,9 +110,12 @@ and that was wrong — the wheel is sized from the dash **height**. The correcte
 
 ## Backlog the loop can still work on
 
-S107 (cluster/wheel sizing, above), S95 (nothing answers `forced-colors: active` — measure before fixing; **not reached yet**, and nothing is claimed
-about it), S104 (per-polygon near-plane clipping, only if you want the ramp to drop further than 3m), S15/S17
-(structured data for `/drive`, blocked behind the canonical fix above).
+S107 (cluster/wheel/column re-derivation — **parked on your decision**, see the section above), S104 (per-polygon
+near-plane clipping, only if you want the ramp to drop further than 3m), S15/S17 (structured data for `/drive`,
+blocked behind the canonical fix above). **S95 is now done** — see cycle 64 above.
+
+The self-generated backlog is close to dry. When it runs out the loop goes back to the Suggester for a fresh audit
+and market-research pass, which is how it refills.
 
 ## One thing worth knowing about how this run verifies itself
 

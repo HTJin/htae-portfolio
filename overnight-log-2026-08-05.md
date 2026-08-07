@@ -1444,3 +1444,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **New confirmed defect:** the wheel overflows its column (up to 1.57x) and **draws over the brake pedal** at 1280x1024 and 1024x1180.
 - **A fix was attempted and abandoned for a specific, measured reason:** the wheel's rotation is a transform about the box centre, so any change that makes the wrapper non-square would make the wheel orbit rather than spin - a bug invisible to a static screenshot. Recorded in S107 so the next attempt does not walk into it.
 - **Progress flag:** no shipped change, second consecutive on this thread. Flagged in the report as needing a decision rather than another audit.
+
+## Cycle 64 (2026-08-07)
+
+- **Phase: Planner** -> took S95, unreached since cycle 57. S107 left parked: it is awaiting the owner's decision after two no-ship cycles, and starting a third would be exactly what I said I would not do.
+- **Phase: Builder** -> `dd32f65`, one line plus the reasoning.
+- **Phase: Reviewer** -> layout neutrality measured at three widths (outer rects identical), audit re-run to an empty at-risk list, phone and landscape-phone checked.
+- **A limitation stated rather than papered over:** forced-colors is not emulatable through this browser bridge. The inventory and the layout-neutrality are measured; the forced-colors rendering is not, and the commit says so.
+- **Progress flag:** yes - one real accessibility defect fixed, backlog item closed.
