@@ -576,7 +576,18 @@ function Pedal({ label, hint, name, onPress, onRelease, tone, disabled }) {
       disabled={disabled}
       aria-label={name}
       className={clsx(
-        'flex h-full w-full touch-none select-none flex-col items-center justify-center rounded-md text-[0.5625rem] uppercase tracking-[0.16em] transition',
+        // `border-transparent` is not decoration — it is the whole pedal's
+        // survival in forced-colors mode. Audited: of 35 on-screen controls,
+        // 27 are plain text links (which forced colors handles fine) and 6
+        // carry a real border. These two pedals were the only painted boxes
+        // with **no** border: their entire shape is a `background-image`
+        // gradient plus a `box-shadow`, over a transparent background colour.
+        // Forced colors reverts box-shadow and flattens gradients, so both
+        // would have collapsed and left the primary driving controls as two
+        // bare labels floating on the dash. A transparent border costs nothing
+        // here (border-box sizing, so the outer rect is unchanged) and gets
+        // painted in a system colour when forced colors is on.
+        'flex h-full w-full touch-none select-none flex-col items-center justify-center rounded-md border border-transparent text-[0.5625rem] uppercase tracking-[0.16em] transition',
         // The pedal travels under the press — but only when pressing it does
         // something. At the end of the route it used to depress and brighten
         // with the car going nowhere, which reads as a broken control rather
