@@ -845,3 +845,8 @@ _(Check the box once you've reviewed the outcome.)_
   - **Scope held, proven:** the complete set of source files changed across the entire run is **nine** - `Dashboard.jsx`, `DriveScene.jsx`, `ExitSign.jsx`, `RoadCanvas.jsx`, `route.js`, `StopCard.jsx`, `useDrive.js`, `world.js` and `drive.module.css`. Every one inside the declared scope. No leakage into the classic site, config, or content.
   - **The owner's own pre-existing uncommitted edits** in `src/components/sections/*` and `src/content/*` are still exactly as the run found them - never staged, never committed, never edited.
   - **Branch state:** build clean, `/drive` 22.5 kB first-load 152 kB, zero drive-scope lint issues, nothing uncommitted in scope, nothing pushed.
+
+- [ ] **S123 - Verify the vegetation only appears where there is a slope** - Status: Proposed (first attempt invalid) - Cycle: 80
+  - The tufts are gated on `drop > -0.35 -> skip`, so nothing should be planted on the open mainline. **Unverified.**
+  - **Cycle 80's attempt does not count:** counting pixels near the flower colours matched the **sunset sky** - amber `(244,208,122)` +/-22 is the dusk gradient - giving 4,837 "flowers" at drop 0 versus 1,092 mid-descent. The impossible direction (more planting where there is no slope) is what exposed it.
+  - **A method that would work:** temporarily raise the flower colours to something absent from every daylight palette (pure magenta), rebuild, count, then revert. Or count only within a narrow band tracking the slope face rather than the whole canvas. Either needs a control run that must come out different.
