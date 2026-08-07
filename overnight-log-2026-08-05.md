@@ -1396,3 +1396,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Builder** -> T1 built and committed `a511ce0`. Lint clean, build clean.
 - **Phase: Reviewer** -> partial. Geometry proven at a stop by canvas pixel sampling. The taper in motion could NOT be exercised: `document.hidden` is true (Chrome window minimised), so rAF is paused (guardrail 24). First probe hung CDP 45s; retry timeout-guarded. Resolved to **Needs testing** rather than Done — self-verification is the only gate, so an unexercised claim does not get to be Done.
 - **Progress flag:** yes — one substantial feature built and committed, two new ideas banked.
+
+## Cycle 58 (2026-08-06)
+
+- **Phase: Reviewer (cycle 57)** -> cleared the one Needs-testing item rather than parking it, by pumping rAF by hand instead of waiting for a foregrounded window. Cycle 57 T1 moved **Needs testing -> Done**.
+- **Owner-directed work, seven messages** across the cycle. Six were real and are shipped in five commits; one - the "gap" on the right - was my own iframe harness and is recorded as **not a defect**.
+- **Guardrail 50 amended, not broken.** Cycle 18 required the wheel centred on `innerWidth / 2`; the owner requires it left of centre. Amended in the open with the new target and the measured table.
+- **New standing limit recorded.** `RAMP_DROP` cannot exceed `CAM_HEIGHT` in this renderer. The constant now carries the proof, and S102 describes the geometry needed to lift it.
+- **Progress flag:** yes - one item verified to Done, six owner-directed changes shipped, one false alarm closed, one new backlog item.

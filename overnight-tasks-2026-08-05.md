@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Reviewer
-**Cycle:** 57
+**Cycle:** 58
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -126,7 +126,12 @@
 49. **Move the cockpit, not the projection.** The road maths is verified correct and was proven pixel-identical in
     cycle 15. Do not add a principal-point offset to `project()` to "fix" this — that would shove the road into the
     left third of the windshield. The defect is in the dash layout.
-50. **Measure the wheel, do not eyeball it.** "Looks centred" is not a result. Verify with
+50. **AMENDED IN CYCLE 58 — the wheel is deliberately NOT centred any more.** The owner: *"the driving wheel is
+    supposed to be the left side of the vehicle but it's centered to the screen."* The measurement discipline below
+    still stands; only the target changed. The wheel must now sit **left of `innerWidth / 2`** at every desktop width,
+    and the check is that the offset is positive and grows with width — see cycle 58 for the measured table. Do not
+    "fix" the wheel back onto the centre line: that is the defect now, not the goal.
+    *(Original guardrail, kept for the record:)* **Measure the wheel, do not eyeball it.** "Looks centred" is not a result. Verify with
     `getBoundingClientRect()` against `innerWidth / 2`, the same measurement that found the defect.
 51. **Landscape phone is the one that breaks.** Cycle 12's 71px panel/dash overlap lived there and came from a height
     written twice in different units. Re-check 844×390 and 390×844 explicitly after any dash layout change, and
@@ -2335,6 +2340,89 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 </details>
 
+### CYCLE 58
+
+**Owner-directed again.** Three instructions arrived in sequence while cycle 57 was being reviewed. All three are the
+same fault seen from different angles: the cockpit was laid out as if the driver sat in the middle of the car.
+
+- [x] **1. The driver sits on the left, and the dash stopped being symmetric** — **DONE** — `f1c5b4f`
+  - **The owner, twice:** *"the left side of the dash is unrealistically long"*, then *"the driving wheel is supposed
+    to be the left side of the vehicle but it's centered to the screen."*
+  - **What was there:** the xl grid was `1fr / clamp(260px,24vw,400px) / 1fr` — a door column exactly equal to the
+    console column, which is what put the wheel on the screen's centre line and left a **503px** empty slab outboard
+    of the driver at 1440 (716px at 1920).
+  - **Why it was like that, and why that reasoning lost:** cycle 18 centred it on sound geometry — the camera is the
+    driver's eye looking straight down the road, so anything directly in front of the driver projects to the middle
+    of the image. True, and still true. But it renders a car with the driver in the middle of it, and the owner is
+    the authority on how their own cockpit should read. **Guardrail 50 amended in the open, not quietly broken.**
+  - **Now:** `0.5fr / wheel / 1.5fr` at xl. Below xl the split was already lopsided at `0.42fr` and was left alone.
+  - **Measured** in sized same-origin iframes, each proved to be its own viewport and hydrated first (guardrails
+    53/54): wheel centre **358px** left of screen centre at 1920, **282** at 1600, **252** at 1440, **221** at 1280,
+    and **153** at 1100 — that last figure is *exactly* what cycle 18 recorded for `lg`, which is the proof `lg` was
+    not disturbed. Door card 503 → 252px at 1440. Build clean and the shared CSS hash changed, so the new arbitrary
+    grid class really emitted rules rather than silently no-opping (guardrail 6). No hydration warning, no page
+    console error — all ten console messages were from a wallet extension, not the site.
+
+- [x] **2. The pedals were on the wrong side of the car** — **DONE** — `6d2e3aa`
+  - **The owner:** *"I don't think it makes much sense to have th brake and gas on the right side."* Correct — the
+    footwell was the **last** child of the centre-stack column, past the trip computer and the button row, which put
+    the brake and accelerator hard against the passenger door.
+  - **Now** the first child of that column, immediately inboard of the wheel. The pedals themselves are untouched:
+    same sizes, same pointer/key handlers, same disabled-at-the-destination behaviour from cycle 45.
+  - **Measured:** brake/go at x 1011/1081 at 1920, 753/823 at 1440, 657/727 at 1280, all right of the wheel centre
+    and well inboard of where they were. Wheel centre **unchanged** at all three widths, so this moved the pedals
+    without disturbing task 1. Console button row still on **one line** at 1280 — the constraint that set the xl
+    breakpoint originally. No horizontal scroll at any width.
+
+- [x] **3. Pedals right of the wheel, and the HUD back within reach** — **DONE** — `5ee5782`
+  - Task 2 was half right. Moving the pedals inboard as a *flow* child cost the console ~330px and shoved the trip
+    computer against the right edge — *"that doesn't mean to push the hud for the back next route map and all that to
+    be pushed to the right"* — and a stint on the driver's side was wrong too: *"brake and go pedals should be to the
+    right of the wheel."* They are now pinned **out of the flow** at the bottom left of the console column: right of
+    the wheel, costing the console no width. The console itself is capped at 720px (it had stretched to 1074px at
+    1920 once the right column went to 1.5fr — *"now the dash is stretched way too far to the right"*).
+  - **Two things only measurement caught.** `.footwell` sets `position: relative` for its `::before` shadow; putting
+    Tailwind's `absolute` on the same node loses on source order (the CSS module ships after the utilities), and the
+    pedals land silently at the *top* of the dash. And below xl the console column is narrow enough that the centred
+    button row runs under the pedals — the GO pedal overlapped "Back" at 1100x800. Pedal/console/trip/wheel overlap
+    is now asserted **pairwise** at 1920/1440/1280/1100/1024: zero collisions, console on one row, no h-scroll.
+
+- [x] **4. Two lanes each way** — **DONE** — `694c4f6`
+  - *"why is the highway just one lane? make it at least 2."* It was one 5.5m lane per carriageway. Now
+    `LANE_WIDTH * LANES`, with a broken white lane line between each pair on both carriageways, drawn from `LANES` so
+    a third lane would mark itself. `LANE_OFFSET` is derived as the centre of the rightmost lane, and the steering
+    drift limit comes off `LANE_WIDTH` — left at the old typed 2.3 the car would have wandered across the new lane
+    line, breaking the owner's cycle-13 rule.
+
+- [x] **5. The exit actually leaves the highway, downhill** — **DONE** — `694c4f6`
+  - *"the exit is still not far enough away from the highway road"* → `RAMP_OFFSET` 2.7m past the carriageway → 14m.
+    `LEG_LENGTH` 220 → 340 to buy the room, so `RAMP_LENGTH` goes 88 → 136m with 68m of open mainline still between
+    consecutive ramps.
+  - *"make the exit ramp way longer down a hill and then back up"* → `rampDropAt(s)` shares one `rampProgress` with
+    `rampAt(s)`, so the exit cannot start turning before it starts falling. Proven: `drop / ramp` is constant at
+    -0.0536214953271028 across **617 sampled frames, spread 2e-17**, matching `-RAMP_DROP / RAMP_OFFSET`.
+  - **`RAMP_DROP` is `CAM_HEIGHT * 0.85`, and that ceiling is a renderer limit, not taste.** The road is flat ribbons
+    with no depth buffer and no embankment faces; screen height is `CAM_HEIGHT + drop - hillAt(s)`, so once `drop`
+    exceeds eye height it is negative for *every* `s` and the entire mainline lifts above the horizon as a wedge
+    across the sky. Measured at a first attempt of 6.5m: the highway hung over the windscreen and the sky vanished.
+    **Do not raise this constant** — a deeper descent needs real embankment geometry, filed as S102.
+
+- [x] **6. Continuous prose stopped being set in newspaper columns** — **DONE** — `4195b71`
+  - *"the passage describing my time unemployed is not friendly to read with like 3 column layout."* Cycles 39/49
+    measured columns as a win, and were right about *items* — a bulleted list gives the eye a fresh start every
+    entry. Prose is the opposite: three short columns make you track bottom-to-top every few lines, and the
+    sabbatical is the longest and most personal entry on the résumé.
+  - The split is now by **content, not width**: paragraphs-only stops get one column with the measure bounded in
+    `ch`; stops with lists keep the columns. Measured at 1440x900 and 1280x800 on EXIT 04 — one column, 679px (the
+    70ch cap), panel scrolls 178px, which is the deliberate trade. EXIT 02 (bullets) unchanged as a control.
+
+- [ ] **NOT A DEFECT — the "gap spilling out the road on the right side of the UI"** — **the owner was looking at my
+  test harness, not their site.** I had injected a **1440px-wide iframe** over the live 1920px page to measure
+  breakpoints; the page underneath showed through to the right of it. Removed the iframe, reloaded clean, and
+  re-screenshotted: the dash spans the full viewport with no gap, and `documentElement.scrollWidth === innerWidth` at
+  every width tested. **Nothing was changed for this**, because there was nothing wrong. Worth recording because a
+  measurement harness that overlays the page can manufacture a convincing-looking defect.
+
 ### CYCLE 57
 
 **Not a Suggester cycle.** The backlog was dry and a Suggester pass had begun (site audit + market research), but the
@@ -2372,6 +2460,19 @@ broken should check for orphaned servers before suspecting the code.**
     exercised from here. **Moved to Needs testing, not Done.**
 
 ## Done (proven by the autonomous Reviewer)
+
+- [x] **Every stop is a real interchange, on a divided highway (cycle 57, `a511ce0`) — taper proven in motion in
+  cycle 58.** The Chrome window never came forward, so instead of waiting for it the sim loop was pumped by hand (see
+  the reusable probe above). Drove MILE 0 → EXIT 01 → EXIT 02 for real: **557 frames, zero errors.**
+  - `sim.ramp` is **exactly 0** from travel **308 to 351.6** — the predicted mainline window is 220+88 → 440−88, i.e.
+    308 → 352. It reaches **8.2** (`RAMP_OFFSET` = `CARRIAGEWAY + 2.7`) at both stops, and **84 frames** were spent on
+    open mainline, so the car genuinely rejoins the highway between exits rather than slaloming.
+  - The profile is symmetric about the leg: 5.976 at travel 250 against 6.012 at 410; 1.937 at 280 against 1.970 at
+    380. Entrance and exit ramps really are one shape mirrored.
+  - **No kink at either join:** the largest frame-to-frame change in `d(ramp)/d(travel)` across the whole leg is
+    **0.004**, which is the smoothstep's zero-slope endpoints doing their job.
+  - Confirmed independently that `sim.ramp` is `8.2` at travel 0 straight out of `createSim`, so MILE 0 really does
+    start parked on the entrance ramp.
 
 - **C56.0 — The résumé PDF is real, current, and agrees with the site** *(cycle 56 — verification)* — the
   destination panel's *"Download résumé"* had never been checked. `/resume.pdf` serves **200**; at **3,730 bytes** it
@@ -3119,12 +3220,23 @@ broken should check for orphaned servers before suspecting the code.**
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
-- [ ] **The ramp taper in motion (cycle 57, `a511ce0`)** — the geometry is proven at a *stop*; what is unproven is the
-  drive between stops. **Clear it by:** with the Chrome window **foregrounded** (rAF must actually run — probe it
-  first, timeout-guarded), drive MILE 0 → EXIT 01 and check that (a) `sim.ramp` reaches **0** on the mainline mid-leg
-  and `RAMP_OFFSET` at the stop, (b) the car merges without a visible kink at both ends of the taper, (c) the median
-  barrier sits just left of the carriageway when `ramp` is 0, (d) no hydration warning and no console error, (e) the
-  exit sign still stands on the ramp's outer verge rather than on its tarmac.
+*(Cycle 57's ramp-taper item was cleared in cycle 58 — moved to Done. See the note below on how, because the
+technique generalises.)*
+
+> **Reusable probe (added cycle 58) — driving the sim with `requestAnimationFrame` paused.**
+> Guardrail 24 says frame-driven behaviour is unmeasurable in a hidden tab, and that had been treated as "wait for a
+> human to foreground the window". It is not: **you can pump the loop yourself.** Load `/drive` in a same-origin
+> iframe and, using the cycle-29 timing (set `src`, then poll `contentWindow` and patch the moment `location.href` is
+> the real URL, while `readyState` is still `loading`), replace `requestAnimationFrame` with one that files callbacks
+> into a `Map` instead of scheduling them, and `cancelAnimationFrame` with a delete. Then call them yourself with a
+> synthetic clock advancing 16.7ms a frame. The **real** `step()` runs with real `dt`, the real subscribers fire and
+> the real canvas paints — deterministically, and as fast as you can drain the queue.
+> Reach the live sim through the React fiber: `canvas[Object.keys(canvas).find(k => k.startsWith('__reactFiber$'))]`,
+> then walk `.return` until `memoizedProps.drive.simRef` exists (it is **one** hop).
+> Two traps. **An `async` IIFE returns `{}`** from this JS bridge — it stringifies the pending promise — so use
+> top-level `await`; the code still *runs*, which is confusing, so a call that "did nothing" may well have done it.
+> And **an unguarded rAF probe hangs CDP for the full 45s** when rAF is paused; always `Promise.race` it against a
+> timeout.
 
 *(empty — all three long-parked items were cleared in cycle 20 once the window became foregrounded.)*
 
@@ -3308,6 +3420,13 @@ broken should check for orphaned servers before suspecting the code.**
 
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
+- **S102 — A real embankment, so the exit ramp can drop properly** *(new, cycle 58)* — `RAMP_DROP` is pinned under
+  `CAM_HEIGHT` because the renderer paints flat ribbons with no depth buffer: any deeper and the whole mainline lifts
+  above the horizon and paints across the sky (measured at 6.5m). To get a real descent the mainline needs an
+  **embankment face** filled between the two grades at its outer edge, and the mainline ribbon needs to be **clipped
+  where it passes above the eye** so it cannot paint over the sky. Both are drawable with the existing `rail()` and a
+  run-test like `ribbonRuns`, so this is a contained job — it just is not a constant to nudge, which is exactly why
+  the constant now carries the explanation.
 - **S95 — Nothing in drive mode answers `forced-colors: active`** *(new, cycle 57)* — `grep -rn "forced-colors\|-ms-high-contrast" src/` returns **nothing**. Drive mode is a canvas scene plus colour-carrying chrome, and forced-colors replaces the author palette wholesale; WebAIM's 2018 low-vision survey put high-contrast-mode use at ~30% of respondents. The canvas is `aria-hidden` and the text content is exposed elsewhere, so this may well be fine — **the task is to measure it, not to fix it**. Emulatable via DevTools' *Emulate CSS media feature* rendering flag.
 - **S96 — The pedals are pointer-driven but touch has never actually been exercised** *(new, cycle 57)* — `Pedal` (`Dashboard.jsx:528-549`) binds `onPointerDown/Up/Cancel/Leave` and carries `touch-none select-none`, which is the right shape, but every cycle that touched the pedals verified them with a **mouse**. Untested on touch: whether `setPointerCapture` + `pointerleave` interact badly when a finger slides off the pedal, and whether a long press raises the touch callout. Needs a real touch-event harness, not a synthetic click.
 

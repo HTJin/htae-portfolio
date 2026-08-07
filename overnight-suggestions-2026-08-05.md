@@ -524,3 +524,29 @@ this before each Suggester pass so it never re-proposes an idea already here.
 
 - [ ] **S97 - The pedals are pointer-driven but have only ever been tested with a mouse** - Status: Proposed - Cycle: 57
   - **Source:** site audit. `Pedal` binds pointer events and sets `touch-none select-none`, which is the right shape, but no cycle has exercised it with real touch events - specifically `setPointerCapture` + `pointerleave` when a finger slides off, and the long-press callout.
+
+- [ ] **S98 - The cockpit was laid out as if the driver sat in the middle of the car** - Status: Done - Cycle: 58
+  - **Source:** the owner, directly: "the left side of the dash is unrealistically long", "the driving wheel is supposed to be the left side of the vehicle but it's centered to the screen", "I don't think it makes much sense to have th brake and gas on the right side", "that doesn't mean to push the hud ... to be pushed to the right", "brake and go pedals should be to the right of the wheel", "now the dash is stretched way too far to the right".
+  - **Shipped:** xl columns 0.5fr / wheel / 1.5fr; pedals pinned out of the flow right of the wheel; console capped at 720px.
+  - **Evidence:** wheel 358/282/252/221/138px left of centre at 1920/1600/1440/1280/1024, `lg` unchanged at exactly the 153px recorded in cycle 18; zero pedal/console/trip/wheel collisions at five widths; console on one row everywhere; no horizontal scroll. Commits `f1c5b4f`, `6d2e3aa`, `5ee5782`.
+  - **Note:** overrides cycle 18's centred-wheel decision. Guardrail 50 amended in the open.
+
+- [ ] **S99 - Frame-driven behaviour IS measurable in a hidden tab** - Status: Done (technique) - Cycle: 58
+  - Guardrail 24 says rAF is paused when the tab is hidden, which had been read as "unobtainable". Patching `requestAnimationFrame` before hydration inside a same-origin iframe lets the loop be pumped by hand with a synthetic clock, running the real `step()` and the real canvas paint deterministically. Recorded as a reusable probe in the task file.
+
+- [ ] **S100 - The highway was one lane, and the exit barely left it** - Status: Done - Cycle: 58
+  - **Source:** the owner: "why is the highway just one lane? make it at least 2" and "the exit is still not far enough away from the highway road".
+  - **Shipped:** two lanes per carriageway with a broken lane line drawn from `LANES`; `LANE_OFFSET` and the steering drift limit derived from `LANE_WIDTH`; `RAMP_OFFSET` out to `CARRIAGEWAY + 14`; `LEG_LENGTH` 220 -> 340 so `RAMP_LENGTH` could grow 88 -> 136m with 68m of mainline still between ramps. Commit `694c4f6`.
+
+- [ ] **S101 - The exit ramp now goes downhill and climbs back** - Status: Done (capped) - Cycle: 58
+  - **Source:** the owner: "make the exit ramp way longer down a hill and then back up".
+  - **Shipped:** `rampDropAt(s)` sharing one `rampProgress` with `rampAt(s)`; `sim.drop` on the camera; every ramp-following ribbon follows it down via `point.yRamp`; roadside furniture and the exit sign descend with it.
+  - **Evidence:** `drop / ramp` constant at -0.0536214953271028 over 617 frames, spread 2e-17, matching `-RAMP_DROP / RAMP_OFFSET`.
+  - **Honest limit:** the descent is capped at `CAM_HEIGHT * 0.85`. Deeper and the mainline lifts above the horizon and paints across the sky, because the renderer has flat ribbons and no depth buffer. See S102.
+
+- [ ] **S102 - A real embankment, so the ramp can drop properly** - Status: Proposed - Cycle: 58
+  - Needs an embankment face between the ramp grade and the mainline grade, plus clipping the mainline where it passes above the eye. Both are drawable with the existing `rail()` and a run-test like `ribbonRuns`. Until then `RAMP_DROP` stays under `CAM_HEIGHT`.
+
+- [ ] **S103 - Continuous prose should not be set in newspaper columns** - Status: Done - Cycle: 58
+  - **Source:** the owner: "the passage describing my time unemployed is not friendly to read with like 3 column layout."
+  - Cycles 39/49 measured columns as a win and were right about *items*; prose is the opposite. Split now by content rather than width: paragraphs-only stops get one column with the measure bounded in `ch`. Measured at 1440x900 and 1280x800 on EXIT 04: one column, 679px, panel scrolls 178px. EXIT 02 unchanged as a control. Commit `4195b71`.
