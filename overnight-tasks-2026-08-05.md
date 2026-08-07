@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 59
+**Cycle:** 60
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -2340,6 +2340,56 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 </details>
 
+### CYCLE 59
+
+**Planner.** Backlog had S102, S95, S97. Took **S102** — it is the only one that finishes *owner-directed* work:
+the owner asked for an exit "way longer down a hill and then back up", and cycle 58 shipped a hill capped at 1.15m
+with the real fix filed rather than built. S95/S97 stay queued.
+
+- [x] **1. An embankment, so the ramp can drop like a real one** — **DONE** — `8264530`. Drop **1.15 → 3m** (2.6x).
+  - **Shipped:** flat surfaces (bands, stripes, edge and lane lines) are drawn inside a clip to below the eyeline;
+    standing objects — lamp masts, the median barrier, the embankment face — stay outside it. A new `embankment()`
+    fills the gap, its top edge at `point.y` and its bottom at `point.yRamp`, the same two values the mainline and
+    the ramp are painted from.
+  - **Why 3m and not more, having actually tried:** at 7.5m the camera sits ~6m below and ~17m to the side of the
+    highway, so the embankment's near field is off-screen left and its polygon sweeps in as a black wedge over the
+    sky. **Looked at it, rejected it, came down.** That is the projection running out of road — flat ribbons, no
+    depth buffer, no per-polygon near-plane clipping — not a constant to nudge. Filed as **S104**.
+  - **Crest case checked, per guardrail 56:** the mainline was re-inspected at travel 150.6 with the ramp fully out
+    of it. Two lanes, lane line, median line, edge line, barrier, delineators and sign all correct, no artefacts.
+  - **Drive integrity:** three consecutive legs pumped — arrivals land exactly on 340 / 680 / 1020, `drop` −3 and
+    `ramp` 21.4 at every stop, `drop / ramp` constant at −0.14018691588785048 over **1,443 samples, spread 5.6e-17**,
+    exactly `−RAMP_DROP / RAMP_OFFSET`.
+
+*(original plan below, kept for the record)*
+- [ ] **1. An embankment, so the ramp can drop like a real one** — files: `RoadCanvas.jsx`, `route.js`.
+  - **Why the cap exists:** a point's screen height is `CAM_HEIGHT + drop − hillAt(s)`. Once `drop` passes eye
+    height that is negative for every `s`, so the whole mainline lifts above the horizon and paints as a wedge across
+    the sky. Cycle 58 measured that at 6.5m.
+  - **The rule that fixes it:** *a horizontal surface above your eye cannot be seen; a vertical face can.* So clip
+    the flat road surfaces at the eyeline, leave standing objects alone, and fill the gap the clip opens with an
+    embankment face between the two grades.
+  - **Done when:** the mainline paints **zero** pixels above the eyeline at a deep drop, an embankment is visible
+    between highway and ramp, arrival still parks exactly on the stop, and crests still read as road going over a
+    brow rather than road vanishing.
+
+**Critic — pre-mortem for this cycle.**
+56. *Failure: treating this as a pure ramp change.* **Measured baseline: 26,683 opaque road pixels already paint
+    above the eyeline today**, because `hillAt` swings ±3.5m against a 1.35m eye — crests already do this. Any clip
+    therefore changes crest rendering too. **Guardrail:** measure the same pixel count before and after, and look at
+    a crest, before calling it done. "It fixed the ramp" is not evidence it did not break the hills.
+57. *Failure: clipping the whole scene and beheading the lamps.* Masts are 8.6m tall and the median barrier stands
+    proud of the road; those legitimately cross the horizon. **Guardrail:** the clip covers **flat surfaces only** —
+    bands, stripes and edge lines. `rail()` and `drawRoadside` stay outside it, and so does the embankment, which is
+    a vertical face.
+58. *Failure: the embankment drifting away from the roads it joins.* **Guardrail:** its top edge must use `point.y`
+    and its bottom edge `point.yRamp` — the same two values the mainline and the ramp are drawn from, never a third
+    copy of the maths.
+59. *Failure: the clip leaving a hole with sky showing through it.* **Guardrail:** the ground gradient `fillRect` is
+    painted before the clip and must stay outside it, so there is always ground under anything removed.
+60. *Failure: a deeper drop quietly breaking the drive.* **Guardrail:** re-run the pumped drive — arrival must still
+    park exactly on the stop, and `drop / ramp` must still be constant, or the descent and the turn have come apart.
+
 ### CYCLE 58
 
 **Owner-directed again.** Three instructions arrived in sequence while cycle 57 was being reviewed. All three are the
@@ -3420,13 +3470,15 @@ technique generalises.)*
 
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
-- **S102 — A real embankment, so the exit ramp can drop properly** *(new, cycle 58)* — `RAMP_DROP` is pinned under
-  `CAM_HEIGHT` because the renderer paints flat ribbons with no depth buffer: any deeper and the whole mainline lifts
-  above the horizon and paints across the sky (measured at 6.5m). To get a real descent the mainline needs an
-  **embankment face** filled between the two grades at its outer edge, and the mainline ribbon needs to be **clipped
-  where it passes above the eye** so it cannot paint over the sky. Both are drawable with the existing `rail()` and a
-  run-test like `ribbonRuns`, so this is a contained job — it just is not a constant to nudge, which is exactly why
-  the constant now carries the explanation.
+- **S102 — A real embankment** — **DONE in cycle 59** (`8264530`). Drop 1.15 → 3m. Left here only as a pointer.
+- **S104 — Per-polygon near-plane clipping, if the ramp should drop further than 3m** *(new, cycle 59)* — cycle 59
+  built the embankment and the eyeline clip, which bought 2.6x the descent, and then **tried 7.5m and rejected it by
+  looking at it**: with the camera ~6m below and ~17m to the side of the highway, the embankment's near field is off
+  the left of the screen and its polygon sweeps in as a black wedge over the sky. Nothing short of real 3D clipping
+  fixes that — polygons need splitting at a near plane and against the horizon, rather than being handed to
+  `ctx.fill()` whole. **Genuinely large**, and worth doing only if a deeper descent is wanted for its own sake; 3m
+  already reads as a hill. Do not simply raise `RAMP_DROP` — that has now been tried twice and rejected twice, with
+  the pictures to prove it.
 - **S95 — Nothing in drive mode answers `forced-colors: active`** *(new, cycle 57)* — `grep -rn "forced-colors\|-ms-high-contrast" src/` returns **nothing**. Drive mode is a canvas scene plus colour-carrying chrome, and forced-colors replaces the author palette wholesale; WebAIM's 2018 low-vision survey put high-contrast-mode use at ~30% of respondents. The canvas is `aria-hidden` and the text content is exposed elsewhere, so this may well be fine — **the task is to measure it, not to fix it**. Emulatable via DevTools' *Emulate CSS media feature* rendering flag.
 - **S96 — The pedals are pointer-driven but touch has never actually been exercised** *(new, cycle 57)* — `Pedal` (`Dashboard.jsx:528-549`) binds `onPointerDown/Up/Cancel/Leave` and carries `touch-none select-none`, which is the right shape, but every cycle that touched the pedals verified them with a **mouse**. Untested on touch: whether `setPointerCapture` + `pointerleave` interact badly when a finger slides off the pedal, and whether a long press raises the touch callout. Needs a real touch-event harness, not a synthetic click.
 

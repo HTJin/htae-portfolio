@@ -550,3 +550,11 @@ this before each Suggester pass so it never re-proposes an idea already here.
 - [ ] **S103 - Continuous prose should not be set in newspaper columns** - Status: Done - Cycle: 58
   - **Source:** the owner: "the passage describing my time unemployed is not friendly to read with like 3 column layout."
   - Cycles 39/49 measured columns as a win and were right about *items*; prose is the opposite. Split now by content rather than width: paragraphs-only stops get one column with the measure bounded in `ch`. Measured at 1440x900 and 1280x800 on EXIT 04: one column, 679px, panel scrolls 178px. EXIT 02 unchanged as a control. Commit `4195b71`.
+
+- [ ] **S102 - A real embankment, so the exit ramp can drop properly** - Status: Done - Cycle: 59
+  - **Shipped:** flat road surfaces clipped at the eyeline (a horizontal plane above your eye cannot be seen) while standing objects stay unclipped; a new `embankment()` face between the mainline grade and the ramp grade, drawn from the same `point.y` / `point.yRamp` the two roads use. `RAMP_DROP` 1.15 -> 3m, 2.6x deeper.
+  - **Evidence:** mainline re-inspected at travel 150.6 with the ramp fully out of it - two lanes, lane line, median line, edge line, barrier, delineators, sign, no artefacts. Three consecutive legs pumped: arrivals exactly on 340/680/1020, drop -3 and ramp 21.4 at every stop, drop/ramp constant at -0.14018691588785048 over 1,443 samples (spread 5.6e-17). Commit `8264530`.
+  - **Honest limit, tried and rejected:** 7.5m was built and looked at. The embankment's near field lands off-screen left and its polygon sweeps in as a black wedge over the sky. See S104.
+
+- [ ] **S104 - Per-polygon near-plane clipping** - Status: Proposed - Cycle: 59
+  - Only needed if the ramp should drop further than 3m. Polygons would have to be split against a near plane and against the horizon instead of being handed to `ctx.fill()` whole. Genuinely large. Do **not** just raise `RAMP_DROP`: that has been tried at 6.5m and 7.5m and rejected both times, with screenshots.

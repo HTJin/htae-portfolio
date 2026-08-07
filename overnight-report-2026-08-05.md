@@ -1,6 +1,6 @@
 # Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 58 (2026-08-06).
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 59 (2026-08-06).
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -25,6 +25,8 @@ instructions mid-run, and those outrank anything the loop picks for itself.
 | 58 | Two lanes each way, and an exit that leaves the highway properly — 14m clear, 136m long, and descending | `694c4f6` |
 | 58 | Continuous prose stopped being set in newspaper columns | `4195b71` |
 
+| 59 | The exit ramp's descent is no longer capped by the renderer — flat surfaces clip at the eyeline, an embankment fills the gap, and the hill went 1.15m → 3m | `8264530` |
+
 **One reported problem was not a defect.** The "gap spilling out the road on the right side of the UI" was a 1440px
 measurement iframe I had overlaid on the live 1920px page — the page showing through beside my own harness. Removed
 it, reloaded, re-measured: full-width dash, no horizontal scroll. Nothing was changed, because nothing was wrong.
@@ -37,13 +39,18 @@ the road, so whatever is in front of the driver lands in the middle of the image
 is — but it renders a car with the driver sitting in the middle of it. Guardrail 50 now records the new target (wheel
 **left** of centre) and keeps the original text for the record.
 
-**The exit ramp's descent is capped, and the cap is a renderer limit rather than taste.** `RAMP_DROP` is
-`CAM_HEIGHT * 0.85`. The road is painted as flat ribbons with no depth buffer and no embankment faces; a point's
-screen height is `CAM_HEIGHT + drop − hillAt(s)`, so the moment `drop` exceeds eye height that goes negative for
-*every* position and the entire mainline lifts above the horizon and paints as a wedge across the sky. Measured at a
-first attempt of 6.5m: the highway hung over the windscreen and the sky vanished behind it. **A deeper descent is a
-real feature, not a constant to nudge** — it needs an embankment face between the two grades and clipping of the
-mainline where it passes above the eye. Filed as **S102**.
+**The hill you asked for is now 3m rather than 1.15m, and it stops there for a reason I checked rather than assumed.**
+Cycle 58 capped the descent because a deeper drop lifted the whole highway above the horizon and painted it across
+the sky. Cycle 59 fixed the cause: flat road surfaces are now clipped at the eyeline (you cannot see a horizontal
+plane above your eye) while standing objects — lamp masts, the barrier, the embankment — are left alone, and a new
+embankment face fills the gap between the highway and the dropped ramp. That bought 2.6× the descent.
+
+**I then tried 7.5m and rejected it by looking at it.** At that depth the camera sits about 6m below and 17m to the
+side of the highway, so the embankment's near field falls off the left of the screen and its polygon sweeps in as a
+black wedge over the sky. That is this projection running out of road — flat ribbons, no depth buffer, no
+per-polygon near-plane clipping — not a number to nudge. Going deeper is filed as **S104** and is a genuinely large
+job; 3m already reads as a hill. **`RAMP_DROP` has now been raised too far twice and reverted twice**, so the
+constant carries that history.
 
 ## Parked — needs you
 
@@ -61,9 +68,10 @@ mainline where it passes above the eye. Filed as **S102**.
 
 ## Backlog the loop can still work on
 
-S102 (embankment geometry, above), S95 (nothing answers `forced-colors: active` — measure before fixing), S97 (the
-pedals are pointer-driven but have only ever been exercised with a mouse, never real touch events), S15/S17
-(structured data for `/drive`, blocked behind the canonical fix above).
+S95 (nothing answers `forced-colors: active` — measure before fixing), S97 (the pedals are pointer-driven but have
+only ever been exercised with a mouse, never real touch events), S104 (per-polygon near-plane clipping, only if you
+want the ramp to drop further than 3m), S15/S17 (structured data for `/drive`, blocked behind the canonical fix
+above).
 
 ## Health
 

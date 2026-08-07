@@ -1404,3 +1404,12 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Guardrail 50 amended, not broken.** Cycle 18 required the wheel centred on `innerWidth / 2`; the owner requires it left of centre. Amended in the open with the new target and the measured table.
 - **New standing limit recorded.** `RAMP_DROP` cannot exceed `CAM_HEIGHT` in this renderer. The constant now carries the proof, and S102 describes the geometry needed to lift it.
 - **Progress flag:** yes - one item verified to Done, six owner-directed changes shipped, one false alarm closed, one new backlog item.
+
+## Cycle 59 (2026-08-06)
+
+- **Phase: Planner** -> took S102 from the backlog: the only item that finishes *owner-directed* work, since cycle 58 shipped the requested hill capped and filed the real fix rather than building it. S95/S97 stay queued.
+- **Phase: Critic** -> five guardrails written (56-60). The load-bearing one was 56: a **baseline measurement showed 26,683 opaque road pixels already painting above the eyeline**, because `hillAt` swings +/-3.5m against a 1.35m eye. So the clip could never be a pure ramp change, and the crest case had to be re-checked afterwards. It was.
+- **Phase: Builder** -> `8264530`. Drop 1.15 -> 3m.
+- **Phase: Reviewer** -> verified by real execution: mainline inspected with the ramp fully out of it; three legs pumped with exact arrivals and a constant drop/ramp ratio.
+- **A rejected attempt, recorded rather than buried.** 7.5m was built, rendered, looked at, and abandoned. The screenshot is the evidence and S104 describes what it would actually take.
+- **Progress flag:** yes - one backlog item closed, one honest new one opened.
