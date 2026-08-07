@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 62 (2026-08-06).
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 63 (2026-08-06).
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -11,7 +11,7 @@ This file is rewritten every cycle. The full history lives in `overnight-tasks-2
 
 ## Where the run is
 
-62 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
+63 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
 against comparable sites, then built and verified them. **Cycles 57, 58, 59 and 61 were owner-directed** — you gave
 instructions mid-run, and those outrank anything the loop picks for itself. Cycle 60 came off the loop's own backlog.
 
@@ -30,6 +30,7 @@ instructions mid-run, and those outrank anything the loop picks for itself. Cycl
 | 61 | The centre display was a 6.2:1 letterbox; it is now 16:9 like a real one. The exit panel narrowed from 76rem/3 columns to 60rem/2 | `664def6` |
 
 | 62 | *Audit only — nothing shipped.* The rest of the cockpit's proportions checked; two suspected defects disproved, one real one measured and filed rather than rushed | — |
+| 63 | *Audit only — nothing shipped.* The proportion mechanism proven, and a confirmed defect found: the wheel draws over the brake pedal on tall-narrow windows. Fix attempted and abandoned — see the decision section below | — |
 
 **One reported problem was not a defect.** The "gap spilling out the road on the right side of the UI" was a 1440px
 measurement iframe I had overlaid on the live 1920px page — the page showing through beside my own harness. Removed
@@ -56,19 +57,41 @@ per-polygon near-plane clipping — not a number to nudge. Going deeper is filed
 job; 3m already reads as a hill. **`RAMP_DROP` has now been raised too far twice and reverted twice**, so the
 constant carries that history.
 
-## One proportion I measured but did not change
+## ⚠ This needs a decision from you, not another audit
 
-You said "certain parts", plural, so cycle 62 audited the rest of the cockpit. Two things I expected to be defects
-were not: **the instrument cluster is exactly centred on the wheel axis** (my first reading said 40px off, and that
-was me measuring two of the row's three children), and the gauges overflowing their inner row by ~9px is invisible
-because the housing that paints the binnacle is a wider parent.
+Cycles 62 and 63 both went at the cockpit proportions and **both shipped nothing.** That is two in a row on one
+thread, so I am stopping and asking rather than starting a third.
 
-The real finding: **the cluster and the wheel are sized by unrelated rules** — the gauges in viewport *height*, the
-wheel from a viewport-*width* column — so the ratio between them ranges **0.602 to 0.831** depending on your window,
-a 38% swing in something that is one piece of hardware in a real car. **I did not fix it on sight.** The obvious fix
-lands squarely in the dash height budget that three earlier cycles tuned for short and landscape-phone viewports,
-and rushing it is exactly the "quiet cockpit redesign" the run's own guardrails forbid. It is filed as **S107** with
-the measurements and a safe shape for the fix — say the word and it gets a proper cycle.
+**What is confirmed.** The steering wheel's width *is* the dash height (`aspect-square h-full`, measured
+`dashH − 19px` in six of six samples), the column holding it is sized by viewport **width**, and the gauges use the
+height basis with a pixel cap that freezes them past ~971px tall. Three rules for what a real car builds as one
+assembly.
+
+**The defect that falls out of it:** on tall-narrow windows the wheel grows past its own column and **draws over the
+brake pedal** — overlapping by 2px at 1280×1024 and by 53px at 1024×1180, and over the door card at both. It is
+`pointer-events-none`, so it does not block the press; it covers it.
+
+**Why I did not just fix it.** The wheel rotates via a transform about the *box* centre. Every one-line fix
+(`max-w-full` and friends) leaves the wrapper non-square, at which point the wheel's content no longer shares that
+centre and it would **orbit instead of spin** — a bug that does not show up in a screenshot and would have shipped.
+The alternative that keeps rotation correct re-centres the wheel vertically out of its tuned position, and no
+constant fraction works because the overflow ranges from 0.925 to about 1.57.
+
+The real fix is to derive the wheel, its column and the gauges from a single `min(column width, dash height)`. That
+is a genuine cockpit re-derivation touching the dash height budget three earlier cycles tuned for short and
+landscape-phone viewports — the kind of change this run's guardrails say not to make quietly after you twice
+rejected inventions of mine. **Tell me to do it and it gets a full cycle with those guardrails loaded; otherwise it
+stays parked and the loop moves to other work.**
+
+## Two cockpit things that are *not* defects
+
+Recorded so a later pass does not "fix" either. **The instrument cluster is exactly centred on the wheel axis** —
+offset 0 at both 1920×1080 and 1440×900. My first reading said 40px off, and that was me measuring two of the gauge
+row's three children and forgetting the gear block. And the gauges overflowing their inner flex row by ~9px a side
+is invisible, because the element that paints the binnacle housing is a wider parent.
+
+*(Cycle 62 also reported here that the wheel was sized from a viewport-width column. Cycle 63 measured it properly
+and that was wrong — the wheel is sized from the dash **height**. The corrected mechanism is in the section above.)*
 
 ## Parked — needs you
 

@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 63
+**Cycle:** 64
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -2339,6 +2339,42 @@ biggest lever available: making the drive pass **time**, not just distance.
     MILE 0 without throwing, and the URL tracks the current exit so it can be copied.
 
 </details>
+
+### CYCLE 63
+
+**S107, and the mechanism turned out not to be what S107 assumed. Nothing shipped — but the finding is now exact.**
+
+- **What actually drives the drift.** `--dash` is `clamp(190px, 36%, 48%)` and measures **exactly 36% of viewport
+  height** at every size tested. The steering wheel wrapper is `aspect-square h-full`, so **the wheel's width is the
+  dash height** — measured `dashH − 19px` in all six samples. The gauges are `clamp(44px, 7vh, 68px)` — the same
+  height basis, but with a **px cap** that freezes them once the viewport passes ~971px tall while the wheel keeps
+  growing. Meanwhile the *column* the wheel lives in is `clamp(260px, 24vw, 400px)` — viewport **width**.
+  So: wheel driven by height, its own container driven by width, gauges driven by height-with-a-cap. Three rules.
+- **CONFIRMED DEFECT — the wheel overflows its column and collides with a control.**
+
+  | viewport | wheel | wheel/column | gap to nearest pedal | collision |
+  |---|---|---|---|---|
+  | 1920x1080 | 370 | 0.925 | +35px | no |
+  | 1600x1200 | 413 | 1.077 | +5px | no |
+  | 1280x1024 | 350 | 1.141 | **−2px** | **pedal + door card** |
+  | 1024x1180 | 407 | ~1.57 | **−53px** | **pedal + door card** |
+
+  The wheel is `pointer-events-none`, so it does not block the press — it draws **over** the brake pedal.
+- **Why it is still not fixed, having tried.** Every one-line fix breaks something measurable:
+  - `max-w-full` on the wrapper makes the box non-square. The SVG then letterboxes inside it, but the rotation is
+    `style.transform` about `origin-center` — **the box centre**. Content centred by `preserveAspectRatio` in a
+    *non-square* box no longer shares that centre, so the wheel would **orbit instead of spin**. This is the trap;
+    it is not visible in a static screenshot and would have shipped as a rotating-wheel bug.
+  - `preserveAspectRatio="xMidYMin"` fixes the anchor but not the rotation origin.
+  - `inset-0` + default `preserveAspectRatio` *does* keep origin and content centre together and gives the wheel
+    `min(colW, colH)` correctly — but it **re-centres the wheel vertically in the column**, moving it from its
+    tuned `top-[40%]`.
+  - No single fraction works: the overflow ratio ranges 0.925 to ~1.57, so any constant that fixes one viewport
+    leaves another broken.
+- **Conclusion:** this needs the wheel, its column and the gauges re-derived from **one** quantity —
+  `min(column width, dash height)` — which is a cockpit re-derivation touching the budget cycles 12/25/44 tuned, and
+  guardrail 52 says that is not something to do quietly. **Two audit cycles in a row on this thread is enough**:
+  it now needs a deliberate decision, not another audit. Recorded in full in **S107**.
 
 ### CYCLE 62
 

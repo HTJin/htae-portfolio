@@ -1436,3 +1436,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Reviewer** -> **nothing shipped, on purpose.** Two suspected defects were disproved by measuring properly, and the one real finding needs a cycle of its own rather than the tail of an audit.
 - **A wrong first reading, caught and corrected.** "Cluster is 40px left of the wheel axis" came from measuring two of the row's three children. With the gear block included, children and row both centre on 602. Reported as a non-defect rather than as a fix.
 - **Progress flag:** no shipped change. One suspected defect disproved, one non-defect documented, one well-evidenced backlog item opened (S107).
+
+## Cycle 63 (2026-08-06)
+
+- **Phase: Planner** -> took S107, which cycle 62 had filed as needing a cycle of its own.
+- **Outcome: mechanism proven, one new confirmed defect, nothing shipped.** The wheel's width is the dash height, its column is width-derived, and the gauges are height-derived with a px cap - three rules where a real car has one.
+- **New confirmed defect:** the wheel overflows its column (up to 1.57x) and **draws over the brake pedal** at 1280x1024 and 1024x1180.
+- **A fix was attempted and abandoned for a specific, measured reason:** the wheel's rotation is a transform about the box centre, so any change that makes the wrapper non-square would make the wheel orbit rather than spin - a bug invisible to a static screenshot. Recorded in S107 so the next attempt does not walk into it.
+- **Progress flag:** no shipped change, second consecutive on this thread. Flagged in the report as needing a decision rather than another audit.
