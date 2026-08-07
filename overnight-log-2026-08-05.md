@@ -1759,3 +1759,14 @@ It is not. Reading the actual state rather than trusting the first alarming numb
   sweep — a faint glow at that point — so the *ground* reference is the one carrying that sweep.
 - **Controller:** backlog holds actionable items (S96 touch harness, S112/S113 measurements). `Cycle: 101`,
   `Phase: Planner`.
+
+### Cycle 101 -> 102
+
+- **T101.1 Done.** 13 alpha sweeps, exits 0→3, both ramp directions, drops 0 → −5.5, mainline included: 0 transparent
+  below horizon in all. Positive control (same grid above horizon) 784/962 = 81.5%. No source change was needed.
+- **No new defects found**, which is itself the result: the cycle-100 fix holds across the whole route, not just where
+  it was found.
+- **Process notes:** a silent no-op (`reachedSamples: 0`) was caught and discarded; the stronger `:3008` pre-fix
+  control was attempted and failed (fiber walk null on the old bundle) and is recorded as a limitation.
+- **Controller:** no source change this cycle and the remaining backlog items are measurements or need their own
+  cycle (S107). `Cycle: 102`, `Phase: Suggester`.

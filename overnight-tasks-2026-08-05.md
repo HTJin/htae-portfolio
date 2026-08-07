@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
-**Cycle:** 101
+**Phase:** Suggester
+**Cycle:** 102
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -2711,6 +2711,22 @@ broken should check for orphaned servers before suspecting the code.**
     sim loop is a _stop_, where the ramp is at full offset by definition, so the taper between stops cannot be
     exercised from here. **Moved to Needs testing, not Done.**
 
+## Tonight's tasks — CYCLE 101
+
+- [x] **T101.1 — Prove S129/S130 across the whole route, not one ramp.** _Why:_ cycle 99's lesson, paid for four
+      times over, is that a fix verified only where the last bug lived survives as a bug elsewhere. S129 (the
+      transparent seam) and S130 (the rail gore) were verified at **exit 1's ramp and one mainline point**. Both
+      ramps of every stop are the domain. _Files:_ measurement only, no source change unless a void is found.
+      _Done when:_ an alpha sweep below the horizon returns **0 transparent samples** at multiple stops, on both the
+      deceleration and acceleration ramp, at several drop depths and on open mainline — each run carrying a control
+      that must read opaque.
+      _Guardrail (top failure mode):_ **a sweep that silently measures nothing.** If the car never moves, or the
+      horizon is misdetected, every run returns "0 holes" and looks like a pass. Every run must therefore report the
+      sim state it measured (travel/ramp/drop), the detected horizon, and a control sample that must be 255; a run
+      whose control fails is discarded, not reported.
+      _Second guardrail:_ **alpha, not colour** (cycle 100), and **ignore everything above the horizon** — sky there
+      is correct, and counting it produced two false findings last cycle.
+
 ## Done (proven by the autonomous Reviewer)
 
 - [x] **Every stop is a real interchange, on a divided highway (cycle 57, `a511ce0`) — taper proven in motion in
@@ -3494,6 +3510,27 @@ broken should check for orphaned servers before suspecting the code.**
   **above the horizon**, between the bank's silhouette and the horizon line, which is what you correctly see from
   inside a cut. One real finding, three reported. Rule: a hole detector must treat near-zero alpha as empty, and must
   ignore anything above the horizon.
+
+### Cycle 101
+
+- [x] **T101.1 — S129/S130 proven across the route, not one ramp.** Cycle 99's lesson applied to my own cycle-100
+      fix: both were verified at exit 1's ramp and one mainline point, which is precisely the narrow re-checking that
+      let `bankFoot` stay broken for four cycles.
+      **13 alpha sweeps** below the horizon across exits 0→3, on both the acceleration and deceleration ramp, at
+      drops of 0, −1.9, −2.7, −3.0, −4.5, −4.9 and −5.5, plus open mainline (ramp 0):
+      **0 transparent samples in every one** (1406 samples per sweep).
+      **The instrument was proven in the same run:** the identical grid moved *above* the horizon returns
+      **784 / 962 transparent (81.5%)**. A detector that finds 81.5% where sky is expected and 0% where ground is
+      expected is measuring something real — this is the control the repo's own rules demand, and without it every
+      zero above would be indistinguishable from a broken probe.
+      **A silent no-op was caught, not reported:** the first attempt's second leg returned `reachedSamples: 0`
+      because `driveToNext` was called while already en route. It was discarded and the sequencing fixed, rather
+      than being counted as another clean pass.
+      **Limitation, stated:** the intended stronger control — running the same sweep against the pre-fix build on
+      `:3008` — could not be done. The React fiber walk returns null on that older bundle, so the sim state could
+      not be read, and reporting holes without the position they were measured at would have violated this task's
+      own guardrail. The above-horizon control substitutes for it and is weaker: it proves the detector sees
+      transparency, not that it would have caught *this specific* seam.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
