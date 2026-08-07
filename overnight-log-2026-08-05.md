@@ -1669,3 +1669,9 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 
 - **Phase: Planner** -> found the report's shipped-work table still ended at cycle 67, omitting the owner's three side-profile fixes (cycles 79-82) and their verification (81). Added four rows.
 - **Progress flag:** no shipped change; an owner-facing summary corrected from stale to accurate.
+
+## Cycle 88 (2026-08-07)
+
+- **Phase: Suggester** -> asked whether cycle 87's contradiction was isolated. It was not: the leg time, the 4.7-minute route figure and the 52px overlap are all duplicated across the report and the action page.
+- **Structural fix, not another sync:** the report's leg-length paragraph now points at `overnight-ACTION-REQUIRED.md` §5 rather than restating its numbers, with the reason recorded inline.
+- **Progress flag:** no shipped change; the mechanism behind a documentation contradiction removed rather than its symptom patched.

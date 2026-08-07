@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 87 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 88 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -41,10 +41,10 @@ instructions mid-run, and those outrank anything the loop picks for itself. Cycl
 | 81 | Verified the planting only appears where there is a slope, using a marker colour no palette contains — 0 on the mainline, 7 mid-descent | — |
 | 68 | _Measurement only._ No heap leak over the full route (+0.62 MB across 21 stops). Cold page weight reclassified as unmeasurable from here | — |
 
-**One trade to be aware of, from your "a bit longer" request.** A leg now takes **14.1 seconds**, so driving the
-whole route on the accelerator is about **4.7 minutes** — up from ~3.8 min at the previous leg length and ~3.1 min
-when the run started. That is the direct cost of the change and it is yours to judge; `Next` still autopilots for
-anyone who would rather not hold a pedal. Say the word if you want the legs pulled back.
+**One trade to be aware of, from your "a bit longer" request:** the legs got measurably slower to drive. The figures
+live in `overnight-ACTION-REQUIRED.md` §5 and are deliberately **not repeated here** — cycle 87 found the S107
+collision quoted differently in these two files because the same measurement had been published twice and only one
+copy was corrected. Owner-facing numbers belong in one place.
 
 **One reported problem was not a defect.** The "gap spilling out the road on the right side of the UI" was a 1440px
 measurement iframe I had overlaid on the live 1920px page — the page showing through beside my own harness. Removed
