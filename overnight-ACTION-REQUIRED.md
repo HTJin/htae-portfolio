@@ -12,9 +12,13 @@ have grown past the point where the actionable parts are findable.
 
 ## 1. A decision — the wheel draws over the brake pedal
 
-**Confirmed defect.** On tall-narrow windows the steering wheel grows past its own column and paints over the brake
-pedal: **2px overlap at 1280×1024, 53px at 1024×1180**, and over the door card at both. It is `pointer-events-none`,
-so it does not block the press — it covers it.
+**Confirmed defect, re-measured in cycle 77.** On tall-narrow windows the steering wheel grows past its own column
+and paints over the brake pedal: **1px overlap at 1280×1024, 52px at 1024×1180**, and over the door card at both. It
+is `pointer-events-none`, so it does not block the press — it covers it. At 1920×1080 it clears by 36px.
+
+*(First measured in cycle 63 as 2px / 53px. Re-checked here because cycles 61 and 65 changed the dash and the road
+afterwards and this page is written to be acted on — the defect survives both, and the difference is sub-pixel
+rounding, not movement.)*
 
 **I did not fix it, deliberately.** The wheel rotates via a transform about the *box* centre. Every one-line fix
 (`max-w-full` and relatives) makes the wrapper non-square, at which point the wheel's content no longer shares that

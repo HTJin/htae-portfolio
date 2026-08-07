@@ -1556,3 +1556,9 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Suggester** -> no new defect hunted. The loop has returned "no defect" for six of the last seven cycles and everything of consequence is parked, so the useful act was **consolidation, not discovery**.
 - Wrote `overnight-ACTION-REQUIRED.md`: one page covering the S107 decision, three out-of-scope fixes with confirmed line numbers, the two dead project links, four measurements only a human with DevTools can take, the leg-length preference, and three toolchain warnings.
 - **Progress flag:** no shipped change and no new finding; the run's output made usable.
+
+## Cycle 77 (2026-08-07)
+
+- **Phase: Planner** -> nothing buildable remained, so verified the accuracy of what cycle 76 wrote for the owner rather than adding to it.
+- **S107 collision re-measured** after cycles 61 and 65 changed the dash and road: still present at both viewports, figures corrected from -2px/-53px to **-1px/-52px**, 1920x1080 clear by 36px. `overnight-ACTION-REQUIRED.md` updated with the provenance.
+- **Progress flag:** no shipped change; the owner-facing figures made current.
