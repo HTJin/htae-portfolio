@@ -1,6 +1,24 @@
-# Overnight run — report (rewritten at the end of cycle 100)
+# Overnight run — report (rewritten at the end of cycle 101)
 
-**Branch:** `feat/drive-mode` · **Phase:** Planner · **Cycle:** 101 · nothing pushed, all commits local.
+**Branch:** `feat/drive-mode` · **Phase:** Suggester · **Cycle:** 102 · nothing pushed, all commits local.
+
+## Cycle 101 — the cycle-100 fix holds across the whole route
+
+No source change; this cycle existed to stop a fix from being trusted on the strength of one sample. S129/S130 had
+been verified at **one ramp of one exit** — the same narrow re-checking that let `bankFoot` stay broken for four
+cycles.
+
+**13 alpha sweeps** across exits 0→3, both the acceleration and deceleration ramp, at drops of 0, −1.9, −2.7, −3.0,
+−4.5, −4.9 and −5.5, plus open mainline: **0 transparent samples below the horizon in every one** (1406 samples each).
+
+**The instrument was proven in the same run** — the identical grid moved *above* the horizon returns **784 / 962
+(81.5%)** transparent. Without that, "0 holes" and "the probe is broken" are the same reading, and this run has
+produced the second more than once.
+
+Two things went wrong and were handled rather than reported as passes: a leg that measured nothing (`reachedSamples:
+0`, `driveToNext` called while already en route) was discarded and the sequencing fixed; and the stronger control —
+sweeping the pre-fix `:3008` build — could not be run at all, because the fiber walk returns null on that older
+bundle. That is logged as a limitation, not quietly swapped for the weaker control.
 
 > **Read `overnight-ACTION-REQUIRED.md` first** — that is the short list of things only you can decide. This file is
 > the status of the loop itself.
