@@ -1522,3 +1522,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **S117 (keyboard traversal): PASS.** Map opens on `m`, focus moves into the dialog, Escape closes it, driving still works after the round trip.
 - **Backlog dry again** -> cycle 72 goes to the Suggester.
 - **Progress flag:** no shipped change; two backlog items closed with real answers and one earlier unproven reading resolved.
+
+## Cycle 72 (2026-08-07)
+
+- **Phase: Suggester** -> backlog dry. Audited the route map for distance figures that could have gone stale when `LEG_LENGTH` changed. All 21 stops list correctly; the map prints **no distances at all**, so the hypothesis did not apply. **No defect.**
+- **One idea filed (S118)** and one honest observation: five consecutive cycles have returned "no defect" on drive mode.
+- **Diminishing returns flagged in the report.** The remaining high-value work is parked on the owner (S107) or out of write scope (classic site, canonical, sitemap). Continued self-directed cycles should be a deliberate choice.
+- **Phase -> Planner.**
+- **Progress flag:** no shipped change; one audit clean, one idea filed, run state made explicit.

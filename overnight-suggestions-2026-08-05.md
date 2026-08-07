@@ -681,3 +681,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
 - [ ] **S117 - Keyboard-only traversal, end to end** - Status: Done (no defect) - Cycle: 71
   - Route map is closed on arrival, **opens on `m`**, **focus moves into the dialog** (cycle 10's fix still holding after everything cycles 57-65 changed), **closes on Escape**, and the car is still drivable after the round trip.
   - With cycle 70's finding that a full leg drives on keys alone, and cycles 33/34's focus-order and skip-link work, the keyboard journey is now covered end to end.
+
+- [ ] **S118 - The route map gives no sense of distance or position** - Status: Proposed (needs owner appetite) - Cycle: 72
+  - **Measured:** the map lists all 21 stops correctly but prints **zero** distance figures. A visitor looking at it has no sense of where a stop sits along a 5.2-mile route, or how far the next one is.
+  - `stop.s` and `formatMiles()` already exist, so a mile figure per row would be derived rather than invented - the same discipline as the trip summary.
+  - **Flagged as needing the owner's appetite rather than queued for building.** The owner has twice rejected inventions of mine in this cockpit, and adding a column to their route map is an addition, not a correction. It is filed as an idea, not a defect.
+
+- [ ] **S119 - Five consecutive no-defect cycles: the run is at diminishing returns on drive mode** - Status: Observation - Cycle: 72
+  - Cycles 66, 69, 70, 71 and 72 all returned no defect. Drive mode has now been audited from most angles this environment can reach.
+  - The remaining substantive work is **parked on the owner** (S107 - the wheel drawing over the brake pedal, a confirmed defect deliberately not fixed) or **outside this run's write scope** (the classic site's cropped and non-cycling photos, the duplicate canonical on `/drive`, the missing sitemap entry).
+  - Four things this environment provably cannot measure remain open for a human with DevTools: frame rate, forced-colors rendering, the printed page, cold page weight.
+  - Recorded so that continuing to generate self-directed work is a deliberate decision rather than momentum.
