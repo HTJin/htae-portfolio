@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Suggester
+**Phase:** Reviewer
 **Cycle:** 57
 
 ## Project orientation (so a fresh agent can start cold)
@@ -53,6 +53,14 @@
   The camera sits at `cameraX(sim) = LANE_OFFSET + sim.x` (`world.js`), `LANE_OFFSET = 2.7` — the midpoint of the
   right-hand lane. `sim.x` is drift **within the lane**, so steering re-centres to the lane, never to the centre line.
   Any future change touching camera lateral position must go through `cameraX()` and preserve this.
+- **(2026-08-06, cycle 57) It is a divided highway, and every stop is a real interchange.** *"make it so that we
+  actually take a real highway exit on the road. before each stop, exit the highway ramp, then show, then resume by
+  taking the accelerate ramp back up to the highway. be sure that since this is a higwhay, the left most lane left is
+  a divider for the opposing traffic."* So: (a) there is **no centre line** — the lane to the left of yours is a
+  **median with a barrier**, with the opposing carriageway beyond it; (b) you **leave the mainline on a deceleration
+  ramp before every stop and rejoin on an acceleration ramp after it**. Do not restore the dashed centre line, and do
+  not turn the stops back into points on the mainline. The opposing carriageway stays **empty** — the cycle-13
+  instruction above still stands, and a divider implies opposing traffic without the loop inventing vehicles for it.
 
 **Pre-mortem guardrails (prevent likely failure modes):**
 1. *Failure: hydration mismatch.* The gauges already round coordinates to keep SSR and client byte-identical (`Dashboard.jsx:11-17`). Any new SVG geometry computed with `Math.*` must be rounded the same way, and nothing may branch on `window`/`Date` during render. **Guardrail:** after every visual change, check the browser console for a hydration warning before calling the task built.
@@ -2327,6 +2335,42 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 </details>
 
+### CYCLE 57
+
+**Not a Suggester cycle.** The backlog was dry and a Suggester pass had begun (site audit + market research), but the
+owner gave a direct instruction mid-cycle, which outranks anything the loop picks for itself. The two ideas the audit
+had already turned up were parked to the Backlog rather than thrown away.
+
+**Environment note — six orphaned dev servers.** This session opened with `next dev` running on **3111, 3112, 3113,
+3114, 3115 and 3116** plus a `next start`, all left over from the previous session and all sharing `.next`. That is
+guardrail 6's trap running six times over: `127.0.0.1:3008/drive` was returning **500**. Killed all of them (leaving
+the unrelated `spe-food-service` vite alone), wiped `.next`, rebuilt clean. **A later cycle that finds `/drive`
+broken should check for orphaned servers before suspecting the code.**
+
+- [x] **1. Every stop is a real interchange, on a divided highway** — **BUILT, partly verified** — `a511ce0`
+  - **What was wrong (read, not guessed):** `RoadCanvas.jsx` painted `stripes(-0.16, 0.16, DASH_PERIOD, centreLine)` —
+    a **dashed** line at x=0. That is the marking for a road you may legally overtake into oncoming traffic on, not a
+    highway. And `route.js` put every stop at `index * LEG_LENGTH` on that one line, so arriving meant halting on the
+    mainline; there was no ramp anywhere in `src/components/drive/`.
+  - **What was built:** `ROAD_HALF` → `CARRIAGEWAY` (the old name said "from the centre line", which is now false);
+    `MEDIAN_WIDTH = 4.2` and `OPPOSING_EDGE` added; the dashed line replaced by a median barrier plus an empty
+    opposing carriageway; median-side edge lines yellow, outer edges white. `rampAt(s)` in `route.js` describes both
+    ramps as one smoothstepped shape; `sim.ramp` carries it onto the sim and `cameraX()` adds it **outside `sim.x`**,
+    so the owner's cycle-13 lane-centring rule still holds. Right-hand roadside furniture and the exit sign ride the
+    ramp; left-hand furniture moved to the far carriageway's outer edge.
+  - **Derived, not typed:** `RAMP_LENGTH = LEG_LENGTH * 0.4`. The entrance ramp out of one exit must finish before the
+    exit ramp into the next starts, or the road never returns to the mainline — a constant that must agree with
+    another constant gets computed from it (cycle 32's lesson).
+  - **Verified:** `npm run lint` clean (only the pre-existing `SideNav` warning); `npm run build` clean, `/drive`
+    21.5 → 21.9 kB. At MILE 0 the canvas pixels across the near field read, left to right: **mainline tarmac → white
+    edge line → gore verge → ramp edge line → ramp tarmac** — the off-ramp genuinely separated from the mainline with
+    the gore between them. The median barrier renders (zoomed the far field; raised band with a lighter cap).
+  - **NOT verified, and not claimed:** the ramp taper **in motion**. The Chrome window is minimised, so the tab reports
+    `document.hidden: true` and `requestAnimationFrame` is paused — guardrail 24. A first rAF probe hung CDP for the
+    full 45s exactly as that guardrail predicts; the retry was timeout-guarded. Every position reachable without the
+    sim loop is a *stop*, where the ramp is at full offset by definition, so the taper between stops cannot be
+    exercised from here. **Moved to Needs testing, not Done.**
+
 ## Done (proven by the autonomous Reviewer)
 
 - **C56.0 — The résumé PDF is real, current, and agrees with the site** *(cycle 56 — verification)* — the
@@ -3075,6 +3119,13 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
+- [ ] **The ramp taper in motion (cycle 57, `a511ce0`)** — the geometry is proven at a *stop*; what is unproven is the
+  drive between stops. **Clear it by:** with the Chrome window **foregrounded** (rAF must actually run — probe it
+  first, timeout-guarded), drive MILE 0 → EXIT 01 and check that (a) `sim.ramp` reaches **0** on the mainline mid-leg
+  and `RAMP_OFFSET` at the stop, (b) the car merges without a visible kink at both ends of the taper, (c) the median
+  barrier sits just left of the carriageway when `ramp` is 0, (d) no hydration warning and no console error, (e) the
+  exit sign still stands on the ramp's outer verge rather than on its tarmac.
+
 *(empty — all three long-parked items were cleared in cycle 20 once the window became foregrounded.)*
 
 ## Awaiting scenario (can't test until a specific scenario occurs)
@@ -3257,6 +3308,8 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 - **S15 — Structured data for `/drive`** *(new, cycle 4)* — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
+- **S95 — Nothing in drive mode answers `forced-colors: active`** *(new, cycle 57)* — `grep -rn "forced-colors\|-ms-high-contrast" src/` returns **nothing**. Drive mode is a canvas scene plus colour-carrying chrome, and forced-colors replaces the author palette wholesale; WebAIM's 2018 low-vision survey put high-contrast-mode use at ~30% of respondents. The canvas is `aria-hidden` and the text content is exposed elsewhere, so this may well be fine — **the task is to measure it, not to fix it**. Emulatable via DevTools' *Emulate CSS media feature* rendering flag.
+- **S96 — The pedals are pointer-driven but touch has never actually been exercised** *(new, cycle 57)* — `Pedal` (`Dashboard.jsx:528-549`) binds `onPointerDown/Up/Cancel/Leave` and carries `touch-none select-none`, which is the right shape, but every cycle that touched the pedals verified them with a **mouse**. Untested on touch: whether `setPointerCapture` + `pointerleave` interact badly when a finger slides off the pedal, and whether a long press raises the touch callout. Needs a real touch-event harness, not a synthetic click.
 
 ---
 

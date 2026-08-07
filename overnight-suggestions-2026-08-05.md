@@ -511,3 +511,16 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Worth knowing:** everything else checks out, so this reads as one project that moved on rather than general rot.
 
 *(Check the box once you've reviewed the outcome.)*
+
+- [ ] **S95 - Every stop is a real interchange, on a divided highway** - Status: **Built, Needs testing** - Cycle: 57
+  - **Source:** the owner, directly, mid-cycle. Not an idea the loop generated - it outranks what the Suggester had started on.
+  - **What was wrong:** the road was marked as a two-lane road (a *dashed* centre line at x=0) and called a highway, and every stop was a point on that line the car simply halted at. There was no ramp anywhere in the drive code.
+  - **What was built:** a median with a barrier and an empty opposing carriageway replacing the dashed line; `rampAt(s)` giving every stop a deceleration ramp in and an acceleration ramp out; roadside furniture and the exit sign riding the ramp so they stand on the verge rather than in it.
+  - **Evidence:** lint + build clean; at MILE 0 the canvas pixels read mainline / edge line / gore / ramp edge line / ramp across the near field, and the median barrier renders. Commit `a511ce0`.
+  - **Not yet proven:** the taper in motion - the Chrome window was minimised, so rAF was paused (guardrail 24) and the car could not be driven.
+
+- [ ] **S96 - Nothing in drive mode answers `forced-colors: active`** - Status: Proposed - Cycle: 57
+  - **Source:** site audit + research (high-contrast mode is used by roughly 30% of WebAIM's 2018 low-vision respondents). `grep` finds no `forced-colors` or `-ms-high-contrast` rule anywhere in `src/`. Measure before fixing: the canvas is `aria-hidden` and its meaning is carried in text elsewhere, so this may be fine as it stands.
+
+- [ ] **S97 - The pedals are pointer-driven but have only ever been tested with a mouse** - Status: Proposed - Cycle: 57
+  - **Source:** site audit. `Pedal` binds pointer events and sets `touch-none select-none`, which is the right shape, but no cycle has exercised it with real touch events - specifically `setPointerCapture` + `pointerleave` when a finger slides off, and the long-press callout.

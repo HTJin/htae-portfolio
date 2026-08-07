@@ -1387,3 +1387,12 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 **Parked as Needs human, deliberately.** Both live in `src/lib/projects.js`, which the Guardrails make read-only, and the fix is a judgment only the owner can make — whether the domain lapsed, the repo went private, or there is a new address. The loop will not guess a replacement URL or quietly delete a project.
 
 **Exit.** No commit to `src/`. -> `Cycle: 57 / Phase: Suggester` (backlog still dry).
+
+## Cycle 57 (2026-08-06, resumed session)
+
+- **Resumed.** Previous session ended; the relief heartbeat is session-only and died with it. Re-created (`*/30 * * * *`). Ledgers all intact on disk; state read as `Phase: Suggester, Cycle: 57`.
+- **Environment repair.** Six orphaned `next dev` servers (3111-3116) + a `next start`, all sharing `.next`; `/drive` was serving 500. Killed, wiped `.next`, clean rebuild. Guardrail 6.
+- **Phase: Suggester** -> began (audit + market research), produced S96 and S97, then **superseded by a direct owner instruction** mid-cycle. Owner instructions outrank loop-generated work; S96/S97 parked to the Backlog intact.
+- **Phase: Builder** -> T1 built and committed `a511ce0`. Lint clean, build clean.
+- **Phase: Reviewer** -> partial. Geometry proven at a stop by canvas pixel sampling. The taper in motion could NOT be exercised: `document.hidden` is true (Chrome window minimised), so rAF is paused (guardrail 24). First probe hung CDP 45s; retry timeout-guarded. Resolved to **Needs testing** rather than Done — self-verification is the only gate, so an unexercised claim does not get to be Done.
+- **Progress flag:** yes — one substantial feature built and committed, two new ideas banked.
