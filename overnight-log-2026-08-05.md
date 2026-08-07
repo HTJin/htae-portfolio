@@ -1653,3 +1653,9 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **One false alarm caught:** the sr-only itinerary appeared to have collapsed from 9,854 characters to 26. `querySelector('.sr-only')` had returned the skip link; there are three such elements and the itinerary is still exactly 9,854 characters.
 - **Fourth false reading this run caused by a selector matching the wrong element.** Named as a rule: when a selector can match more than one thing, count the matches before believing the one you got.
 - **Progress flag:** no shipped change; current state confirmed sound and one false alarm dismissed.
+
+## Cycle 85 (2026-08-07)
+
+- **Phase: Planner** -> backlog dry. Consolidated the run's seven false readings into a "Measuring the drive scene" section in `CLAUDE.md`, so the lessons live where work happens rather than in journal entries.
+- Six rules plus two environment limits, each traceable to a specific wrong conclusion caught during the run.
+- **Progress flag:** no shipped change; the run's most transferable output moved somewhere it will be read.

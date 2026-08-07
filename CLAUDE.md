@@ -32,6 +32,31 @@ Two traps this repo has produced repeatedly:
 - **Port 3000 is usually taken.** Confirm the real port from the dev-server log; production checks use
   `npm run build` then `PORT=3008 npm run start`.
 
+## Measuring the drive scene
+
+`/drive` is a canvas scene driven by a 60fps loop, which makes it easy to produce a confident, wrong number. Seven
+separate measurements during one long run looked like defects and were the instrument, not the site. Every one had
+one of these causes:
+
+- **Don't measure a property the background also has.** "Count flower-coloured pixels" matched the sunset sky and
+  reported planting where none existed. Fixed by temporarily repainting the flowers a colour no palette contains
+  (magenta), measuring, then reverting.
+- **Check what your reference actually is.** A "sky" colour sampled above the horizon turned out to be the
+  embankment, so everything compared against it was meaningless.
+- **When a selector can match more than one thing, count the matches first.** `querySelector('.sr-only')` returns
+  the skip link, not the itinerary — there are three. The same mistake produced "the cluster is 40px off", "29 of 35
+  controls have no border" and "the trip summary is missing", none of which were real.
+- **Always run a control that must come out different.** Without one, "no animation" is indistinguishable from a
+  harness that did nothing, and "zero hits" from a broken detector.
+- **Sample the transition, not the endpoints.** Ramp faults live mid-descent. Checks taken parked at a stop or out
+  on the open mainline — where the ramp offset is at its extremes — missed three separate defects in a row.
+- **Check the direction of a result before believing its size.** More planting where there is no slope is
+  impossible; noticing that is what exposed the detector rather than the data.
+
+Two environment limits worth knowing before trying: `requestAnimationFrame` is paused in a hidden tab, and React's
+scheduler is not driven by rAF — pumping frames does not flush a re-render, so give it real time before asserting on
+the DOM.
+
 ## Windows PowerShell notes
 
 - `Get-Content` / `Set-Content` read BOM-less UTF-8 as ANSI in Windows PowerShell 5.1. **Never round-trip a source
