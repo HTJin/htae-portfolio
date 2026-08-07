@@ -1,6 +1,6 @@
 # Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 59 (2026-08-06).
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 60 (2026-08-06).
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -26,6 +26,7 @@ instructions mid-run, and those outrank anything the loop picks for itself.
 | 58 | Continuous prose stopped being set in newspaper columns | `4195b71` |
 
 | 59 | The exit ramp's descent is no longer capped by the renderer — flat surfaces clip at the eyeline, an embankment fills the gap, and the hill went 1.15m → 3m | `8264530` |
+| 60 | The pedals, driven with touch for the first time: a disabled pedal no longer moves the sim, and pointer capture can no longer swallow a press | `ae31e76` |
 
 **One reported problem was not a defect.** The "gap spilling out the road on the right side of the UI" was a 1440px
 measurement iframe I had overlaid on the live 1920px page — the page showing through beside my own harness. Removed
@@ -68,10 +69,18 @@ constant carries that history.
 
 ## Backlog the loop can still work on
 
-S95 (nothing answers `forced-colors: active` — measure before fixing), S97 (the pedals are pointer-driven but have
-only ever been exercised with a mouse, never real touch events), S104 (per-polygon near-plane clipping, only if you
-want the ramp to drop further than 3m), S15/S17 (structured data for `/drive`, blocked behind the canonical fix
-above).
+S95 (nothing answers `forced-colors: active` — measure before fixing; **not reached yet**, and nothing is claimed
+about it), S104 (per-polygon near-plane clipping, only if you want the ramp to drop further than 3m), S15/S17
+(structured data for `/drive`, blocked behind the canonical fix above).
+
+## One thing worth knowing about how this run verifies itself
+
+Cycle 60 found two real pedal defects, but its first two "failures" were the **harness**, not the site: React
+synthesises `onPointerLeave` from `pointerout`, so a raw `pointerleave` proved nothing; and React's scheduler is not
+driven by `requestAnimationFrame`, so pumping frames does not flush a re-render — which briefly made a working
+cycle-45 fix look broken. Both were caught and thrown out rather than reported. Where a browser-behaviour question
+actually decided whether a defect was real — *does Chrome fire pointer events at a disabled button?* — it was
+settled with a **real click and a control that proved the click landed**, not with an assumption.
 
 ## Health
 

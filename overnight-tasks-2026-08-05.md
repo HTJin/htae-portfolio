@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 60
+**Cycle:** 61
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -2339,6 +2339,43 @@ biggest lever available: making the drive pass **time**, not just distance.
     MILE 0 without throwing, and the URL tracks the current exit so it can be copied.
 
 </details>
+
+### CYCLE 60
+
+**Planner.** Took **S97** — the pedals were reworked three times in cycle 58 and had still only ever been driven
+with a mouse. S95 (forced-colors) was **not reached this cycle** and stays queued; nothing is claimed about it.
+
+**Critic — pre-mortem.**
+61. *Failure: a synthetic pointer event proving nothing.* `setPointerCapture` throws for an id that is not an active
+    pointer, so a dispatched `pointerdown` can die inside the handler — which looks exactly like "touch is broken"
+    when it is the harness that is broken. **Guardrail:** separate harness failure from product failure explicitly,
+    and say what stubbing anything leaves unproven.
+62. *Failure: claiming real-finger behaviour from untrusted events.* **Guardrail:** claim only what the handlers do
+    with the events they receive. Where a browser-behaviour question actually decides whether a defect is real,
+    settle it with **real input**, with a control proving the input landed.
+63. *Failure: testing the hidden phone pedals instead of the desktop ones.* Both sets are in the DOM. **Guardrail:**
+    filter to visible elements and state which layout is under test.
+64. *Failure: reading the DOM before React has re-rendered.* React's scheduler is not driven by rAF, so pumping
+    frames does not flush a state update. **Guardrail:** give it real time before asserting on `disabled`.
+65. *Failure: mistaking a second `onRelease()` for a bug.* Releasing capture fires boundary events, so a release can
+    legitimately run twice. **Guardrail:** assert final state, never call counts.
+
+- [x] **1. Touch, for the first time — and two real defects** — **DONE** — `ae31e76`
+  - **Guardrail 64 earned its place immediately:** the first destination check read `go.disabled` as `false` because
+    React had not re-rendered yet. With a real wait it reads `true` — cycle 45's work was never broken.
+  - **Defect 1 — `disabled` is not self-enforcing.** Chrome **does** dispatch pointer events to a disabled button.
+    Settled with a **real click** on a disabled button plus an enabled control that proved the click landed — not
+    inferred from synthetic dispatch. So pressing the greyed-out GO at the destination ran the handler and set
+    throttle to 1. The car could not move, so nothing looked wrong; a greyed-out control was mutating the sim.
+  - **Defect 2 — `setPointerCapture` could eat the press.** `?.` guards a missing *method*, not a throw. Measured:
+    it threw, `onPress()` never ran, the pedal did nothing, and an uncaught NotFoundError landed on the window.
+  - **After:** press survives the throw (throttle 1, **zero uncaught errors**), press drives the car (4.11 m/s over
+    30 frames), pointerup / pointercancel / slide-off all release, brake works, **disabled GO leaves throttle 0**,
+    and brake stays live at the destination — cycle 45's contract intact. `touch-action: none`, `user-select: none`
+    confirmed on the pedals.
+  - **Not proven, and not claimed:** dispatched pointer events are untrusted and skip Chrome's gesture pipeline, so
+    this establishes what the handlers do with the events they receive, not how a real finger fares against touch
+    heuristics.
 
 ### CYCLE 59
 
