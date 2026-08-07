@@ -8,6 +8,17 @@ changes made mid-review. The script is `prettier --write .`.
 Do it _after_ the edit and _before_ `git add`, so formatting never lands as a separate follow-up commit or as noise
 in the next person's diff.
 
+**Know that `npm run prettier` is `prettier --write .` — it formats the whole repo, not just what you touched.**
+That is usually what you want. It is _not_ what you want when you are working under a restricted scope: it will
+happily reformat files you were told to leave alone, and that reformatting is a real change even though you did not
+intend it. When scope matters, format only your own files:
+
+```
+npx prettier --write src/components/drive src/styles/drive.module.css
+```
+
+Then check nothing else moved: `git diff --numstat -- src/` should list only the files you meant to change.
+
 ## Verify by running, not by reading
 
 A change is not done because it looks right. Run it: `npm run build`, `npm run lint`, and exercise the actual page
