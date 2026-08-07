@@ -1422,3 +1422,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Reviewer** -> seven cases re-run against the rebuilt page with the sim pumped by hand; zero uncaught errors.
 - **A browser-behaviour question settled with real input rather than assumed:** Chrome fires `pointerdown` on a disabled `<button>`. Proven with a control click that landed. This is what turned "probably a harness artefact" into a real defect.
 - **Progress flag:** yes - one backlog item closed, two defects fixed.
+
+## Cycle 61 (2026-08-06)
+
+- **Owner-directed**, and explicitly asked for research first: how a car interior is actually proportioned, because "the elongated hud" looked wrong. Searched, then measured the shipped value (6.2:1), then changed it to the 16:9 that production centre displays use.
+- **Both items measured before and after**, at five widths: aspect 6.21 -> 1.77-1.78, exit panel 76rem/3 columns -> 60rem/2 columns with a ~57 character measure, zero pedal/console/screen collisions, console on one row, no horizontal scroll.
+- **A correction to an earlier cycle's reasoning, not just its output.** Cycle 49's third column was backed by real measurements that showed a win on both axes. The numbers were right and the conclusion was wrong, because "nothing hidden, narrow measure" does not capture "this is a metre-wide broadsheet". Recorded so the next pass does not re-derive the third column from the same numbers.
+- **Progress flag:** yes - two owner-directed changes shipped.

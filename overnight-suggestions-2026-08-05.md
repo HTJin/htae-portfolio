@@ -565,3 +565,15 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **2. `setPointerCapture` could swallow the press.** `?.` guards a missing method, not a throw; when it threw, `onPress()` never ran and the pedal did nothing.
   - **Evidence after the fix:** press survives the throw (throttle 1, zero uncaught errors); press drives the car at 4.11 m/s over 30 frames; pointerup, pointercancel and slide-off all release; brake works; disabled GO leaves throttle 0; brake still live at the destination. `touch-action: none`, `user-select: none` confirmed. Commit `ae31e76`.
   - **Not claimed:** dispatched pointer events are untrusted, so this covers what the handlers do with the events they receive, not real-finger behaviour against Chrome's gesture heuristics.
+
+- [ ] **S105 - The centre display was a 6.2:1 letterbox, not a screen** - Status: Done - Cycle: 61
+  - **Source:** the owner, asking for a web search on real car interior proportions: "the proportions of certain parts of the ui just really makes it look very unrealistic. such as the elongated hud".
+  - **Measured first:** 720 x 116 px = 6.21:1. Production centre displays run ~10-12.3 inches on a 16:9 panel (~1.78:1); a 10-inch 16:9 unit is 8.7 x 4.9 inches. The 48- and 56-inch pillar-to-pillar panels are several displays side by side, not one strip.
+  - **Shipped:** `aspect-video` with width derived from height; centre stack capped at 24rem; footwell back in normal flow now that the stack cannot stretch.
+  - **Evidence:** aspect 1.77-1.78 at 1920/1600/1440/1280/1100, zero collisions, console on one row, no horizontal scroll. Commit `664def6`.
+
+- [ ] **S106 - The exit panel was too wide to read** - Status: Done - Cycle: 61
+  - **Source:** the owner: "i dislike the 3 column layout of the exit. it's too wide and hard to read".
+  - **Shipped:** card 76rem -> 60rem, columns capped at two.
+  - **Evidence:** `columnCount` 2 at every width, measure 433px (~57 characters). Commit `664def6`.
+  - **Note:** this reverses part of cycle 49, whose measurements were correct but whose conclusion was not - a narrow measure inside a very wide panel is still a hard read.

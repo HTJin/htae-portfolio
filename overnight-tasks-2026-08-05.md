@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 61
+**Cycle:** 62
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -2339,6 +2339,29 @@ biggest lever available: making the drive pass **time**, not just distance.
     MILE 0 without throwing, and the URL tracks the current exit so it can be copied.
 
 </details>
+
+### CYCLE 61
+
+**Owner-directed.** *"do a web search on how a car interior looks like — the proportions of certain parts of the ui
+just really makes it look very unrealistic, such as the elongated hud. also i dislike the 3 column layout of the
+exit. it's too wide and hard to read."* Researched first, then measured, then changed.
+
+- [x] **1. The centre display was a 6.2:1 letterbox** — **DONE** — `664def6`
+  - **Measured before touching anything:** 720 x 116 px. Nothing in a car has that shape. Production centre displays
+    are ~10–12.3 inches on a **16:9** panel (~1.78:1) — a 10-inch 16:9 unit is 8.7 x 4.9 inches. The pillar-to-pillar
+    outliers (Mercedes' 56-inch Hyperscreen, the 48-inch Lincoln Nautilus) are **several displays side by side**, not
+    one strip, so they are not a precedent for a 6:1 box.
+  - **Now** `aspect-video`, width taken from height: **1.77–1.78:1 at every width tested**.
+  - **Knock-on, deliberately:** the centre stack is capped at 24rem — a stack should not be wider than the display it
+    houses — and the footwell returns to normal flow, which is safe *only* because the stack is now capped. An
+    in-flow footwell beside an uncapped stack is exactly what pushed the console across the cabin in cycle 58. The
+    `pl-[148px]` reservation went with the absolute positioning that required it.
+- [x] **2. The exit panel was a broadsheet** — **DONE** — `664def6`
+  - Cycle 49 added a third column at xl and measured it as a win on both axes. **That was measuring the wrong
+    thing** — nothing hidden and a narrow measure, on a 1216px panel three columns wide. Card 76rem → 60rem, two
+    columns maximum. Measure now **433px ≈ 57 characters**.
+  - **Verified** at 1920/1600/1440/1280/1100: aspect 1.77–1.78, `columnCount` 2, zero pedal/console/screen
+    collisions, console on one row, no horizontal scroll.
 
 ### CYCLE 60
 

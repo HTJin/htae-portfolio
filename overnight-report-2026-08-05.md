@@ -1,6 +1,6 @@
-# Overnight report — rolling summary
+﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 60 (2026-08-06).
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 61 (2026-08-06).
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -11,11 +11,11 @@ This file is rewritten every cycle. The full history lives in `overnight-tasks-2
 
 ## Where the run is
 
-58 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
-against comparable sites, then built and verified them. **Cycles 57 and 58 were owner-directed** — you gave
-instructions mid-run, and those outrank anything the loop picks for itself.
+61 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
+against comparable sites, then built and verified them. **Cycles 57, 58, 59 and 61 were owner-directed** — you gave
+instructions mid-run, and those outrank anything the loop picks for itself. Cycle 60 came off the loop's own backlog.
 
-## Shipped in the last two cycles (all owner-directed)
+## Shipped since cycle 57
 
 | | What | Commit |
 |---|---|---|
@@ -27,6 +27,7 @@ instructions mid-run, and those outrank anything the loop picks for itself.
 
 | 59 | The exit ramp's descent is no longer capped by the renderer — flat surfaces clip at the eyeline, an embankment fills the gap, and the hill went 1.15m → 3m | `8264530` |
 | 60 | The pedals, driven with touch for the first time: a disabled pedal no longer moves the sim, and pointer capture can no longer swallow a press | `ae31e76` |
+| 61 | The centre display was a 6.2:1 letterbox; it is now 16:9 like a real one. The exit panel narrowed from 76rem/3 columns to 60rem/2 | `664def6` |
 
 **One reported problem was not a defect.** The "gap spilling out the road on the right side of the UI" was a 1440px
 measurement iframe I had overlaid on the live 1920px page — the page showing through beside my own harness. Removed
