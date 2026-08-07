@@ -479,9 +479,34 @@ export function DriveScene() {
     }
   }, [started, mapOpen, setThrottle, setBrake, setSteer, drive, toggleMap])
 
+  // Printing. The scene sets `body.style.overflow = 'hidden'` so the drive
+  // cannot be scrolled; on paper that clips the document to a single page and
+  // throws the résumé away. The print sheet in `drive.module.css` cannot undo
+  // it — it is an *inline* style, and CSS Modules refuses any selector there
+  // with no local class in it, so a stylesheet cannot target `body` at all.
+  // Released here instead, beside the code that set it, and put back after so
+  // the drive still cannot be scrolled.
+  useEffect(() => {
+    const release = () => {
+      document.body.style.overflow = 'visible'
+    }
+    const restore = () => {
+      document.body.style.overflow = 'hidden'
+    }
+    window.addEventListener('beforeprint', release)
+    window.addEventListener('afterprint', restore)
+    return () => {
+      window.removeEventListener('beforeprint', release)
+      window.removeEventListener('afterprint', restore)
+    }
+  }, [])
+
   return (
     <div
-      className="fixed inset-0 overflow-hidden bg-[#03060c] text-white"
+      // `printable` carries nothing on screen — it exists so the print rules
+      // in `drive.module.css` have something to anchor to. See the `@media
+      // print` block there for why this page needs one at all.
+      className={`fixed inset-0 overflow-hidden bg-[#03060c] text-white ${styles.printable}`}
       // The dashboard's height, defined once and read by everything that has
       // to line up with it: the dash itself, the arrival panel's bottom edge,
       // and the bonnet / dash reflection / wipers in `CarInterior`. It used to

@@ -396,6 +396,66 @@
   box-shadow: inset 0 2px 3px -1px rgba(0, 0, 0, 0.95);
 }
 
+/* Printing.
+ *
+ * Measured before writing any of this: the page had **zero** `@media print`
+ * rules anywhere, and printing it would have produced a page of dashboard with
+ * no résumé on it at all. Three things conspire:
+ *   - `drive.jsx` sets `body.style.overflow = 'hidden'` at runtime, so the
+ *     printed document is clipped to a single viewport. That is an *inline*
+ *     style, which is why every rule here has to be `!important` to beat it.
+ *   - the canvas, the cockpit and the arrival panel are absolutely positioned
+ *     decoration — on paper they are a large dark rectangle.
+ *   - the actual content is already in the DOM: a 9,854-character `.sr-only`
+ *     itinerary carrying the whole résumé, clipped to `rect(0,0,0,0)`.
+ *
+ * So the print sheet does not build anything new. It gets out of the way and
+ * lets the text that is already there out of its clip.
+ */
+@media print {
+  /* `html`/`body` are deliberately NOT styled from here. CSS Modules rejects
+     any top-level selector with no local class in it — both `:global(html)`
+     and the `:global { html, body }` block form are build errors, which is how
+     this was found rather than guessed. And `body`'s `overflow: hidden` is an
+     *inline* style written at runtime anyway, so a stylesheet could not beat it
+     without `!important` on a selector that is not allowed to exist here.
+     It is released in `DriveScene` on `beforeprint` instead, next to the code
+     that set it. */
+
+  /* The cockpit is scenery. It does not belong on paper. */
+  .printable {
+    position: static !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .printable canvas,
+  .printable [aria-hidden='true'] {
+    display: none !important;
+  }
+
+  /* The résumé is right there — it is only hidden because sighted users are
+     looking at the drive instead. On paper the drive is the part to drop. */
+  .printable :global(.sr-only) {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    clip: auto !important;
+    clip-path: none !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    color: #000 !important;
+  }
+
+  .printable :global(.sr-only) a {
+    color: #000 !important;
+    text-decoration: underline;
+  }
+}
+
 /* On a landscape phone the whole dashboard is 190px tall and the terminal has
    to share it with the instrument strip and the controls. Its own padding is
    the cheapest thing to give back — the content stays, it just sits closer to
