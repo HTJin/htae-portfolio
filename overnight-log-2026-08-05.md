@@ -1614,3 +1614,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Suggester** -> no new defect. Re-checked the owner-facing action file's own factual claims: the "34 commits" figure was already stale (37) and was replaced with the `git` commands that stay current. Nine-file scope and zero owner-content diff re-confirmed.
 - **Position recorded plainly:** cycles 72-78 produced an audit, an integrity check, a consolidation, and two corrections to that consolidation. The loop is functioning as specified, but marginal value per self-directed cycle is now near zero with everything of consequence parked on the owner.
 - **Progress flag:** no shipped change; one stale owner-facing figure removed at the root cause rather than updated.
+
+## Cycle 79 (2026-08-07)
+
+- **Owner-directed, three rounds on the exit's side profile.** Ramp given its own ground; barrier made opaque; bank turned from a 90-degree wall into a ~1:2.6 slope with the parapet reduced to a guardrail. Vegetation planted on the face, deterministic per guardrail 25. Commits `1e1445a`, `f3a85d7`, `97c1012`.
+- **Root cause of needing three rounds:** every check was taken at the endpoints (parked, or on the open mainline) where the ramp offset is extreme. All three faults lived mid-descent. Recorded as the sampling rule for anything ramp-related.
+- **New standing convention:** `npm run prettier` after every code change, before committing - in a new repo-root `CLAUDE.md` plus persistent memory.
+- **Progress flag:** yes - three owner-reported defects fixed, one convention established.
