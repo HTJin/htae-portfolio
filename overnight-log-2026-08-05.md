@@ -1477,3 +1477,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Market research** reinforced two things the run has not looked at: load under two seconds, and not burying content behind animation.
 - **Phase -> Planner** with a refilled backlog.
 - **Progress flag:** no shipped change; backlog refilled from dry with four measured or clearly-scoped items.
+
+## Cycle 67 continued - Builder/Reviewer (2026-08-07)
+
+- **Phase: Planner -> Builder -> Reviewer** on S111 (printing). Shipped `1dde62c`.
+- **Two build errors were the teacher.** `:global(html)` and `:global { html, body }` are both rejected by CSS Modules; that is how the constraint was found, not by reading docs and hoping. The body overflow is released in JS on `beforeprint` instead, next to where it is set.
+- **Verified what is verifiable and said what is not:** rules, their targets, the beforeprint/afterprint round trip and screen-neutrality are all measured. The printed page is not - no print emulation through this bridge, and `window.print()` would open a blocking modal in an unattended loop.
+- **Progress flag:** yes - one measured gap closed.

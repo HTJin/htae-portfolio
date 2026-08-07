@@ -631,3 +631,10 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - Cycle 33 proved the per-frame subscriber set does not leak, but nothing has ever measured the **heap** across a long session.
   - **My cycle-67 attempt was invalid and is not evidence of anything:** I never clicked "Start engine" in the probe frame, so the sim loop never mounted, all 48,000 pumped frames were no-ops and `travel` stayed at 0. The 3.9 MB delta it produced measures GC noise, nothing more.
   - Redo properly: start the engine, drive the full 20 legs, force GC where possible, and treat `performance.memory` as coarse - look for a trend across repeated runs rather than a single delta.
+
+- [ ] **S111 - No print stylesheet anywhere** - Status: Done - Cycle: 67
+  - **Measured before building:** zero `@media print` rules on the live page. Printing would have given a page of dashboard and no resume, because `body.style.overflow = 'hidden'` clips the document to one page, the cockpit and canvas are absolutely positioned scenery, and the real content is a 9,854-character `.sr-only` itinerary clipped to `rect(0,0,0,0)`.
+  - **Shipped:** a print block that hides the canvas and everything `aria-hidden` inside the scene, and un-clips the `.sr-only` itinerary so the resume itself prints. Plus a `beforeprint`/`afterprint` pair in `DriveScene` that releases and restores the inline body overflow.
+  - **Two constraints found by the compiler, not assumed:** CSS Modules rejects any top-level selector with no local class (`:global(html)` and the `:global { html, body }` block form are both build errors), and the body overflow is inline so a stylesheet could not have won anyway.
+  - **Evidence:** one print block with four selectors in the shipped CSS; `.sr-only` un-hashed via `:global`, `.printable` hashed and matched against the scene root; `beforeprint` -> overflow `visible`, `afterprint` -> `hidden`; screen layout identical across seven controls. Commit `1dde62c`.
+  - **Not claimed:** the printed output was not observed - print media is not emulatable through this bridge and `window.print()` opens a blocking modal. Worth a human hitting Ctrl+P once.
