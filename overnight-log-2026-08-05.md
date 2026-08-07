@@ -1634,3 +1634,9 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Experiment fully reverted** - colours restored, build clean, `git diff --numstat -- src/` empty, nothing stray committed. Scoped `npx prettier --write` used per the CLAUDE.md note added in cycle 79.
 - **Method lesson recorded:** the fix for a detector that keeps lying is to measure a property the background cannot have.
 - **Progress flag:** yes - one open question closed with a valid measurement, no code change needed.
+
+## Cycle 82 (2026-08-07)
+
+- **Phase: Suggester** -> examined the bank/ramp junction at full drop, the one case the slope change created and I had only reasoned about. **No gap** - ground continuous from bank to ramp at travel 420, drop -5.5.
+- **One more invalid probe, discarded on the spot:** a "sky" reference sampled above the horizon was actually the embankment, so the hole-detector's zero was meaningless. Resolved by direct observation instead.
+- **Progress flag:** no shipped change; one unverified assumption from the slope work closed by looking at it.
