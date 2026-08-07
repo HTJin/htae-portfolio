@@ -1720,3 +1720,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **S126:** comments describing an abandoned `absolute` approach rewritten to match the shipped flow layout; dead `relative` removed.
 - **All six review findings closed.** Two were real defects in shipped features.
 - **Progress flag:** yes - review backlog fully cleared.
+
+## Cycle 97 (2026-08-07)
+
+- **Phase: Suggester -> Builder -> Reviewer.** Dispatched a second review over the first review's own fixes; it found a **medium defect I introduced in cycle 96**.
+- **Fixed:** the `beforeprint` capture was unconditional, breaking on double-`beforeprint` (permanently scrollable) and lone-`afterprint` (lock cleared). Verified four paths against the built page. Also stripped a UTF-8 BOM I had added to `route.js` via PowerShell - the exact trap CLAUDE.md warns about.
+- **Filed S127** (the `max` clamp contradicts its own comment; makes a ~0.25m vertical face early in descent) and **S128** (`<noscript>` overlay is a grandchild, so the print keep-rule cannot hide it).
+- **Progress flag:** yes - one medium defect and one artifact fixed; two low findings filed.

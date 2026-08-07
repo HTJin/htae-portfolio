@@ -869,3 +869,12 @@ _(Check the box once you've reviewed the outcome.)_
 - [ ] **S126 - Dashboard comments describe an implementation that no longer exists** - Status: Proposed (review finding, low) - Cycle: 94
   - The block explaining that the pedals are "positioned out of the flow, pinned to the bottom left" and the long note about why `absolute` must live on a separate node from `.footwell` both describe the *abandoned* approach - the shipped markup has no `absolute` anywhere and the `relative` positions nothing. Two adjacent comments also state opposite facts about whether the footwell is in flow.
   - In a codebase where comments carry the reasoning, this is how a later edit preserves the wrong invariant. It is the same fault as the `footOf` comment that defended a vertical wall.
+
+- [ ] **S127 - The `max` clamp and its own comment disagree** - Status: Proposed (review finding, low) - Cycle: 97
+  - `bankFoot` is `max(BANK_TOP + 0.25, min(rampEdge, BANK_TOP - drop * SLOPE_RUN))`. The JSDoc says "the `min` stops the bank running out across the ramp" - but **whenever the `max` wins, the foot is outboard of `rampEdge`**, so that guarantee does not hold in exactly the regime the `max` was added for. At the measured point (drop -0.86, top 10.6, rampEdge 7.46) the foot is 10.85, i.e. 3.4m past the ramp's near edge.
+  - It also makes the face a ~0.25m near-vertical wall for the first part of every descent - the "90-degree wall" `SLOPE_RUN`'s own comment says must never happen. The drop is tiny there so it is not visually severe, but **the invariant the comments assert is not the one the code enforces**, which is the third time in this run a comment has argued for something the code does not do.
+  - Fix: either bound the ramp clamp to `rampEdge > BANK_TOP` explicitly, or correct both comments to describe the real precedence.
+
+- [ ] **S128 - The `<noscript>` overlay is inside `printKeep`, so print cannot hide it** - Status: Proposed (review finding, low) - Cycle: 97
+  - `.printable > *:not(.printKeep)` only reaches **direct children** of the scene. The `<noscript>` full-bleed panel is a *grandchild*, inside the kept wrapper, so with scripting disabled a printed page gets a solid dark "Drive mode needs JavaScript" panel over the unclipped resume - the same `position: fixed` overlay failure the keep-list approach was supposed to make impossible.
+  - Fix: hoist the `<noscript>` to be a sibling of the `printKeep` wrapper, or hide it explicitly in the print block.
