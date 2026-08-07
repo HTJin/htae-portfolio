@@ -1727,3 +1727,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Fixed:** the `beforeprint` capture was unconditional, breaking on double-`beforeprint` (permanently scrollable) and lone-`afterprint` (lock cleared). Verified four paths against the built page. Also stripped a UTF-8 BOM I had added to `route.js` via PowerShell - the exact trap CLAUDE.md warns about.
 - **Filed S127** (the `max` clamp contradicts its own comment; makes a ~0.25m vertical face early in descent) and **S128** (`<noscript>` overlay is a grandchild, so the print keep-rule cannot hide it).
 - **Progress flag:** yes - one medium defect and one artifact fixed; two low findings filed.
+
+## Cycle 98 (2026-08-07)
+
+- **Phase: Planner -> Builder -> Reviewer** on S127 and S128, the last review findings. Both fixed; all eight findings across two reviews now closed.
+- **S127 fixed structurally:** the ramp clamp is gated on the ramp actually being outboard, rather than the result being floored. Both asserted invariants verified across 694 taper frames.
+- **S128:** `<noscript>` overlay tagged and hidden; hook confirmed in served SSR markup.
+- **Own-metric misfire caught before reporting:** a "near-vertical face" count was measuring absolute run, not grade.
+- **Progress flag:** yes - review backlog fully cleared for the second time.
