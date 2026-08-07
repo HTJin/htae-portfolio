@@ -667,3 +667,9 @@ this before each Suggester pass so it never re-proposes an idea already here.
 
 - [ ] **S117 - Keyboard-only traversal, end to end** - Status: Proposed - Cycle: 70
   - Cycle 70 proved a leg can be *driven* on keys alone, and cycles 33/34 fixed focus order and the skip link. What has never been done in one pass: start the engine, drive, open and close the route map, reach the arrival panel's links, and continue - all without a pointer. That is the actual journey a keyboard user takes.
+
+- [ ] **S115 - Re-verify the reduced-motion contract against the rewritten road** - Status: Done (no defect) - Cycle: 70
+  - **The risk:** reduced motion teleports through `goTo`, and cycles 57-65 gave `goTo` responsibility for `sim.ramp` and `sim.drop`. A teleport could plausibly have landed with both stranded at the origin's values.
+  - **It does not.** Reduced motion jumps to **travel 420 in 2 frames** (3 to arrive) with **ramp 30.2 and drop -5.5, both correct for the destination**.
+  - **Control run with motion allowed animates properly** - travel still 0 after 2 frames, speed 0.27, 842 frames to arrive. Without the control, "it teleported" would have been indistinguishable from a harness that did nothing.
+  - **Caveat:** the `matchMedia` patch landed at `readyState: interactive`, not the `loading` cycle 29 recommends. It worked - the patched run reports true, the control false, and they behave differently - because framer-motion reads the query at mount. `loading` is still the safer target.

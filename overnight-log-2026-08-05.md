@@ -1507,3 +1507,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Three ideas filed:** S115 (re-verify reduced motion against the rewritten road - the strongest, since it is downstream of `goTo`, which changed), S116 (`n` key from a genuinely parked state), S117 (keyboard-only traversal end to end, including the route map and panel links).
 - **Phase -> Planner** with a refilled backlog.
 - **Progress flag:** no shipped change; one clean audit and three scoped ideas.
+
+## Cycle 70 continued - Planner/Reviewer (2026-08-07)
+
+- **S115 (reduced motion, re-verified against the rewritten road): no defect.** Teleport lands at travel 420 in 3 frames with ramp 30.2 and drop -5.5, correct for the destination. Control run animates over 842 frames, so the result is meaningful rather than a dead harness.
+- **Caveat recorded:** the `matchMedia` patch landed at `readyState: interactive` rather than `loading`; it worked, and the control proves it, but `loading` stays the safer target.
+- **Backlog:** S116 and S117 remain, both keyboard items. S107 still parked on the owner's decision.
+- **Progress flag:** no shipped change; the largest outstanding regression risk from cycles 57-65 checked and cleared.
