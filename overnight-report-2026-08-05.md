@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 89 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 90 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -11,9 +11,14 @@ This file is rewritten every cycle. The full history lives in `overnight-tasks-2
 
 ## Where the run is
 
-87 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
-against comparable sites, then built and verified them. **Cycles 57, 58, 59 and 61 were owner-directed** — you gave
-instructions mid-run, and those outrank anything the loop picks for itself. Cycle 60 came off the loop's own backlog.
+Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing against
+comparable sites, then built and verified them. From 57 onward most of the substantial work has been
+**owner-directed** — you gave instructions mid-run, and those outrank anything the loop picks for itself. The
+shipped table below is the record; the current cycle number is at the top of
+`overnight-tasks-2026-08-05.md`.
+
+_(No cycle count here on purpose — it went stale within a cycle of every previous attempt to keep one, the same way
+the commit count did in cycle 78.)_
 
 ## Shipped since cycle 57
 

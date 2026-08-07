@@ -1681,3 +1681,9 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Planner** -> completed the de-duplication cycle 88 started: the report's S107 section no longer restates the collision figures and points at the action page instead.
 - **Caught my own near-miss:** an HTML comment wrapping the old paragraph would have been left unclosed, swallowing the next section. Removed the paragraph outright and verified by grep that no action-page figures remain in the report.
 - **Progress flag:** no shipped change; the single-source rule now actually holds across both documents.
+
+## Cycle 90 (2026-08-07)
+
+- **Phase: Suggester** -> removed the hard cycle count and the stale owner-directed list from the report header; it now points at the tasks file's phase marker, which the loop updates every cycle.
+- **Named the shared root cause** behind cycles 78, 87, 88, 89 and 90: a figure copied into a summary is a figure that will be wrong later. A summary should point at what changes, not restate it.
+- **Progress flag:** no shipped change; the last drifting figure in the owner-facing docs removed at its cause.
