@@ -706,3 +706,10 @@ this before each Suggester pass so it never re-proposes an idea already here.
     2. **`next.config.mjs` enables the experimental `scrollRestoration` flag.** Experimental features are outside semver, so a Next upgrade can change or drop it silently.
     3. **`tailwind.config.js` safelists `/^apexcharts-.*$/`, which matches no classes.** Dead config for a charting library the site does not appear to use; harmless but it makes every build print a warning, which trains people to ignore build warnings.
   - **All three are in files the Guardrails block puts off-limits** (`next.config.mjs`, `tailwind.config.js`, and `src/components/**` outside `drive/`), so they are recorded rather than fixed. All are small.
+
+- [ ] **S122 - End-of-run integrity check on the branch** - Status: Done (clean) - Cycle: 75
+  - Run because nothing buildable remained and 34 commits is a lot for the owner to take on trust.
+  - **Owner content untouched, proven:** `git diff --numstat` against `src/content`, `src/components/sections` and `src/lib` returns nothing at all.
+  - **Scope held, proven:** the complete set of source files changed across the entire run is **nine** - `Dashboard.jsx`, `DriveScene.jsx`, `ExitSign.jsx`, `RoadCanvas.jsx`, `route.js`, `StopCard.jsx`, `useDrive.js`, `world.js` and `drive.module.css`. Every one inside the declared scope. No leakage into the classic site, config, or content.
+  - **The owner's own pre-existing uncommitted edits** in `src/components/sections/*` and `src/content/*` are still exactly as the run found them - never staged, never committed, never edited.
+  - **Branch state:** build clean, `/drive` 22.5 kB first-load 152 kB, zero drive-scope lint issues, nothing uncommitted in scope, nothing pushed.
