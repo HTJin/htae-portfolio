@@ -487,9 +487,18 @@ export function DriveScene() {
   // Released here instead, beside the code that set it, and put back after so
   // the drive still cannot be scrolled.
   useEffect(() => {
-    let beforePrintOverflow = ''
+    // `null` means "no print in progress". Both guards below depend on it.
+    let beforePrintOverflow = null
     const release = () => {
-      beforePrintOverflow = document.body.style.overflow
+      // Capture **once**. Chrome re-fires `beforeprint` when a preview is
+      // reopened, and `window.print()` during a preview does the same. An
+      // unconditional capture would store `'visible'` on the second fire, and
+      // the following `afterprint` would write that back — leaving the drive
+      // permanently scrollable, which is the exact thing the mount effect sets
+      // out to prevent.
+      if (beforePrintOverflow === null) {
+        beforePrintOverflow = document.body.style.overflow
+      }
       document.body.style.overflow = 'visible'
     }
     const restore = () => {
@@ -500,7 +509,14 @@ export function DriveScene() {
       // lock — this would silently overwrite it. And a browser that fires
       // `beforeprint` without a matching `afterprint` leaves the value it
       // captured, rather than a guess.
+      //
+      // And bail if no print started. `afterprint` can arrive alone — the
+      // scene can remount while a preview is open — in which case there is
+      // nothing captured, and writing the initial value would *clear* the
+      // scroll lock. Doing nothing is right; the mount effect already owns it.
+      if (beforePrintOverflow === null) return
       document.body.style.overflow = beforePrintOverflow
+      beforePrintOverflow = null
     }
     window.addEventListener('beforeprint', release)
     window.addEventListener('afterprint', restore)

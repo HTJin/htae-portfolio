@@ -1,4 +1,4 @@
-﻿import { education, experience, meta, projects, skills } from '@/content'
+import { education, experience, meta, projects, skills } from '@/content'
 import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
 
 /**
