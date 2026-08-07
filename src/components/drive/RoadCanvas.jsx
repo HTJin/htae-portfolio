@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { paletteAt, withAlpha } from './daylight'
 import {
+  BANK_TOP_OFFSET,
   LEG_LENGTH,
   RAMP_OFFSET,
   RAMP_SEPARATES,
@@ -237,8 +238,12 @@ export function RoadCanvas({ drive, className }) {
       }
     }
 
-    /** The top of the bank: the outer edge of the mainline's verge. */
-    const BANK_TOP = CARRIAGEWAY + 2.4
+    /**
+     * The top of the bank: the outer edge of the mainline's verge. Imported
+     * rather than typed here — `route` needs the same number to know when the
+     * ramp has cleared the verge and may start descending.
+     */
+    const BANK_TOP = BANK_TOP_OFFSET
 
     /**
      * How far out the bank runs for every metre it falls. Real highway
@@ -254,26 +259,28 @@ export function RoadCanvas({ drive, className }) {
      * face and the planting on it** — they each had their own before, and
      * disagreed by ~1.7m at full ramp, which floated the flowers off the slope.
      *
-     * The ramp clamp is **gated, not floored**. It applies only where the ramp
-     * has moved outboard of `BANK_TOP`; before that the ramp edge is still
-     * inside the carriageway (measured at drop −0.86: top 10.6, ramp edge 7.46,
-     * carriageway 0–8.2) and clamping to it would drag the bank's foot inboard
-     * of its own top, crossing the quad and painting verge across the running
-     * lanes. Flooring the result with a `max` avoided that but replaced it with
-     * a 0.25m near-vertical face — the wall `SLOPE_RUN` exists to prevent.
+     * This line was wrong four times, and every fix failed the same way because
+     * they were all fixes to the wrong thing. The ramp used to start *falling*
+     * while it was still laterally inside the carriageway, so there were spans
+     * where the ramp was below the mainline and underneath it — a shape with no
+     * ground between the two to slope, which no clamp can express. Flooring
+     * gave a vertical face; gating gave a 3.7m step where the gate flipped.
+     *
+     * `route.dropProgress` now holds the descent until the ramp has cleared
+     * `BANK_TOP_OFFSET`, so wherever `drop` is non-zero the ramp edge is
+     * genuinely outboard of the bank's top and there is real ground between
+     * them. That makes this the plain minimum it always wanted to be:
+     * `slopeFoot` where the slope has room, the ramp edge where it doesn't.
+     * Both terms are continuous in `s`, so the foot is too.
+     *
+     * **One definition, used by both the face and the planting on it** — they
+     * each had their own before and disagreed by ~1.7m at full ramp, which
+     * floated the flowers off the slope.
      */
     function bankFoot(ramp, drop) {
       const slopeFoot = BANK_TOP - drop * SLOPE_RUN
       const rampEdge = LANE_OFFSET + ramp - RAMP_WIDTH / 2 - 1.2
-      // The ramp only constrains the bank once it is actually outboard of the
-      // bank's top. Early in a taper it is not — it is still inside the
-      // carriageway — and clamping to it there is what produced the two bugs
-      // this line has now had: first a foot *inboard* of its own top, painting
-      // verge across the running lanes; then, after a blunt `max` fix, a 0.25m
-      // near-vertical face, which is the 90-degree wall `SLOPE_RUN` exists to
-      // prevent. Gating the clamp instead of flooring the result makes the
-      // slope free to run its full length exactly when nothing is in its way.
-      return rampEdge > BANK_TOP ? Math.min(rampEdge, slopeFoot) : slopeFoot
+      return Math.min(rampEdge, slopeFoot)
     }
 
     /**

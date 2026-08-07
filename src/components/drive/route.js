@@ -70,6 +70,18 @@ export const RAMP_DROP = 5.5
  */
 export const RAMP_SEPARATES = CARRIAGEWAY - LANE_OFFSET + RAMP_WIDTH / 2
 
+/**
+ * Metres of verge outboard of the running lanes, i.e. where the shoulder ends
+ * and the embankment's top edge begins.
+ *
+ * `RoadCanvas` draws that edge and `route` has to know where it is, because the
+ * ramp may not start descending until it has cleared it. Defined once, here,
+ * and imported there — the two were independent numbers for four cycles and the
+ * disagreement is exactly what kept producing malformed banks.
+ */
+export const VERGE_WIDTH = 2.4
+export const BANK_TOP_OFFSET = CARRIAGEWAY + VERGE_WIDTH
+
 /** Smoothstep: zero slope at both ends, so the ramp meets the mainline flush. */
 function smoothstep(t) {
   return t * t * (3 - 2 * t)
@@ -93,8 +105,42 @@ export function rampAt(s) {
  * still curving — the two are the same ramp.
  */
 export function rampDropAt(s) {
-  return -RAMP_DROP * rampProgress(s)
+  return -RAMP_DROP * dropProgress(s)
 }
+
+/**
+ * The descent **lags the divergence**, and that is load-bearing geometry.
+ *
+ * Sharing one progress with `rampAt` meant the ramp began falling while it was
+ * still laterally *inside* the carriageway — which no real interchange does; a
+ * ramp pulls away first and drops afterwards. It also made the embankment
+ * between them undrawable: the bank is the ground from the mainline's verge
+ * down to the ramp, and when the ramp is below *and* inboard there is no such
+ * ground. Four separate attempts to clamp `bankFoot` into sense all failed on
+ * that same impossibility — a foot inboard of its own top, a vertical floor, a
+ * doc contradicting the code, then a 3.7m discontinuity.
+ *
+ * Holding the drop until the ramp has cleared `RAMP_SEPARATES` removes the
+ * impossible region entirely rather than clamping around it: wherever there is
+ * a height difference, there is now real ground to slope. The stop is still
+ * `RAMP_DROP` below the mainline — only the shape of getting there changed.
+ */
+function dropProgress(s) {
+  const lateral = rampProgress(s)
+  if (lateral <= DROP_HOLD) return 0
+  return smoothstep((lateral - DROP_HOLD) / (1 - DROP_HOLD))
+}
+
+/**
+ * The lateral progress at which the ramp's near edge finally clears the top of
+ * the bank, so there is ground to slope. Derived, not typed: it has to agree
+ * with where `RoadCanvas` puts that top, which is why `VERGE_WIDTH` is defined
+ * here and imported there rather than written down twice.
+ */
+const DROP_HOLD = Math.min(
+  0.9,
+  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET
+)
 
 /** 0 on the open mainline, 1 at a stop; smoothstepped, so both ends are flush. */
 function rampProgress(s) {
