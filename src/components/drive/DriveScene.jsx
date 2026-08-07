@@ -554,6 +554,14 @@ export function DriveScene() {
           already announces the link, and saying it twice is worse than not
           saying it at all. */}
       <div
+        // `printKeep` is what survives printing. The print sheet hides every
+        // *other* direct child of the scene rather than naming the pieces to
+        // hide — naming them is how the dashboard ended up printed over the
+        // résumé, since its root carries no `aria-hidden` and matched none of
+        // the rules. This wrapper holds the crawlable itinerary, so keeping
+        // exactly one thing is both simpler and impossible to get wrong when
+        // new cockpit chrome is added later.
+        className={styles.printKeep}
         onFocus={(event) => {
           const link = event.target.closest?.('a[href]')
           setOutlineFocus(link ? link.textContent.trim() : null)

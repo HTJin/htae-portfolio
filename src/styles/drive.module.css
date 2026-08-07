@@ -430,8 +430,22 @@
     color: #000 !important;
   }
 
-  .printable canvas,
-  .printable [aria-hidden='true'] {
+  /* Hide every direct child of the scene except the one holding the résumé.
+   *
+   * This used to name what to hide — `canvas` and `[aria-hidden='true']` —
+   * which caught the sky, the interior and the road, and missed everything
+   * else: the **dashboard** (`#drive-controls`, no `aria-hidden`), the arrival
+   * panel's wrapper, the exit link and the ignition splash. Worse, forcing
+   * `.printable` to `position: static` removes their containing block, so in
+   * paged media they land on page one, on top of the now-unclipped itinerary.
+   * Printing before "Start engine" would have produced a full-bleed ignition
+   * panel; printing mid-drive, a dashboard band across the résumé.
+   *
+   * Naming what to *keep* is one rule instead of a list, and it cannot rot when
+   * new cockpit chrome is added — a new absolutely-positioned overlay is hidden
+   * automatically rather than silently joining the page.
+   */
+  .printable > *:not(.printKeep) {
     display: none !important;
   }
 
