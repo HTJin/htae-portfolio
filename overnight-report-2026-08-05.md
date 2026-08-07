@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 95 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 96 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),

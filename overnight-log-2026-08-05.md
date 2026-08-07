@@ -1712,3 +1712,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Fixed by inversion:** hide every direct child of the scene except the `printKeep` wrapper, rather than enumerating cockpit pieces. Verified by resolving the shipped selector against the live DOM - 11 children, 10 hidden, 1 kept, dashboard hidden, itinerary intact.
 - **Lesson recorded:** the defect sat inside the exact area cycle 67 had flagged as unverifiable. Two cycles running, the bug was in the part I had honestly labelled as unchecked.
 - **Progress flag:** yes - a real shipped-feature defect fixed. S125 and S126 remain.
+
+## Cycle 96 (2026-08-07)
+
+- **Phase: Planner -> Builder -> Reviewer** on S125 and S126, the last review findings. Both fixed and committed.
+- **S125 verified against the case it exists for:** a foreign `overflow` value survives a print round trip (`clip -> visible -> clip`); the old hardcoded restore would have written `hidden`.
+- **S126:** comments describing an abandoned `absolute` approach rewritten to match the shipped flow layout; dead `relative` removed.
+- **All six review findings closed.** Two were real defects in shipped features.
+- **Progress flag:** yes - review backlog fully cleared.
