@@ -962,47 +962,72 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
           <SteeringWheel drive={drive} />
         </div>
 
-        {/* The footwell, then the centre stack beyond it.
+        {/* The footwell and the centre stack, both to the driver's right.
 
-            The pedals used to sit at the far right of the cabin, past the
-            centre stack — which put the driver's feet on the other side of the
-            car from the driver. The owner: *"I don't think it makes much sense
-            to have th brake and gas on the right side"*. They belong under the
-            driver, so they are now the first thing inboard of the wheel rather
-            than the last thing before the passenger door. */}
-        <div className="flex h-full min-w-0 items-stretch gap-4">
-          {/* The footwell, immediately inboard of the wheel. */}
-          <div
-            className={`flex h-full flex-[0.5] shrink-0 items-end gap-2 pb-2 ${styles.footwell}`}
-          >
-            <div className="h-[clamp(52px,8vh,74px)] w-[46%] max-w-[62px]">
-              <Pedal
-                label="BRAKE"
-                name="Brake"
-                hint="↓ / S"
-                tone="stop"
-                onPress={() => drive.setBrake(1)}
-                onRelease={() => drive.setBrake(0)}
-              />
-            </div>
-            <div className="h-[clamp(62px,9.5vh,88px)] w-[46%] max-w-[62px]">
-              <Pedal
-                label="GO"
-                name={
-                  routeEnded
-                    ? 'Go — unavailable, this is the end of the route'
-                    : 'Go — hold to accelerate'
-                }
-                hint="↑ / W"
-                tone="go"
-                disabled={routeEnded}
-                onPress={() => drive.setThrottle(1)}
-                onRelease={() => drive.setThrottle(0)}
-              />
+            The pedals belong just right of the wheel, where a driver's feet
+            actually are. Getting them there took three goes, so the reasoning
+            is written down rather than left to be rediscovered:
+
+            1. They started at the *far* right, past the centre stack, against
+               the passenger door — "I don't think it makes much sense to have
+               th brake and gas on the right side".
+            2. Making them a flow child at the head of this column put them in
+               the right place but cost the console ~330px, shoving the trip
+               computer and the button row toward the passenger door — "that
+               doesn't mean to push the hud for the back next route map and all
+               that to be pushed to the right".
+            3. So they are positioned **out of the flow**, pinned to the bottom
+               left of this column. They sit immediately right of the wheel and
+               take no width from the console, which keeps the position it had
+               before any of this started. They clear the trip computer
+               vertically and the button row horizontally — both are asserted
+               by measurement, not by eye. */}
+        <div className="relative flex h-full min-w-0 items-stretch gap-4">
+          {/* Two nested elements on purpose: `.footwell` must keep its own
+              `position: relative`, because the well's shadow is a `::before`
+              inset against it. Putting Tailwind's `absolute` on that same node
+              loses — the CSS module ships after the utilities and both are
+              single-class, so source order hands it to `.footwell`, and the
+              pedals land silently at the top of the dash instead of the
+              bottom. Measured once the hard way; kept split ever since. */}
+          <div className="absolute bottom-2 left-0 z-10 flex">
+            <div className={`flex items-end gap-2 ${styles.footwell}`}>
+              <div className="h-[clamp(52px,8vh,74px)] w-[62px]">
+                <Pedal
+                  label="BRAKE"
+                  name="Brake"
+                  hint="↓ / S"
+                  tone="stop"
+                  onPress={() => drive.setBrake(1)}
+                  onRelease={() => drive.setBrake(0)}
+                />
+              </div>
+              <div className="h-[clamp(62px,9.5vh,88px)] w-[62px]">
+                <Pedal
+                  label="GO"
+                  name={
+                    routeEnded
+                      ? 'Go — unavailable, this is the end of the route'
+                      : 'Go — hold to accelerate'
+                  }
+                  hint="↑ / W"
+                  tone="go"
+                  disabled={routeEnded}
+                  onPress={() => drive.setThrottle(1)}
+                  onRelease={() => drive.setThrottle(0)}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex h-full min-w-0 flex-[1.15] flex-col justify-center gap-2 py-1">
+          {/* Capped, and left-aligned in its column. Moving the driver to the
+              left made this column 1.5fr, and an uncapped centre stack simply
+              stretched into it — a 1074px terminal at 1920 with the button row
+              centred under it, which is the HUD drifting toward the passenger
+              door. The cap keeps the console at roughly the width it had when
+              it sat beside a centred wheel, so it stays within reach of the
+              driver and the dash beyond it reads as passenger side. */}
+          <div className="flex h-full min-w-0 max-w-[720px] flex-[1.15] flex-col justify-center gap-2 py-1">
             <div className="flex justify-between gap-3">
               <Vent className="flex w-[26%]" />
               <Vent className="flex w-[26%]" />
@@ -1010,7 +1035,14 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
             <div className="h-[clamp(84px,13vh,116px)]">
               <TripComputer drive={drive} stop={stop} />
             </div>
-            <div className="flex flex-wrap items-center justify-center gap-1.5">
+            {/* Below xl the console column is narrow enough that a centred
+                button row runs under the pedals — measured at 1100x800, the
+                GO pedal overlapping "Back". The pedals are out of the flow, so
+                nothing reserves that space automatically; this row reserves it
+                for itself, and only where it is actually needed. At xl and up
+                there is no collision (checked at 1280) and the padding comes
+                straight back off, so the console keeps its position. */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 pl-[148px] xl:pl-0">
               <ConsoleButton
                 onClick={drive.goBack}
                 disabled={drive.index === 0}
@@ -1038,7 +1070,6 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               <AudioToggle drive={drive} />
             </div>
           </div>
-
         </div>
       </div>
     </div>
