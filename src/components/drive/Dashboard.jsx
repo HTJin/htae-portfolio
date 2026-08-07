@@ -962,8 +962,46 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
           <SteeringWheel drive={drive} />
         </div>
 
-        {/* Centre stack and footwell, both to the driver's right. */}
+        {/* The footwell, then the centre stack beyond it.
+
+            The pedals used to sit at the far right of the cabin, past the
+            centre stack — which put the driver's feet on the other side of the
+            car from the driver. The owner: *"I don't think it makes much sense
+            to have th brake and gas on the right side"*. They belong under the
+            driver, so they are now the first thing inboard of the wheel rather
+            than the last thing before the passenger door. */}
         <div className="flex h-full min-w-0 items-stretch gap-4">
+          {/* The footwell, immediately inboard of the wheel. */}
+          <div
+            className={`flex h-full flex-[0.5] shrink-0 items-end gap-2 pb-2 ${styles.footwell}`}
+          >
+            <div className="h-[clamp(52px,8vh,74px)] w-[46%] max-w-[62px]">
+              <Pedal
+                label="BRAKE"
+                name="Brake"
+                hint="↓ / S"
+                tone="stop"
+                onPress={() => drive.setBrake(1)}
+                onRelease={() => drive.setBrake(0)}
+              />
+            </div>
+            <div className="h-[clamp(62px,9.5vh,88px)] w-[46%] max-w-[62px]">
+              <Pedal
+                label="GO"
+                name={
+                  routeEnded
+                    ? 'Go — unavailable, this is the end of the route'
+                    : 'Go — hold to accelerate'
+                }
+                hint="↑ / W"
+                tone="go"
+                disabled={routeEnded}
+                onPress={() => drive.setThrottle(1)}
+                onRelease={() => drive.setThrottle(0)}
+              />
+            </div>
+          </div>
+
           <div className="flex h-full min-w-0 flex-[1.15] flex-col justify-center gap-2 py-1">
             <div className="flex justify-between gap-3">
               <Vent className="flex w-[26%]" />
@@ -1001,36 +1039,6 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
             </div>
           </div>
 
-          {/* Pedals, tucked where the footwell would be. */}
-          <div
-            className={`flex h-full flex-[0.5] shrink-0 items-end gap-2 pb-2 ${styles.footwell}`}
-          >
-            <div className="h-[clamp(52px,8vh,74px)] w-[46%] max-w-[62px]">
-              <Pedal
-                label="BRAKE"
-                name="Brake"
-                hint="↓ / S"
-                tone="stop"
-                onPress={() => drive.setBrake(1)}
-                onRelease={() => drive.setBrake(0)}
-              />
-            </div>
-            <div className="h-[clamp(62px,9.5vh,88px)] w-[46%] max-w-[62px]">
-              <Pedal
-                label="GO"
-                name={
-                  routeEnded
-                    ? 'Go — unavailable, this is the end of the route'
-                    : 'Go — hold to accelerate'
-                }
-                hint="↑ / W"
-                tone="go"
-                disabled={routeEnded}
-                onPress={() => drive.setThrottle(1)}
-                onRelease={() => drive.setThrottle(0)}
-              />
-            </div>
-          </div>
         </div>
       </div>
     </div>
