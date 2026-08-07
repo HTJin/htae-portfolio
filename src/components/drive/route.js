@@ -1,8 +1,58 @@
 import { education, experience, meta, projects, skills } from '@/content'
+import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
 
 /** Metres of tarmac between consecutive stops. */
 export const LEG_LENGTH = 220
 export const METERS_PER_MILE = 1609.34
+
+/**
+ * Exit and entrance ramps.
+ *
+ * Every stop is a real interchange: you leave the mainline on a deceleration
+ * ramp, park on it while the panel is open, and rejoin on an acceleration ramp.
+ * The two are the same shape mirrored about the stop, so one function describes
+ * both.
+ *
+ * `RAMP_LENGTH` is derived from `LEG_LENGTH` rather than typed, because the two
+ * quantities have to agree about something neither can see: the entrance ramp
+ * out of one exit must finish before the exit ramp into the next one starts, or
+ * the road never returns to the mainline and the "highway" is just a slalom. At
+ * 0.4 of a leg each, the middle 20% of every leg is mainline. (Same lesson as
+ * `MARKER_SPACING` in cycle 32 — a constant that must match another constant
+ * gets computed from it.)
+ */
+export const RAMP_LENGTH = LEG_LENGTH * 0.4
+/** How far right of the mainline lane the ramp has carried you at the stop. */
+export const RAMP_OFFSET = CARRIAGEWAY + 2.7
+/** The ramp is a single lane, centred on the car. */
+export const RAMP_WIDTH = 4.4
+
+/**
+ * The offset at which the ramp is clear of the mainline entirely — its inner
+ * edge is past the carriageway's outer edge. Before this the ramp is still a
+ * deceleration lane *inside* the carriageway and carries no markings of its
+ * own; after it, it is a separate road and gets its own edge lines.
+ */
+export const RAMP_SEPARATES = CARRIAGEWAY - LANE_OFFSET + RAMP_WIDTH / 2
+
+/** Smoothstep: zero slope at both ends, so the ramp meets the mainline flush. */
+function smoothstep(t) {
+  return t * t * (3 - 2 * t)
+}
+
+/**
+ * How far the ramp has carried the road off the mainline at world position `s`.
+ *
+ * Zero on the open highway, `RAMP_OFFSET` at a stop. Keyed off the *object's*
+ * own position, never the camera's, so the road does not change shape as you
+ * approach it (guardrail 17).
+ */
+export function rampAt(s) {
+  const index = clamp(Math.round(s / LEG_LENGTH), 0, ROUTE_LAST)
+  const distance = Math.abs(s - index * LEG_LENGTH)
+  if (distance >= RAMP_LENGTH) return 0
+  return RAMP_OFFSET * smoothstep(1 - distance / RAMP_LENGTH)
+}
 
 const byDateAscending = (a, b) => new Date(a.date) - new Date(b.date)
 
@@ -186,6 +236,14 @@ export const route = [
 }))
 
 export const routeLength = (route.length - 1) * LEG_LENGTH
+
+/**
+ * The last stop's index, used by `rampAt` to clamp. Declared here rather than
+ * beside `rampAt` because it needs `route`; `rampAt` is a hoisted function
+ * declaration and is only ever *called* after this module has finished
+ * evaluating, so the ordering is safe.
+ */
+const ROUTE_LAST = route.length - 1
 
 /**
  * What the roadside looks like on each leg. Every mile used to carry identical

@@ -13,15 +13,32 @@
  * the projection, change it here and check that one call site.
  */
 
-export const ROAD_HALF = 5.5 // metres from centre line to the outer edge line
+/**
+ * Where things sit across a divided highway.
+ *
+ * `x = 0` is the **median edge** of the carriageway you are driving on, not a
+ * centre line — there is no centre line, because the traffic coming the other
+ * way is behind a barrier rather than behind paint. Reading left to right:
+ *
+ *     -OPPOSING_EDGE .. -MEDIAN_WIDTH   the opposing carriageway
+ *     -MEDIAN_WIDTH  .. 0               the median, with the barrier down it
+ *      0             .. CARRIAGEWAY     your carriageway
+ *
+ * This used to be a single `ROAD_HALF = 5.5` measured "from the centre line",
+ * with a dashed line at `x = 0` — which is the marking for a road you may
+ * legally overtake into oncoming traffic on, not a highway.
+ */
+export const CARRIAGEWAY = 5.5 // metres, median edge line to outer edge line
+export const MEDIAN_WIDTH = 4.2 // metres of median between the two carriageways
+export const OPPOSING_EDGE = MEDIAN_WIDTH + CARRIAGEWAY // far side's outer edge
 export const CAM_HEIGHT = 1.35 // driver eye height above the tarmac
 
 /**
  * Where the car actually sits across the road.
  *
- * You drive *in a lane*, not astride the centre line — so the camera is offset
- * into the right-hand lane, and the centre line runs down the left of the view
- * where it belongs.
+ * You drive *in a lane*, not astride the median — so the camera is offset into
+ * the carriageway, and the median runs down the left of the view where it
+ * belongs.
  *
  * What this does **not** do is move the vanishing point. `project()` divides
  * the lateral offset by `z`, so the offset only shifts the road's *near* field:
@@ -33,9 +50,18 @@ export const CAM_HEIGHT = 1.35 // driver eye height above the tarmac
  */
 export const LANE_OFFSET = 2.7
 
-/** The car's lateral position: its lane, plus whatever steering drift. */
+/**
+ * The car's lateral position: its lane, the ramp it is on, plus steering drift.
+ *
+ * `sim.ramp` is how far the exit/entrance ramp has carried the road away from
+ * the mainline at the car's own position — it is `rampAt(sim.travel)`, kept on
+ * the sim by `useDrive` so this stays a pure function of the sim and `world.js`
+ * need not know what the route looks like. It is added *outside* `sim.x` so
+ * steering still re-centres to the middle of whichever lane you are in, on the
+ * highway or on the ramp, exactly as before.
+ */
 export function cameraX(sim) {
-  return LANE_OFFSET + sim.x
+  return LANE_OFFSET + (sim.ramp ?? 0) + sim.x
 }
 export const HORIZON_RATIO = 0.44 // where the vanishing point sits vertically
 export const Z_NEAR = 2.4

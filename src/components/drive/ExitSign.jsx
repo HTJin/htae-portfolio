@@ -1,7 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { paletteAt } from './daylight'
-import { LEG_LENGTH, METERS_PER_MILE, routeLength } from './route'
-import { ROAD_HALF, makeCamera, project } from './world'
+import {
+  LEG_LENGTH,
+  METERS_PER_MILE,
+  RAMP_OFFSET,
+  RAMP_WIDTH,
+  routeLength,
+} from './route'
+import { LANE_OFFSET, makeCamera, project } from './world'
 import styles from '@/styles/drive.module.css'
 
 // The sign is authored at 300x180 design px standing for 6m x 3.6m of
@@ -10,7 +16,16 @@ const DESIGN_WIDTH = 300
 const SIGN_METERS = 6
 const MOUNT_HEIGHT = 5.4
 const ANCHOR_Y = 90
-const OFFSET_X = ROAD_HALF + 4.6
+/**
+ * The sign stands on the far verge of the ramp it names.
+ *
+ * It is anchored at the stop's own `s`, which is the end of the off-ramp, so
+ * the ramp has carried the road to `RAMP_OFFSET` by the time you reach it —
+ * leaving this at `CARRIAGEWAY + 4.6` would have planted the sign in the middle
+ * of the ramp's tarmac. Derived from the ramp's own geometry so it stays put if
+ * either changes.
+ */
+const OFFSET_X = LANE_OFFSET + RAMP_OFFSET + RAMP_WIDTH / 2 + 2
 
 /**
  * The sign's whole approach is scaled to the leg you actually drive.

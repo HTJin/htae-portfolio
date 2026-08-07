@@ -1,9 +1,20 @@
 import { useEffect, useRef } from 'react'
 import { paletteAt, withAlpha } from './daylight'
-import { LEG_LENGTH, roadsideAt, routeLength } from './route'
+import {
+  LEG_LENGTH,
+  RAMP_OFFSET,
+  RAMP_SEPARATES,
+  RAMP_WIDTH,
+  rampAt,
+  roadsideAt,
+  routeLength,
+} from './route'
 import {
   CAM_HEIGHT,
-  ROAD_HALF,
+  CARRIAGEWAY,
+  LANE_OFFSET,
+  MEDIAN_WIDTH,
+  OPPOSING_EDGE,
   Z_FAR,
   Z_NEAR,
   cameraX,
@@ -14,7 +25,6 @@ import {
 } from './world'
 
 const SEGMENTS = 130
-const DASH_PERIOD = 14 // metres of "on" then "off" for the centre line
 const DELINEATOR_SPACING = 24
 const LAMP_SPACING = 72
 
@@ -59,43 +69,73 @@ export function RoadCanvas({ drive, className }) {
         point.scale = scale
         point.cx = width / 2 + (curveAt(s) - baseCurve - cameraX(sim)) * scale
         point.y = horizon + (CAM_HEIGHT + baseHill - hillAt(s)) * scale
+        // The ramp offset at this point's own world position. Computed once
+        // here rather than per ribbon: five ribbons follow the ramp, and this
+        // turns 5xN calls a frame into N. Allocates nothing (guardrail 14).
+        point.ramp = rampAt(s)
       }
     }
 
-    /** Fill one continuous ribbon of road between two lateral offsets. */
-    function ribbon(first, last, from, to, fill) {
+    /**
+     * Fill one continuous ribbon of road between two lateral offsets.
+     *
+     * `follow` slides the ribbon sideways with the ramp at each point, which is
+     * what makes an off-ramp peel away from a mainline that carries straight on
+     * — both are painted by this one function, one following and one not.
+     */
+    function ribbon(first, last, from, to, fill, follow = false) {
       if (last <= first) return
       ctx.fillStyle = fill
       ctx.beginPath()
       for (let i = first; i <= last; i += 1) {
         const point = points[i]
-        const x = point.cx + from * point.scale
+        const slide = follow ? point.ramp : 0
+        const x = point.cx + (from + slide) * point.scale
         if (i === first) ctx.moveTo(x, point.y)
         else ctx.lineTo(x, point.y)
       }
       for (let i = last; i >= first; i -= 1) {
         const point = points[i]
-        ctx.lineTo(point.cx + to * point.scale, point.y)
+        const slide = follow ? point.ramp : 0
+        ctx.lineTo(point.cx + (to + slide) * point.scale, point.y)
       }
       ctx.closePath()
       ctx.fill()
     }
 
-    function band(from, to, fill) {
-      ribbon(0, SEGMENTS, from, to, fill)
+    function band(from, to, fill, follow = false) {
+      ribbon(0, SEGMENTS, from, to, fill, follow)
+    }
+
+    /**
+     * Every contiguous run of segments where `test` holds, as one ramp-following
+     * ribbon. The ramp's own edge lines use this: they must not be painted while
+     * the ramp is still a deceleration lane inside the carriageway, or there
+     * would be a white line down the middle of the lane you are driving in.
+     */
+    function ribbonRuns(from, to, fill, test) {
+      let runStart = -1
+      for (let i = 0; i <= SEGMENTS; i += 1) {
+        const on = test(points[i])
+        if (on && runStart < 0) runStart = i
+        if (runStart >= 0 && (!on || i === SEGMENTS)) {
+          ribbon(runStart, i, from, to, fill, true)
+          runStart = -1
+        }
+      }
     }
 
     /**
      * Paint every "on" stretch of a repeating pattern as a single ribbon.
      * Filling each segment separately would leave anti-aliasing seams.
      */
-    function stripes(from, to, period, fill) {
+    function stripes(from, to, period, fill, follow = false) {
       let runStart = -1
       for (let i = 0; i <= SEGMENTS; i += 1) {
         const on = Math.floor(points[i].s / period) % 2 === 0
         if (on && runStart < 0) runStart = i
         if (runStart >= 0 && (!on || i === SEGMENTS)) {
-          ribbon(runStart, i, from, to, fill)
+          ribbon(runStart, i, from, to, fill, follow)
           runStart = -1
         }
       }
@@ -106,13 +146,13 @@ export function RoadCanvas({ drive, className }) {
      * two heights. Same reason `stripes` exists: filling each segment on its
      * own leaves anti-aliasing seams down the length of it.
      */
-    function rail(first, last, lateral, low, high, fill) {
+    function rail(first, last, lateral, low, high, fill, follow = false) {
       if (last <= first) return
       ctx.fillStyle = fill
       ctx.beginPath()
       for (let i = first; i <= last; i += 1) {
         const point = points[i]
-        const x = point.cx + lateral * point.scale
+        const x = point.cx + (lateral + (follow ? point.ramp : 0)) * point.scale
         const y = point.y - high * point.scale
         if (i === first) ctx.moveTo(x, y)
         else ctx.lineTo(x, y)
@@ -120,7 +160,7 @@ export function RoadCanvas({ drive, className }) {
       for (let i = last; i >= first; i -= 1) {
         const point = points[i]
         ctx.lineTo(
-          point.cx + lateral * point.scale,
+          point.cx + (lateral + (follow ? point.ramp : 0)) * point.scale,
           point.y - low * point.scale
         )
       }
@@ -129,13 +169,13 @@ export function RoadCanvas({ drive, className }) {
     }
 
     /** Every contiguous run of segments where `test` holds, as one rail. */
-    function railRuns(lateral, low, high, fill, test) {
+    function railRuns(lateral, low, high, fill, test, follow = false) {
       let runStart = -1
       for (let i = 0; i <= SEGMENTS; i += 1) {
         const on = test(points[i].s)
         if (on && runStart < 0) runStart = i
         if (runStart >= 0 && (!on || i === SEGMENTS)) {
-          rail(runStart, i, lateral, low, high, fill)
+          rail(runStart, i, lateral, low, high, fill, follow)
           runStart = -1
         }
       }
@@ -153,6 +193,18 @@ export function RoadCanvas({ drive, className }) {
       // nothing and removes a second copy of the camera maths.
       const place = (s, x, y) => project(camera, sim, s - sim.travel, x, y)
 
+      /**
+       * The outer edge of the road on a given side, at that position's own `s`.
+       *
+       * Right-hand furniture rides the ramp: it stands on the verge of the road
+       * you are driving on, so at an interchange it swings out with the ramp
+       * instead of being left standing in the middle of it. Left-hand furniture
+       * moved out to the *far* carriageway's outer edge, since everything
+       * between you and it is now median and opposing tarmac.
+       */
+      const edge = (s, side) =>
+        side > 0 ? CARRIAGEWAY + rampAt(s) : -OPPOSING_EDGE
+
       // Far to near so nearer objects paint over distant ones.
       const firstLamp = Math.ceil((sim.travel + Z_NEAR) / LAMP_SPACING)
       const lastLamp = Math.floor((sim.travel + 320) / LAMP_SPACING)
@@ -163,9 +215,10 @@ export function RoadCanvas({ drive, className }) {
         if (n % every !== 0) continue
         // Keep alternating sides even where the line has been thinned.
         const side = Math.floor(n / every) % 2 === 0 ? 1 : -1
-        const foot = place(s, side * (ROAD_HALF + 2.6), 0)
-        const head = place(s, side * (ROAD_HALF + 2.6), 8.6)
-        const arm = place(s, side * (ROAD_HALF - 0.4), 8.2)
+        const base = edge(s, side)
+        const foot = place(s, base + side * 2.6, 0)
+        const head = place(s, base + side * 2.6, 8.6)
+        const arm = place(s, base - side * 0.4, 8.2)
         const thickness = Math.max(1, 0.22 * foot.scale)
 
         ctx.strokeStyle = 'rgba(148, 170, 196, 0.5)'
@@ -206,8 +259,9 @@ export function RoadCanvas({ drive, className }) {
         const s = n * MARKER_SPACING
         // Set further out than the delineator line and standing taller, so a
         // marker never reads as just another reflector post.
-        const foot = place(s, ROAD_HALF + 2.5, 0)
-        const plate = place(s, ROAD_HALF + 2.5, 1.9)
+        const marker = CARRIAGEWAY + rampAt(s) + 2.5
+        const foot = place(s, marker, 0)
+        const plate = place(s, marker, 1.9)
         if (foot.y > height * 1.4 || plate.y < horizon - 4) continue
 
         ctx.strokeStyle = 'rgba(170, 188, 208, 0.45)'
@@ -232,8 +286,9 @@ export function RoadCanvas({ drive, className }) {
       for (let n = lastPost; n >= firstPost; n -= 1) {
         const s = n * DELINEATOR_SPACING
         for (const side of [-1, 1]) {
-          const foot = place(s, side * (ROAD_HALF + 1.1), 0)
-          const top = place(s, side * (ROAD_HALF + 1.1), 1.05)
+          const post = edge(s, side) + side * 1.1
+          const foot = place(s, post, 0)
+          const top = place(s, post, 1.05)
           if (foot.y > height * 1.4 || top.y < horizon - 4) continue
           ctx.strokeStyle = 'rgba(190, 205, 222, 0.4)'
           ctx.lineWidth = Math.max(0.8, 0.12 * foot.scale)
@@ -300,38 +355,88 @@ export function RoadCanvas({ drive, className }) {
 
       buildPoints(sim)
 
-      band(-(ROAD_HALF + 22), ROAD_HALF + 22, colors.vergeDark)
+      // Wide enough to cover both carriageways, the median, and the ramp at
+      // full offset — the ground beneath everything the road is made of.
+      band(-(OPPOSING_EDGE + 22), CARRIAGEWAY + RAMP_OFFSET + 22, colors.vergeDark)
 
-      // Rumble bands on the verge, alternating with distance travelled.
-      stripes(-(ROAD_HALF + 2.4), -ROAD_HALF, 9, colors.vergeLight)
-      stripes(ROAD_HALF, ROAD_HALF + 2.4, 9, colors.vergeLight)
+      // Rumble bands on the two outer verges, alternating with distance. The
+      // right-hand one follows the ramp, because the right-hand verge is the
+      // shoulder of whichever road you are actually on.
+      stripes(-(OPPOSING_EDGE + 2.4), -OPPOSING_EDGE, 9, colors.vergeLight)
+      stripes(CARRIAGEWAY, CARRIAGEWAY + 2.4, 9, colors.vergeLight, true)
 
       const tarmac = ctx.createLinearGradient(0, horizon, 0, height)
       tarmac.addColorStop(0, colors.tarmacFar)
       tarmac.addColorStop(1, colors.tarmacNear)
-      band(-ROAD_HALF, ROAD_HALF, tarmac)
+
+      // The carriageway coming the other way. Empty, and it stays empty — the
+      // owner asked for the invented traffic to come off this road, so what
+      // makes it a highway is the barrier and the second carriageway, not
+      // vehicles on it.
+      band(-OPPOSING_EDGE, -MEDIAN_WIDTH, tarmac)
+      // Yours. The median strip between the two is left as verge.
+      band(0, CARRIAGEWAY, tarmac)
+      // The ramp. On the open highway its offset is 0 and it lies exactly on
+      // the lane you are in, so it paints nothing you can see; approaching a
+      // stop it slides right and peels out of the carriageway, opening a wedge
+      // of verge between the two. That wedge is the gore, and it comes out of
+      // the geometry rather than being drawn as a special case.
+      band(LANE_OFFSET - RAMP_WIDTH / 2, LANE_OFFSET + RAMP_WIDTH / 2, tarmac, true)
 
       const paint = withAlpha(colors.paint, 0.82)
-      band(-ROAD_HALF + 0.25, -ROAD_HALF + 0.55, paint)
-      band(ROAD_HALF - 0.55, ROAD_HALF - 0.25, paint)
+      // Median-side lines are yellow, outer edges white — the same convention
+      // that used to be carried by the centre line this replaces.
+      const medianLine = withAlpha(colors.centreLine, 0.85)
 
-      stripes(-0.16, 0.16, DASH_PERIOD, withAlpha(colors.centreLine, 0.85))
+      // Your carriageway: yellow against the median, white on the outside.
+      band(0.25, 0.55, medianLine)
+      band(CARRIAGEWAY - 0.55, CARRIAGEWAY - 0.25, paint)
+      // The opposing carriageway, mirrored.
+      band(-MEDIAN_WIDTH - 0.55, -MEDIAN_WIDTH - 0.25, medianLine)
+      band(-OPPOSING_EDGE + 0.25, -OPPOSING_EDGE + 0.55, paint)
+
+      // The ramp's own edge lines, painted only where it has actually left the
+      // carriageway. While it is still a deceleration lane these would be two
+      // white stripes down the middle of the lane you are driving in.
+      const separated = (point) => point.ramp > RAMP_SEPARATES
+      ribbonRuns(
+        LANE_OFFSET - RAMP_WIDTH / 2 + 0.05,
+        LANE_OFFSET - RAMP_WIDTH / 2 + 0.35,
+        paint,
+        separated
+      )
+      ribbonRuns(
+        LANE_OFFSET + RAMP_WIDTH / 2 - 0.35,
+        LANE_OFFSET + RAMP_WIDTH / 2 - 0.05,
+        paint,
+        separated
+      )
+
+      // The median barrier. This is what makes it a divided highway rather than
+      // a road you may legally overtake into oncoming traffic on: the traffic
+      // coming the other way is behind concrete, not behind a dashed line.
+      const barrierX = -MEDIAN_WIDTH / 2
+      rail(0, SEGMENTS, barrierX, 0, 0.92, withAlpha(colors.vergeLight, 0.95))
+      rail(0, SEGMENTS, barrierX, 0.74, 0.92, withAlpha(colors.paint, 0.45))
 
       // Guardrail along the scenic overlook — the one leg with a drop beside
-      // it. Painted before the roadside furniture so lamps stand in front.
+      // it. Painted before the roadside furniture so lamps stand in front, and
+      // following the ramp so it stays on the outside of the road it guards.
       railRuns(
-        ROAD_HALF + 1.9,
+        CARRIAGEWAY + 1.9,
         0.42,
         0.78,
         withAlpha(colors.paint, 0.5),
-        hasGuardrail
+        hasGuardrail,
+        true
       )
       railRuns(
-        ROAD_HALF + 1.9,
+        CARRIAGEWAY + 1.9,
         0.2,
         0.44,
         withAlpha(colors.vergeDark, 0.95),
-        hasGuardrail
+        hasGuardrail,
+        true
       )
 
       drawRoadside(sim, colors)

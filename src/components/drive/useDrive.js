@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { rampAt } from './route'
 import { clamp, curveAt } from './world'
 
 const MAX_SPEED = 42 // m/s, about 94 mph
@@ -26,6 +27,13 @@ function createSim() {
     travel: 0,
     speed: 0,
     x: 0,
+    // Where the ramp has carried the road at `travel`. Seeded rather than left
+    // at 0 because MILE 0 *is* an interchange: the car starts parked on the
+    // entrance ramp, which is what "hold the accelerator to pull onto the
+    // highway" has always said it does. The canvas paints before the first
+    // `step()` runs (the ignition splash), so a 0 here would draw one frame of
+    // the car sitting on the mainline before it snapped onto the ramp.
+    ramp: rampAt(0),
     steer: 0,
     steerInput: 0,
     wheel: 0,
@@ -191,6 +199,12 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         sim.throttleLock = sim.throttle > 0
         arriveAt(sim.target)
       }
+
+      // One assignment covers both places `travel` moves above — the metre-by-
+      // metre integration and the snap onto the stop — so the ramp can never be
+      // a frame behind the car sitting on it. The parked early-return skips it,
+      // which is correct: `travel` did not move, so neither did the ramp.
+      sim.ramp = rampAt(sim.travel)
     },
     [arriveAt, depart]
   )
@@ -224,6 +238,9 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       const sim = simRef.current
       sim.target = next
       sim.travel = all[next].s
+      // Teleporting (Back, the route map, reduced motion) moves `travel`
+      // without going through `step`, so the ramp has to follow here too.
+      sim.ramp = rampAt(sim.travel)
       sim.speed = 0
       sim.parked = true
       sim.autopilot = false
