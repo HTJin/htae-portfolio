@@ -201,14 +201,29 @@ export function RoadCanvas({ drive, className }) {
     function embankment(fill) {
       const TOP = CARRIAGEWAY + 2.4
 
-      // Where the ground has come back up to the ramp's grade. Clamped so it
-      // can never end up *inboard* of the top: when the ramp has already
-      // dropped but has not yet moved aside, this collapses to a near-vertical
-      // face — which is exactly right, because that face is the highway's own
-      // flank. The mainline is an infinitely thin ribbon otherwise, and a road
-      // with no side floats.
-      const footOf = (point) =>
-        Math.max(TOP + 0.25, LANE_OFFSET + point.ramp - RAMP_WIDTH / 2 - 1.2)
+      // How far out the slope runs for every metre it falls. Real highway
+      // embankments sit around 1:2 to 1:3; 2.6 reads as earth rather than
+      // engineering. **This is what stops the face being a 90-degree wall** —
+      // the run is a function of the drop, so the bank lies back further the
+      // deeper the exit goes, instead of standing upright.
+      const SLOPE_RUN = 2.6
+
+      // Where the bank meets the lower ground.
+      //
+      // The run comes from the **drop**, not from where the ramp happens to be:
+      // fall 3m and the bank lies back 7.8m, fall 5.5m and it lies back 14m. It
+      // was previously `max(TOP + 0.25, rampEdge)`, which pinned the foot just
+      // outboard of the top whenever the ramp had dropped but not yet moved
+      // aside — i.e. it made the bank a **vertical wall** for the first half of
+      // every descent, which is exactly what it should never be.
+      //
+      // Still never crosses the ramp: if the slope would run past the ramp's
+      // near edge, it stops there and the last of the fall is taken up by the
+      // ramp's own shoulder.
+      const footOf = (point) => {
+        const rampEdge = LANE_OFFSET + point.ramp - RAMP_WIDTH / 2 - 1.2
+        return Math.min(rampEdge, TOP - point.drop * SLOPE_RUN)
+      }
 
       // Gated on **elevation difference**, not on lateral separation. Gating it
       // on separation was the bug: the ramp starts falling long before it moves
@@ -637,9 +652,14 @@ export function RoadCanvas({ drive, className }) {
       // "why the hell am I able to see through the road???". Concrete is not
       // 90% opaque. Only the highlight along the top keeps any alpha, because
       // a lit edge is a reflection rather than a material.
+      // A **guardrail**, not a wall: it hangs at rail height with the bank
+      // visible under it, so the road's edge still reads against the sky
+      // without putting a slab of concrete beside the carriageway. It was
+      // 0.92m of solid, which is a parapet — and a parapet is the other way of
+      // getting the 90-degree wall the bank was just fixed to avoid.
       const shoulder = CARRIAGEWAY + 2.4
-      railRuns(shoulder, 0, 0.92, colors.vergeLight, () => true)
-      railRuns(shoulder, 0.74, 0.92, withAlpha(colors.paint, 0.85), () => true)
+      railRuns(shoulder, 0.42, 0.72, colors.vergeLight, () => true)
+      railRuns(shoulder, 0.66, 0.72, withAlpha(colors.paint, 0.8), () => true)
 
       // The median barrier. This is what makes it a divided highway rather than
       // a road you may legally overtake into oncoming traffic on: the traffic
