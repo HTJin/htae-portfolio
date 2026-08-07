@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Suggester
+**Phase:** Planner
 **Cycle:** 67
 
 ## Project orientation (so a fresh agent can start cold)
@@ -3681,6 +3681,22 @@ technique generalises.)*
   `ctx.fill()` whole. **Genuinely large**, and worth doing only if a deeper descent is wanted for its own sake; 3m
   already reads as a hill. Do not simply raise `RAMP_DROP` — that has now been tried twice and rejected twice, with
   the pictures to prove it.
+- **S111 — No print stylesheet anywhere** *(new, cycle 67)* — measured: **zero** `@media print` rules in any
+  stylesheet on the live page, against a fixed-position cockpit with `overflow: hidden` and a full-viewport canvas.
+  Print or Save-as-PDF will very likely produce a blank or broken page, and recruiters do save portfolios to PDF.
+  **Measure the actual print render first**; the fix may be as small as a print block that hides the cockpit and
+  reveals the crawlable itinerary already in the DOM.
+- **S112 — Time-to-content: a first visitor must drive to reach anything** *(new, cycle 67)* — market research is
+  blunt that a hiring manager spends minutes and that content should not sit behind animation. Fast paths exist
+  (route map, `?exit=N`, the classic site) but none is obvious on arrival, and **cycle 65's longer legs made it
+  measurably worse — 14.1s a leg, up from ~9.3s**. **Measure only:** seconds and actions from cold load to the first
+  substantive stop. The owner chose this experience deliberately, so this is a measurement, not a redesign proposal.
+- **S113 — Cold page weight, measured properly** *(new, cycle 67)* — the cycle-67 attempt returned 0.9 KB, which is
+  meaningless (cached resources report `transferSize: 0`). Needs a cache-bypassed load. Last real figure was 208 KB
+  in cycle 42, before the ramp geometry, the embankment and the two-lane road.
+- **S114 — Heap growth over a long drive** *(new, cycle 67)* — never measured. The cycle-67 attempt was **invalid**:
+  the engine was never started in the probe frame, so the car never moved and 48,000 pumped frames were no-ops.
+  Redo with the engine running, across the full 20 legs, treating `performance.memory` as coarse.
 - **S107 — The instrument cluster and the steering wheel are sized by unrelated rules** *(new, cycle 62)* — measured:
   the ratio between them ranges **0.602 to 0.831** across viewports (spread 0.229), because the gauges are sized in
   `vh` and the wheel comes from a `vw`-based column. In a real car they are one piece of hardware. **The fix lands in

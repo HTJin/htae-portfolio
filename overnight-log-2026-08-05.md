@@ -1469,3 +1469,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Third instance this run of a bad selector masquerading as a defect** - noted in the journal, since it keeps happening and the pattern is worth naming.
 - **Backlog now genuinely dry** -> next cycle goes to the Suggester for a fresh audit and market-research pass.
 - **Progress flag:** no shipped change; a change-set verified and one consequence quantified.
+
+## Cycle 67 (2026-08-07)
+
+- **Phase: Suggester** -> backlog dry, so a fresh audit plus market research. Four new ideas: S111 (no print stylesheet - measured, zero rules), S112 (time-to-content, sharpened by cycle 65's longer legs), S113 (cold page weight - redo properly), S114 (heap over a long drive - redo properly).
+- **Two measurements discarded rather than reported.** Page weight read 0.9 KB because cached resources report `transferSize: 0`. The heap probe never started the engine, so the car never moved and the delta was GC noise. Both filed as work, not findings.
+- **Market research** reinforced two things the run has not looked at: load under two seconds, and not burying content behind animation.
+- **Phase -> Planner** with a refilled backlog.
+- **Progress flag:** no shipped change; backlog refilled from dry with four measured or clearly-scoped items.

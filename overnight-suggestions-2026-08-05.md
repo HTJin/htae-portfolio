@@ -613,3 +613,21 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - All 21 exits deep-linked and checked: hydrated, heading present, `n/21` counter correct, 28 of 28 images loading, no horizontal scroll at any exit.
   - Derived route distance followed `LEG_LENGTH` correctly: 20 x 420 / 1609.34 = 5.2 mi, destination reads `5.2 MI`.
   - **Consequence quantified, for the owner to judge:** a leg is now 14.1s and the whole route about 4.7 minutes of held accelerator, up from ~3.1 minutes before the run started widening the legs. Not a defect - the direct result of "I want the ride to the next exit a bit longer".
+
+- [ ] **S111 - There is no print stylesheet anywhere** - Status: Proposed - Cycle: 67
+  - **Measured:** walked every stylesheet in the live page and counted `@media print` rules. **Zero.** `/drive` is a fixed-position cockpit with `body { overflow: hidden }`, a full-viewport canvas and absolutely-positioned chrome, so Print or Save-as-PDF will almost certainly produce a blank or broken page.
+  - **Why it matters:** recruiters do save portfolios to PDF, and the resume itself is the content here. Measure the actual print render first, then decide - the fix might be as small as a print block that hides the cockpit and shows the crawlable itinerary that already exists in the DOM.
+
+- [ ] **S112 - Time-to-content: a first visitor must drive to reach anything** - Status: Proposed - Cycle: 67
+  - **Source:** market research. Hiring managers spend only a few minutes on a portfolio, and the repeated advice is "do not bury the case studies behind animations - the first click should answer what you owned and why it matters".
+  - `/drive` puts the entire resume behind a driving simulation. There *are* fast paths - the route map, `?exit=N` deep links, and the classic site - but none is obvious on arrival, and **cycle 65's longer legs made this measurably worse: 14.1s per leg now, up from ~9.3s**.
+  - **Measure first:** seconds and actions from cold load to the first substantive stop, and how discoverable the route map is to someone who has not read the key hints. Only then decide whether anything should change - the owner chose this experience deliberately, so this is a measurement, not a redesign proposal.
+
+- [ ] **S113 - Cold page weight is unmeasured, and my attempt to measure it was worthless** - Status: Proposed - Cycle: 67
+  - Tried to total `transferSize` from the frame's resource timing and got **0.9 KB**, which is nonsense: everything was served from cache, and cached resources report `transferSize: 0`. Recorded so nobody quotes that number.
+  - Needs a genuinely cache-bypassed load. Market research is specific here - "should load in under 2 seconds", Lighthouse 90+ - and the last real figure was 208 KB back in cycle 42, since when the drive page has gained the ramp geometry, the embankment and the two-lane road.
+
+- [ ] **S114 - Heap growth over a long drive is still unmeasured** - Status: Proposed - Cycle: 67
+  - Cycle 33 proved the per-frame subscriber set does not leak, but nothing has ever measured the **heap** across a long session.
+  - **My cycle-67 attempt was invalid and is not evidence of anything:** I never clicked "Start engine" in the probe frame, so the sim loop never mounted, all 48,000 pumped frames were no-ops and `travel` stayed at 0. The 3.9 MB delta it produced measures GC noise, nothing more.
+  - Redo properly: start the engine, drive the full 20 legs, force GC where possible, and treat `performance.memory` as coarse - look for a trend across repeated runs rather than a single delta.
