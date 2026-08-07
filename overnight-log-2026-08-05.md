@@ -1514,3 +1514,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Caveat recorded:** the `matchMedia` patch landed at `readyState: interactive` rather than `loading`; it worked, and the control proves it, but `loading` stays the safer target.
 - **Backlog:** S116 and S117 remain, both keyboard items. S107 still parked on the owner's decision.
 - **Progress flag:** no shipped change; the largest outstanding regression risk from cycles 57-65 checked and cleared.
+
+## Cycle 71 (2026-08-07)
+
+- **Phase: Planner -> Reviewer** on S116 and S117, both keyboard items, settled in one probe.
+- **S116 (the `n` shortcut from parked): PASS.** Target advances 0 -> 1, autopilot engages, arrives at travel 420 in 838 frames. Resolves the reading cycle 70 correctly refused to call either way.
+- **S117 (keyboard traversal): PASS.** Map opens on `m`, focus moves into the dialog, Escape closes it, driving still works after the round trip.
+- **Backlog dry again** -> cycle 72 goes to the Suggester.
+- **Progress flag:** no shipped change; two backlog items closed with real answers and one earlier unproven reading resolved.

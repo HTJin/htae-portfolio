@@ -673,3 +673,11 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **It does not.** Reduced motion jumps to **travel 420 in 2 frames** (3 to arrive) with **ramp 30.2 and drop -5.5, both correct for the destination**.
   - **Control run with motion allowed animates properly** - travel still 0 after 2 frames, speed 0.27, 842 frames to arrive. Without the control, "it teleported" would have been indistinguishable from a harness that did nothing.
   - **Caveat:** the `matchMedia` patch landed at `readyState: interactive`, not the `loading` cycle 29 recommends. It worked - the patched run reports true, the control false, and they behave differently - because framer-motion reads the query at mount. `loading` is still the safer target.
+
+- [ ] **S116 - Does the `n` shortcut work from a parked state?** - Status: Done (pass) - Cycle: 71
+  - Cycle 70 could not settle this and filed it as **unproven** rather than guessing: the throttle had already advanced the itinerary, so `n` had nothing to do.
+  - Retested from a controlled parked state (`parked: true, target: 0, travel: 0, throttle: 0`): `n` advances the target **0 -> 1**, engages autopilot, and arrives at travel 420 in 838 frames. **Works.**
+
+- [ ] **S117 - Keyboard-only traversal, end to end** - Status: Done (no defect) - Cycle: 71
+  - Route map is closed on arrival, **opens on `m`**, **focus moves into the dialog** (cycle 10's fix still holding after everything cycles 57-65 changed), **closes on Escape**, and the car is still drivable after the round trip.
+  - With cycle 70's finding that a full leg drives on keys alone, and cycles 33/34's focus-order and skip-link work, the keyboard journey is now covered end to end.
