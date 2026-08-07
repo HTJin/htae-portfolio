@@ -1705,3 +1705,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Planner** -> after eight documentation-only cycles, verified the product itself. Last drive-mode source commit is still `97c1012` (the slope fix); build clean, `/drive` 22.8 kB / 152 kB first load; drive-scope lint clean. **No drift.**
 - **Trend recorded:** cycles 85-92 produced documentation fixes and then nothing. Real faults in files the owner reads, but the productive backlog is empty and the cycle count should not be read as progress.
 - **Progress flag:** no shipped change; product integrity confirmed after a long stretch of doc-only work.
+
+## Cycle 95 (2026-08-07)
+
+- **Phase: Planner -> Builder -> Reviewer** on S124 (print sheet), the most substantive review finding.
+- **Fixed by inversion:** hide every direct child of the scene except the `printKeep` wrapper, rather than enumerating cockpit pieces. Verified by resolving the shipped selector against the live DOM - 11 children, 10 hidden, 1 kept, dashboard hidden, itinerary intact.
+- **Lesson recorded:** the defect sat inside the exact area cycle 67 had flagged as unverifiable. Two cycles running, the bug was in the part I had honestly labelled as unchecked.
+- **Progress flag:** yes - a real shipped-feature defect fixed. S125 and S126 remain.
