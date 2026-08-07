@@ -1664,3 +1664,8 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 
 - **Phase: Suggester** -> executed the two commands `CLAUDE.md` instructs the next person to run. Both behave as documented: the scoped prettier command stays inside drive scope, and `git diff --numstat -- src/` returns 0 content diffs.
 - **Progress flag:** no shipped change; the run's own documentation verified by running it.
+
+## Cycle 87 (2026-08-07)
+
+- **Phase: Planner** -> found the report's shipped-work table still ended at cycle 67, omitting the owner's three side-profile fixes (cycles 79-82) and their verification (81). Added four rows.
+- **Progress flag:** no shipped change; an owner-facing summary corrected from stale to accurate.

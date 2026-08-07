@@ -215,3 +215,6 @@ One line per task as it completes.
 
 - **Cycle 86 - ran the advice I had just written down.** `CLAUDE.md` now tells the next person to format with a scoped `npx prettier --write src/components/drive src/styles/drive.module.css` and to check the blast radius with `git diff --numstat -- src/`. Documentation that does not work is worse than none, so both were executed rather than assumed: the scoped command touches only drive-scope files, and the check returns **0 content diffs**. Verified, not just asserted - which is the same standard the rest of the run was held to, applied to its own output.
 
+
+- **Cycle 87 - the shipped-work table stopped at cycle 67 and had been wrong for eight cycles.** The owner's three side-profile reports were fixed in cycles 79-82 and verified in 81, but the report's summary table - the thing someone skims to see what changed - still ended before any of it. Added the four rows, including the one that says plainly that a clamp of mine held the bank vertical for the first half of every descent *with a comment claiming it was correct*. A summary that omits the most recently reported defects is worse than no summary, because it reads as completeness.
+

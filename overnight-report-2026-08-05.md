@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 86 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 87 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -35,6 +35,10 @@ instructions mid-run, and those outrank anything the loop picks for itself. Cycl
 | 65 | The highway got a flank, so the gap under the elevation is gone. Plus a thicker road, the exit 22m out, a 5.5m drop and 420m legs | `b7cfa73` |
 | 66 | _Sweep only — no defect._ All 21 exits re-checked after the road overhaul; the derived route distance followed correctly to 5.2 mi | — |
 | 67 | The page had no print styling at all and would have printed a page of dashboard with no résumé. It now prints the résumé that was already in the DOM | `1dde62c` |
+| 79 | **The exit had no ground beside it.** The verge is drawn at mainline grade, so once the ramp descends the eyeline clip removed it and nothing replaced it — the ramp was tarmac over empty gradient for the whole descent | `1e1445a` |
+| 79 | **The barrier was see-through** (drawn at 0.9 alpha over a 0.5 cap) and the highway had no edge standing against the sky. Both fixed; planting added on the bank | `f3a85d7` |
+| 79 | **The bank was a 90° wall.** A clamp of mine pinned its foot beside the top for the first half of every descent — with a comment claiming that was correct. It now lies back ~1:2.6 from the drop, and the shoulder parapet came down to a guardrail | `97c1012` |
+| 81 | Verified the planting only appears where there is a slope, using a marker colour no palette contains — 0 on the mainline, 7 mid-descent | — |
 | 68 | _Measurement only._ No heap leak over the full route (+0.62 MB across 21 stops). Cold page weight reclassified as unmeasurable from here | — |
 
 **One trade to be aware of, from your "a bit longer" request.** A leg now takes **14.1 seconds**, so driving the
