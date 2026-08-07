@@ -11,7 +11,7 @@ This file is rewritten every cycle. The full history lives in `overnight-tasks-2
 
 ## Where the run is
 
-78 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
+87 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
 against comparable sites, then built and verified them. **Cycles 57, 58, 59 and 61 were owner-directed** — you gave
 instructions mid-run, and those outrank anything the loop picks for itself. Cycle 60 came off the loop's own backlog.
 
@@ -79,7 +79,7 @@ height basis with a pixel cap that freezes them past ~971px tall. Three rules fo
 assembly.
 
 **The defect that falls out of it:** on tall-narrow windows the wheel grows past its own column and **draws over the
-brake pedal** — overlapping by 2px at 1280×1024 and by 53px at 1024×1180, and over the door card at both. It is
+brake pedal** — overlapping by 1px at 1280×1024 and by 52px at 1024×1180, and over the door card at both (re-measured in cycle 77; first taken in cycle 63 as 2px / 53px, before later dash and road changes). It is
 `pointer-events-none`, so it does not block the press; it covers it.
 
 **Why I did not just fix it.** The wheel rotates via a transform about the _box_ centre. Every one-line fix
