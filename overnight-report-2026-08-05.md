@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 55 · branch `feat/drive-mode` · 72 commits, nothing pushed
+**Last updated:** end of cycle 56 · branch `feat/drive-mode` · 73 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,39 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 56 — two of your project links are dead — this one needs you
+
+Fifty-five cycles had checked how your site *behaves* and never once checked whether the things it **links to** still
+exist. For a résumé site that is a strange gap, because a dead link is visible to precisely the person you least want
+to show it to.
+
+**The good news first.** Your résumé PDF is genuine and current — I opened it and read the text rather than trusting
+that the file downloads — and it **agrees with your site**: same current role, employer and dates. A PDF that
+contradicts the pages around it is the sort of thing that quietly costs an interview, and yours does not. Of the 21
+outbound links in your content, 18 are fine. (LinkedIn returns a "bot blocked" code to me, which is normal and not a
+broken link.)
+
+**The finding: on EXIT 11, Solar Power Indy, both buttons are dead.**
+
+- **Live site -> `gosolarindy.energy`** — this domain **no longer exists**. Not slow, not temporarily down: it does
+  not resolve at all, and the `www.` and non-secure versions fail the same way, while other sites load fine from the
+  same machine. The dead address is also *printed on screen* — it is the little browser bar shown above that
+  project's screenshots.
+- **Source -> `github.com/HTJin/solar-questions`** — returns **404**, while every one of your other repositories
+  answers normally.
+
+So a recruiter who opens that project — the first one on the route — and clicks either button gets an error page.
+
+**I have not touched it, deliberately.** The fix depends on things only you know: whether the domain lapsed, whether
+the repository was renamed or made private, or whether there is a new home for the project. Guessing a replacement URL
+or quietly deleting a project from your portfolio is not mine to do. It is written up with the evidence and is waiting
+for you.
+
+**Everything else checks out**, which is what makes this read as one project that has moved on rather than general
+decay.
 
 ---
 

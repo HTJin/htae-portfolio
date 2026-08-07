@@ -1364,3 +1364,26 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 **And it recovers properly, which is the part that would have mattered.** Holding the accelerator completed the leg in **10 seconds**, ARRIVED appeared, and the panel came back with the right stop. A visitor cannot get stranded.
 
 **Exit.** No commit to `src/`. -> `Cycle: 56 / Phase: Suggester` (backlog still dry).
+
+## Cycle 56
+
+**Suggester — do the things this site links to actually exist?** Fifty-five cycles had audited how the page behaves and never once checked whether its outbound links resolve. For a résumé site that is a strange gap: a dead project link is visible to exactly the person you least want to show it to.
+
+**First, the résumé PDF, which is the single most important link on the page.** `/resume.pdf` serves **200** — but at **3,730 bytes**, which looked like a placeholder. It is not: one page, 9 objects, base-14 Helvetica and a single Flate stream is exactly what a text-only résumé weighs. I decompressed the stream and read it. It is the real document, current, and it **agrees with the site** — *Senior MES DevOps Engineer, StarPlus Energy, Dec 2025 - Present*, matching `experience.js` role for role. A portfolio whose PDF contradicts its own pages would be a bad thing to ship; this one does not.
+
+**Then all 21 outbound URLs in the content.** Two harness faults on the way, both caught by controls:
+- the first sweep returned **000 for all 21**, which would have read as catastrophe. Python had written the URL list with Windows line endings, so every URL carried a trailing `\r`. A single `curl` to GitHub had returned **200** moments earlier — that mismatch is what exposed it.
+- `virshop-flask.onrender.com` read 000 on the first pass and **200 in 0.27s** on retry: a free-tier cold start, not a fault. It is not in the findings because I re-checked it.
+
+**Two links are genuinely dead, and both belong to the same project — Solar Power Indy, EXIT 11:**
+
+| button | href | result |
+|---|---|---|
+| **Live site** | `https://gosolarindy.energy` | **domain does not exist** |
+| **Source** | `https://github.com/HTJin/solar-questions` | **404** |
+
+**Established rather than assumed:** `nslookup` says *"Non-existent domain"*; `curl` exits **6 (could not resolve host)** with `dns=0.000000s`; the `www.` and `http://` variants fail identically; and the **control**, `vercel.com`, returns **200** from the same shell, so the network is fine. GitHub answers **404 in 0.39s** — a real reply from a live host, not a timeout — while every other `github.com/HTJin/*` repo in the content returns 200. And the dead domain is not only linked but **printed**: the screenshot frame's browser chrome shows `gosolarindy.energy` as that project's address.
+
+**Parked as Needs human, deliberately.** Both live in `src/lib/projects.js`, which the Guardrails make read-only, and the fix is a judgment only the owner can make — whether the domain lapsed, the repo went private, or there is a new address. The loop will not guess a replacement URL or quietly delete a project.
+
+**Exit.** No commit to `src/`. -> `Cycle: 57 / Phase: Suggester` (backlog still dry).

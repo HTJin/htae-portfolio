@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 56
+**Cycle:** 57
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -577,9 +577,31 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 56
+## Tonight's tasks (in order) — CYCLE 57
 
-_Not yet planned — backlog still dry, so cycle 56 opens at **Suggester**._
+_Not yet planned — backlog still dry, so cycle 57 opens at **Suggester**._
+
+<details>
+<summary>Cycle 56's list (verification + one Needs-human find — kept for context)</summary>
+
+### CYCLE 56
+
+Backlog dry. New angle, never tried in 55 cycles: **do the things drive mode links to actually exist?**
+
+- **The résumé PDF is real, current and consistent — clean.** `/resume.pdf` serves **200** (3,730 bytes — small, but
+  legitimately so: one page, 9 objects, base-14 Helvetica, a single compressed stream). Decompressed and read: it is
+  the real résumé, and it **agrees with the site** — same title, employer and dates for the current role
+  (*Senior MES DevOps Engineer, StarPlus Energy, Dec 2025 - Present*), matching `experience.js`. A portfolio whose PDF
+  contradicts its own pages would be a bad thing to ship; it does not.
+- **18 of 21 outbound links resolve.** LinkedIn's **999** is its standard anti-bot response, not a dead link.
+- **Two genuinely dead links — see Needs human.**
+
+*(One measurement caught itself: the first sweep returned **000 for all 21** URLs, because Python wrote the list with
+Windows line endings and every URL carried a trailing `\r`. A single `curl` had already returned 200 moments earlier,
+which is what exposed it. And `virshop-flask.onrender.com` first read 000 but returns **200** on retry in 0.27s — a
+cold-start blip on a free tier, not a fault. Re-checking is why it is not in the list below.)*
+
+</details>
 
 <details>
 <summary>Cycle 55's list (a verification-only cycle — nothing shipped, kept for context)</summary>
@@ -2307,6 +2329,17 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 ## Done (proven by the autonomous Reviewer)
 
+- **C56.0 — The résumé PDF is real, current, and agrees with the site** *(cycle 56 — verification)* — the
+  destination panel's *"Download résumé"* had never been checked. `/resume.pdf` serves **200**; at **3,730 bytes** it
+  looks suspiciously small, and is not — one page, 9 objects, base-14 Helvetica and a single Flate stream is exactly
+  that size. Decompressed and read: it is the real document, and its current role matches `experience.js` — *Senior
+  MES DevOps Engineer, StarPlus Energy, Dec 2025 - Present* — so the PDF and the pages do not contradict each other.
+- **C56.1 — 18 of 21 outbound links resolve** *(cycle 56 — verification)* — every URL in the content was requested.
+  LinkedIn's **999** is its standard anti-bot response rather than a dead link, and `virshop-flask.onrender.com` read
+  000 once but returns **200** in 0.27s on retry (free-tier cold start), so neither is a fault. The two that **are**
+  dead are parked in **Needs human**. *The first sweep returned 000 for all 21 URLs — Windows line endings had put a
+  trailing `\r` on every one. A single `curl` returning 200 moments earlier is what exposed the harness.*
+
 - **C55.0 — No unhandled failure paths under abuse** *(cycle 55 — verification)* — cycle 54's lesson turned into a
   hunt. `router.replace` carries no `.catch()` and Next rejects on a cancelled route change, so it was hammered with
   **14 rapid alternating Back/Next clicks** while listening for `error` and `unhandledrejection` and with
@@ -3057,6 +3090,31 @@ biggest lever available: making the drive pass **time**, not just distance.
 *(empty)*
 
 ## Needs human (parked — requires a person; the loop will NOT guess these)
+
+- [ ] **⭐ Two dead links on the Solar Power Indy project (EXIT 11)** *(found cycle 56)* — Needs human because both
+  live in `src/lib/projects.js`, which the Guardrails make **read-only**, and because only the owner knows whether the
+  domain lapsed, the repo went private, or there is a new address.
+
+  **Both are rendered as buttons a visitor will click**, confirmed in the running panel at `/drive?exit=11`:
+  | button | href | result |
+  |---|---|---|
+  | **Live site** | `https://gosolarindy.energy` | **domain does not exist** |
+  | **Source** | `https://github.com/HTJin/solar-questions` | **404** |
+
+  **Evidence, and the controls that make it trustworthy:**
+  - `nslookup gosolarindy.energy` -> *"Non-existent domain"* (NXDOMAIN). `curl` exits **6 — could not resolve host**
+    with `dns=0.000000s`. The **`www.`** and plain **`http://`** variants fail the same way.
+  - **Control:** `vercel.com` returns **200** from the same shell, so DNS and the network are working.
+  - GitHub returns **404** in 0.39s — a real answer from a live host, not a timeout — while every other
+    `github.com/HTJin/*` repo in the content returns **200**.
+  - The dead domain is also **printed on screen**: the screenshot frame's browser chrome shows
+    `gosolarindy.energy` as the project's address (`ProjectShots.jsx` `hostOf(site)`).
+
+  **Why it matters:** EXIT 11 is a project stop, and its two calls to action both fail — a recruiter clicking *Live
+  site* gets a browser error page, and *Source* gets GitHub's 404. Everything else on the route checks out, which is
+  what makes this one stand out rather than look like general rot.
+
+  **What the loop will not do:** guess a replacement URL, delete the project, or edit your content. That is yours.
 
 > **All three re-verified at cycle 35 against the current files and the served HTML** — they were first measured
 > around cycles 4 and 10, and the working tree has changed since, so they were re-checked rather than trusted:

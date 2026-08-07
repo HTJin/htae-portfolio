@@ -499,4 +499,15 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Outcome:** **Clean.** Fourteen rapid alternating Back/Next clicks produced no errors of any kind and left the route in a sensible state. Interfering with the car mid-drive - opening the map, hitting Escape, jumping backwards and forwards, tapping the accelerator - also produced nothing.
   - **One thing that looked like a bug and was not:** after all that, the arrival panel was missing. It turned out the car had simply coasted to a stop **between** two exits, which is what happens when you stop accelerating; the panel is for arrivals, and the dashboard correctly showed the distance still to go rather than "arrived". Holding the accelerator finished the journey in ten seconds and the panel came back. Nobody can get stranded.
 
+- [ ] **S93 - Is the resume PDF real, current, and consistent with the site?** - Status: Done (no defect) - Cycle: 56
+  - **Source:** the destination panel's "Download resume" button had never been checked in 55 cycles.
+  - **Why / expected impact:** it is arguably the most important link on the whole site, and at 3,730 bytes it looked small enough to be a placeholder.
+  - **Outcome:** **It is genuine.** That size is normal for a one-page, text-only PDF using standard fonts. I decompressed it and read the text: it is your real resume, and it matches the site - same current role, employer and dates as your experience file. Your PDF and your pages do not contradict each other, which is the failure mode that would actually cost you something.
+
+- [ ] **S94 - Two dead links on the Solar Power Indy project** - Status: **Needs human** - Cycle: 56
+  - **Source:** the first check in this run of whether the site's outbound links actually resolve. 18 of 21 are fine.
+  - **Why / expected impact:** on **EXIT 11 (Solar Power Indy)**, *both* buttons are dead. **Live site** points at `gosolarindy.energy`, and that domain **no longer exists** - not slow, not down: it does not resolve at all, and the `www.` and `http://` versions fail the same way, while other sites resolve fine from here. **Source** points at `github.com/HTJin/solar-questions`, which returns **404**, while every one of your other repositories returns fine. The dead address is also *printed on screen* as the little browser bar above that project's screenshots.
+  - **Why this is yours and not mine:** the fix depends on things only you know - whether the domain lapsed, whether the repo was renamed or made private, or whether there is a new home for it - and both values live in a file this run treats as read-only. I will not guess a replacement URL or quietly delete a project from your portfolio.
+  - **Worth knowing:** everything else checks out, so this reads as one project that moved on rather than general rot.
+
 *(Check the box once you've reviewed the outcome.)*
