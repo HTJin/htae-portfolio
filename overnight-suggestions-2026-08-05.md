@@ -699,3 +699,10 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Sitemap - unchanged:** one `<loc>`, no `/drive`.
   - **Duplicate canonical - unchanged:** `/drive` ships two canonical tags, `https://htae.dev` **first** and `https://htae.dev/drive` second, so crawlers still read `/drive` as the homepage. `og:url` still doubled.
   - **Dead links - still dead, with one honest correction:** `gosolarindy.energy` still does not resolve. The repo link returned a **connection abort** this run rather than cycle 56's clean **404** - still unreachable, and the control `github.com/HTJin` returns **200** so the network and GitHub are fine, but the ledger now records what actually came back rather than repeating the older figure.
+
+- [ ] **S121 - Three toolchain warnings, all outside this run's write scope** - Status: Needs human (parked) - Cycle: 74
+  - Captured from real `npm run lint` / `npm run build` output during this session, not from reading config:
+    1. **`SideNav.jsx:38:6` - `useCallback` has a missing dependency, `sections`.** The only one of the three with genuine bug potential: a stale closure over `sections` would make the callback act on outdated data. Worth a look even if it turns out to be intentional.
+    2. **`next.config.mjs` enables the experimental `scrollRestoration` flag.** Experimental features are outside semver, so a Next upgrade can change or drop it silently.
+    3. **`tailwind.config.js` safelists `/^apexcharts-.*$/`, which matches no classes.** Dead config for a charting library the site does not appear to use; harmless but it makes every build print a warning, which trains people to ignore build warnings.
+  - **All three are in files the Guardrails block puts off-limits** (`next.config.mjs`, `tailwind.config.js`, and `src/components/**` outside `drive/`), so they are recorded rather than fixed. All are small.

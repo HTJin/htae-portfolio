@@ -1537,3 +1537,9 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **All four still valid.** Classic-site photo patch exact to the line; sitemap still one `<loc>`; `/drive` still ships two canonicals with the homepage first; `gosolarindy.energy` still does not resolve.
 - **One correction to the record:** the Solar Power Indy repo returned a connection abort this time rather than cycle 56's clean 404. Still unreachable, control returns 200, but the difference is recorded rather than smoothed over.
 - **Progress flag:** no shipped change; the owner's parked work confirmed safe to apply.
+
+## Cycle 74 (2026-08-07)
+
+- **Phase: Suggester** -> filed S121: three toolchain warnings the build and lint have been emitting all run, all in files outside this run's write scope, so all parked for the owner.
+- **Phase -> Planner.**
+- **Progress flag:** no shipped change; three standing warnings surfaced and attributed.
