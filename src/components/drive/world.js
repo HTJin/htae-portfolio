@@ -28,7 +28,10 @@
  * with a dashed line at `x = 0` — which is the marking for a road you may
  * legally overtake into oncoming traffic on, not a highway.
  */
-export const CARRIAGEWAY = 5.5 // metres, median edge line to outer edge line
+/** A running lane. Two of them per carriageway — it is a highway. */
+export const LANE_WIDTH = 3.7
+export const LANES = 2
+export const CARRIAGEWAY = LANE_WIDTH * LANES // median edge line to outer edge
 export const MEDIAN_WIDTH = 4.2 // metres of median between the two carriageways
 export const OPPOSING_EDGE = MEDIAN_WIDTH + CARRIAGEWAY // far side's outer edge
 export const CAM_HEIGHT = 1.35 // driver eye height above the tarmac
@@ -48,7 +51,17 @@ export const CAM_HEIGHT = 1.35 // driver eye height above the tarmac
  * is always at the middle of the image — which is why the cockpit is laid out
  * around the middle of the viewport, not around some offset seat position.
  */
-export const LANE_OFFSET = 2.7
+export const LANE_OFFSET = CARRIAGEWAY - LANE_WIDTH / 2
+
+/**
+ * How far the car may drift inside its lane before the lane edge stops it.
+ *
+ * Derived from the lane rather than typed, because the whole point of the
+ * owner's cycle-13 instruction is that steering re-centres you in **your
+ * lane**. Typed independently, a later change to `LANE_WIDTH` would quietly
+ * let the car wander into the next lane, or into the median.
+ */
+export const LANE_DRIFT = LANE_WIDTH / 2 - 0.35
 
 /**
  * The car's lateral position: its lane, the ramp it is on, plus steering drift.
@@ -94,7 +107,12 @@ export function project(camera, sim, z, x = 0, y = 0) {
   const s = sim.travel + z
   const scale = camera.focal / z
   const lateral = curveAt(s) - curveAt(sim.travel) + x - cameraX(sim)
-  const vertical = CAM_HEIGHT + hillAt(sim.travel) - hillAt(s) - y
+  // `sim.drop` is how far the ramp has carried the car *below* the mainline
+  // grade at its own position — the exit falls away downhill and the entrance
+  // climbs back. It belongs on the eye, not on the point: anything standing on
+  // the ramp is lowered by passing its own `rampDropAt(s)` in through `y`.
+  const vertical =
+    CAM_HEIGHT + hillAt(sim.travel) + (sim.drop ?? 0) - hillAt(s) - y
 
   return {
     x: camera.width / 2 + lateral * scale,

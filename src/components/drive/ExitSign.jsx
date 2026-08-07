@@ -5,6 +5,7 @@ import {
   METERS_PER_MILE,
   RAMP_OFFSET,
   RAMP_WIDTH,
+  rampDropAt,
   routeLength,
 } from './route'
 import { LANE_OFFSET, makeCamera, project } from './world'
@@ -73,7 +74,16 @@ export function ExitSign({ drive, stop }) {
 
       // Same projection the canvas uses, so the sign always stands exactly
       // where the roadside furniture around it does.
-      const { x, y, scale } = project(camera, sim, z, OFFSET_X, MOUNT_HEIGHT)
+      // The sign stands on the ramp's verge, so it stands at the ramp's
+      // *grade* too — anchored at the stop, which is the bottom of the exit.
+      // Without the drop it would float at the height the highway used to be.
+      const { x, y, scale } = project(
+        camera,
+        sim,
+        z,
+        OFFSET_X,
+        MOUNT_HEIGHT + rampDropAt(stop.s)
+      )
       const size = (SIGN_METERS * scale) / DESIGN_WIDTH
 
       wrapper.style.visibility = 'visible'

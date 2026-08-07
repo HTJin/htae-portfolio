@@ -1,8 +1,16 @@
 import { education, experience, meta, projects, skills } from '@/content'
-import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
+import { CAM_HEIGHT, CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
 
-/** Metres of tarmac between consecutive stops. */
-export const LEG_LENGTH = 220
+/**
+ * Metres of tarmac between consecutive stops.
+ *
+ * Raised from 220 in cycle 58 to buy room for a much longer ramp: the exit has
+ * to be long enough to read as a real interchange rather than a kink, and the
+ * two ramps either side of a stop still have to leave a stretch of open
+ * mainline between them. At 340 with ramps at 0.4 of a leg, that stretch is
+ * 68m — half the leg is ramp, and you still get back on the highway.
+ */
+export const LEG_LENGTH = 340
 export const METERS_PER_MILE = 1609.34
 
 /**
@@ -22,10 +30,41 @@ export const METERS_PER_MILE = 1609.34
  * gets computed from it.)
  */
 export const RAMP_LENGTH = LEG_LENGTH * 0.4
-/** How far right of the mainline lane the ramp has carried you at the stop. */
-export const RAMP_OFFSET = CARRIAGEWAY + 2.7
+/**
+ * How far right of the mainline lane the ramp has carried you at the stop.
+ *
+ * Was `CARRIAGEWAY + 2.7`, which cleared the highway by a couple of metres —
+ * enough to be a separate ribbon of tarmac, not enough to feel like you had
+ * left. At `CARRIAGEWAY + 14` the stop sits about two carriageway widths clear
+ * of the running lanes, with the gore opening into real verge between them.
+ */
+export const RAMP_OFFSET = CARRIAGEWAY + 14
 /** The ramp is a single lane, centred on the car. */
 export const RAMP_WIDTH = 4.4
+
+/**
+ * How far the ramp falls below the mainline grade at the stop.
+ *
+ * An off-ramp that only moves sideways reads as a lane change. Real ones fall
+ * away down an embankment and climb back to merge, so the exit goes downhill
+ * and the entrance comes back up.
+ *
+ * **The ceiling here is not a taste decision — it is a hard limit of this
+ * renderer, and it is why this is `CAM_HEIGHT * 0.85` rather than a round
+ * number.** The road is painted as flat ribbons with no depth buffer and no
+ * embankment faces. A point's screen height comes from
+ * `CAM_HEIGHT + drop − hillAt(s)`; once `drop` exceeds `CAM_HEIGHT` that goes
+ * negative for *every* `s`, so the entire mainline lifts above the horizon and
+ * paints as a wedge across the sky, converging on the vanishing point from
+ * above. Measured at 6.5m: the highway hung over the windscreen and the sky
+ * disappeared behind it. Keeping the drop under eye height keeps the mainline
+ * where a road belongs.
+ *
+ * Going deeper than this needs real geometry — an embankment face between the
+ * two grades and something to occlude the mainline behind it. That is a
+ * genuine feature, not a constant to nudge; see the backlog.
+ */
+export const RAMP_DROP = CAM_HEIGHT * 0.85
 
 /**
  * The offset at which the ramp is clear of the mainline entirely — its inner
@@ -48,10 +87,25 @@ function smoothstep(t) {
  * approach it (guardrail 17).
  */
 export function rampAt(s) {
+  return RAMP_OFFSET * rampProgress(s)
+}
+
+/**
+ * How far the ramp has fallen below the mainline grade at `s`. Negative, since
+ * the exit runs downhill. Shares `rampProgress` with the lateral offset, so the
+ * ramp cannot start turning before it starts descending, or level out while
+ * still curving — the two are the same ramp.
+ */
+export function rampDropAt(s) {
+  return -RAMP_DROP * rampProgress(s)
+}
+
+/** 0 on the open mainline, 1 at a stop; smoothstepped, so both ends are flush. */
+function rampProgress(s) {
   const index = clamp(Math.round(s / LEG_LENGTH), 0, ROUTE_LAST)
   const distance = Math.abs(s - index * LEG_LENGTH)
   if (distance >= RAMP_LENGTH) return 0
-  return RAMP_OFFSET * smoothstep(1 - distance / RAMP_LENGTH)
+  return smoothstep(1 - distance / RAMP_LENGTH)
 }
 
 const byDateAscending = (a, b) => new Date(a.date) - new Date(b.date)

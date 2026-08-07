@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { rampAt } from './route'
-import { clamp, curveAt } from './world'
+import { rampAt, rampDropAt } from './route'
+import { LANE_DRIFT, clamp, curveAt } from './world'
 
 const MAX_SPEED = 42 // m/s, about 94 mph
 const ACCELERATION = 8
@@ -34,6 +34,9 @@ function createSim() {
     // `step()` runs (the ignition splash), so a 0 here would draw one frame of
     // the car sitting on the mainline before it snapped onto the ramp.
     ramp: rampAt(0),
+    // Same reasoning for the ramp's vertical: MILE 0 sits at the bottom of the
+    // entrance ramp, below the mainline grade.
+    drop: rampDropAt(0),
     steer: 0,
     steerInput: 0,
     wheel: 0,
@@ -123,10 +126,13 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       if (Math.abs(sim.steerInput) < 0.01) {
         sim.x += (0 - sim.x) * Math.min(1, dt * 1.2)
       }
+      // Bounded by the lane, not by a typed number: the carriageway now has
+      // two lanes, and a drift limit left at the old 2.3 would let the car
+      // wander across the lane line the moment the lane got narrower.
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
-        -2.3,
-        2.3
+        -LANE_DRIFT,
+        LANE_DRIFT
       )
 
       const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
@@ -205,6 +211,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       // a frame behind the car sitting on it. The parked early-return skips it,
       // which is correct: `travel` did not move, so neither did the ramp.
       sim.ramp = rampAt(sim.travel)
+      sim.drop = rampDropAt(sim.travel)
     },
     [arriveAt, depart]
   )
@@ -241,6 +248,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       // Teleporting (Back, the route map, reduced motion) moves `travel`
       // without going through `step`, so the ramp has to follow here too.
       sim.ramp = rampAt(sim.travel)
+      sim.drop = rampDropAt(sim.travel)
       sim.speed = 0
       sim.parked = true
       sim.autopilot = false

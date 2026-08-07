@@ -6,6 +6,7 @@ import {
   RAMP_SEPARATES,
   RAMP_WIDTH,
   rampAt,
+  rampDropAt,
   roadsideAt,
   routeLength,
 } from './route'
@@ -13,6 +14,8 @@ import {
   CAM_HEIGHT,
   CARRIAGEWAY,
   LANE_OFFSET,
+  LANE_WIDTH,
+  LANES,
   MEDIAN_WIDTH,
   OPPOSING_EDGE,
   Z_FAR,
@@ -25,6 +28,7 @@ import {
 } from './world'
 
 const SEGMENTS = 130
+const DASH_PERIOD = 14 // metres of "on" then "off" for a broken lane line
 const DELINEATOR_SPACING = 24
 const LAMP_SPACING = 72
 
@@ -56,7 +60,8 @@ export function RoadCanvas({ drive, className }) {
     function buildPoints(sim) {
       const { width, focal, horizon } = camera
       const baseCurve = curveAt(sim.travel)
-      const baseHill = hillAt(sim.travel)
+      // The eye's own elevation includes how far the ramp has taken it down.
+      const baseHill = hillAt(sim.travel) + (sim.drop ?? 0)
 
       for (let i = 0; i <= SEGMENTS; i += 1) {
         // Log spacing in depth gives roughly even spacing on screen.
@@ -73,6 +78,11 @@ export function RoadCanvas({ drive, className }) {
         // here rather than per ribbon: five ribbons follow the ramp, and this
         // turns 5xN calls a frame into N. Allocates nothing (guardrail 14).
         point.ramp = rampAt(s)
+        // Two surfaces exist at this depth now: the mainline at `point.y`, and
+        // the ramp, which has fallen `rampDropAt(s)` below it. A ribbon that
+        // follows the ramp has to follow it *down* as well as across, or the
+        // exit slides sideways while staying glued to the highway's grade.
+        point.yRamp = point.y - rampDropAt(s) * scale
       }
     }
 
@@ -90,14 +100,18 @@ export function RoadCanvas({ drive, className }) {
       for (let i = first; i <= last; i += 1) {
         const point = points[i]
         const slide = follow ? point.ramp : 0
+        const y = follow ? point.yRamp : point.y
         const x = point.cx + (from + slide) * point.scale
-        if (i === first) ctx.moveTo(x, point.y)
-        else ctx.lineTo(x, point.y)
+        if (i === first) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
       }
       for (let i = last; i >= first; i -= 1) {
         const point = points[i]
         const slide = follow ? point.ramp : 0
-        ctx.lineTo(point.cx + (to + slide) * point.scale, point.y)
+        ctx.lineTo(
+          point.cx + (to + slide) * point.scale,
+          follow ? point.yRamp : point.y
+        )
       }
       ctx.closePath()
       ctx.fill()
@@ -152,16 +166,18 @@ export function RoadCanvas({ drive, className }) {
       ctx.beginPath()
       for (let i = first; i <= last; i += 1) {
         const point = points[i]
+        const base = follow ? point.yRamp : point.y
         const x = point.cx + (lateral + (follow ? point.ramp : 0)) * point.scale
-        const y = point.y - high * point.scale
+        const y = base - high * point.scale
         if (i === first) ctx.moveTo(x, y)
         else ctx.lineTo(x, y)
       }
       for (let i = last; i >= first; i -= 1) {
         const point = points[i]
+        const base = follow ? point.yRamp : point.y
         ctx.lineTo(
           point.cx + (lateral + (follow ? point.ramp : 0)) * point.scale,
-          point.y - low * point.scale
+          base - low * point.scale
         )
       }
       ctx.closePath()
@@ -205,6 +221,17 @@ export function RoadCanvas({ drive, className }) {
       const edge = (s, side) =>
         side > 0 ? CARRIAGEWAY + rampAt(s) : -OPPOSING_EDGE
 
+      /**
+       * Ground level for something standing on a given side, as a `y` offset.
+       *
+       * Right-hand furniture rides the ramp, so it also has to ride it
+       * *downhill* — otherwise the lamps and posts along the exit stay pegged
+       * at the highway's grade while the road sinks away beneath them, and the
+       * ramp appears to burrow underground. Left-hand furniture is on the far
+       * carriageway, which never leaves the mainline grade.
+       */
+      const ground = (s, side) => (side > 0 ? rampDropAt(s) : 0)
+
       // Far to near so nearer objects paint over distant ones.
       const firstLamp = Math.ceil((sim.travel + Z_NEAR) / LAMP_SPACING)
       const lastLamp = Math.floor((sim.travel + 320) / LAMP_SPACING)
@@ -216,9 +243,10 @@ export function RoadCanvas({ drive, className }) {
         // Keep alternating sides even where the line has been thinned.
         const side = Math.floor(n / every) % 2 === 0 ? 1 : -1
         const base = edge(s, side)
-        const foot = place(s, base + side * 2.6, 0)
-        const head = place(s, base + side * 2.6, 8.6)
-        const arm = place(s, base - side * 0.4, 8.2)
+        const g = ground(s, side)
+        const foot = place(s, base + side * 2.6, g)
+        const head = place(s, base + side * 2.6, g + 8.6)
+        const arm = place(s, base - side * 0.4, g + 8.2)
         const thickness = Math.max(1, 0.22 * foot.scale)
 
         ctx.strokeStyle = 'rgba(148, 170, 196, 0.5)'
@@ -260,8 +288,9 @@ export function RoadCanvas({ drive, className }) {
         // Set further out than the delineator line and standing taller, so a
         // marker never reads as just another reflector post.
         const marker = CARRIAGEWAY + rampAt(s) + 2.5
-        const foot = place(s, marker, 0)
-        const plate = place(s, marker, 1.9)
+        const g = rampDropAt(s)
+        const foot = place(s, marker, g)
+        const plate = place(s, marker, g + 1.9)
         if (foot.y > height * 1.4 || plate.y < horizon - 4) continue
 
         ctx.strokeStyle = 'rgba(170, 188, 208, 0.45)'
@@ -287,8 +316,9 @@ export function RoadCanvas({ drive, className }) {
         const s = n * DELINEATOR_SPACING
         for (const side of [-1, 1]) {
           const post = edge(s, side) + side * 1.1
-          const foot = place(s, post, 0)
-          const top = place(s, post, 1.05)
+          const g = ground(s, side)
+          const foot = place(s, post, g)
+          const top = place(s, post, g + 1.05)
           if (foot.y > height * 1.4 || top.y < horizon - 4) continue
           ctx.strokeStyle = 'rgba(190, 205, 222, 0.4)'
           ctx.lineWidth = Math.max(0.8, 0.12 * foot.scale)
@@ -394,6 +424,22 @@ export function RoadCanvas({ drive, className }) {
       // The opposing carriageway, mirrored.
       band(-MEDIAN_WIDTH - 0.55, -MEDIAN_WIDTH - 0.25, medianLine)
       band(-OPPOSING_EDGE + 0.25, -OPPOSING_EDGE + 0.55, paint)
+
+      // Lane lines. Broken white, one between each pair of lanes on each
+      // carriageway — this is what makes it read as a highway rather than a
+      // single-lane road with a barrier beside it. Derived from LANES, so
+      // adding a third lane draws its line without another edit here.
+      const laneLine = withAlpha(colors.paint, 0.7)
+      for (let lane = 1; lane < LANES; lane += 1) {
+        const at = lane * LANE_WIDTH
+        stripes(at - 0.15, at + 0.15, DASH_PERIOD, laneLine)
+        stripes(
+          -MEDIAN_WIDTH - at - 0.15,
+          -MEDIAN_WIDTH - at + 0.15,
+          DASH_PERIOD,
+          laneLine
+        )
+      }
 
       // The ramp's own edge lines, painted only where it has actually left the
       // carriageway. While it is still a deceleration lane these would be two
