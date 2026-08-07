@@ -245,6 +245,26 @@ export function StopCard({ stop, visible, position, total }) {
    */
   const roomy = !shots && stop.kind !== 'destination'
 
+  /**
+   * Is this stop a continuous piece of writing, rather than a list?
+   *
+   * Columns suit bullets, tags and the toolbox grid: each item is short and
+   * self-contained, so the eye starts fresh every time and a narrow measure is
+   * pure gain. They suit *prose* far less. A paragraph split across three short
+   * columns makes the reader track to the bottom and back to the top for every
+   * few lines, and the taller the passage the worse it gets.
+   *
+   * The sabbatical is the case that exposed it — the longest entry on the
+   * résumé, all `drawer` paragraphs and no bullets, and the owner: "the passage
+   * describing my time unemployed is not friendly to read with like 3 column
+   * layout." It is also the most personal thing on the page, which is the worst
+   * possible thing to make someone fight to read.
+   */
+  const proseOnly =
+    (stop.paragraphs?.length ?? 0) > 0 &&
+    (stop.bullets?.length ?? 0) === 0 &&
+    (stop.groups?.length ?? 0) === 0
+
   return (
     <AnimatePresence mode="wait">
       {visible ? (
@@ -369,9 +389,21 @@ export function StopCard({ stop, visible, position, total }) {
               // columns move together on purpose: widening alone would stretch
               // the measure to ~590px per column, which is worse than the
               // problem being fixed.
-              <div className="lg:columns-2 lg:gap-x-8 xl:columns-3 [&_li]:break-inside-avoid">
-                <StopProse stop={stop} />
-              </div>
+              // Continuous prose does not go in columns — see `proseOnly`. It
+              // gets one column with the measure bounded in `ch`, so the line
+              // length is set by the type rather than by however wide the panel
+              // happens to be. The panel still scrolls, which is the right
+              // trade: a few lines below the fold costs a scroll, while three
+              // columns cost you the thread of what you are reading.
+              proseOnly ? (
+                <div className="mx-auto max-w-[70ch]">
+                  <StopProse stop={stop} />
+                </div>
+              ) : (
+                <div className="lg:columns-2 lg:gap-x-8 xl:columns-3 [&_li]:break-inside-avoid">
+                  <StopProse stop={stop} />
+                </div>
+              )
             ) : (
               <StopProse stop={stop} />
             )}
