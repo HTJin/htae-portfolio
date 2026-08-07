@@ -856,3 +856,16 @@ _(Check the box once you've reviewed the outcome.)_
   - **Valid method:** temporarily repaint the flowers pure magenta / cyan - colours absent from every daylight palette - so a hit can only be a flower.
   - **Result: 0 marker pixels on the open mainline (drop 0), 7 mid-descent (drop -2.61).** The gate holds; nothing is planted where there is no slope. The control differs, so the zero is meaningful rather than an inert harness.
   - Markers reverted, build clean, `git diff --numstat -- src/` empty. **No code change was needed** - the code was already right, only the evidence was missing.
+
+- [ ] **S124 - The print sheet does not actually hide the cockpit** - Status: Proposed (review finding, medium) - Cycle: 94
+  - The `@media print` block hides `.printable canvas` and `.printable [aria-hidden='true']`. `Sky` and `CarInterior` are aria-hidden and `RoadCanvas` is a canvas - but **`Dashboard`'s root carries `id="drive-controls"` and no `aria-hidden`**, and neither do the StopCard overlay wrapper, the exit link, or the ignition splash. Forcing `.printable` to `position: static` removes their containing block, so in paged media they land on page 1 over the now-unclipped itinerary.
+  - Printing before pressing Start engine would give a full-bleed ignition panel; printing mid-drive gives a dashboard band across the first page.
+  - **This is a feature I shipped in cycle 67 and called verified.** What I verified was that the rules existed, targeted the right selectors and did not change the screen - never that the printed page was right, which I stated at the time as a limitation. The limitation turned out to be hiding a real defect.
+  - Fix: hide everything under `.printable` and re-show only `.sr-only`, rather than enumerating things to hide.
+
+- [ ] **S125 - `afterprint` hardcodes `overflow: hidden` instead of restoring** - Status: Proposed (review finding, low) - Cycle: 94
+  - The mount effect deliberately saves `previousOverflow` before setting `hidden`; the print handler I added writes the literal `'hidden'` back. Equivalent today, divergent the moment anything else touches `body.style.overflow`. A browser firing `beforeprint` without `afterprint` leaves the page permanently scrollable.
+
+- [ ] **S126 - Dashboard comments describe an implementation that no longer exists** - Status: Proposed (review finding, low) - Cycle: 94
+  - The block explaining that the pedals are "positioned out of the flow, pinned to the bottom left" and the long note about why `absolute` must live on a separate node from `.footwell` both describe the *abandoned* approach - the shipped markup has no `absolute` anywhere and the `relative` positions nothing. Two adjacent comments also state opposite facts about whether the footwell is in flow.
+  - In a codebase where comments carry the reasoning, this is how a later edit preserves the wrong invariant. It is the same fault as the `footOf` comment that defended a vertical wall.

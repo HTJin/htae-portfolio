@@ -1,4 +1,4 @@
-import { education, experience, meta, projects, skills } from '@/content'
+﻿import { education, experience, meta, projects, skills } from '@/content'
 import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
 
 /**
@@ -7,8 +7,8 @@ import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
  * Raised from 220 in cycle 58 to buy room for a much longer ramp: the exit has
  * to be long enough to read as a real interchange rather than a kink, and the
  * two ramps either side of a stop still have to leave a stretch of open
- * mainline between them. At 340 with ramps at 0.4 of a leg, that stretch is
- * 68m — half the leg is ramp, and you still get back on the highway.
+ * mainline between them. At 420 with ramps at 0.4 of a leg, that stretch is
+ * 84m — 80% of the leg is ramp, and you still get back on the highway.
  */
 export const LEG_LENGTH = 420
 export const METERS_PER_MILE = 1609.34
@@ -35,7 +35,7 @@ export const RAMP_LENGTH = LEG_LENGTH * 0.4
  *
  * Was `CARRIAGEWAY + 2.7`, which cleared the highway by a couple of metres —
  * enough to be a separate ribbon of tarmac, not enough to feel like you had
- * left. At `CARRIAGEWAY + 14` the stop sits about two carriageway widths clear
+ * left. At `CARRIAGEWAY + 22` the stop sits well clear
  * of the running lanes, with the gore opening into real verge between them.
  */
 export const RAMP_OFFSET = CARRIAGEWAY + 22
