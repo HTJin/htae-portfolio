@@ -530,7 +530,28 @@ function ConsoleButton({ children, onClick, disabled, title, label, accent }) {
 function Pedal({ label, hint, name, onPress, onRelease, tone, disabled }) {
   const handlers = {
     onPointerDown: (event) => {
-      event.currentTarget.setPointerCapture?.(event.pointerId)
+      // `disabled` is not self-enforcing here. Chrome **does** dispatch
+      // pointer events to a disabled <button> — verified with a real click
+      // against an enabled control beside it, not assumed — so at the
+      // destination, where GO is disabled, pressing it still ran this handler
+      // and set the throttle. The car could not move (cycle 45 sees to that),
+      // but a greyed-out control was quietly mutating the sim, which is the
+      // kind of thing that is harmless right up until it is not.
+      if (disabled) return
+
+      // Capture is what keeps the press alive when a finger slides off the pad
+      // mid-corner. It is also allowed to throw: `setPointerCapture` raises
+      // NotFoundError if the pointer is no longer active, and the `?.` here
+      // only ever guarded a *missing method*, never a throw. Measured with a
+      // synthetic pointer, whose id is not active: it threw, and `onPress()`
+      // below never ran — the pedal did nothing at all. The press is the
+      // point; the capture is a nicety, so it must not be able to eat it.
+      try {
+        event.currentTarget.setPointerCapture?.(event.pointerId)
+      } catch (error) {
+        // No capture: a finger that slides off will release early. Still a
+        // working pedal, which is the outcome that matters.
+      }
       onPress()
     },
     onPointerUp: onRelease,
