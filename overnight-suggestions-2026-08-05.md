@@ -656,3 +656,14 @@ this before each Suggester pass so it never re-proposes an idea already here.
     - the **route map is a cockpit control and is named on the splash**: three clicks reaches any of the 21 stops instantly.
   - The only slow route is the intended one: 2 clicks and **14.1s** to EXIT 01. That is the owner's deliberate design, and S112 was scoped as a measurement, not a redesign proposal. **No change recommended.**
   - **Caveat found while measuring:** a `width > 8 && height > 8` "visible control" filter counts the sr-only itinerary's links, because `clip: rect(0,0,0,0)` on the ancestor does not zero descendants' rects. Did not affect this result or cycle 64's, but future probes should test the clipped ancestor.
+
+- [ ] **S115 - Re-verify the reduced-motion contract against the rewritten road** - Status: Proposed - Cycle: 70
+  - Last verified in **cycle 46**. Since then cycles 57-65 rewrote nearly everything underneath it: the exit ramps, the elevation drop, the embankment, the two-lane carriageway, and - most relevant - `goTo` now sets `sim.ramp` and `sim.drop`. **Reduced motion teleports through `goTo`**, so it sits directly downstream of the code that changed most.
+  - Verify with the cycle-29 probe (patch `matchMedia` after `src` is set but while `readyState` is still `loading`), and always against a control run with motion allowed - without one, "no animation" is indistinguishable from a harness that did nothing.
+  - Check specifically that a reduced-motion teleport lands with `ramp` and `drop` correct for the destination stop, not left at the values from where it started.
+
+- [ ] **S116 - Does the `n` shortcut work from a parked state?** - Status: Proposed - Cycle: 70
+  - Cycle 70's keyboard audit could not settle this: the target had already advanced from the earlier accelerator press, so `n` had nothing to do and the result was inconclusive. **Recorded as unproven rather than as a pass or a failure.** Retest from a genuinely parked state.
+
+- [ ] **S117 - Keyboard-only traversal, end to end** - Status: Proposed - Cycle: 70
+  - Cycle 70 proved a leg can be *driven* on keys alone, and cycles 33/34 fixed focus order and the skip link. What has never been done in one pass: start the engine, drive, open and close the route map, reach the arrival panel's links, and continue - all without a pointer. That is the actual journey a keyboard user takes.

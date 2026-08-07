@@ -1499,3 +1499,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Recorded a standing measurement caveat:** a `width > 8 && height > 8` filter counts the sr-only itinerary's links, because `clip` on the ancestor does not zero descendants' rects. Affects any future "count the visible controls" probe.
 - **Backlog now dry again** -> cycle 70 goes to the Suggester.
 - **Progress flag:** no shipped change; last backlog item closed with a measured answer.
+
+## Cycle 70 (2026-08-07)
+
+- **Phase: Suggester** -> backlog dry, so a fresh audit. Checked one thing never checked in this run: **keyboard-only driving**. It works - throttle, brake, alternate keys, and a full leg completed on keys alone. No defect.
+- **Two odd readings correctly diagnosed as harness artifacts** rather than filed as bugs (the `n` key, and a stale React `index`). That discipline is now the recurring theme of this run.
+- **Three ideas filed:** S115 (re-verify reduced motion against the rewritten road - the strongest, since it is downstream of `goTo`, which changed), S116 (`n` key from a genuinely parked state), S117 (keyboard-only traversal end to end, including the route map and panel links).
+- **Phase -> Planner** with a refilled backlog.
+- **Progress flag:** no shipped change; one clean audit and three scoped ideas.
