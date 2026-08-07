@@ -29,7 +29,7 @@
  * legally overtake into oncoming traffic on, not a highway.
  */
 /** A running lane. Two of them per carriageway — it is a highway. */
-export const LANE_WIDTH = 3.7
+export const LANE_WIDTH = 4.1
 export const LANES = 2
 export const CARRIAGEWAY = LANE_WIDTH * LANES // median edge line to outer edge
 export const MEDIAN_WIDTH = 4.2 // metres of median between the two carriageways

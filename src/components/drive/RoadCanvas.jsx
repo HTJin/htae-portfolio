@@ -82,7 +82,8 @@ export function RoadCanvas({ drive, className }) {
         // the ramp, which has fallen `rampDropAt(s)` below it. A ribbon that
         // follows the ramp has to follow it *down* as well as across, or the
         // exit slides sideways while staying glued to the highway's grade.
-        point.yRamp = point.y - rampDropAt(s) * scale
+        point.drop = rampDropAt(s)
+        point.yRamp = point.y - point.drop * scale
       }
     }
 
@@ -199,9 +200,27 @@ export function RoadCanvas({ drive, className }) {
      */
     function embankment(fill) {
       const TOP = CARRIAGEWAY + 2.4
+
+      // Where the ground has come back up to the ramp's grade. Clamped so it
+      // can never end up *inboard* of the top: when the ramp has already
+      // dropped but has not yet moved aside, this collapses to a near-vertical
+      // face — which is exactly right, because that face is the highway's own
+      // flank. The mainline is an infinitely thin ribbon otherwise, and a road
+      // with no side floats.
       const footOf = (point) =>
-        LANE_OFFSET + point.ramp - RAMP_WIDTH / 2 - 1.2
-      const spans = (point) => footOf(point) > TOP + 0.5
+        Math.max(
+          TOP + 0.25,
+          LANE_OFFSET + point.ramp - RAMP_WIDTH / 2 - 1.2
+        )
+
+      // Gated on **elevation difference**, not on lateral separation. Gating it
+      // on separation was the bug: the ramp starts falling long before it moves
+      // meaningfully sideways, so along the whole first half of the taper there
+      // was a real height difference with nothing drawn to fill it — an empty
+      // gap under the highway, and a road that appeared to snap back to grade 0
+      // on the way back up. The face now exists wherever the two grades differ,
+      // and shrinks to nothing exactly as they converge.
+      const spans = (point) => point.drop < -0.02
 
       let runStart = -1
       for (let i = 0; i <= SEGMENTS; i += 1) {

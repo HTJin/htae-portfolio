@@ -10,7 +10,7 @@ import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
  * mainline between them. At 340 with ramps at 0.4 of a leg, that stretch is
  * 68m — half the leg is ramp, and you still get back on the highway.
  */
-export const LEG_LENGTH = 340
+export const LEG_LENGTH = 420
 export const METERS_PER_MILE = 1609.34
 
 /**
@@ -38,7 +38,7 @@ export const RAMP_LENGTH = LEG_LENGTH * 0.4
  * left. At `CARRIAGEWAY + 14` the stop sits about two carriageway widths clear
  * of the running lanes, with the gore opening into real verge between them.
  */
-export const RAMP_OFFSET = CARRIAGEWAY + 14
+export const RAMP_OFFSET = CARRIAGEWAY + 22
 /** The ramp is a single lane, centred on the car. */
 export const RAMP_WIDTH = 4.4
 
@@ -60,7 +60,7 @@ export const RAMP_WIDTH = 4.4
  * while leaving standing objects alone, and fills the gap with an embankment
  * face between the two grades. So the drop is free to be a real one.
  */
-export const RAMP_DROP = 3
+export const RAMP_DROP = 5.5
 
 /**
  * The offset at which the ramp is clear of the mainline entirely — its inner
