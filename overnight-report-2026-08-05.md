@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 88 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 89 (2026-08-07). **See `overnight-ACTION-REQUIRED.md` for everything waiting on you.**
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -78,9 +78,12 @@ thread, so I am stopping and asking rather than starting a third.
 height basis with a pixel cap that freezes them past ~971px tall. Three rules for what a real car builds as one
 assembly.
 
-**The defect that falls out of it:** on tall-narrow windows the wheel grows past its own column and **draws over the
-brake pedal** — overlapping by 1px at 1280×1024 and by 52px at 1024×1180, and over the door card at both (re-measured in cycle 77; first taken in cycle 63 as 2px / 53px, before later dash and road changes). It is
-`pointer-events-none`, so it does not block the press; it covers it.
+**The defect that falls out of it:** on tall-narrow windows the wheel grows past its own column and draws over the
+brake pedal and the door card. **The measured overlaps live in `overnight-ACTION-REQUIRED.md` §1 and are not
+repeated here** — this section restating them is what produced the cycle-87 contradiction, where the two files
+quoted different numbers because only one was corrected.
+
+It is `pointer-events-none`, so it does not block the press; it covers it.
 
 **Why I did not just fix it.** The wheel rotates via a transform about the _box_ centre. Every one-line fix
 (`max-w-full` and friends) leaves the wrapper non-square, at which point the wheel's content no longer shares that

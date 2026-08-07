@@ -1675,3 +1675,9 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Suggester** -> asked whether cycle 87's contradiction was isolated. It was not: the leg time, the 4.7-minute route figure and the 52px overlap are all duplicated across the report and the action page.
 - **Structural fix, not another sync:** the report's leg-length paragraph now points at `overnight-ACTION-REQUIRED.md` §5 rather than restating its numbers, with the reason recorded inline.
 - **Progress flag:** no shipped change; the mechanism behind a documentation contradiction removed rather than its symptom patched.
+
+## Cycle 89 (2026-08-07)
+
+- **Phase: Planner** -> completed the de-duplication cycle 88 started: the report's S107 section no longer restates the collision figures and points at the action page instead.
+- **Caught my own near-miss:** an HTML comment wrapping the old paragraph would have been left unclosed, swallowing the next section. Removed the paragraph outright and verified by grep that no action-page figures remain in the report.
+- **Progress flag:** no shipped change; the single-source rule now actually holds across both documents.
