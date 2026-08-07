@@ -1627,3 +1627,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Suggester** -> tested the new vegetation in motion, per cycle 79's sampling rule. **Measurement invalid and discarded:** the flower-colour detector matches sunset sky, returning 4,837 "flowers" on the open mainline against 1,092 mid-descent. The gate is neither confirmed nor refuted.
 - **Filed S123** with a method that would actually work.
 - **Progress flag:** no shipped change, no valid finding. A bad probe caught before it became a bug report.
+
+## Cycle 81 (2026-08-07)
+
+- **Phase: Planner -> Reviewer** on S123. **Gate verified correct:** 0 marker pixels on the open mainline, 7 mid-descent, using temporary magenta/cyan flowers that no palette contains.
+- **Experiment fully reverted** - colours restored, build clean, `git diff --numstat -- src/` empty, nothing stray committed. Scoped `npx prettier --write` used per the CLAUDE.md note added in cycle 79.
+- **Method lesson recorded:** the fix for a detector that keeps lying is to measure a property the background cannot have.
+- **Progress flag:** yes - one open question closed with a valid measurement, no code change needed.

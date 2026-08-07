@@ -850,3 +850,9 @@ _(Check the box once you've reviewed the outcome.)_
   - The tufts are gated on `drop > -0.35 -> skip`, so nothing should be planted on the open mainline. **Unverified.**
   - **Cycle 80's attempt does not count:** counting pixels near the flower colours matched the **sunset sky** - amber `(244,208,122)` +/-22 is the dusk gradient - giving 4,837 "flowers" at drop 0 versus 1,092 mid-descent. The impossible direction (more planting where there is no slope) is what exposed it.
   - **A method that would work:** temporarily raise the flower colours to something absent from every daylight palette (pure magenta), rebuild, count, then revert. Or count only within a narrow band tracking the slope face rather than the whole canvas. Either needs a control run that must come out different.
+
+- [ ] **S123 - Verify the vegetation only appears where there is a slope** - Status: Done (gate correct) - Cycle: 81
+  - Cycle 80's attempt was discarded: counting near the real flower colours matched **sunset sky**.
+  - **Valid method:** temporarily repaint the flowers pure magenta / cyan - colours absent from every daylight palette - so a hit can only be a flower.
+  - **Result: 0 marker pixels on the open mainline (drop 0), 7 mid-descent (drop -2.61).** The gate holds; nothing is planted where there is no slope. The control differs, so the zero is meaningful rather than an inert harness.
+  - Markers reverted, build clean, `git diff --numstat -- src/` empty. **No code change was needed** - the code was already right, only the evidence was missing.
