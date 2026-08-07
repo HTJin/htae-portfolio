@@ -1346,3 +1346,21 @@ else engineRef.current?.unpause()
 **The lesson worth keeping.** Cycle 53 tested suspend-on-hide and resume-on-show and they both passed — because the happy path passes whether or not the return value is honoured. The bug lived entirely in the failure path, and only appeared when I went looking for it deliberately. That is now guardrail 183.
 
 **Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.5 kB). One commit: `e5fce6a`. -> `Cycle: 55 / Phase: Planner`.
+
+## Cycle 55
+
+**Suggester — cycle 54's lesson as a lens.** Guardrail 183 says test the failure path, because the happy path passes either way. So this pass went looking for **other** places where a failure is unhandled or a returned answer is thrown away, which is exactly the shape of the bug I shipped and then caught last cycle.
+
+**The candidate that looked most likely.** `router.replace` (`DriveScene.jsx:357`) is called without a `.catch()`, and Next's router rejects the promise when a route change is cancelled — which is precisely what rapid navigation causes. So I fired **14 rapid alternating Back/Next clicks** at it with `window.error` and `unhandledrejection` listeners attached and `console.error` patched to record.
+
+**Zero** window errors, **zero** unhandled rejections, **zero** console errors, and the itinerary stayed coherent (ended where it started, URL matching the title). Not a problem in practice.
+
+**Then chaos during motion**, which is harder than chaos while parked: autopilot started, and then interfered with mid-leg — route map opened, Escape, Back, Next, throttle tapped and released. Again no crash and no errors.
+
+**One reading looked like a real find and was not.** After the chaos the arrival panel was **gone** — zero matches in the DOM — while the title and URL both said EXIT 11. That looks like a desync between the simulation and React.
+
+It is not. Reading the actual state rather than trusting the first alarming number: the trip computer said **"0.1 MI"**, not ARRIVED, and the gear read **1**, not P. The car had simply **coasted to a halt between exits** — which is what happens when you stop accelerating, and is correct behaviour. The panel is for arrivals; there had been no arrival. **My check was wrong, not the page**: it compared against a panel that legitimately is not shown mid-leg.
+
+**And it recovers properly, which is the part that would have mattered.** Holding the accelerator completed the leg in **10 seconds**, ARRIVED appeared, and the panel came back with the right stop. A visitor cannot get stranded.
+
+**Exit.** No commit to `src/`. -> `Cycle: 56 / Phase: Suggester` (backlog still dry).

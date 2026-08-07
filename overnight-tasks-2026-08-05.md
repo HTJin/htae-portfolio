@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
-**Cycle:** 55
+**Phase:** Suggester
+**Cycle:** 56
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -577,9 +577,30 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 55
+## Tonight's tasks (in order) — CYCLE 56
 
-_Not yet planned — the Planner writes this list next._
+_Not yet planned — backlog still dry, so cycle 56 opens at **Suggester**._
+
+<details>
+<summary>Cycle 55's list (a verification-only cycle — nothing shipped, kept for context)</summary>
+
+### CYCLE 55
+
+Backlog dry. Cycle 54's lesson (**test the failure path**) became this pass's lens: hunt for other places where a
+failure is unhandled or a returned answer is ignored. **Three checks, nothing to ship.**
+
+- **Unhandled promise paths.** `router.replace` (`DriveScene.jsx:357`) has no `.catch()`, and Next's router rejects on
+  a cancelled route change — so 14 rapid alternating Back/Next clicks were fired at it with `error` and
+  `unhandledrejection` listeners and a patched `console.error` in place: **zero** window errors, **zero** unhandled
+  rejections, **zero** console errors, and the state stayed coherent.
+- **Chaos during motion.** Autopilot started, then interfered with mid-leg: map opened, Escape, Back, Next, throttle
+  tapped. No crash, no error, and no stuck state.
+- **Recovery.** The car ends such a sequence **stopped between exits** with no arrival panel — which is correct, not a
+  fault: the panel is for arrivals, and the trip computer reads the remaining distance rather than ARRIVED. Holding
+  the accelerator completed the leg in **10s** and the panel returned. *(My first check called this a desync because
+  it compared against a panel that legitimately is not shown mid-leg — the check was wrong, not the page.)*
+
+</details>
 
 <details>
 <summary>Cycle 54's list (resolved — kept for context)</summary>
@@ -2285,6 +2306,15 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C55.0 — No unhandled failure paths under abuse** *(cycle 55 — verification)* — cycle 54's lesson turned into a
+  hunt. `router.replace` carries no `.catch()` and Next rejects on a cancelled route change, so it was hammered with
+  **14 rapid alternating Back/Next clicks** while listening for `error` and `unhandledrejection` and with
+  `console.error` patched: **zero** of each, and the itinerary stayed coherent. Chaos **during** motion — map opened
+  mid-drive, Escape, Back, Next, throttle tapped — produced no crash and no error. The car ends stopped **between**
+  exits with no panel, which is **correct** (the panel is for arrivals; the trip computer reads the distance
+  remaining, not ARRIVED), and holding the accelerator finished the leg in **10s** with the panel returning. The first
+  reading called this a desync — that check was wrong, not the page.
 
 - **C54.1 — The sound toggle no longer lies after a refused resume** *(cycle 54, commit `e5fce6a`)* — **my own
   regression from `78d7f0f`, one cycle old.** `unpause()` answers whether the context actually came back and the

@@ -493,4 +493,10 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Outcome:** **Fixed** in `e5fce6a`, one cycle after I introduced it. I proved the bug first by forcing the browser to refuse - the button did indeed keep claiming sound was on - then fixed it and checked all four situations: a refused resume now switches the button off honestly, clicking it afterwards still brings sound back, a successful resume leaves it on, and with sound never turned on nothing happens at all.
   - **Worth noting about the process:** last cycle's testing was not sloppy, but it only exercised the case where everything works, and this bug lived entirely in the case where something fails. I have written that into my own rules: test the failure path, because the happy path passes either way.
 
+- [ ] **S92 - Can rough handling break the drive?** - Status: Done (no defect) - Cycle: 55
+  - **Source:** last cycle's bug lived in a failure path that ordinary testing never touches, so this pass hunted for others.
+  - **Why / expected impact:** the page updates the address bar as you drive, and that kind of update can fail when navigation is interrupted - which is exactly what happens if someone clicks Back and Next repeatedly. Left unhandled, that produces errors in the console.
+  - **Outcome:** **Clean.** Fourteen rapid alternating Back/Next clicks produced no errors of any kind and left the route in a sensible state. Interfering with the car mid-drive - opening the map, hitting Escape, jumping backwards and forwards, tapping the accelerator - also produced nothing.
+  - **One thing that looked like a bug and was not:** after all that, the arrival panel was missing. It turned out the car had simply coasted to a stop **between** two exits, which is what happens when you stop accelerating; the panel is for arrivals, and the dashboard correctly showed the distance still to go rather than "arrived". Holding the accelerator finished the journey in ten seconds and the panel came back. Nobody can get stranded.
+
 *(Check the box once you've reviewed the outcome.)*

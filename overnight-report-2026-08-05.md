@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 54 · branch `feat/drive-mode` · 71 commits, nothing pushed
+**Last updated:** end of cycle 55 · branch `feat/drive-mode` · 72 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,31 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 55 — trying to break the drive on purpose
+
+Last cycle's bug lived in a path that only appears when something goes wrong, so this cycle I went looking for others
+of the same shape, and tried to break the drive deliberately.
+
+**Rapid clicking.** The page updates the address bar as you drive, so each stop can be copied and shared. That kind of
+update can fail when navigation is interrupted — which is exactly what happens if someone impatiently clicks Back
+and Next over and over. I fired fourteen rapid alternating clicks at it while watching for errors: **none**, and the
+route stayed in a sensible state.
+
+**Interfering mid-drive.** I set the car driving and then got in its way — opened the map, hit Escape, jumped
+backwards an exit, forwards again, tapped the accelerator. No errors, no crash.
+
+**The moment it looked broken.** After all that, the arrival panel had vanished, while the tab title still named the
+exit. That looks like the page losing track of itself.
+
+It was not. The car had simply **coasted to a stop between two exits** — which is what a car does when you stop
+pressing the accelerator — and the panel only appears when you actually arrive somewhere. The dashboard was correctly
+showing the distance still to go rather than "arrived". Holding the accelerator finished the leg in ten seconds and
+the panel came back with the right stop. **My test was wrong, not your site.**
+
+**Nothing shipped this cycle**, which is the right outcome when the thing you were trying to break refuses to break.
 
 ---
 
