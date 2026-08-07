@@ -301,7 +301,7 @@ export function StopCard({ stop, visible, position, total }) {
             shots
               ? 'lg:w-[min(94vw,58rem)] [@media(min-width:1536px)_and_(min-height:1120px)]:w-[min(94vw,76rem)]'
               : ''
-          } ${roomy ? 'lg:w-[min(94vw,58rem)] xl:w-[min(94vw,76rem)]' : ''} ${
+          } ${roomy ? 'lg:w-[min(94vw,52rem)] xl:w-[min(94vw,60rem)]' : ''} ${
             styles.hud
           }`}
         >
@@ -400,7 +400,15 @@ export function StopCard({ stop, visible, position, total }) {
                   <StopProse stop={stop} />
                 </div>
               ) : (
-                <div className="lg:columns-2 lg:gap-x-8 xl:columns-3 [&_li]:break-inside-avoid">
+                // Two columns, never three. Cycle 49 added a third at xl and
+                // measured it as a win on both axes — nothing hidden, and a
+                // narrower measure. It was measuring the wrong thing: a 1216px
+                // panel three columns wide is a broadsheet, and the owner reads
+                // it as "too wide and hard to read". The card is narrower now
+                // (60rem at xl, was 76rem) and stops at two columns, which puts
+                // the measure around 55-60 characters instead of ~56 spread
+                // across a metre of screen.
+                <div className="lg:columns-2 lg:gap-x-8 [&_li]:break-inside-avoid">
                   <StopProse stop={stop} />
                 </div>
               )

@@ -1011,7 +1011,7 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               single-class, so source order hands it to `.footwell`, and the
               pedals land silently at the top of the dash instead of the
               bottom. Measured once the hard way; kept split ever since. */}
-          <div className="absolute bottom-2 left-0 z-10 flex">
+          <div className="flex shrink-0 items-end pb-2">
             <div className={`flex items-end gap-2 ${styles.footwell}`}>
               <div className="h-[clamp(52px,8vh,74px)] w-[62px]">
                 <Pedal
@@ -1048,22 +1048,38 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               door. The cap keeps the console at roughly the width it had when
               it sat beside a centred wheel, so it stays within reach of the
               driver and the dash beyond it reads as passenger side. */}
-          <div className="flex h-full min-w-0 max-w-[720px] flex-[1.15] flex-col justify-center gap-2 py-1">
+          {/* The centre stack, sized like one.
+
+              Capped at 24rem because the screen inside it is now a real
+              display shape rather than a letterbox, and the stack should not
+              be wider than the thing it houses. The footwell above it is back
+              in the normal flow: it can be, now that this column cannot
+              stretch to the passenger door — which is what made an in-flow
+              footwell push the console across the cabin last time. */}
+          <div className="flex h-full min-w-0 max-w-[24rem] flex-1 flex-col justify-center gap-2 py-1">
             <div className="flex justify-between gap-3">
               <Vent className="flex w-[26%]" />
               <Vent className="flex w-[26%]" />
             </div>
-            <div className="h-[clamp(84px,13vh,116px)]">
+            {/* A real centre display, not a letterbox.
+
+                This was `h-[clamp(84px,13vh,116px)]` filling whatever width
+                the column had, which measured **720 x 116 — an aspect ratio of
+                6.2:1**. Nothing in a car looks like that. Production centre
+                displays run about 10-12.3 inches on a **16:9** panel (~1.78:1);
+                even the pillar-to-pillar outliers like the Hyperscreen are
+                several screens side by side, not one strip. So the box is
+                `aspect-video` and takes its width from its height, which is
+                what makes it read as a fitted screen instead of a status bar.
+                The owner: the proportions "just really makes it look very
+                unrealistic ... such as the elongated hud". */}
+            <div className="mx-auto aspect-video h-[clamp(110px,17vh,190px)] max-w-full">
               <TripComputer drive={drive} stop={stop} />
             </div>
-            {/* Below xl the console column is narrow enough that a centred
-                button row runs under the pedals — measured at 1100x800, the
-                GO pedal overlapping "Back". The pedals are out of the flow, so
-                nothing reserves that space automatically; this row reserves it
-                for itself, and only where it is actually needed. At xl and up
-                there is no collision (checked at 1280) and the padding comes
-                straight back off, so the console keeps its position. */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5 pl-[148px] xl:pl-0">
+            {/* The padding that used to reserve space here is gone with the
+                absolute footwell that made it necessary — the pedals are in
+                the flow again, so they take their own room. */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5">
               <ConsoleButton
                 onClick={drive.goBack}
                 disabled={drive.index === 0}
