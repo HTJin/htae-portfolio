@@ -638,3 +638,13 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Two constraints found by the compiler, not assumed:** CSS Modules rejects any top-level selector with no local class (`:global(html)` and the `:global { html, body }` block form are both build errors), and the body overflow is inline so a stylesheet could not have won anyway.
   - **Evidence:** one print block with four selectors in the shipped CSS; `.sr-only` un-hashed via `:global`, `.printable` hashed and matched against the scene root; `beforeprint` -> overflow `visible`, `afterprint` -> `hidden`; screen layout identical across seven controls. Commit `1dde62c`.
   - **Not claimed:** the printed output was not observed - print media is not emulatable through this bridge and `window.print()` opens a blocking modal. Worth a human hitting Ctrl+P once.
+
+- [ ] **S114 - Heap growth over a long drive** - Status: Done (no leak) - Cycle: 68
+  - **Redone properly** after cycle 67's attempt was invalid. This run started the engine and used `travel > 0` as a **validity gate before reading any heap figure**.
+  - **Result:** 20 legs, `finalTravel` 8400 (= 20 x 420, the whole route), 16,780 frames pumped. Settled heap **90.05 -> 90.67 MB: +0.62 MB total, 0.031 MB per leg.** No leak.
+  - **Worth knowing:** the mid-drive samples climb 95 -> 100.5 -> 106.8 -> 113.8 MB and read exactly like a leak. They are allocation churn - the settled figure returns to baseline. Anyone re-running this must let it settle before concluding anything.
+  - Together with cycle 33 (subscriber set does not leak) the long-session question is now closed.
+
+- [ ] **S113 - Cold page weight** - Status: **Not measurable in this environment** - Cycle: 68
+  - Cache-busting the document URL is not enough: the JS and CSS chunks are content-hashed and already cached, so 11 of 13 resources report `transferSize: 0`, and the browser cache cannot be cleared through this bridge. The 22.6 KB measured is the **document alone**.
+  - Joins the list of things this environment cannot see: frame rate (cycle 52), forced-colors rendering (cycle 64), the printed page (cycle 67). All need a human with DevTools, where "Disable cache" plus a reload answers it in seconds. The last real figure was 208 KB in cycle 42.

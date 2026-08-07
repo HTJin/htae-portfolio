@@ -1484,3 +1484,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Two build errors were the teacher.** `:global(html)` and `:global { html, body }` are both rejected by CSS Modules; that is how the constraint was found, not by reading docs and hoping. The body overflow is released in JS on `beforeprint` instead, next to where it is set.
 - **Verified what is verifiable and said what is not:** rules, their targets, the beforeprint/afterprint round trip and screen-neutrality are all measured. The printed page is not - no print emulation through this bridge, and `window.print()` would open a blocking modal in an unattended loop.
 - **Progress flag:** yes - one measured gap closed.
+
+## Cycle 68 (2026-08-07)
+
+- **Phase: Planner -> Reviewer** on S113 and S114, both re-dos of measurements botched in cycle 67.
+- **S114 (heap over a long drive): DONE, no leak.** Full route driven - 20 legs, travel 8400, 16,780 frames - settled heap +0.62 MB total, 0.031 MB a leg. The validity gate (`travel > 0` before trusting anything) is what made this run trustworthy where the last was not.
+- **S113 (cold page weight): PARKED - not measurable through this bridge.** Content-hashed chunks stay cached and report `transferSize: 0`; the browser cache cannot be cleared from here. Joins frame rate (cycle 52), forced colors (cycle 64) and the printed page (cycle 67) on the list of things this environment genuinely cannot see.
+- **Progress flag:** yes - one backlog item closed with a real answer, one honestly reclassified as unmeasurable.
