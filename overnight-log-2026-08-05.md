@@ -1429,3 +1429,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Both items measured before and after**, at five widths: aspect 6.21 -> 1.77-1.78, exit panel 76rem/3 columns -> 60rem/2 columns with a ~57 character measure, zero pedal/console/screen collisions, console on one row, no horizontal scroll.
 - **A correction to an earlier cycle's reasoning, not just its output.** Cycle 49's third column was backed by real measurements that showed a win on both axes. The numbers were right and the conclusion was wrong, because "nothing hidden, narrow measure" does not capture "this is a metre-wide broadsheet". Recorded so the next pass does not re-derive the third column from the same numbers.
 - **Progress flag:** yes - two owner-directed changes shipped.
+
+## Cycle 62 (2026-08-06)
+
+- **Phase: Planner** -> continued the owner's proportion work from cycle 61 ("certain parts", plural): audited the instrument cluster and steering wheel against how cars are actually built.
+- **Phase: Reviewer** -> **nothing shipped, on purpose.** Two suspected defects were disproved by measuring properly, and the one real finding needs a cycle of its own rather than the tail of an audit.
+- **A wrong first reading, caught and corrected.** "Cluster is 40px left of the wheel axis" came from measuring two of the row's three children. With the gear block included, children and row both centre on 602. Reported as a non-defect rather than as a fix.
+- **Progress flag:** no shipped change. One suspected defect disproved, one non-defect documented, one well-evidenced backlog item opened (S107).

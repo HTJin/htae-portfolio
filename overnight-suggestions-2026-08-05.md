@@ -577,3 +577,13 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - **Shipped:** card 76rem -> 60rem, columns capped at two.
   - **Evidence:** `columnCount` 2 at every width, measure 433px (~57 characters). Commit `664def6`.
   - **Note:** this reverses part of cycle 49, whose measurements were correct but whose conclusion was not - a narrow measure inside a very wide panel is still a hard read.
+
+- [ ] **S107 - The instrument cluster and the steering wheel are sized by unrelated rules** - Status: Proposed (measured) - Cycle: 62
+  - **Source:** the owner's cycle-61 note that "the proportions of certain parts of the ui just really makes it look very unrealistic" - plural. Cycle 61 fixed the HUD; this is the other half.
+  - **Measured:** gauges are sized in `vh`, the wheel comes from a `vw`-based column, so the ratio between them drifts with the window: 0.813 at 2560x800, 0.602 at 1600x1200, 0.673 at 1920x1080, 0.712 at 1280x1024, 0.774 at 1440x900, 0.831 at 1100x760. **Spread 0.229** - 38% variation in a relationship that is fixed hardware in a real car.
+  - **Not fixed on sight, deliberately:** guardrail 52 forbids quietly redesigning the cockpit, and the fix lands in the dash height budget tuned by cycles 12, 25 and 44 for short and landscape-phone viewports. Needs its own cycle with guardrails 43/44/51 loaded.
+  - **Suggested shape:** size the gauges from the wheel's column width, keep today's `vh` value as a ceiling so short viewports are provably unchanged, and prove the phone cockpit byte-identical.
+
+- [ ] **S108 - Two cockpit non-defects, recorded so nobody "fixes" them** - Status: Done (no defect) - Cycle: 62
+  - The instrument cluster **is** centred on the wheel axis: offset 0 at 1920x1080 and 1440x900. A first reading said 40px left; that was measuring two of the row's three children and ignoring the gear block.
+  - The gauges overflow their flex row by ~9px each side, and it is invisible - the element that paints the binnacle housing is a wider parent, so nothing clips.

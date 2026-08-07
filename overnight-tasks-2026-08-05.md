@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 62
+**Cycle:** 63
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -2340,6 +2340,42 @@ biggest lever available: making the drive pass **time**, not just distance.
 
 </details>
 
+### CYCLE 62
+
+**Audit — the rest of the cockpit's proportions. Nothing shipped, deliberately.** Cycle 61 fixed the "elongated
+hud"; the owner said *"certain parts"*, plural, so this checked the instrument cluster and the wheel against how
+cars are actually built. Two things I expected to be defects were not, and the one real finding is not mine to
+ship without a proper cycle.
+
+- **NOT a defect — the cluster is off-centre from the wheel.** It is not: `binnacleOffsetFromWheelAxis` is **0** at
+  both 1920x1080 and 1440x900. My first read said 40px left, and that was me measuring the two round dials while
+  ignoring the third child of the row (the P R N D gear block). With all three counted, the children centre on
+  **602** and the row centres on **602**.
+- **NOT a defect — the gauges overflow their row** (children span 477.5–726.5 against a row of 486.7–717.3, ~9px
+  each side). The housing that actually paints the binnacle is a wider parent, so nothing clips and nothing is
+  visible. Recorded so a later pass does not "fix" it.
+- **REAL, measured, and not shipped: the cluster and the wheel are sized by unrelated rules.** The gauges are
+  `clamp(..., 7vh/9.5vh, ...)` — viewport **height** — while the wheel comes from a `clamp(260px, 24vw, 400px)`
+  column — viewport **width**. So the ratio between them drifts with the window:
+
+  | viewport | wheel | cluster | ratio |
+  |---|---|---|---|
+  | 2560x800 | 269 | 219 | **0.813** |
+  | 1600x1200 | 414 | 249 | **0.602** |
+  | 1920x1080 | 370 | 249 | 0.673 |
+  | 1280x1024 | 350 | 249 | 0.712 |
+  | 1440x900 | 306 | 237 | 0.774 |
+  | 1100x760 | 255 | 212 | **0.831** |
+
+  **Spread 0.229** — the cluster is 38% larger relative to the wheel at one window size than another. In a real car
+  these are one piece of hardware. This is the cycle-32 class of fault: a quantity that must agree with something it
+  cannot see.
+- **Why it was not fixed here.** Guardrail 52 forbids quietly redesigning the cockpit, and the obvious fix — sizing
+  the gauges from the wheel's column instead of from `vh` — lands directly in the dash **height budget** that cycles
+  12, 25 and 44 tuned for short and landscape-phone viewports. Deriving one from the other while `aspect-square` is
+  in play also fights any height cap. That deserves its own cycle with those guardrails loaded, not the tail end of
+  an audit. Filed as **S107** with these numbers.
+
 ### CYCLE 61
 
 **Owner-directed.** *"do a web search on how a car interior looks like — the proportions of certain parts of the ui
@@ -3539,6 +3575,13 @@ technique generalises.)*
   `ctx.fill()` whole. **Genuinely large**, and worth doing only if a deeper descent is wanted for its own sake; 3m
   already reads as a hill. Do not simply raise `RAMP_DROP` — that has now been tried twice and rejected twice, with
   the pictures to prove it.
+- **S107 — The instrument cluster and the steering wheel are sized by unrelated rules** *(new, cycle 62)* — measured:
+  the ratio between them ranges **0.602 to 0.831** across viewports (spread 0.229), because the gauges are sized in
+  `vh` and the wheel comes from a `vw`-based column. In a real car they are one piece of hardware. **The fix lands in
+  the dash height budget** that cycles 12, 25 and 44 tuned for short and landscape-phone viewports, and
+  `aspect-square` fights any height cap you would add, so this needs its own cycle with guardrails 43/44/51 loaded —
+  not a quick resize. A safe shape is probably: size from the wheel's column width, keep the existing `vh` value as a
+  **ceiling** so short viewports are provably unchanged, and prove the phone cockpit byte-identical.
 - **S95 — Nothing in drive mode answers `forced-colors: active`** *(new, cycle 57)* — `grep -rn "forced-colors\|-ms-high-contrast" src/` returns **nothing**. Drive mode is a canvas scene plus colour-carrying chrome, and forced-colors replaces the author palette wholesale; WebAIM's 2018 low-vision survey put high-contrast-mode use at ~30% of respondents. The canvas is `aria-hidden` and the text content is exposed elsewhere, so this may well be fine — **the task is to measure it, not to fix it**. Emulatable via DevTools' *Emulate CSS media feature* rendering flag.
 - **S96 — The pedals are pointer-driven but touch has never actually been exercised** *(new, cycle 57)* — `Pedal` (`Dashboard.jsx:528-549`) binds `onPointerDown/Up/Cancel/Leave` and carries `touch-none select-none`, which is the right shape, but every cycle that touched the pedals verified them with a **mouse**. Untested on touch: whether `setPointerCapture` + `pointerleave` interact badly when a finger slides off the pedal, and whether a long press raises the touch callout. Needs a real touch-event harness, not a synthetic click.
 

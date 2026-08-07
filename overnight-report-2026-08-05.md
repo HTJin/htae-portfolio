@@ -1,6 +1,6 @@
 ﻿# Overnight report — rolling summary
 
-**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 61 (2026-08-06).
+**Run:** started 2026-08-05, still running. **Last refreshed:** end of cycle 62 (2026-08-06).
 **Branch:** `feat/drive-mode`. Nothing has been pushed, merged or deployed — the guardrails forbid all three.
 
 This file is rewritten every cycle. The full history lives in `overnight-tasks-2026-08-05.md` (source of truth),
@@ -11,7 +11,7 @@ This file is rewritten every cycle. The full history lives in `overnight-tasks-2
 
 ## Where the run is
 
-61 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
+62 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
 against comparable sites, then built and verified them. **Cycles 57, 58, 59 and 61 were owner-directed** — you gave
 instructions mid-run, and those outrank anything the loop picks for itself. Cycle 60 came off the loop's own backlog.
 
@@ -28,6 +28,8 @@ instructions mid-run, and those outrank anything the loop picks for itself. Cycl
 | 59 | The exit ramp's descent is no longer capped by the renderer — flat surfaces clip at the eyeline, an embankment fills the gap, and the hill went 1.15m → 3m | `8264530` |
 | 60 | The pedals, driven with touch for the first time: a disabled pedal no longer moves the sim, and pointer capture can no longer swallow a press | `ae31e76` |
 | 61 | The centre display was a 6.2:1 letterbox; it is now 16:9 like a real one. The exit panel narrowed from 76rem/3 columns to 60rem/2 | `664def6` |
+
+| 62 | *Audit only — nothing shipped.* The rest of the cockpit's proportions checked; two suspected defects disproved, one real one measured and filed rather than rushed | — |
 
 **One reported problem was not a defect.** The "gap spilling out the road on the right side of the UI" was a 1440px
 measurement iframe I had overlaid on the live 1920px page — the page showing through beside my own harness. Removed
@@ -54,6 +56,20 @@ per-polygon near-plane clipping — not a number to nudge. Going deeper is filed
 job; 3m already reads as a hill. **`RAMP_DROP` has now been raised too far twice and reverted twice**, so the
 constant carries that history.
 
+## One proportion I measured but did not change
+
+You said "certain parts", plural, so cycle 62 audited the rest of the cockpit. Two things I expected to be defects
+were not: **the instrument cluster is exactly centred on the wheel axis** (my first reading said 40px off, and that
+was me measuring two of the row's three children), and the gauges overflowing their inner row by ~9px is invisible
+because the housing that paints the binnacle is a wider parent.
+
+The real finding: **the cluster and the wheel are sized by unrelated rules** — the gauges in viewport *height*, the
+wheel from a viewport-*width* column — so the ratio between them ranges **0.602 to 0.831** depending on your window,
+a 38% swing in something that is one piece of hardware in a real car. **I did not fix it on sight.** The obvious fix
+lands squarely in the dash height budget that three earlier cycles tuned for short and landscape-phone viewports,
+and rushing it is exactly the "quiet cockpit redesign" the run's own guardrails forbid. It is filed as **S107** with
+the measurements and a safe shape for the fix — say the word and it gets a proper cycle.
+
 ## Parked — needs you
 
 - ⭐ **Two dead links on Solar Power Indy (EXIT 11).** `gosolarindy.energy` is NXDOMAIN and
@@ -70,7 +86,7 @@ constant carries that history.
 
 ## Backlog the loop can still work on
 
-S95 (nothing answers `forced-colors: active` — measure before fixing; **not reached yet**, and nothing is claimed
+S107 (cluster/wheel sizing, above), S95 (nothing answers `forced-colors: active` — measure before fixing; **not reached yet**, and nothing is claimed
 about it), S104 (per-polygon near-plane clipping, only if you want the ramp to drop further than 3m), S15/S17
 (structured data for `/drive`, blocked behind the canonical fix above).
 
