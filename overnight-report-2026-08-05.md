@@ -3,7 +3,7 @@
 Rolling summary, rewritten at the end of every cycle. **The loop is still running** — it does not stop on its own.
 Stop it by telling me to end the run (that cancels the recurring relief task).
 
-**Last updated:** end of cycle 53 · branch `feat/drive-mode` · 69 commits, nothing pushed
+**Last updated:** end of cycle 54 · branch `feat/drive-mode` · 71 commits, nothing pushed
 
 ---
 
@@ -27,6 +27,29 @@ that file is outside the scope you set, and you have uncommitted edits in that a
 
 **Also waiting:** `/drive` ships **two canonical tags** (the first pointing at your homepage) and **isn't in your
 sitemap**. These compound, so fixing one alone won't surface the page. Patches are in the same section.
+
+---
+
+## Cycle 54 — I broke something last cycle, found it this cycle, and fixed it
+
+Last cycle I made the engine sound stop when you leave the tab and start again when you come back. Coming back can be
+**refused** by the browser — that is normal and expected — and my code ignored the refusal. So in that case the sound
+was gone while the button still said it was on.
+
+Your audio code was written specifically to never do that. Turning sound on only reports success if sound genuinely
+started, on the principle that a control which lies about its own state is worse than one that admits it could not
+start. I broke that rule on the way back in, and it lasted exactly one cycle.
+
+**Fixed.** I proved the bug first — by forcing the browser to refuse, and watching the button carry on claiming sound
+was on — then fixed it and checked all four situations: a refusal now switches the button off honestly, clicking it
+afterwards still brings the sound back, a successful return leaves it on, and with sound never turned on nothing
+happens at all.
+
+**Why it survived a cycle, which is the part worth telling you.** Last cycle's testing was not careless: it checked
+that leaving the tab stopped the sound and returning restarted it, and both were true. But that test passes whether or
+not the code handles a refusal, because in the ordinary case nothing refuses. The bug lived entirely in the failure
+path. I have added a standing rule for myself: test the case where something goes wrong, because the case where
+everything works will pass either way.
 
 ---
 

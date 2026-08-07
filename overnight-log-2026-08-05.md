@@ -1313,3 +1313,36 @@ The empty page is the ceiling. Drive mode runs **at or above** it, so the whole 
 - the toggle still reports truthfully in both directions
 
 **Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.5 kB). One commit: `78d7f0f`. -> `Cycle: 54 / Phase: Planner`.
+
+## Cycle 54
+
+**Suggester — audit the newest change, and this time the newest change was mine and it was wrong.**
+
+Cycle 53 added the visibility handler that suspends the engine when you leave the tab. Reading it back:
+
+```js
+else engineRef.current?.unpause()
+```
+
+`unpause()` is `async` and **answers whether the context actually came back**. That handler throws the answer away. A browser can refuse to resume — autoplay policy, a long spell in the background, stricter rules on Safari — and when it refuses, the sound is gone while the button still says it is on.
+
+**That is the exact lie the rest of the file exists to prevent.** `enable()` is deliberately `async` and returns whether sound really started; `toggle()` only claims "on" if it did; and the comment above it says *"a toggle that reports 'on' while silent is worse than one that admits it could not start"*. I broke that contract on the way back into the tab.
+
+**Proven before fixing, not reasoned about.** With sound enabled by a **real click** and `AudioContext.prototype.resume` patched to reject, hiding then showing the page left the button at `aria-pressed="true"` and *"Turn engine sound off"* while the context sat suspended — with `resume` attempted exactly **once**, so the path definitely ran.
+
+**The fix** honours the answer, and only the answer that means something: `false` is a genuine refusal and switches the toggle off; `undefined` means there is no engine at all, which is not a reason to overrule what the visitor chose.
+
+**Verified, all four cases:**
+
+| case | result |
+|---|---|
+| resume **refused** | toggle reads `aria-pressed="false"`, *"Turn engine sound on"* — it admits the sound is gone |
+| **recovery** after that refusal | a real click brings sound back — the fix does not leave the control dead |
+| resume **succeeds** | toggle **stays on** — a healthy resume does not switch it off |
+| sound **never on** | **zero** suspend/resume calls — cycle 53's guarantee still holds |
+
+*Precisely: in the success case I checked the resulting toggle state, not the recorded calls — my probe cleared its log before I read it. The suspend/resume calls themselves were recorded in the refusal case and in cycle 53.*
+
+**The lesson worth keeping.** Cycle 53 tested suspend-on-hide and resume-on-show and they both passed — because the happy path passes whether or not the return value is honoured. The bug lived entirely in the failure path, and only appeared when I went looking for it deliberately. That is now guardrail 183.
+
+**Exit.** `next lint` clean (only the pre-existing `SideNav.jsx` warning), `npm run build` compiles (`/drive` 21.5 kB). One commit: `e5fce6a`. -> `Cycle: 55 / Phase: Planner`.

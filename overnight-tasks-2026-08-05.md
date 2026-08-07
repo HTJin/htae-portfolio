@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 54
+**Cycle:** 55
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -549,6 +549,19 @@
 182. **Do not break what already works.** The toggle must still tell the truth when the browser refuses to start, and
      unmount must still close the graph. Re-check both rather than assuming an additive change is safe.
 
+### Cycle 54 pre-mortem (guardrails for this cycle's tasks)
+
+183. **Test the failure path, not the happy one.** Cycle 53 verified suspend-on-hide and resume-on-show and still
+     shipped this bug, because the happy path passes either way. The test that matters is `resume` **rejecting**.
+184. **Do not turn the toggle off for the wrong reason.** `unpause()` resolves `false` only when the context genuinely
+     did not come back. A missing engine (`engineRef.current` null) resolves `undefined`, and a success resolves
+     `true` — neither may switch sound off. Check `=== false`, and verify the success case explicitly.
+185. **Recovery must work.** Turning the toggle off flips the effect that owns the listener. Confirm that after a
+     refused resume the visitor can click the toggle again and actually get sound — a fix that leaves the control
+     dead is worse than the lie.
+186. **Keep cycle 53's guarantees.** Re-check the three that already passed: suspend on hide, resume on show, and
+     **nothing at all** when sound was never turned on. An async rewrite of this handler could break any of them.
+
 ## Decisions & assumptions locked in
 
 - **The three user-stated priorities come first, in this order:** (1) car interior dashboard should look like a real car from the driver's POV; (2) the arrival panel (`StopCard`) needs work; (3) project photos are cut off and should auto-cycle with a smooth fade. Creative identity work is welcome but must not displace these.
@@ -564,10 +577,41 @@
 
 - *(none — cycle 1 is the first)*
 
-## Tonight's tasks (in order) — CYCLE 54
+## Tonight's tasks (in order) — CYCLE 55
 
 _Not yet planned — the Planner writes this list next._
 
+<details>
+<summary>Cycle 54's list (resolved — kept for context)</summary>
+
+### CYCLE 54
+
+Backlog dry. This pass audited **cycle 53's own change** first, and found a defect **I introduced last cycle**.
+
+- [x] **1. Coming back to the tab can leave the toggle lit over silence — my own regression from cycle 53** — **DONE**
+  - **What is wrong:** `engineAudio.js` returns whether the context actually came back
+    (`unpause()` resolves `true`/`false`), and the handler I shipped **throws that answer away**:
+    `else engineRef.current?.unpause()`. A browser can refuse to resume — policy, a long spell in the background,
+    stricter rules on Safari — and when it does, the sound is gone while the button still says it is on.
+  - **This is exactly the lie the file was written to avoid.** `enable()` is deliberately `async` and returns whether
+    sound really started, and `toggle()` only claims "on" if it did — its comment says *"a toggle that reports 'on'
+    while silent is worse than one that admits it could not start"*. My visibility handler broke that contract on the
+    way back in.
+  - **Proven by real execution, not reasoned:** with sound enabled by a **real click** and
+    `AudioContext.prototype.resume` patched to reject, hiding then showing the page leaves the button reporting
+    `aria-pressed="true"` and *"Turn engine sound off"* while the context is suspended. `resume` was attempted
+    **once**, so the code path definitely ran.
+  - **Files:** `src/components/drive/Dashboard.jsx` (`AudioToggle`'s visibility effect).
+  - **Done when:** a refused resume turns the toggle **off** so it stops claiming sound; a successful resume leaves it
+    **on**; with sound never enabled nothing happens at all; and after a refused resume the visitor can still click
+    the toggle and get sound back.
+
+</details>
+
+<details>
+<summary>Cycle 53's list (resolved — kept for context)</summary>
+
+### CYCLE 53
 <details>
 <summary>Cycle 53's list (resolved — kept for context)</summary>
 
@@ -2241,6 +2285,23 @@ biggest lever available: making the drive pass **time**, not just distance.
 </details>
 
 ## Done (proven by the autonomous Reviewer)
+
+- **C54.1 — The sound toggle no longer lies after a refused resume** *(cycle 54, commit `e5fce6a`)* — **my own
+  regression from `78d7f0f`, one cycle old.** `unpause()` answers whether the context actually came back and the
+  handler I shipped **threw the answer away** (`else engineRef.current?.unpause()`). A browser can refuse to resume,
+  and when it did the sound was gone while the button still said it was on — precisely the lie the rest of the file
+  is built to avoid (`enable()` is async and returns whether sound really started; its comment: *"a toggle that
+  reports 'on' while silent is worse than one that admits it could not start"*). **Proven before fixing:** with sound
+  enabled by a **real click** and `AudioContext.prototype.resume` patched to reject, hide-then-show left the button at
+  `aria-pressed="true"` / *"Turn engine sound off"* over a suspended context, `resume` attempted **once**. Only
+  `false` now switches the toggle off — `undefined` means there is no engine, which is no reason to overrule the
+  visitor (guardrail 184). **Verified, all four cases:** refused resume -> toggle reads **off**; **recovery** -> a
+  real click after the refusal brings sound back, so the control is not left dead (guardrail 185); successful
+  resume -> toggle **stays on**; sound never enabled -> **zero** suspend/resume calls, so cycle 53's guarantee holds
+  (guardrail 186). *Stated precisely: in the success case the resulting toggle state was checked, not the recorded
+  calls — the probe cleared its log before it was read. The suspend/resume calls themselves were recorded in the
+  refusal case and in cycle 53.* **Cycle 53 verified only the happy path, which passes either way — that is why this
+  survived a cycle** (guardrail 183).
 
 - **C53.1 — The engine goes quiet when you leave the tab** *(cycle 53, commit `78d7f0f`)* —
   `grep -rn visibilitychange src/` returned **nothing**. `disable()` only ramps the master gain and never suspends;
