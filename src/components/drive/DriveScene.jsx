@@ -487,11 +487,20 @@ export function DriveScene() {
   // Released here instead, beside the code that set it, and put back after so
   // the drive still cannot be scrolled.
   useEffect(() => {
+    let beforePrintOverflow = ''
     const release = () => {
+      beforePrintOverflow = document.body.style.overflow
       document.body.style.overflow = 'visible'
     }
     const restore = () => {
-      document.body.style.overflow = 'hidden'
+      // Put back whatever was there, not a hardcoded `hidden`. The mount effect
+      // above already saves and restores this way; writing the literal here
+      // happens to be equivalent today only because nothing else touches
+      // `body.style.overflow`. The moment something does — a modal, a scroll
+      // lock — this would silently overwrite it. And a browser that fires
+      // `beforeprint` without a matching `afterprint` leaves the value it
+      // captured, rather than a guess.
+      document.body.style.overflow = beforePrintOverflow
     }
     window.addEventListener('beforeprint', release)
     window.addEventListener('afterprint', restore)

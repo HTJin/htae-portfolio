@@ -1008,20 +1008,24 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
                computer and the button row toward the passenger door — "that
                doesn't mean to push the hud for the back next route map and all
                that to be pushed to the right".
-            3. So they are positioned **out of the flow**, pinned to the bottom
-               left of this column. They sit immediately right of the wheel and
-               take no width from the console, which keeps the position it had
-               before any of this started. They clear the trip computer
-               vertically and the button row horizontally — both are asserted
-               by measurement, not by eye. */}
-        <div className="relative flex h-full min-w-0 items-stretch gap-4">
-          {/* Two nested elements on purpose: `.footwell` must keep its own
-              `position: relative`, because the well's shadow is a `::before`
-              inset against it. Putting Tailwind's `absolute` on that same node
-              loses — the CSS module ships after the utilities and both are
-              single-class, so source order hands it to `.footwell`, and the
-              pedals land silently at the top of the dash instead of the
-              bottom. Measured once the hard way; kept split ever since. */}
+            3. So they are a `shrink-0` flow child at the head of this column,
+               and the console beside them is **capped** rather than left to
+               stretch. That is what makes (2) survivable: the footwell takes
+               only its own width, and the cap stops the console spreading into
+               what is left. They sit immediately right of the wheel, clear of
+               the trip computer vertically and the button row horizontally —
+               both asserted by measurement, not by eye.
+
+            (An earlier attempt pinned the pedals out of the flow with
+            `absolute` instead. That is gone; do not reintroduce it on the
+            strength of a stale comment — this one described it for two cycles
+            after the markup had changed.) */}
+        <div className="flex h-full min-w-0 items-stretch gap-4">
+          {/* `.footwell` keeps its own `position: relative` because the well's
+              shadow is a `::before` inset against it. Worth knowing if you ever
+              try to position it: Tailwind's `absolute` on that same node loses,
+              since the CSS module ships after the utilities and both are
+              single-class, so source order hands the property to `.footwell`. */}
           <div className="flex shrink-0 items-end pb-2">
             <div className={`flex items-end gap-2 ${styles.footwell}`}>
               <div className="h-[clamp(52px,8vh,74px)] w-[62px]">
