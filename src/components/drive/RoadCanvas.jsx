@@ -254,21 +254,26 @@ export function RoadCanvas({ drive, className }) {
      * face and the planting on it** — they each had their own before, and
      * disagreed by ~1.7m at full ramp, which floated the flowers off the slope.
      *
-     * Both clamps matter:
-     *  - the `min` stops the bank running out across the ramp;
-     *  - the `max` stops it running *inboard of its own top*. Early in the taper
-     *    the ramp has begun to fall but has barely moved aside, so the ramp edge
-     *    is still inside the carriageway — measured at drop −0.86: top 10.6,
-     *    ramp edge 7.46, carriageway 0–8.2. Without the `max` the quad crosses
-     *    itself and paints verge over the running lanes, unclipped, for the
-     *    first quarter of every ramp at every stop.
+     * The ramp clamp is **gated, not floored**. It applies only where the ramp
+     * has moved outboard of `BANK_TOP`; before that the ramp edge is still
+     * inside the carriageway (measured at drop −0.86: top 10.6, ramp edge 7.46,
+     * carriageway 0–8.2) and clamping to it would drag the bank's foot inboard
+     * of its own top, crossing the quad and painting verge across the running
+     * lanes. Flooring the result with a `max` avoided that but replaced it with
+     * a 0.25m near-vertical face — the wall `SLOPE_RUN` exists to prevent.
      */
     function bankFoot(ramp, drop) {
+      const slopeFoot = BANK_TOP - drop * SLOPE_RUN
       const rampEdge = LANE_OFFSET + ramp - RAMP_WIDTH / 2 - 1.2
-      return Math.max(
-        BANK_TOP + 0.25,
-        Math.min(rampEdge, BANK_TOP - drop * SLOPE_RUN)
-      )
+      // The ramp only constrains the bank once it is actually outboard of the
+      // bank's top. Early in a taper it is not — it is still inside the
+      // carriageway — and clamping to it there is what produced the two bugs
+      // this line has now had: first a foot *inboard* of its own top, painting
+      // verge across the running lanes; then, after a blunt `max` fix, a 0.25m
+      // near-vertical face, which is the 90-degree wall `SLOPE_RUN` exists to
+      // prevent. Gating the clamp instead of flooring the result makes the
+      // slope free to run its full length exactly when nothing is in its way.
+      return rampEdge > BANK_TOP ? Math.min(rampEdge, slopeFoot) : slopeFoot
     }
 
     /**

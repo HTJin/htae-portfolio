@@ -613,7 +613,7 @@ export function DriveScene() {
           identical on both sides. */}
         <noscript
           dangerouslySetInnerHTML={{
-            __html: `<div style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:#03060c;color:#e0f2fe;font-family:system-ui,sans-serif;text-align:center">
+            __html: `<div class="drive-print-hide" style="position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:24px;background:#03060c;color:#e0f2fe;font-family:system-ui,sans-serif;text-align:center">
   <div style="max-width:34rem">
     <p style="margin:0;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#7dd3fc">Hyun-Tae Jin &middot; drive mode</p>
     <h2 style="margin:12px 0 0;font-size:28px;font-weight:300;line-height:1.2">Drive mode needs JavaScript</h2>

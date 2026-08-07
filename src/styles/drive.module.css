@@ -449,6 +449,19 @@
     display: none !important;
   }
 
+  /* The one thing the rule above cannot reach.
+   *
+   * `> *` only sees direct children, and the `<noscript>` panel is a
+   * *grandchild* — it sits inside the kept wrapper. With scripting disabled the
+   * server-rendered markup includes a `position: fixed; inset: 0` overlay, and
+   * once `.printable` is forced to `position: static` that overlay lands on
+   * page one over the résumé: exactly the failure the keep-list was supposed to
+   * make structurally impossible. Keeping-not-listing is the better default,
+   * but it is not a guarantee about nesting. */
+  .printable :global(.drive-print-hide) {
+    display: none !important;
+  }
+
   /* The résumé is right there — it is only hidden because sighted users are
      looking at the drive instead. On paper the drive is the part to drop. */
   .printable :global(.sr-only) {
