@@ -11,7 +11,7 @@ This file is rewritten every cycle. The full history lives in `overnight-tasks-2
 
 ## Where the run is
 
-66 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
+68 cycles. Cycles 1–56 were self-directed: the loop generated its own ideas by auditing the live site and comparing
 against comparable sites, then built and verified them. **Cycles 57, 58, 59 and 61 were owner-directed** — you gave
 instructions mid-run, and those outrank anything the loop picks for itself. Cycle 60 came off the loop's own backlog.
 
@@ -35,6 +35,7 @@ instructions mid-run, and those outrank anything the loop picks for itself. Cycl
 | 65 | The highway got a flank, so the gap under the elevation is gone. Plus a thicker road, the exit 22m out, a 5.5m drop and 420m legs | `b7cfa73` |
 | 66 | *Sweep only — no defect.* All 21 exits re-checked after the road overhaul; the derived route distance followed correctly to 5.2 mi | — |
 | 67 | The page had no print styling at all and would have printed a page of dashboard with no résumé. It now prints the résumé that was already in the DOM | `1dde62c` |
+| 68 | *Measurement only.* No heap leak over the full route (+0.62 MB across 21 stops). Cold page weight reclassified as unmeasurable from here | — |
 
 **One trade to be aware of, from your "a bit longer" request.** A leg now takes **14.1 seconds**, so driving the
 whole route on the accelerator is about **4.7 minutes** — up from ~3.8 min at the previous leg length and ~3.1 min
