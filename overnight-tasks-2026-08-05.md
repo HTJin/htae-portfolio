@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Suggester
-**Cycle:** 100
+**Phase:** Planner
+**Cycle:** 101
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3469,6 +3469,31 @@ broken should check for orphaned servers before suspecting the code.**
 - **C3-1b. Timezone year bug (found while verifying C3-1)** — proven fixed. `yearOf()` used `new Date(d).getFullYear()`, which parses `YYYY-MM-DD` as UTC midnight then reads it back in local time, so in any timezone behind UTC a January 1st date reports the previous year. The SSR probe showed **four** stops at 2023 when only three roles are from 2023: the StarPlus UI/UX role (`2024-01-01`, own label "Jan 2024 - Oct 2024") had silently moved to 2023. Confirmed the mechanism in Node across all ten content dates — only the Jan 1st one differed (local 2023 vs UTC/string 2024). The year is now read straight off the string; the re-run probe shows index 8 at 2024. Commit `94eea90`.
 - **C2-3. Deep-link an exit** — proven working: `/drive?exit=11` opens parked on Solar Power Indy with the panel up and the carousel at 1/4; driving on moved the URL to `?exit=12`; `?exit=999` falls back to the ignition screen at MILE 0 without throwing. The accept predicate was additionally exercised across `11/0/20/21/999/-3/banana/11abc/" 11 "/1.5/""/1e3/null/0x5` — only in-range integers accepted. Commit `0d3e493`.
 - **5c. Reduced-motion path through the carousel** _(cleared cycle 2)_ — proven by real execution: `matchMedia('(prefers-reduced-motion: reduce)')` was patched to report `matches: true` inside a 390px probe frame before hydration, then EXIT 11 was opened. The frame counter held at `1/4` across 11 seconds (autoplay would have advanced 2-3 times at the 4.2s interval), clicking the third dot still moved it `1/4 -> 3/4`, and the `@media (prefers-reduced-motion: reduce) { .shot { transition: none } }` rule is present in the served stylesheet.
+
+### Cycle 100 — owner-directed (these outrank the loop's own backlog)
+
+- [x] **S129 — A transparent seam ran the whole length of every embankment.** _(owner: "the gap is still there")_
+      The shoulder guardrail hangs `0.42m` above the mainline grade; the bank's top edge stopped **at** grade. Nothing
+      painted the `0.42m` between them. Invisible on the mainline (painted verge sits behind the slot) and fatal from
+      the ramp, where the deck is a flat surface above the eye and correctly clipped — so behind the slot there is
+      nothing at all and the canvas is **literally transparent**. Found by sampling **alpha**, not colour: `a=0` at
+      y206-212 (x150) and y230-236 (x300) on a frozen frame at drop −4.18. Fixed by raising the bank's top edge to the
+      rail's underside via a shared `SHOULDER_RAIL_FOOT`. Commit `1cdd982`.
+      **Verified:** at the deepest drop (−5.5m, ramp 30.2) **0 / 1406** samples below the horizon are transparent;
+      seam columns x150 and x300 show no enclosed gaps. Control: ground reads 255 in the same sweep.
+- [x] **S130 — The car drove through the shoulder guardrail at every exit and entrance.** _(owner: "we're literally
+      just driving through the highway rail")_ The rail was painted with a `() => true` test — full length, fixed in
+      world space at the mainline shoulder — while the ramp sweeps from the running lane out past it. It now breaks at
+      the gore and resumes past the nose, with the opening derived from the **ramp's own footprint** rather than a
+      hand-tuned span of `s`, so it survives retuning `RAMP_OFFSET` / `RAMP_WIDTH`. Commit `1cdd982`.
+      **Verified:** no regression on the open mainline (travel 171, ramp 0, drop 0) — **0 / 1406** transparent samples
+      below the horizon, controls correct; and with `ramp = 0` the predicate's outer bound (9.05) is inboard of the
+      shoulder (10.6), so the rail is always drawn on the mainline.
+- **Correction logged against my own cycle-100 reporting.** I reported "3 enclosed holes remain". Two were **my
+  detector** counting a lamp halo (alpha 1-7) as opaque and calling the sky either side enclosed; the third sits
+  **above the horizon**, between the bank's silhouette and the horizon line, which is what you correctly see from
+  inside a cut. One real finding, three reported. Rule: a hole detector must treat near-zero alpha as empty, and must
+  ignore anything above the horizon.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 

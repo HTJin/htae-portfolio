@@ -1743,3 +1743,19 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Evidence:** full-taper sweep, 3361 samples @5cm through the real modules. Max foot step 0.0126m, min run:fall 2.60:1, 0 on tarmac, 0 inverted, depth -5.500m. **PASS.**
 - **Standing lesson recorded:** verify the whole domain, not the neighbourhood of the last bug. Four cycles of narrow re-checking is what kept this alive.
 - **Controller:** backlog still holds actionable items; `Cycle: 100`, `Phase: Suggester` (backlog was dry at 99's start). Owner-parked items remain in `overnight-ACTION-REQUIRED.md` and are untouched.
+
+### Cycle 100 (owner-directed) -> 101
+
+- **The loop was interrupted by the owner twice, and both reports were real.** Owner direction outranks the backlog.
+- **S129 / S130 shipped** in `1cdd982`; build clean, prettier run, only `RoadCanvas.jsx` touched.
+- **Method change that actually mattered: measure alpha, not colour.** Three cycles of colour-matching walked past a
+  hole that one alpha read found immediately. On a transparent canvas over a DOM sky element, "is anything painted
+  here" is the only question that separates a gap from a dark surface. This is also why the cycle-99 full-taper
+  geometry sweep passed while the screen was still wrong — **the defect was above the slope being measured.**
+- **I over-reported the leftovers and the owner's guess exposed it.** "3 enclosed holes" was 1 real + 2 detector
+  artifacts (lamp halo at alpha 1-7 counted as opaque). Recorded as a correction against my own reporting.
+- **Verification this cycle:** deepest drop (−5.5m) 0/1406 transparent below horizon; open mainline (ramp 0, drop 0)
+  0/1406. Controls behaved in both sweeps (ground 255). Caveat: the sky control read 9 rather than 0 in the ramp
+  sweep — a faint glow at that point — so the *ground* reference is the one carrying that sweep.
+- **Controller:** backlog holds actionable items (S96 touch harness, S112/S113 measurements). `Cycle: 101`,
+  `Phase: Planner`.

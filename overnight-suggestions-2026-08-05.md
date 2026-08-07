@@ -840,6 +840,7 @@ _(Check the box once you've reviewed the outcome.)_
   - **All three are in files the Guardrails block puts off-limits** (`next.config.mjs`, `tailwind.config.js`, and `src/components/**` outside `drive/`), so they are recorded rather than fixed. All are small.
 
 - [ ] **S122 - End-of-run integrity check on the branch** - Status: Done (clean) - Cycle: 75
+
   - Run because nothing buildable remained and 34 commits is a lot for the owner to take on trust.
   - **Owner content untouched, proven:** `git diff --numstat` against `src/content`, `src/components/sections` and `src/lib` returns nothing at all.
   - **Scope held, proven:** the complete set of source files changed across the entire run is **nine** - `Dashboard.jsx`, `DriveScene.jsx`, `ExitSign.jsx`, `RoadCanvas.jsx`, `route.js`, `StopCard.jsx`, `useDrive.js`, `world.js` and `drive.module.css`. Every one inside the declared scope. No leakage into the classic site, config, or content.
@@ -847,34 +848,51 @@ _(Check the box once you've reviewed the outcome.)_
   - **Branch state:** build clean, `/drive` 22.5 kB first-load 152 kB, zero drive-scope lint issues, nothing uncommitted in scope, nothing pushed.
 
 - [ ] **S123 - Verify the vegetation only appears where there is a slope** - Status: Proposed (first attempt invalid) - Cycle: 80
+
   - The tufts are gated on `drop > -0.35 -> skip`, so nothing should be planted on the open mainline. **Unverified.**
   - **Cycle 80's attempt does not count:** counting pixels near the flower colours matched the **sunset sky** - amber `(244,208,122)` +/-22 is the dusk gradient - giving 4,837 "flowers" at drop 0 versus 1,092 mid-descent. The impossible direction (more planting where there is no slope) is what exposed it.
   - **A method that would work:** temporarily raise the flower colours to something absent from every daylight palette (pure magenta), rebuild, count, then revert. Or count only within a narrow band tracking the slope face rather than the whole canvas. Either needs a control run that must come out different.
 
 - [ ] **S123 - Verify the vegetation only appears where there is a slope** - Status: Done (gate correct) - Cycle: 81
+
   - Cycle 80's attempt was discarded: counting near the real flower colours matched **sunset sky**.
   - **Valid method:** temporarily repaint the flowers pure magenta / cyan - colours absent from every daylight palette - so a hit can only be a flower.
   - **Result: 0 marker pixels on the open mainline (drop 0), 7 mid-descent (drop -2.61).** The gate holds; nothing is planted where there is no slope. The control differs, so the zero is meaningful rather than an inert harness.
   - Markers reverted, build clean, `git diff --numstat -- src/` empty. **No code change was needed** - the code was already right, only the evidence was missing.
 
 - [ ] **S124 - The print sheet does not actually hide the cockpit** - Status: Proposed (review finding, medium) - Cycle: 94
+
   - The `@media print` block hides `.printable canvas` and `.printable [aria-hidden='true']`. `Sky` and `CarInterior` are aria-hidden and `RoadCanvas` is a canvas - but **`Dashboard`'s root carries `id="drive-controls"` and no `aria-hidden`**, and neither do the StopCard overlay wrapper, the exit link, or the ignition splash. Forcing `.printable` to `position: static` removes their containing block, so in paged media they land on page 1 over the now-unclipped itinerary.
   - Printing before pressing Start engine would give a full-bleed ignition panel; printing mid-drive gives a dashboard band across the first page.
   - **This is a feature I shipped in cycle 67 and called verified.** What I verified was that the rules existed, targeted the right selectors and did not change the screen - never that the printed page was right, which I stated at the time as a limitation. The limitation turned out to be hiding a real defect.
   - Fix: hide everything under `.printable` and re-show only `.sr-only`, rather than enumerating things to hide.
 
 - [ ] **S125 - `afterprint` hardcodes `overflow: hidden` instead of restoring** - Status: Proposed (review finding, low) - Cycle: 94
+
   - The mount effect deliberately saves `previousOverflow` before setting `hidden`; the print handler I added writes the literal `'hidden'` back. Equivalent today, divergent the moment anything else touches `body.style.overflow`. A browser firing `beforeprint` without `afterprint` leaves the page permanently scrollable.
 
 - [ ] **S126 - Dashboard comments describe an implementation that no longer exists** - Status: Proposed (review finding, low) - Cycle: 94
-  - The block explaining that the pedals are "positioned out of the flow, pinned to the bottom left" and the long note about why `absolute` must live on a separate node from `.footwell` both describe the *abandoned* approach - the shipped markup has no `absolute` anywhere and the `relative` positions nothing. Two adjacent comments also state opposite facts about whether the footwell is in flow.
+
+  - The block explaining that the pedals are "positioned out of the flow, pinned to the bottom left" and the long note about why `absolute` must live on a separate node from `.footwell` both describe the _abandoned_ approach - the shipped markup has no `absolute` anywhere and the `relative` positions nothing. Two adjacent comments also state opposite facts about whether the footwell is in flow.
   - In a codebase where comments carry the reasoning, this is how a later edit preserves the wrong invariant. It is the same fault as the `footOf` comment that defended a vertical wall.
 
 - [ ] **S127 - The `max` clamp and its own comment disagree** - Status: Proposed (review finding, low) - Cycle: 97
+
   - `bankFoot` is `max(BANK_TOP + 0.25, min(rampEdge, BANK_TOP - drop * SLOPE_RUN))`. The JSDoc says "the `min` stops the bank running out across the ramp" - but **whenever the `max` wins, the foot is outboard of `rampEdge`**, so that guarantee does not hold in exactly the regime the `max` was added for. At the measured point (drop -0.86, top 10.6, rampEdge 7.46) the foot is 10.85, i.e. 3.4m past the ramp's near edge.
   - It also makes the face a ~0.25m near-vertical wall for the first part of every descent - the "90-degree wall" `SLOPE_RUN`'s own comment says must never happen. The drop is tiny there so it is not visually severe, but **the invariant the comments assert is not the one the code enforces**, which is the third time in this run a comment has argued for something the code does not do.
   - Fix: either bound the ramp clamp to `rampEdge > BANK_TOP` explicitly, or correct both comments to describe the real precedence.
 
 - [ ] **S128 - The `<noscript>` overlay is inside `printKeep`, so print cannot hide it** - Status: Proposed (review finding, low) - Cycle: 97
-  - `.printable > *:not(.printKeep)` only reaches **direct children** of the scene. The `<noscript>` full-bleed panel is a *grandchild*, inside the kept wrapper, so with scripting disabled a printed page gets a solid dark "Drive mode needs JavaScript" panel over the unclipped resume - the same `position: fixed` overlay failure the keep-list approach was supposed to make impossible.
+  - `.printable > *:not(.printKeep)` only reaches **direct children** of the scene. The `<noscript>` full-bleed panel is a _grandchild_, inside the kept wrapper, so with scripting disabled a printed page gets a solid dark "Drive mode needs JavaScript" panel over the unclipped resume - the same `position: fixed` overlay failure the keep-list approach was supposed to make impossible.
   - Fix: hoist the `<noscript>` to be a sibling of the `printKeep` wrapper, or hide it explicitly in the print block.
+
+## Cycle 100 — owner-reported (not AI-generated)
+
+- [ ] **S129 — Transparent seam under the shoulder guardrail** — _source: owner, "the gap is still there"._
+      Status: **Done** (`1cdd982`). The rail hangs 0.42m above grade; the bank stopped at grade; the 0.42m between was
+      never painted, and from the ramp there is nothing behind it. Evidence: alpha 0 at y206-212/y230-236 on a frozen
+      frame at drop −4.18; after the fix, 0/1406 transparent samples below the horizon at drop −5.5.
+- [ ] **S130 — Car drives through the shoulder guardrail** — _source: owner, "we're literally just driving through the
+      highway rail"._ Status: **Done** (`1cdd982`). Rail was `() => true`, full length, fixed in world space, while the
+      ramp sweeps past it. Now breaks at the gore, opening derived from the ramp's footprint. Evidence: mainline
+      regression sweep 0/1406 transparent below horizon.
