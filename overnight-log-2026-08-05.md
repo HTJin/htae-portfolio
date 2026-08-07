@@ -1659,3 +1659,8 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Planner** -> backlog dry. Consolidated the run's seven false readings into a "Measuring the drive scene" section in `CLAUDE.md`, so the lessons live where work happens rather than in journal entries.
 - Six rules plus two environment limits, each traceable to a specific wrong conclusion caught during the run.
 - **Progress flag:** no shipped change; the run's most transferable output moved somewhere it will be read.
+
+## Cycle 86 (2026-08-07)
+
+- **Phase: Suggester** -> executed the two commands `CLAUDE.md` instructs the next person to run. Both behave as documented: the scoped prettier command stays inside drive scope, and `git diff --numstat -- src/` returns 0 content diffs.
+- **Progress flag:** no shipped change; the run's own documentation verified by running it.
