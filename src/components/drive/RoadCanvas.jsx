@@ -199,31 +199,8 @@ export function RoadCanvas({ drive, className }) {
      * carriageway and there is nothing to embank.
      */
     function embankment(fill) {
-      const TOP = CARRIAGEWAY + 2.4
-
-      // How far out the slope runs for every metre it falls. Real highway
-      // embankments sit around 1:2 to 1:3; 2.6 reads as earth rather than
-      // engineering. **This is what stops the face being a 90-degree wall** —
-      // the run is a function of the drop, so the bank lies back further the
-      // deeper the exit goes, instead of standing upright.
-      const SLOPE_RUN = 2.6
-
-      // Where the bank meets the lower ground.
-      //
-      // The run comes from the **drop**, not from where the ramp happens to be:
-      // fall 3m and the bank lies back 7.8m, fall 5.5m and it lies back 14m. It
-      // was previously `max(TOP + 0.25, rampEdge)`, which pinned the foot just
-      // outboard of the top whenever the ramp had dropped but not yet moved
-      // aside — i.e. it made the bank a **vertical wall** for the first half of
-      // every descent, which is exactly what it should never be.
-      //
-      // Still never crosses the ramp: if the slope would run past the ramp's
-      // near edge, it stops there and the last of the fall is taken up by the
-      // ramp's own shoulder.
-      const footOf = (point) => {
-        const rampEdge = LANE_OFFSET + point.ramp - RAMP_WIDTH / 2 - 1.2
-        return Math.min(rampEdge, TOP - point.drop * SLOPE_RUN)
-      }
+      const TOP = BANK_TOP
+      const footOf = (point) => bankFoot(point.ramp, point.drop)
 
       // Gated on **elevation difference**, not on lateral separation. Gating it
       // on separation was the bug: the ramp starts falling long before it moves
@@ -260,6 +237,40 @@ export function RoadCanvas({ drive, className }) {
       }
     }
 
+    /** The top of the bank: the outer edge of the mainline's verge. */
+    const BANK_TOP = CARRIAGEWAY + 2.4
+
+    /**
+     * How far out the bank runs for every metre it falls. Real highway
+     * embankments sit around 1:2 to 1:3; 2.6 reads as earth rather than
+     * engineering. This is what stops the face being a 90-degree wall — the run
+     * is a function of the drop, so the bank lies back further the deeper the
+     * exit goes instead of standing upright.
+     */
+    const SLOPE_RUN = 2.6
+
+    /**
+     * Where the bank meets the lower ground. **One definition, used by both the
+     * face and the planting on it** — they each had their own before, and
+     * disagreed by ~1.7m at full ramp, which floated the flowers off the slope.
+     *
+     * Both clamps matter:
+     *  - the `min` stops the bank running out across the ramp;
+     *  - the `max` stops it running *inboard of its own top*. Early in the taper
+     *    the ramp has begun to fall but has barely moved aside, so the ramp edge
+     *    is still inside the carriageway — measured at drop −0.86: top 10.6,
+     *    ramp edge 7.46, carriageway 0–8.2. Without the `max` the quad crosses
+     *    itself and paints verge over the running lanes, unclipped, for the
+     *    first quarter of every ramp at every stop.
+     */
+    function bankFoot(ramp, drop) {
+      const rampEdge = LANE_OFFSET + ramp - RAMP_WIDTH / 2 - 1.2
+      return Math.max(
+        BANK_TOP + 0.25,
+        Math.min(rampEdge, BANK_TOP - drop * SLOPE_RUN)
+      )
+    }
+
     /**
      * Grass and wildflowers on the embankment face.
      *
@@ -280,11 +291,9 @@ export function RoadCanvas({ drive, className }) {
         const s = n * SPACING
         const drop = rampDropAt(s)
         if (drop > -0.35) continue // no slope here, nothing to plant on
-        const top = CARRIAGEWAY + 2.4
-        const foot = Math.max(
-          top + 0.25,
-          LANE_OFFSET + rampAt(s) - RAMP_WIDTH / 2 - 1.2
-        )
+        // The same foot the face itself is drawn from — see `bankFoot`.
+        const top = BANK_TOP
+        const foot = bankFoot(rampAt(s), drop)
 
         for (let k = 0; k < 4; k += 1) {
           // Spread across the face, biased away from both edges.
