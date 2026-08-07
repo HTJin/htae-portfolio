@@ -84,7 +84,20 @@ Each is seconds of work with DevTools open, and each is currently an unknown rat
 
 ## What the loop did, in one line
 
-**34 commits on `feat/drive-mode`, nothing pushed.** Nine source files touched, every one inside
-`src/components/drive/**` or `src/styles/drive.module.css`. **Zero diff to `src/content`,
-`src/components/sections` and `src/lib`** — your content was never touched, and your own pre-existing uncommitted
-edits are exactly as they were found.
+**All work is on `feat/drive-mode`; nothing has been pushed, merged or deployed.** Exactly **nine** source files
+touched across the whole run, every one inside `src/components/drive/**` or `src/styles/drive.module.css`:
+
+`Dashboard.jsx` · `DriveScene.jsx` · `ExitSign.jsx` · `RoadCanvas.jsx` · `route.js` · `StopCard.jsx` ·
+`useDrive.js` · `world.js` · `drive.module.css`
+
+**Zero diff to `src/content`, `src/components/sections` and `src/lib`** — your content was never touched, and your
+own pre-existing uncommitted edits are exactly as the run found them.
+
+Verify any of that yourself:
+
+```
+git diff --name-only 6c19c99..HEAD -- src/          # the nine files
+git diff --numstat -- src/content src/lib           # empty
+```
+
+*(Deliberately no commit count here — it only goes stale. The commands above are always current.)*
