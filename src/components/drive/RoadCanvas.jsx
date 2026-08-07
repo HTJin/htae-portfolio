@@ -223,8 +223,19 @@ export function RoadCanvas({ drive, className }) {
             for (let k = runStart; k <= i; k += 1) {
               const point = points[k]
               const x = point.cx + TOP * point.scale
-              if (k === runStart) ctx.moveTo(x, point.y)
-              else ctx.lineTo(x, point.y)
+              // Up to the **underside of the shoulder rail**, not to the road
+              // surface. This is the void the owner kept reporting and I kept
+              // failing to find: the rail hangs 0.42m above grade, the bank
+              // stopped at grade, and nothing painted the 0.42m between them.
+              // On the mainline that slot is harmless — the verge behind it is
+              // painted. From the ramp it is not: the deck is a flat surface
+              // above the eye and correctly clipped, so behind the slot there
+              // is nothing, and the canvas is transparent there. Measured on a
+              // frozen mid-ramp frame (drop -4.15): alpha **0** at y206-212,
+              // sky showing through a seam between rail and bank.
+              const yTop = point.y - SHOULDER_RAIL_FOOT * point.scale
+              if (k === runStart) ctx.moveTo(x, yTop)
+              else ctx.lineTo(x, yTop)
             }
             for (let k = i; k >= runStart; k -= 1) {
               const point = points[k]
@@ -244,6 +255,14 @@ export function RoadCanvas({ drive, className }) {
      * ramp has cleared the verge and may start descending.
      */
     const BANK_TOP = BANK_TOP_OFFSET
+
+    /**
+     * How high the shoulder guardrail's underside sits above the mainline
+     * grade. Shared with the `railRuns` call that paints it, so the bank can
+     * close the gap under it exactly — the two drifting apart is what left a
+     * transparent seam along the whole length of every embankment.
+     */
+    const SHOULDER_RAIL_FOOT = 0.42
 
     /**
      * How far out the bank runs for every metre it falls. Real highway
@@ -678,9 +697,42 @@ export function RoadCanvas({ drive, className }) {
       // without putting a slab of concrete beside the carriageway. It was
       // 0.92m of solid, which is a parapet — and a parapet is the other way of
       // getting the 90-degree wall the bank was just fixed to avoid.
+      //
+      // **It breaks at the gore, because the ramp crosses it.** It ran the full
+      // length with a `() => true` test, fixed in world space at the mainline's
+      // shoulder, while the ramp sweeps from the running lane out past it — so
+      // every exit and every entrance drove the car straight through a steel
+      // barrier. The owner, plainly: "we're literally just driving through the
+      // highway rail." A barrier that closes the void is worth nothing if the
+      // road goes through it.
+      //
+      // Real interchanges open the shoulder rail at the gore for exactly this
+      // reason and resume it past the nose. The opening is derived from the
+      // ramp's own footprint rather than from a hand-tuned span of `s`, so it
+      // stays correct if `RAMP_OFFSET`, `RAMP_WIDTH` or the ramp curve is
+      // retuned — the same lesson as `RAMP_LENGTH` and `BANK_TOP_OFFSET`.
       const shoulder = CARRIAGEWAY + 2.4
-      railRuns(shoulder, 0.42, 0.72, colors.vergeLight, () => true)
-      railRuns(shoulder, 0.66, 0.72, withAlpha(colors.paint, 0.8), () => true)
+      const GORE_CLEARANCE = 0.7
+      const railClearOfRamp = (s) => {
+        const centre = LANE_OFFSET + rampAt(s)
+        const inner = centre - RAMP_WIDTH / 2 - GORE_CLEARANCE
+        const outer = centre + RAMP_WIDTH / 2 + GORE_CLEARANCE
+        return shoulder < inner || shoulder > outer
+      }
+      railRuns(
+        shoulder,
+        SHOULDER_RAIL_FOOT,
+        0.72,
+        colors.vergeLight,
+        railClearOfRamp
+      )
+      railRuns(
+        shoulder,
+        0.66,
+        0.72,
+        withAlpha(colors.paint, 0.8),
+        railClearOfRamp
+      )
 
       // The median barrier. This is what makes it a divided highway rather than
       // a road you may legally overtake into oncoming traffic on: the traffic
