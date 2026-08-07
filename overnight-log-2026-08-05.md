@@ -1646,3 +1646,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Phase: Planner** -> backlog dry, everything parked. Refreshed `overnight-ACTION-REQUIRED.md` rather than manufacturing work: re-stamped to cycle 83, noted the cycle-77 re-measurement of the S107 figures, and made explicit that the recent side-profile fixes are absent from that page because they are **done**, not overlooked.
 - **Branch verified clean:** zero content diffs across `src/`, nothing uncommitted in drive scope.
 - **Progress flag:** no shipped change; the owner-facing page kept true.
+
+## Cycle 84 (2026-08-07)
+
+- **Phase: Suggester** -> plain smoke test on the real page rather than an invented finding. `/drive` clean: hydrated, canvas, splash, no horizontal scroll, print block present.
+- **One false alarm caught:** the sr-only itinerary appeared to have collapsed from 9,854 characters to 26. `querySelector('.sr-only')` had returned the skip link; there are three such elements and the itinerary is still exactly 9,854 characters.
+- **Fourth false reading this run caused by a selector matching the wrong element.** Named as a rule: when a selector can match more than one thing, count the matches before believing the one you got.
+- **Progress flag:** no shipped change; current state confirmed sound and one false alarm dismissed.
