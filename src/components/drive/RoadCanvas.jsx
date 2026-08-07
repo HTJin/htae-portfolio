@@ -184,6 +184,51 @@ export function RoadCanvas({ drive, className }) {
       ctx.fill()
     }
 
+    /**
+     * The embankment: the ground falling from the mainline's verge down to the
+     * ramp's grade, which is what you are actually looking at when the exit has
+     * dropped away below the highway.
+     *
+     * Its top edge is drawn at `point.y` and its bottom edge at `point.yRamp` —
+     * the *same* two values the mainline and the ramp are painted from, so the
+     * face cannot drift away from either road however the ramp is tuned.
+     *
+     * Only drawn where the ramp has moved far enough right that there is real
+     * ground between the two; nearer the mainline the ramp is still part of the
+     * carriageway and there is nothing to embank.
+     */
+    function embankment(fill) {
+      const TOP = CARRIAGEWAY + 2.4
+      const footOf = (point) =>
+        LANE_OFFSET + point.ramp - RAMP_WIDTH / 2 - 1.2
+      const spans = (point) => footOf(point) > TOP + 0.5
+
+      let runStart = -1
+      for (let i = 0; i <= SEGMENTS; i += 1) {
+        const on = spans(points[i])
+        if (on && runStart < 0) runStart = i
+        if (runStart >= 0 && (!on || i === SEGMENTS)) {
+          if (i > runStart) {
+            ctx.fillStyle = fill
+            ctx.beginPath()
+            for (let k = runStart; k <= i; k += 1) {
+              const point = points[k]
+              const x = point.cx + TOP * point.scale
+              if (k === runStart) ctx.moveTo(x, point.y)
+              else ctx.lineTo(x, point.y)
+            }
+            for (let k = i; k >= runStart; k -= 1) {
+              const point = points[k]
+              ctx.lineTo(point.cx + footOf(point) * point.scale, point.yRamp)
+            }
+            ctx.closePath()
+            ctx.fill()
+          }
+          runStart = -1
+        }
+      }
+    }
+
     /** Every contiguous run of segments where `test` holds, as one rail. */
     function railRuns(lateral, low, high, fill, test, follow = false) {
       let runStart = -1
@@ -385,6 +430,22 @@ export function RoadCanvas({ drive, className }) {
 
       buildPoints(sim)
 
+      // Everything from here to the matching `restore()` is a **flat surface**,
+      // and a flat surface above your eye cannot be seen — you are looking at
+      // its edge, or at whatever holds it up. Once the ramp drops far enough
+      // the mainline sits above the eyeline entirely, and without this clip it
+      // paints as a wedge of tarmac across the sky (measured at a 6.5m drop in
+      // cycle 58: the highway hung over the windscreen).
+      //
+      // Standing objects are deliberately outside this: an 8.6m lamp mast, the
+      // median barrier and the embankment face all cross the eyeline honestly.
+      // The ground gradient above is outside it too, so nothing the clip
+      // removes can leave sky showing through.
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(0, horizon, width, Math.max(0, height - horizon))
+      ctx.clip()
+
       // Wide enough to cover both carriageways, the median, and the ramp at
       // full offset — the ground beneath everything the road is made of.
       band(-(OPPOSING_EDGE + 22), CARRIAGEWAY + RAMP_OFFSET + 22, colors.vergeDark)
@@ -456,6 +517,21 @@ export function RoadCanvas({ drive, className }) {
         LANE_OFFSET + RAMP_WIDTH / 2 - 0.05,
         paint,
         separated
+      )
+
+      // End of the flat surfaces. Everything below stands up off the ground.
+      ctx.restore()
+
+      // The face between the two grades, filling what the clip just opened up.
+      embankment(colors.vergeDark)
+      // A lit lip along the top of it, so the highway reads as sitting on an
+      // embankment rather than floating above a gap.
+      railRuns(
+        CARRIAGEWAY + 2.4,
+        0,
+        0.18,
+        withAlpha(colors.vergeLight, 0.5),
+        () => true
       )
 
       // The median barrier. This is what makes it a divided highway rather than

@@ -1,5 +1,5 @@
 import { education, experience, meta, projects, skills } from '@/content'
-import { CAM_HEIGHT, CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
+import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
 
 /**
  * Metres of tarmac between consecutive stops.
@@ -49,22 +49,18 @@ export const RAMP_WIDTH = 4.4
  * away down an embankment and climb back to merge, so the exit goes downhill
  * and the entrance comes back up.
  *
- * **The ceiling here is not a taste decision — it is a hard limit of this
- * renderer, and it is why this is `CAM_HEIGHT * 0.85` rather than a round
- * number.** The road is painted as flat ribbons with no depth buffer and no
- * embankment faces. A point's screen height comes from
- * `CAM_HEIGHT + drop − hillAt(s)`; once `drop` exceeds `CAM_HEIGHT` that goes
- * negative for *every* `s`, so the entire mainline lifts above the horizon and
- * paints as a wedge across the sky, converging on the vanishing point from
- * above. Measured at 6.5m: the highway hung over the windscreen and the sky
- * disappeared behind it. Keeping the drop under eye height keeps the mainline
- * where a road belongs.
+ * This was capped at `CAM_HEIGHT * 0.85` for one cycle, because the renderer
+ * could not cope with more: screen height is `CAM_HEIGHT + drop − hillAt(s)`,
+ * so once `drop` passed eye height the whole mainline lifted above the horizon
+ * and painted as a wedge of tarmac across the sky. Measured at 6.5m — the
+ * highway hung over the windscreen.
  *
- * Going deeper than this needs real geometry — an embankment face between the
- * two grades and something to occlude the mainline behind it. That is a
- * genuine feature, not a constant to nudge; see the backlog.
+ * That is fixed properly now rather than avoided. `RoadCanvas` clips **flat
+ * surfaces** at the eyeline (a horizontal plane above your eye cannot be seen)
+ * while leaving standing objects alone, and fills the gap with an embankment
+ * face between the two grades. So the drop is free to be a real one.
  */
-export const RAMP_DROP = CAM_HEIGHT * 0.85
+export const RAMP_DROP = 3
 
 /**
  * The offset at which the ramp is clear of the mainline entirely — its inner
