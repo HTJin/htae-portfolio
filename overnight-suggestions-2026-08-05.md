@@ -692,3 +692,10 @@ this before each Suggester pass so it never re-proposes an idea already here.
   - The remaining substantive work is **parked on the owner** (S107 - the wheel drawing over the brake pedal, a confirmed defect deliberately not fixed) or **outside this run's write scope** (the classic site's cropped and non-cycling photos, the duplicate canonical on `/drive`, the missing sitemap entry).
   - Four things this environment provably cannot measure remain open for a human with DevTools: frame rate, forced-colors rendering, the printed page, cold page weight.
   - Recorded so that continuing to generate self-directed work is a deliberate decision rather than momentum.
+
+- [ ] **S120 - Re-verification of all four parked Needs-human items** - Status: Done (all still valid) - Cycle: 73
+  - Cycle 35 last did this, 38 cycles ago. These are patches the owner applies **blind**, so drifted line numbers would be my fault.
+  - **Classic site photo patch - exact:** `aspect-video` line 97, `object-cover` line 120, `AnimatePresence` line 104, `handleScreenshotClick` line 61, file 152 lines, and `setInterval|setTimeout|useEffect` still returns **nothing** - still click-only, still cropping.
+  - **Sitemap - unchanged:** one `<loc>`, no `/drive`.
+  - **Duplicate canonical - unchanged:** `/drive` ships two canonical tags, `https://htae.dev` **first** and `https://htae.dev/drive` second, so crawlers still read `/drive` as the homepage. `og:url` still doubled.
+  - **Dead links - still dead, with one honest correction:** `gosolarindy.energy` still does not resolve. The repo link returned a **connection abort** this run rather than cycle 56's clean **404** - still unreachable, and the control `github.com/HTJin` returns **200** so the network and GitHub are fine, but the ledger now records what actually came back rather than repeating the older figure.

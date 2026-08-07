@@ -1530,3 +1530,10 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **Diminishing returns flagged in the report.** The remaining high-value work is parked on the owner (S107) or out of write scope (classic site, canonical, sitemap). Continued self-directed cycles should be a deliberate choice.
 - **Phase -> Planner.**
 - **Progress flag:** no shipped change; one audit clean, one idea filed, run state made explicit.
+
+## Cycle 73 (2026-08-07)
+
+- **Phase: Planner** -> no buildable item: S118 is parked on the owner's appetite (it is an addition to their cockpit, not a correction) and S119 is an observation. Followed cycle 35's precedent instead and re-verified the parked Needs-human patches, unchecked for ~38 cycles.
+- **All four still valid.** Classic-site photo patch exact to the line; sitemap still one `<loc>`; `/drive` still ships two canonicals with the homepage first; `gosolarindy.energy` still does not resolve.
+- **One correction to the record:** the Solar Power Indy repo returned a connection abort this time rather than cycle 56's clean 404. Still unreachable, control returns 200, but the difference is recorded rather than smoothed over.
+- **Progress flag:** no shipped change; the owner's parked work confirmed safe to apply.
