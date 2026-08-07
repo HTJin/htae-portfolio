@@ -1735,3 +1735,11 @@ It is not. Reading the actual state rather than trusting the first alarming numb
 - **S128:** `<noscript>` overlay tagged and hidden; hook confirmed in served SSR markup.
 - **Own-metric misfire caught before reporting:** a "near-vertical face" count was measuring absolute run, not grade.
 - **Progress flag:** yes - review backlog fully cleared for the second time.
+
+### Cycle 99 -> 100 (phase transition)
+
+- **Reviewer verdict on cycle 98:** all three findings on `bankFoot` confirmed real, and the cycle-98 fix was **a regression on every count** vs. what it replaced (3.72m discontinuity, exactly-vertical crossover face, bank ~2.8m over the ramp tarmac for p<0.26).
+- **Cycle 99 resolution:** root-caused above the line — the ramp descended before diverging, an unrepresentable shape. Fixed in `route.dropProgress`; `bankFoot` simplified to a plain minimum. `VERGE_WIDTH`/`BANK_TOP_OFFSET` centralised in `route.js`. Commit `c8dd9d0`, build clean, prettier run.
+- **Evidence:** full-taper sweep, 3361 samples @5cm through the real modules. Max foot step 0.0126m, min run:fall 2.60:1, 0 on tarmac, 0 inverted, depth -5.500m. **PASS.**
+- **Standing lesson recorded:** verify the whole domain, not the neighbourhood of the last bug. Four cycles of narrow re-checking is what kept this alive.
+- **Controller:** backlog still holds actionable items; `Cycle: 100`, `Phase: Suggester` (backlog was dry at 99's start). Owner-parked items remain in `overnight-ACTION-REQUIRED.md` and are untouched.
