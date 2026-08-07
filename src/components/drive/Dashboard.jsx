@@ -932,18 +932,28 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
           The road was previously drawn from an eye at 50% while the cockpit
           was laid out around one at 32% — a 345px disagreement at 1920.
           To the driver's left is the door; the console lives to their right. */}
-      <div className="hidden h-full grid-cols-[0.42fr_clamp(260px,24vw,400px)_1fr] items-stretch gap-5 px-6 pb-2 pt-3 lg:grid xl:grid-cols-[1fr_clamp(260px,24vw,400px)_1fr]">
-        {/* The door side. Only from xl up does it take a full column, and the
-            threshold is measured rather than chosen: centring the wheel means
-            the door column must equal the console column, and the console
-            needs ~310px for its button row on one line (measured at 1100px:
-            Back 78 + Next 77 + Route map 105 + the audio toggle and gaps).
-            Working back through the flex shares that is a ~461px column, so
-            2 x 461 + the 260px wheel column + 40px of gaps + 48px of padding
-            = ~1270px before it fits — which is xl. Below that the door column
-            narrows to 0.42fr instead, which brings the wheel most of the way
-            to the eyeline (measured: 153px short at 1100) while keeping the
-            console on one row. Verified at 1100x800 in a sized iframe. */}
+      <div className="hidden h-full grid-cols-[0.42fr_clamp(260px,24vw,400px)_1fr] items-stretch gap-5 px-6 pb-2 pt-3 lg:grid xl:grid-cols-[0.5fr_clamp(260px,24vw,400px)_1.5fr]">
+        {/* The door side — short, because the driver sits near it.
+
+            This used to be `1fr` at xl, equal to the console column, which put
+            the wheel exactly on the horizontal centre of the screen. That was
+            defensible geometry (cycle 18: the camera is the driver's eye
+            looking straight down the road, so whatever is directly in front of
+            the driver lands in the middle of the image) but it read wrong, and
+            the owner said so: *"the driving wheel is supposed to be the left
+            side of the vehicle but it's centered to the screen"*, and before
+            that, *"the left side of the dash is unrealistically long"* — the
+            two are the same fault seen from either end. A symmetric dash is a
+            car with the driver sitting in the middle of it.
+
+            So the columns are deliberately lopsided now: a short door column,
+            the wheel ahead of the driver, and the long sweep of dash, centre
+            stack and footwell to their right, which is where a left-hand-drive
+            car actually puts them. The console column keeps the room it needs
+            for its button row on one line (~310px, measured at 1100px: Back 78
+            + Next 77 + Route map 105 + the audio toggle and gaps) — it only
+            gained space in this change, never lost it. Below xl the split was
+            already lopsided at 0.42fr and is left alone. */}
         <div className={`h-full ${styles.doorCard}`} aria-hidden="true" />
 
         {/* Driver's side: binnacle behind, wheel in front, one locked unit. */}
