@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 138
+**Cycle:** 139
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3831,6 +3831,24 @@ broken should check for orphaned servers before suspecting the code.**
       the "valid" case; it returned *no resume*, identical to the corrupt cases, because a null id correctly fails
       the id-match check. Only by using a value **the app itself had written** did the control pass — and until it
       did, "corrupt data is rejected" was indistinguishable from "resume never appears in an iframe".
+
+### Cycle 138
+
+- [x] **Clean build from scratch — the one integrity check nobody had run.** Every build tonight reused `.next`, and
+      this repo has a documented history of its webpack cache silently serving CSS missing newly-added classes. So
+      `.next` was wiped and the committed source rebuilt from nothing.
+
+      | check | result |
+      | --- | --- |
+      | build | succeeds; `/drive` 23.5 kB, 153 kB first load |
+      | served CSS | **103,618 bytes — byte-identical** to the incremental build measured in cycle 128 |
+      | newest component's classes (`MotionToggle`, cycle 122) | `border-sky-300`, `bg-sky-300`, `text-sky-200` all present |
+      | control (`AudioToggle`, pre-existing) | present — so the grep discriminates |
+      | `@media print`, `prefers-reduced-motion` | both survived the clean build |
+      | scene invariant on the clean artifact | **0 holes / 1813** at mainline, −2.75 and −5.34; sky control 99–100% |
+
+      **The committed source builds from nothing into a working drive.** The shared-CSS hash differs from an older
+      build's, which is explained by classes added since — not by staleness, since the served bytes match exactly.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
