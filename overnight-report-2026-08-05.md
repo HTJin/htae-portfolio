@@ -1,6 +1,54 @@
-# Overnight run — report (rewritten at the end of cycle 101)
+# Overnight run — report (rewritten at the end of cycle 106)
 
-**Branch:** `feat/drive-mode` · **Phase:** Suggester · **Cycle:** 102 · nothing pushed, all commits local.
+**Branch:** `feat/drive-mode` · **Cycle:** 106 · nothing pushed, all commits local.
+
+## The headline: a fix of mine regressed silently and nothing caught it
+
+The gore opening — the break in the shoulder barrier where the ramp crosses it — shipped in `1cdd982`, then
+**disappeared** when the continuous side polygon landed. The barrier reverted to `rail(0, SEGMENTS, …)`: a solid wall
+at a fixed 10.9m running the whole length of the road, while the ramp sweeps from 6m out to 36m straight across it.
+**This loop committed that regression itself, in `74331f6` and `403f7f4`.** It surfaced only because the owner kept
+reporting it. Restored and re-gated (barrier, deck fascia and lit cap) in `38d3b6a`.
+
+**Every visual fix in this run carries the same exposure.** There is no check that would catch the next one. That gap
+is the single most valuable thing left on the list.
+
+## What shipped since cycle 100
+
+| | | |
+| --- | --- | --- |
+| **S131** | Gore markings — the wedge between mainline and ramp was bare verge | `b137505` |
+| **S133** | Depth-sort the three surfaces at different heights, so near ground buries the distant cut | `403f7f4` |
+| **S129/S130** | Transparent seam under the guardrail; rail crossing the ramp | `1cdd982` |
+| — | Highway given a top (barrier / deck fascia / earth) so it stops reading as a soffit | `ff3586c` |
+| — | Side face battered instead of vertical | `7a666e9` |
+| — | Gore opening restored after regression | `38d3b6a` |
+
+## Measurement lessons this run paid for, in blood
+
+1. **A number without a control is not a measurement.** S133 measured 84.6ms/frame and looked like a flat guardrail
+   violation; I began reverting. The baseline — stashed, rebuilt, same harness — was **83.7ms**. The change costs
+   ~1%; the 12fps was the instrument. I nearly threw away the right fix.
+2. **Don't measure a property the background also has.** Counting "bright pixels near the shoulder" to find the
+   barrier also counted the ramp's edge lines, which *grow* as the ramp separates — it would have reported the
+   barrier present while it was absent. The **magenta technique** (repaint the one thing in a colour no palette
+   contains) settled it in a single run, with the control inherent.
+3. **Alpha, not colour.** Three cycles of colour-matching walked past a hole one alpha read found instantly.
+4. **Sample the transition, not the endpoints.** Stills at rest are the wrong instrument for a 60fps scene; frame
+   strips keyed on `drop` showed in one image what a dozen parked screenshots missed.
+5. **A server responding is not a server serving your code.** Three stale servers faked results tonight; every
+   measurement now checks source → build → server timestamps first.
+
+## Open, owner-reported, not fixed
+
+- **S135 — the descent is invisible.** Geometry is sound (110m for 5.5m = **5.0% grade**); the rendering is not: a
+  52m swath of ground follows the ramp *down*, so nothing holds grade to measure the drop against. Filed with its
+  trap — narrowing that band needs a cut wall outside the ramp **in the same change**, or the right-hand void
+  returns.
+- **The flank is thin through the first half of a descent**, and the scene is **clipped at the frame edge** before
+  the road's side is fully in view.
+- **NH-9:** three drive files still carry uncommitted third-party edits. `RoadCanvas.jsx` was committed because it
+  became inseparable from the fixes; `CarInterior.jsx`, `world.js` and `DriveScene.jsx` are untouched.
 
 ## Cycle 101 — the cycle-100 fix holds across the whole route
 
