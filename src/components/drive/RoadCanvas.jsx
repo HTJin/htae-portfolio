@@ -615,34 +615,77 @@ export function RoadCanvas({ drive, className }) {
       ctx.rect(0, horizon, width, Math.max(0, height - horizon))
       ctx.clip()
 
-      // Wide enough to cover both carriageways, the median, and the ramp at
-      // full offset — the ground beneath everything the road is made of.
-      band(
-        -(OPPOSING_EDGE + 22),
-        CARRIAGEWAY + RAMP_OFFSET + 22,
-        colors.vergeDark
-      )
+      const tarmac = ctx.createLinearGradient(0, horizon, 0, height)
+      tarmac.addColorStop(0, colors.tarmacFar)
+      tarmac.addColorStop(1, colors.tarmacNear)
 
-      // The ground **at the ramp's own grade**, following it down.
-      //
-      // The band above is drawn at mainline grade, so the moment the ramp
-      // descends it sits above the eyeline and the clip removes it — correctly,
-      // since you cannot see ground that is above you. But nothing replaced it,
-      // so the ramp became tarmac floating over the background gradient with an
-      // empty void either side of it, for the whole descent. The embankment
-      // only ever filled the wedge between the highway and the ramp; it never
-      // gave the ramp any ground of its own.
-      band(-(CARRIAGEWAY + 26), CARRIAGEWAY + 26, colors.vergeDark, true)
+      /**
+       * The three surfaces that sit at **different heights**, painted
+       * back-to-front one depth slice at a time.
+       *
+       * Everything else here is coplanar — markings lie on the carriageway they
+       * belong to — so a single full-length polygon per surface is both correct
+       * and cheaper. These three are not: the mainline's ground is at grade, the
+       * ramp and the ground under it are up to 5.5m below it, and they were each
+       * painted as one polygon spanning the whole 980m of `Z_FAR` in a fixed
+       * object order. Object order is not depth order, so the next exit's cut —
+       * 224m away and well below your eyeline — was painted *after* all the
+       * grade-level ground in front of it and could never be occluded by it. It
+       * read as the landscape being transparent. It was not; it was solid, and
+       * simply in front of things it should have been behind.
+       *
+       * Painting slice-by-slice from far to near lets the near ground bury the
+       * distant cut the way the ground itself would. No distance gate (terrain
+       * would visibly pop as you approach) and no narrowing of the ramp's own
+       * ground (that re-opens the void beside the ramp this band was added to
+       * fix). Occlusion falls out of the geometry instead.
+       *
+       * **Cost:** three fills per segment rather than three per frame. That is
+       * the reason only these three moved — guardrail 2 — and the frame budget
+       * is measured, not assumed.
+       *
+       * **Seams:** each slice shares an edge with its neighbour and carries the
+       * same fill, so the anti-aliased join blends into an identical colour.
+       * This is why the alternating surfaces (`stripes`, `ribbonRuns`) are NOT
+       * in here: there the neighbour is a different colour and the seam shows,
+       * which is the whole reason those helpers accumulate runs.
+       */
+      const graded = [
+        // The ground beneath everything the road is made of, at mainline grade.
+        {
+          from: -(OPPOSING_EDGE + 22),
+          to: CARRIAGEWAY + RAMP_OFFSET + 22,
+          fill: colors.vergeDark,
+          follow: false,
+        },
+        // The ground at the ramp's own grade, following it down. Without this
+        // the ramp is tarmac floating over the background with a void either
+        // side of it for the whole descent.
+        {
+          from: -(CARRIAGEWAY + 26),
+          to: CARRIAGEWAY + 26,
+          fill: colors.vergeDark,
+          follow: true,
+        },
+        // The ramp itself.
+        {
+          from: LANE_OFFSET - RAMP_WIDTH / 2,
+          to: LANE_OFFSET + RAMP_WIDTH / 2,
+          fill: tarmac,
+          follow: true,
+        },
+      ]
+      for (let i = SEGMENTS - 1; i >= 0; i -= 1) {
+        for (const layer of graded) {
+          ribbon(i, i + 1, layer.from, layer.to, layer.fill, layer.follow)
+        }
+      }
 
       // Rumble bands on the two outer verges, alternating with distance. The
       // right-hand one follows the ramp, because the right-hand verge is the
       // shoulder of whichever road you are actually on.
       stripes(-(OPPOSING_EDGE + 2.4), -OPPOSING_EDGE, 9, colors.vergeLight)
       stripes(CARRIAGEWAY, CARRIAGEWAY + 2.4, 9, colors.vergeLight, true)
-
-      const tarmac = ctx.createLinearGradient(0, horizon, 0, height)
-      tarmac.addColorStop(0, colors.tarmacFar)
-      tarmac.addColorStop(1, colors.tarmacNear)
 
       // The carriageway coming the other way. Empty, and it stays empty — the
       // owner asked for the invented traffic to come off this road, so what
@@ -651,17 +694,8 @@ export function RoadCanvas({ drive, className }) {
       band(-OPPOSING_EDGE, -MEDIAN_WIDTH, tarmac)
       // Yours. The median strip between the two is left as verge.
       band(0, CARRIAGEWAY, tarmac)
-      // The ramp. On the open highway its offset is 0 and it lies exactly on
-      // the lane you are in, so it paints nothing you can see; approaching a
-      // stop it slides right and peels out of the carriageway, opening a wedge
-      // of verge between the two. That wedge is the gore, and it comes out of
-      // the geometry rather than being drawn as a special case.
-      band(
-        LANE_OFFSET - RAMP_WIDTH / 2,
-        LANE_OFFSET + RAMP_WIDTH / 2,
-        tarmac,
-        true
-      )
+      // The ramp is painted with the depth-sorted slices above, not here — it
+      // is one of the three surfaces that lives at a different height.
 
       // Gore markings. Every real interchange paints this wedge, and it is the
       // most recognisable marking an exit has — without it the road simply
