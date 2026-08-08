@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 104
+**Cycle:** 106
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3771,6 +3771,24 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S135 — The descent is invisible: the land sinks with the road, so there is no reference.** _(new, cycle 106)_
+  **Measured, both halves.** The geometry is fine — `descent.mjs` against the real `route` module: the fall runs
+  **110m for 5.5m, a 5.0% average grade** (US highways cap near 6%), across 65% of the ramp. So this is not a
+  too-short or too-shallow ramp. **The rendering is the problem:** a six-frame strip from 119m out to 48m out
+  (drop 0 → −4.53) shows the ramp curving away and the gore hatching reading correctly, and **at no point does the
+  road appear to descend.**
+  **Cause:** `RoadCanvas` paints `band(-(CARRIAGEWAY + 26), CARRIAGEWAY + 26, colors.vergeDark, true)` — a 52m swath
+  of ground that follows the ramp *down*. Road and land sink together, so nothing in frame stays at grade to measure
+  the drop against. A real off-ramp is legible precisely because the land beside it does **not** move.
+  **Fix, and it is not a one-liner:** narrow that band to a shelf so the surrounding land holds grade. That is only
+  safe now that S133 depth-sorts the graded surfaces — before it, grade terrain painted in the wrong order. It also
+  needs a **cut wall on the outside of the ramp**: with the shelf narrowed, grade-level ground beyond the ramp sits
+  above the eyeline once you have dropped, the clip correctly removes it, and without a wall to fill that face you
+  re-open the void on the right-hand side. That void is the owner's most-repeated complaint; do not narrow the band
+  without building the outside wall in the same change.
+  **Done when:** from 100m out the ramp visibly falls away relative to land that stays at grade, and an alpha sweep
+  below the horizon at drops 0 → −5.5 still returns zero transparent samples on **both** sides of the ramp.
 
 - **S133 — Depth-ordered painting (the refactor that closes four separate defects).** _(new, cycle 103)_
   **Mechanism, measured not guessed:** `RoadCanvas.jsx:635` paints

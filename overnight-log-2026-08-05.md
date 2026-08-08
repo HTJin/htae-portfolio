@@ -1791,3 +1791,16 @@ It is not. Reading the actual state rather than trusting the first alarming numb
   survives is a human decision.
 - **Controller:** `Cycle: 103`, `Phase: Planner`. Measurement-only work (S132 investigate, per-stop gore sweep) is
   available but was **not** run — it would have measured a stale build while the tree moves underneath it.
+
+### Cycle 105-106
+
+- **Cycle 105:** the gore opening had **regressed** — barrier back to `rail(0, SEGMENTS, …)`, a solid wall across the
+  ramp's path; this loop committed that regression in `74331f6`/`403f7f4` without noticing. Restored and gated
+  barrier, fascia and cap (`38d3b6a`). Verified by the magenta technique after the first probe proved invalid
+  (bright-pixel counting also counted the ramp's own edge lines): 45,587px before the crossing → **0px through it** →
+  48,220px after, matching the predicted 1.55–7.35m window.
+- **Cycle 106:** descent measured on both sides. Geometry sound (110m / 5.5m = 5.0% grade); rendering does not read
+  as a descent at any distance. Cause: 52m of ground follows the ramp down, leaving no grade reference. Filed as
+  **S135** with the void-returns trap attached. No source change.
+- **Controller:** `Cycle: 106`. Backlog: S135, S134-shaped gap (no regression guard for visual fixes), S96, S112/S113,
+  S107.
