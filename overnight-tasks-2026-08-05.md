@@ -3772,6 +3772,25 @@ _(empty)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
+- **S133 — Depth-ordered painting (the refactor that closes four separate defects).** _(new, cycle 103)_
+  **Mechanism, measured not guessed:** `RoadCanvas.jsx:635` paints
+  `band(-(CARRIAGEWAY + 26), CARRIAGEWAY + 26, colors.vergeDark, true)` — a 52m swath of terrain that follows the
+  ramp *down*, across the whole 980m of `Z_FAR`. The next exit's cut therefore drags the landscape down with it and
+  is plainly visible 224m out (captured at travel 196, ramp 0, drop 0: a hard-edged sunken terrace to the right).
+  Nothing is transparent; the ground is genuinely lower, at a distance where intervening grade-level ground should
+  hide it.
+  **Why the cheap fixes are traps, both of them tested against prior owner reports:**
+  narrowing the band re-opens the void beside the ramp that cycle 65 added it to fix; a distance gate makes terrain
+  pop up as you approach, which is the "unnatural transition" already reported.
+  **The fix:** paint back-to-front by depth — for each segment from far to near, emit that segment's ground,
+  carriageways, ramp and flank together — so near ground is laid down *after* the distant cut and buries it.
+  Occlusion then falls out of geometry instead of a hand-written running order.
+  **Also closes:** far-side lamps drawn over the road (patched by hand in `74331f6`, still order-dependent), gaps at
+  transition angles, and the flank being a sliver early in a descent.
+  **Guardrail this must carry:** per-segment fills are exactly what `stripes`/`ribbonRuns` exist to avoid — filling
+  each segment separately leaves anti-aliasing seams down the road. The rewrite must overlap adjacent quads or
+  accumulate runs per surface, and must be checked for seams before it is called done.
+
 - **S131 — Gore markings** _(new, cycle 102)_ — observed on the live build: the wedge between mainline and ramp carries no hatching, no bounding line and no nose. Small, self-contained paint pass. Must be drawn inside the eyeline clip.
 - **S132 — Investigate vegetation specks near the horizon** _(new, cycle 102)_ — may be correct planting on the previous exit's bank, or tufts emitted where no bank exists. **Measure before touching `vegetation()`.**
 
