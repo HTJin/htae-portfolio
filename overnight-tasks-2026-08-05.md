@@ -4128,6 +4128,20 @@ _(empty)_
   **Done when:** descending at −2, −4 and −5.5 shows no rail above the deck's clamped edge, the gore opening still
   cuts at the intersection, and the I1 void sweep still returns 0.
 
+  **Cycle 143 — the owner stated the same requirement from the other axis:** _"when we go lower elevation going down
+  the exit ramp the guardrail shouldn't be in the fixed position, it should be within how we get further away from
+  the main highway."_ So the rail must **recede as the ramp carries you away** — shrink and slide with the growing
+  lateral distance, the way the deck it belongs to does.
+  **What the maths already does, so the fix is not here:** `point.cx` is
+  `width/2 + (curveAt(s) − baseCurve − cameraX(sim)) · scale`, and `cameraX` includes `sim.ramp`. The barrier's
+  screen position therefore _already_ accounts for the camera moving away, and it is drawn at a fixed **world**
+  lateral, which is correct — a real guardrail does not move.
+  **So "it is not receding" is a symptom, and the unclamped height is the strongest candidate cause:** an object
+  that keeps growing upward while the deck is held at the eye line will read as looming rather than receding, even
+  while its `x` recedes correctly. **Test the clamp first and re-check the perception before touching `cx` or the
+  lateral** — changing a world position that is already right, to chase a symptom caused elsewhere, is exactly how
+  the trench was built.
+
 - **S145 — The exit ramp draws through the distant ground.** _(new, cycle 141; owner-reported)_
   **The owner:** _"the exit ramp and the exit has higher z index than the ground I see in the horizon so it shows
   through the ground."_
