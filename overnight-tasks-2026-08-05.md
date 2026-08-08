@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 115
+**Cycle:** 116
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3696,6 +3696,29 @@ _(empty — all three long-parked items were cleared in cycle 20 once the window
 _(empty)_
 
 ## Needs human (parked — requires a person; the loop will NOT guess these)
+
+- **NH-11 — S107's remaining decision is a proportion judgment, with the numbers now in hand.** _(cycle 115)_
+  **Measured** with one consistent definition — main gauge diameter ÷ wheel diameter — inside same-origin iframes
+  sized to each viewport (the window-resize path reported success while `innerWidth` stayed 1920, so it was not
+  trusted):
+
+  | viewport | wheel | gauge | ratio |
+  | --- | --- | --- | --- |
+  | 1920×895 | 302 | 85 | 0.281 |
+  | 1440×900 | 304 | 86 | 0.281 |
+  | 1280×1024 | 349 | 92 | 0.264 |
+  | 1024×1180 | 405 | 92 | **0.227** |
+  | 390×844 | — | 62 | discarded: no wheel at phone width |
+
+  **Spread 0.054**, and the mechanism is plain: the wheel scales with its column (302 → 405) while the gauge caps at
+  92, so the taller and narrower the viewport, the smaller the cluster looks against the wheel.
+  **This is NOT comparable to cycle 62's 0.602–0.831 / spread 0.229.** That used a different definition, and quoting
+  an improvement across two metrics would be the same error as the retired 208KB page-weight baseline.
+  **Why it is parked rather than fixed:** the remedy S107 itself proposes — size the gauge from the wheel's column
+  with the existing `vh` value as a ceiling — makes the ratio constant but changes cockpit proportions at every
+  desktop size. That is taste, in the dash-height budget that cycles 12, 25 and 44 each tuned for short and
+  landscape-phone viewports. **What would settle it:** say whether a constant ratio is wanted at the cost of a
+  larger cluster on tall-narrow screens.
 
 - **NH-10 — How much windscreen the cockpit should show is your call, not the loop's.** _(cycle 108)_
   The owner reports the view "doesn't reach to the very side of the highway road and looks cut off".
