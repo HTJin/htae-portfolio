@@ -2,8 +2,8 @@ import styles from '@/styles/drive.module.css'
 
 /**
  * Everything between the driver and the road: glass, pillars, headliner,
- * mirror, wipers and the car's own bonnet. Purely decorative — it never
- * swallows pointer events.
+ * mirror and the car's own bonnet. Purely decorative — it never swallows
+ * pointer events.
  */
 export function CarInterior({ passedStop }) {
   return (
@@ -44,37 +44,11 @@ export function CarInterior({ passedStop }) {
         className={`absolute inset-y-0 right-0 w-[15%] bg-[#0a0d12] sm:w-[11%] ${styles.pillarRight}`}
       />
 
-      {/* Wipers parked at the base of the glass, just above the bonnet.
-
-          Everything from here down is positioned against `--dash` (the
-          dashboard's height, defined once in DriveScene) rather than against a
-          percentage of the viewport. These used to be fixed percentages chosen
-          to sit right when the dash was 36% tall — but the dash is
-          `clamp(190px, 36%, 48%)`, so below ~528px of height the 190px floor
-          wins and the furniture stayed put while the dash grew over it. On a
-          844x390 landscape phone that hid the bonnet completely. The offsets
-          below resolve to exactly the old values at the 36% branch. */}
-      <svg
-        className="absolute inset-x-0 bottom-[calc(var(--dash)_+_5%)] h-[8%] w-full opacity-70"
-        viewBox="0 0 1000 80"
-        preserveAspectRatio="none"
-      >
-        <path
-          d="M120 74 L470 18"
-          stroke="rgba(12,16,22,0.9)"
-          strokeWidth="7"
-          strokeLinecap="round"
-        />
-        <path
-          d="M520 74 L840 26"
-          stroke="rgba(12,16,22,0.9)"
-          strokeWidth="7"
-          strokeLinecap="round"
-        />
-      </svg>
-
       {/* The dash top, smeared back at the driver by the windshield. Sits
-          directly on the dash, so it reads from the same quantity. */}
+          directly on the dash, so it reads from the same quantity. Positioned
+          against `--dash` (the dashboard's height, defined once in DriveScene)
+          rather than a viewport percentage — the dash is
+          `clamp(190px, 36%, 48%)`, so a fixed % drifts when the floor wins. */}
       <div
         className={`absolute inset-x-[12%] bottom-[var(--dash)] h-[9%] ${styles.dashReflection}`}
       />

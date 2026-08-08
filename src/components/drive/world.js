@@ -78,7 +78,10 @@ export function cameraX(sim) {
 }
 export const HORIZON_RATIO = 0.44 // where the vanishing point sits vertically
 export const Z_NEAR = 2.4
-export const Z_FAR = 460
+// Was 460: the ribbon died mid-view and the elevated deck cut off as a hard
+// cliff against the sky. ~1km keeps tarmac and the bank dissolving into haze
+// at the horizon instead of ending as a wall.
+export const Z_FAR = 980
 
 /** Lateral drift of the road centre at world position `s`. */
 export function curveAt(s) {

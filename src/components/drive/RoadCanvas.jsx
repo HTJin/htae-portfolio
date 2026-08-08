@@ -118,55 +118,44 @@ export function RoadCanvas({ drive, className }) {
      * what makes an off-ramp peel away from a mainline that carries straight on
      * — both are painted by this one function, one following and one not.
      *
-     * **Every** vertex clamps to the camera eye line, mainline and ramp alike,
-     * so a surface above you cannot paint as a sky wedge — see `yOf`. Clamping
-     * only the mainline is what split the road at its junction; the full-canvas
-     * horizon clip that preceded both was worse still, hiding the peel-off
-     * entirely because a screen-space rectangle cannot track road elevation.
+     * Surfaces above the eye are skipped, never clamped to the horizon.
+     * Clamping painted a flat asphalt bar on the vanishing line.
      */
     function ribbon(first, last, from, to, fill, follow = false) {
       if (last <= first) return
       const { horizon } = camera
-      /**
-       * **One rule, applied to whichever surface the vertex belongs to.**
-       *
-       * This clamped the mainline and left the ramp alone, and that asymmetry
-       * was the seam the owner kept reporting: _"a horizontal gap separation
-       * with what the car is immediately driving on… and the point of entry
-       * where the main highway road is. this gap should NOT exist."_
-       *
-       * At the point of entry `drop` is 0, so `yRamp === y` — the ramp and the
-       * mainline are the **same surface at the same height** and must join
-       * seamlessly. Clamping one and not the other tore them apart along a
-       * horizontal line exactly where they had to be continuous.
-       *
-       * The cull itself is sound and stays: a flat surface above your eye
-       * cannot be seen, which is why a 6.5m drop painted tarmac as a wedge
-       * across the sky in cycle 58. That is equally true of the ramp — so both
-       * are culled by the same test, against each vertex's own height.
-       *
-       * Where the two genuinely differ in elevation they still separate, and
-       * they should: that is the descent, and it is the **only** separation the
-       * owner wants visible between the highway and the exit.
-       */
-      const yOf = (point) => {
-        const y = follow ? point.yRamp : point.y
-        return y < horizon ? horizon : y
+      const yOf = (point) => (follow ? point.yRamp : point.y)
+
+      // Above the eye: invisible. Do not clamp to horizon (that is the asphalt bar).
+      let visible = 0
+      for (let i = first; i <= last; i += 1) {
+        if (yOf(points[i]) >= horizon) visible += 1
       }
+      if (visible === 0) return
+
       ctx.fillStyle = fill
       ctx.beginPath()
+      let started = false
       for (let i = first; i <= last; i += 1) {
         const point = points[i]
+        const y = yOf(point)
+        if (y < horizon) continue
         const slide = follow ? point.ramp : 0
         const x = point.cx + (from + slide) * point.scale
-        const y = yOf(point)
-        if (i === first) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
+        if (!started) {
+          ctx.moveTo(x, y)
+          started = true
+        } else {
+          ctx.lineTo(x, y)
+        }
       }
+      if (!started) return
       for (let i = last; i >= first; i -= 1) {
         const point = points[i]
+        const y = yOf(point)
+        if (y < horizon) continue
         const slide = follow ? point.ramp : 0
-        ctx.lineTo(point.cx + (to + slide) * point.scale, yOf(point))
+        ctx.lineTo(point.cx + (to + slide) * point.scale, y)
       }
       ctx.closePath()
       ctx.fill()
@@ -307,24 +296,18 @@ export function RoadCanvas({ drive, className }) {
     const SLOPE_RUN = 2.6
 
     /**
-     * The highway body closes the void between the elevated mainline and the
-     * ramp you are on. Two faces, one job:
+     * The highway profile body when viewed from the exit ramp.
      *
-     * 1. **Elevated deck face** — when the camera is below the mainline, a solid
-     *    wall under the full elevated carriageway (opposing edge → shoulder)
-     *    from deck grade down to the lower grade. Without this the deck floats
-     *    over a horizontal gap of empty ground — the separation marked in red.
-     * 2. **Interchange wedge** — shoulder → ramp inner edge, deck → ramp grade.
-     *    Opens as the ramp peels; chunked out where the ramp crosses the
-     *    shoulder so the point of entry is a hole in the shape.
+     * One opaque face from the elevated deck shoulder down to the **ramp
+     * grade**, along the ramp's inner edge. The foot follows `point.yRamp` —
+     * the same curve as the white edge line of the road you are on — so the
+     * body meets the entrance at the road, not at a flat screen-horizon cut.
      *
-     * Gaps that should read: the two roadways, and the elevation change between
-     * them. Never a void under the highway.
+     * Never clamp the foot to `horizon`: that was the gray/violet halves split.
      */
-    function highwayBodySlice(first, last, fill, camDrop) {
-      if (last <= first) return
+    function highwayBody(fill, camDrop) {
+      if (camDrop >= -0.15) return
       const shoulder = BANK_TOP
-      const leftEdge = -OPPOSING_EDGE
       const rampInnerOf = (point) => LANE_OFFSET + point.ramp - RAMP_WIDTH / 2
       const clearOfIntersection = (point) => {
         const centre = LANE_OFFSET + point.ramp
@@ -332,103 +315,30 @@ export function RoadCanvas({ drive, className }) {
         const outer = centre + RAMP_WIDTH / 2 + 0.7
         return shoulder < inner || shoulder > outer
       }
-      const deeperOf = (point) => Math.min(point.drop, camDrop)
 
-      // --- 1. Solid face under the elevated deck (kills the horizontal gap) ---
-      if (camDrop < -0.15) {
-        ctx.fillStyle = fill
-        // Right face (toward the ramp): deck shoulder down to lower grade.
-        ctx.beginPath()
-        for (let i = first; i <= last; i += 1) {
-          const point = points[i]
-          const x = point.cx + shoulder * point.scale
-          if (i === first) ctx.moveTo(x, point.y)
-          else ctx.lineTo(x, point.y)
-        }
-        for (let i = last; i >= first; i -= 1) {
-          const point = points[i]
-          const deeper = deeperOf(point)
-          ctx.lineTo(
-            point.cx + shoulder * point.scale,
-            point.y - deeper * point.scale
-          )
-        }
-        ctx.closePath()
-        ctx.fill()
-        // Left face (far carriageway edge).
-        ctx.beginPath()
-        for (let i = first; i <= last; i += 1) {
-          const point = points[i]
-          const x = point.cx + leftEdge * point.scale
-          if (i === first) ctx.moveTo(x, point.y)
-          else ctx.lineTo(x, point.y)
-        }
-        for (let i = last; i >= first; i -= 1) {
-          const point = points[i]
-          const deeper = deeperOf(point)
-          ctx.lineTo(
-            point.cx + leftEdge * point.scale,
-            point.y - deeper * point.scale
-          )
-        }
-        ctx.closePath()
-        ctx.fill()
-        // Underside slab between those two feet — seals the void under the deck.
-        ctx.beginPath()
-        for (let i = first; i <= last; i += 1) {
-          const point = points[i]
-          const deeper = deeperOf(point)
-          const x = point.cx + shoulder * point.scale
-          const y = point.y - deeper * point.scale
-          if (i === first) ctx.moveTo(x, y)
-          else ctx.lineTo(x, y)
-        }
-        for (let i = last; i >= first; i -= 1) {
-          const point = points[i]
-          const deeper = deeperOf(point)
-          ctx.lineTo(
-            point.cx + leftEdge * point.scale,
-            point.y - deeper * point.scale
-          )
-        }
-        ctx.closePath()
-        ctx.fill()
-        // Deck top between the two edges (reads as the elevated road body).
-        ctx.beginPath()
-        for (let i = first; i <= last; i += 1) {
-          const point = points[i]
-          const x = point.cx + shoulder * point.scale
-          if (i === first) ctx.moveTo(x, point.y)
-          else ctx.lineTo(x, point.y)
-        }
-        for (let i = last; i >= first; i -= 1) {
-          const point = points[i]
-          ctx.lineTo(point.cx + leftEdge * point.scale, point.y)
-        }
-        ctx.closePath()
-        ctx.fill()
-      }
-
-      // --- 2. Interchange wedge: shoulder → ramp road ---
+      // Profile + interchange as one face: deck shoulder → ramp inner edge.
+      // Chunked out where the ramp crosses the shoulder (point of entry).
       const spans = (point) =>
-        clearOfIntersection(point) && rampInnerOf(point) - shoulder > 0.35
+        clearOfIntersection(point) && rampInnerOf(point) - shoulder > 0.15
 
       let runStart = -1
-      for (let i = first; i <= last; i += 1) {
+      for (let i = 0; i <= SEGMENTS; i += 1) {
         const on = spans(points[i])
         if (on && runStart < 0) runStart = i
-        if (runStart >= 0 && (!on || i === last)) {
+        if (runStart >= 0 && (!on || i === SEGMENTS)) {
           if (i > runStart) {
             ctx.fillStyle = fill
             ctx.beginPath()
             for (let k = runStart; k <= i; k += 1) {
               const point = points[k]
               const x = point.cx + shoulder * point.scale
+              // Deck edge — real elevation, never flattened to the horizon.
               if (k === runStart) ctx.moveTo(x, point.y)
               else ctx.lineTo(x, point.y)
             }
             for (let k = i; k >= runStart; k -= 1) {
               const point = points[k]
+              // Foot on the ramp road itself — aligned to the white stripe.
               ctx.lineTo(
                 point.cx + rampInnerOf(point) * point.scale,
                 point.yRamp
@@ -440,6 +350,26 @@ export function RoadCanvas({ drive, className }) {
           runStart = -1
         }
       }
+
+      // When the ramp has not yet peeled (open mainline ahead while you sit
+      // below), still seal under the deck with a shoulder face down to the
+      // camera grade so nothing shows through beside the wedge.
+      ctx.fillStyle = fill
+      ctx.beginPath()
+      for (let i = 0; i <= SEGMENTS; i += 1) {
+        const point = points[i]
+        const x = point.cx + shoulder * point.scale
+        if (i === 0) ctx.moveTo(x, point.y)
+        else ctx.lineTo(x, point.y)
+      }
+      for (let i = SEGMENTS; i >= 0; i -= 1) {
+        const point = points[i]
+        // Camera grade at this depth: mainline y shifted by the camera's drop.
+        const footY = point.y - camDrop * point.scale
+        ctx.lineTo(point.cx + shoulder * point.scale, footY)
+      }
+      ctx.closePath()
+      ctx.fill()
     }
 
     /**
@@ -794,11 +724,13 @@ export function RoadCanvas({ drive, className }) {
 
       // Where we are along the route decides what time of day it is.
       const colors = paletteAt(routeLength > 0 ? sim.travel / routeLength : 0)
+      const camDrop = sim.drop ?? 0
+      const belowDeck = camDrop < -0.15
 
-      const ground = ctx.createLinearGradient(0, horizon - 4, 0, height)
-      ground.addColorStop(0, colors.groundFar)
-      ground.addColorStop(1, colors.groundNear)
-      ctx.fillStyle = ground
+      // Ground under the road. Neutral charcoal — night `vergeDark` / `groundNear`
+      // are blue-violet and read as a tinted lower half of the windshield.
+      const GROUND = '#0c0e12'
+      ctx.fillStyle = GROUND
       ctx.fillRect(0, horizon - 6, width, height - horizon + 6)
 
       buildPoints(sim)
@@ -847,32 +779,24 @@ export function RoadCanvas({ drive, className }) {
        * which is the whole reason those helpers accumulate runs.
        */
       const graded = [
-        // The ground beneath everything the road is made of, at mainline grade.
-        {
-          from: -(OPPOSING_EDGE + 22),
-          to: CARRIAGEWAY + RAMP_OFFSET + 22,
-          fill: colors.vergeDark,
-          follow: false,
-        },
+        // Mainline-grade verge — only while you are on the mainline. From an
+        // exit it sits near the vanishing line and paints the dark gray
+        // horizontal bar across the horizon.
+        ...(!belowDeck
+          ? [
+              {
+                from: -(OPPOSING_EDGE + 22),
+                to: CARRIAGEWAY + RAMP_OFFSET + 22,
+                fill: GROUND,
+                follow: false,
+              },
+            ]
+          : []),
         // The ground at the ramp's own grade, following it down.
-        //
-        // **This is deliberately wide, and a narrower shelf was a mistake.**
-        // Cycle 107 cut it back and added a wall climbing from the shelf to the
-        // grade beyond, on the theory that land holding grade beside the ramp
-        // would make the descent legible. It did — and it also put the exit in a
-        // trench, with a wall on the *right* of the ramp. The owner, immediately:
-        // "why the hell am I seeing walls to the right of the highway and exit?
-        // you're only supposed to have that for the highway."
-        //
-        // They are right, and the model is the correction: the highway sits on
-        // an embankment and the ramp descends to *natural ground level* beside
-        // it. There is one face in this scene — the highway's own — and it is on
-        // your left as you come down. To the right the ground simply is the
-        // ground. So it follows the ramp down, as wide as the view needs.
         {
           from: -(CARRIAGEWAY + 26),
           to: CARRIAGEWAY + 26,
-          fill: colors.vergeDark,
+          fill: GROUND,
           follow: true,
         },
         // The ramp itself.
@@ -883,31 +807,44 @@ export function RoadCanvas({ drive, className }) {
           follow: true,
         },
       ]
-      for (let i = SEGMENTS - 1; i >= 0; i -= 1) {
-        for (const layer of graded) {
-          ribbon(i, i + 1, layer.from, layer.to, layer.fill, layer.follow)
-        }
-        // Highway body at this depth, after the roads it sits between, so a
-        // nearer body face buries a farther ramp cut instead of the ramp
-        // painting over the horizon ground.
-        highwayBodySlice(i, i + 1, colors.vergeDark, sim.drop ?? 0)
+      const FAR_EXIT_Z = 140
+
+      // Opaque highway profile — charcoal, not night vergeDark (blue).
+      if (belowDeck) {
+        highwayBody(GROUND, camDrop)
       }
 
-      // Rumble bands on the two outer verges, alternating with distance. The
-      // right-hand one follows the ramp, because the right-hand verge is the
-      // shoulder of whichever road you are actually on.
-      stripes(-(OPPOSING_EDGE + 2.4), -OPPOSING_EDGE, 9, colors.vergeLight)
-      stripes(CARRIAGEWAY, CARRIAGEWAY + 2.4, 9, colors.vergeLight, true)
+      for (let i = SEGMENTS - 1; i >= 0; i -= 1) {
+        const point = points[i]
+        const farExitCut =
+          point.z > FAR_EXIT_Z && Math.abs(point.drop - camDrop) > 0.8
 
-      // The carriageway coming the other way. Empty, and it stays empty — the
-      // owner asked for the invented traffic to come off this road, so what
-      // makes it a highway is the barrier and the second carriageway, not
-      // vehicles on it.
-      band(-OPPOSING_EDGE, -MEDIAN_WIDTH, tarmac)
-      // Yours. The median strip between the two is left as verge.
-      band(0, CARRIAGEWAY, tarmac)
-      // The ramp is painted with the depth-sorted slices above, not here — it
-      // is one of the three surfaces that lives at a different height.
+        for (const layer of graded) {
+          // Defer the live ramp tarmac until after the body when below.
+          if (belowDeck && layer.follow && layer.fill === tarmac) continue
+          if (farExitCut && layer.follow && layer.fill === tarmac) continue
+          ribbon(i, i + 1, layer.from, layer.to, layer.fill, layer.follow)
+        }
+      }
+
+      if (!belowDeck) {
+        highwayBody(GROUND, camDrop)
+      }
+
+      // Rumble bands. Off the exit entirely — the right-hand strip following
+      // the ramp read as another elongated rail to the horizon.
+      if (!belowDeck) {
+        stripes(-(OPPOSING_EDGE + 2.4), -OPPOSING_EDGE, 9, colors.vergeLight)
+        stripes(CARRIAGEWAY, CARRIAGEWAY + 2.4, 9, colors.vergeLight, true)
+      }
+
+      // Mainline tarmac. When the camera is below the deck, the elevated body
+      // already represents the highway — painting full-length tarmac here is
+      // what left the asphalt bar on the horizon (clamped deck edge).
+      if (!belowDeck) {
+        band(-OPPOSING_EDGE, -MEDIAN_WIDTH, tarmac)
+        band(0, CARRIAGEWAY, tarmac)
+      }
 
       // Gore markings. Every real interchange paints this wedge, and it is the
       // most recognisable marking an exit has — without it the road simply
@@ -929,33 +866,49 @@ export function RoadCanvas({ drive, className }) {
       // that used to be carried by the centre line this replaces.
       const medianLine = withAlpha(colors.centreLine, 0.85)
 
-      // Your carriageway: yellow against the median, white on the outside.
-      band(0.25, 0.55, medianLine)
-      band(CARRIAGEWAY - 0.55, CARRIAGEWAY - 0.25, paint)
-      // The opposing carriageway, mirrored.
-      band(-MEDIAN_WIDTH - 0.55, -MEDIAN_WIDTH - 0.25, medianLine)
-      band(-OPPOSING_EDGE + 0.25, -OPPOSING_EDGE + 0.55, paint)
+      // Mainline markings stay with the mainline tarmac — hidden when below.
+      if (!belowDeck) {
+        band(0.25, 0.55, medianLine)
+        band(CARRIAGEWAY - 0.55, CARRIAGEWAY - 0.25, paint)
+        band(-MEDIAN_WIDTH - 0.55, -MEDIAN_WIDTH - 0.25, medianLine)
+        band(-OPPOSING_EDGE + 0.25, -OPPOSING_EDGE + 0.55, paint)
 
-      // Lane lines. Broken white, one between each pair of lanes on each
-      // carriageway — this is what makes it read as a highway rather than a
-      // single-lane road with a barrier beside it. Derived from LANES, so
-      // adding a third lane draws its line without another edit here.
-      const laneLine = withAlpha(colors.paint, 0.7)
-      for (let lane = 1; lane < LANES; lane += 1) {
-        const at = lane * LANE_WIDTH
-        stripes(at - 0.15, at + 0.15, DASH_PERIOD, laneLine)
-        stripes(
-          -MEDIAN_WIDTH - at - 0.15,
-          -MEDIAN_WIDTH - at + 0.15,
-          DASH_PERIOD,
-          laneLine
-        )
+        const laneLine = withAlpha(colors.paint, 0.7)
+        for (let lane = 1; lane < LANES; lane += 1) {
+          const at = lane * LANE_WIDTH
+          stripes(at - 0.15, at + 0.15, DASH_PERIOD, laneLine)
+          stripes(
+            -MEDIAN_WIDTH - at - 0.15,
+            -MEDIAN_WIDTH - at + 0.15,
+            DASH_PERIOD,
+            laneLine
+          )
+        }
       }
 
-      // The ramp's own edge lines, painted only where it has actually left the
-      // carriageway. While it is still a deceleration lane these would be two
-      // white stripes down the middle of the lane you are driving in.
-      const separated = (point) => point.ramp > RAMP_SEPARATES
+      // The ramp you are on — painted last so it is the topmost plane and its
+      // white edge lines meet the highway body at the entrance instead of
+      // sitting under a separate gray/violet half.
+      if (belowDeck) {
+        for (let i = SEGMENTS - 1; i >= 0; i -= 1) {
+          const point = points[i]
+          if (point.z > FAR_EXIT_Z && Math.abs(point.drop - camDrop) > 0.8) {
+            continue
+          }
+          ribbon(
+            i,
+            i + 1,
+            LANE_OFFSET - RAMP_WIDTH / 2,
+            LANE_OFFSET + RAMP_WIDTH / 2,
+            tarmac,
+            true
+          )
+        }
+      }
+
+      const separated = (point) =>
+        point.ramp > RAMP_SEPARATES &&
+        !(point.z > FAR_EXIT_Z && Math.abs(point.drop - camDrop) > 0.8)
       ribbonRuns(
         LANE_OFFSET - RAMP_WIDTH / 2 + 0.05,
         LANE_OFFSET - RAMP_WIDTH / 2 + 0.35,
@@ -969,77 +922,83 @@ export function RoadCanvas({ drive, className }) {
         separated
       )
 
-      // End of the flat surfaces. Everything below stands up off the ground.
-      // The highway body was already painted depth-sorted with the graded
-      // slices above — deck shoulder to ramp inner edge, chunked at the
-      // intersection — so a nearer face buries a farther ramp cut.
+      // End of the flat surfaces. Standing geometry follows.
 
       // **Roadside furniture before the barrier:** lamps on the far carriageway
       // sit behind the highway from an exit ramp; painted after the barrier they
       // read as see-through road.
+      // Baseline elevation is the main highway (drop = 0). The exit only lowers
+      // from that. `belowDeck` alone is not enough for furniture: drop is held
+      // until the ramp clears the verge, so the first half of every exit still
+      // has drop ≈ 0 while you are already off the mainline — and the shoulder
+      // rail kept drawing as an endless line on the right.
+      //
+      // On the main highway only: laterally on the mainline AND at mainline grade.
+      const onMainHighway = Math.abs(camDrop) < 0.1 && (sim.ramp ?? 0) < 0.8
+
       drawRoadside(sim, colors)
 
-      // Barrier on top of the deck only. Chunked out at the same intersection
-      // the body uses, so the car's path through the gore is a hole in both.
-      const shoulder = BANK_TOP
-      const SIDE_TOP = HIGHWAY_SIDE_TOP
-      const railClearOfRamp = (s) => {
-        const centre = LANE_OFFSET + rampAt(s)
-        const inner = centre - RAMP_WIDTH / 2 - 0.7
-        const outer = centre + RAMP_WIDTH / 2 + 0.7
-        return shoulder < inner || shoulder > outer
+      // Shoulder barrier + scenic guardrail: main highway only. Hidden for the
+      // entire exit/entrance (peel or descent), not merely after drop starts.
+      if (onMainHighway) {
+        const shoulder = BANK_TOP
+        const SIDE_TOP = HIGHWAY_SIDE_TOP
+        const railClearOfRamp = (s) => {
+          const centre = LANE_OFFSET + rampAt(s)
+          const inner = centre - RAMP_WIDTH / 2 - 0.7
+          const outer = centre + RAMP_WIDTH / 2 + 0.7
+          return shoulder < inner || shoulder > outer
+        }
+        railRuns(
+          shoulder,
+          0,
+          SIDE_TOP,
+          probe === 'barrier' ? PROBE_TINT : colors.vergeLight,
+          railClearOfRamp
+        )
+        railRuns(
+          shoulder,
+          -0.38,
+          0,
+          withAlpha(colors.tarmacNear, 0.98),
+          railClearOfRamp
+        )
+        railRuns(
+          shoulder,
+          SIDE_TOP - 0.12,
+          SIDE_TOP,
+          colors.paint,
+          railClearOfRamp
+        )
+
+        railRuns(
+          CARRIAGEWAY + 1.9,
+          0.42,
+          0.78,
+          withAlpha(colors.paint, 0.5),
+          hasGuardrail,
+          false
+        )
+        railRuns(
+          CARRIAGEWAY + 1.9,
+          0.2,
+          0.44,
+          withAlpha(colors.vergeDark, 0.95),
+          hasGuardrail,
+          false
+        )
       }
-      railRuns(
-        shoulder,
-        0,
-        SIDE_TOP,
-        probe === 'barrier' ? PROBE_TINT : colors.vergeLight,
-        railClearOfRamp
-      )
-      // Deck slab thickness under the barrier — reads as pavement edge, not soffit.
-      railRuns(
-        shoulder,
-        -0.38,
-        0,
-        withAlpha(colors.tarmacNear, 0.98),
-        railClearOfRamp
-      )
-      railRuns(
-        shoulder,
-        SIDE_TOP - 0.12,
-        SIDE_TOP,
-        colors.paint,
-        railClearOfRamp
-      )
 
       vegetation(sim, colors)
 
       // The median barrier. This is what makes it a divided highway rather than
       // a road you may legally overtake into oncoming traffic on: the traffic
       // coming the other way is behind concrete, not behind a dashed line.
-      const barrierX = -MEDIAN_WIDTH / 2
-      rail(0, SEGMENTS, barrierX, 0, 0.92, withAlpha(colors.vergeLight, 0.95))
-      rail(0, SEGMENTS, barrierX, 0.74, 0.92, withAlpha(colors.paint, 0.45))
-
-      // Guardrail along the scenic overlook — the one leg with a drop beside
-      // it. Painted before the roadside furniture so lamps stand in front, and
-      // following the ramp so it stays on the outside of the road it guards.
-      railRuns(
-        CARRIAGEWAY + 1.9,
-        0.42,
-        0.78,
-        withAlpha(colors.paint, 0.5),
-        hasGuardrail,
-        true
-      )
-      railRuns(
-        CARRIAGEWAY + 1.9,
-        0.2,
-        0.44,
-        withAlpha(colors.vergeDark, 0.95),
-        hasGuardrail,
-        true
-      )
+      if (onMainHighway) {
+        const barrierX = -MEDIAN_WIDTH / 2
+        rail(0, SEGMENTS, barrierX, 0, 0.92, withAlpha(colors.vergeLight, 0.95))
+        rail(0, SEGMENTS, barrierX, 0.74, 0.92, withAlpha(colors.paint, 0.45))
+      }
 
       // Haze so the tarmac dissolves into the sky instead of ending abruptly.
       const haze = ctx.createLinearGradient(
