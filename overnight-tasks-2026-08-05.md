@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 140
+**Cycle:** 141
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -4109,6 +4109,24 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S144 — The eyeline clip is one global horizontal line, not per-surface elevation.** _(new, cycle 140; owner-reported)_
+  **The owner's words:** _"the ramp downhill and uphill work based upon a container divided horizontally but the
+  horizontal line never is aligned to the elevation of the actual highway, thus making the ramp road be invisible
+  only until there is elevation change."_
+  **Confirmed in code:** every flat surface is clipped by a single `ctx.rect(0, horizon, width, height - horizon)` —
+  one screen-space division at the **camera's** horizon, applied identically to the mainline, the ramp and the
+  ground, regardless of what elevation each is at. The ramp is then painted at `point.yRamp`, which equals
+  `point.y` until a drop exists, so **before any elevation change the ramp is drawn exactly on top of the mainline
+  and is invisible by construction** — only its edge lines (gated on `separated`) hint that it is there.
+  **Why this is the deeper of the two defects:** it is the same class as the barrier cut just fixed in `f831a24` —
+  a screen-space proxy standing in for real geometry. The barrier's was quantised; this one is elevation-blind.
+  **What a fix has to do:** clip each surface against the viewer's eye plane *relative to that surface's own
+  elevation*, so a ramp at grade is distinguishable from the mainline it sits beside without waiting for a drop.
+  **Do not** simply lower the clip line — that is the same global-proxy mistake with a different constant, and it
+  will put tarmac in the sky on the descent, which cycle 58 already measured at a 6.5m drop.
+  **Done when:** the ramp reads as a separate road *before* it starts descending, and the descent still shows no
+  surface above the eyeline at drops of −2, −4 and −5.5.
 
 - **✅ RETIRED — do not mine.** _Cycle 133: the premise was false. Under realistic navigation the cleanup runs — a tracked carousel interval logged `create → clear → create` across two `Next` legs, and live never exceeds 1. **Guardrail 5 is fully satisfied: no stacking and no leak.** The "never cleared" reading came from `drive.goTo()`, a synthetic path that also produced two other false findings the same cycle._
 - **S143 — One carousel interval is never cleared (bounded at one, not stacking).** _(new, cycle 132)_
