@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 143
+**Cycle:** 144
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -4109,6 +4109,38 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S147 — THE defect the owner has been describing all along: an asymmetric clamp splits the road at its junction.**
+  _(new, cycle 144; owner-identified — supersedes the guardrail framing in S146)_
+  **The owner:** _"a horizontal gap separation with what the car is immediately driving on while exiting the ramp and
+  the point of entry where the main highway road is. this gap should NOT exist… the gap should only be visible for
+  the immediate path and roadway of the main highway road and the exit ramp downhill and uphill (elevation changes)."_
+  **The mechanism, exactly.** `ribbon()` clamps **mainline vertices only**:
+
+  ```js
+  const yOf = (point) => {
+    if (follow) return point.yRamp // ramp: never clamped
+    return point.y < horizon ? horizon : point.y // mainline: clamped to the eye line
+  }
+  ```
+
+  At the point of entry `drop === 0`, so `yRamp === y` — the ramp and the mainline are **the same surface at the same
+  height** and must join seamlessly. But once the camera is below the mainline, the mainline vertex is pushed up to
+  `horizon` while the ramp vertex stays at its true height. **One half of a continuous surface is clamped and the
+  half it joins is not**, so they separate along a horizontal line precisely at the junction. Measured symptom:
+  parked at the bottom of a ramp, `horizon = 337` while painted road reaches `y = 176`.
+  **Why the previous framings were wrong.** The guardrail is drawn at the correct **world** lateral and its `cx`
+  already subtracts `cameraX` — it recedes correctly. It looked like the culprit because it is the brightest thing
+  straddling the seam. **The seam is the defect; the rail merely sits on it.**
+  **The requirement, in the owner's terms:** the only separation visible between mainline and ramp must be the
+  **real elevation change** as the ramp goes down and comes back up. At the junction, where there is no elevation
+  difference, there must be **no separation at all**.
+  **Constraint on the fix:** the clamp exists for a real reason — cycle 58 measured a 6.5m drop painting tarmac as a
+  wedge across the sky. So the answer is **not** to delete it and **not** to clamp the ramp the same way (that just
+  moves the seam). Both halves must be culled by **one rule applied to the joined surface**, so a vertex shared by
+  two ribbons resolves to one `y`.
+  **Done when:** at drops of −2, −4 and −5.5 there is **no horizontal discontinuity** where the ramp meets the
+  mainline; no surface paints above the eye line; and the I1 void sweep still returns 0.
 
 - **S146 — The guardrail does not share the highway's clamped shape.** _(new, cycle 142; owner-reported)_
   **The owner:** _"the highway guardrail container is in a fixed position and blocking the view while invisible going
