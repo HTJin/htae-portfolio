@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 132
+**Cycle:** 133
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -4053,6 +4053,23 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S143 — One carousel interval is never cleared (bounded at one, not stacking).** _(new, cycle 132)_
+  **Guardrail 5 is satisfied on its stated concern.** Patching `setInterval`/`clearInterval` and filtering to the
+  carousel's own `HOLD = 4200` delay: live intervals **never exceed 1** — across 5 stop changes in a clean run and
+  18 in an earlier one. Nothing stacks.
+  **But the one that exists is never cleared.** Created at a project stop, it is still live after navigating to a
+  non-project stop and again at MILE 0, so it keeps firing `setIndex` every 4.2s for the rest of the session on a
+  carousel nobody is looking at. `ProjectShots` **does** have the cleanup (`return () => clearInterval(timer)`, deps
+  `[reducedMotion, paused, count, key]`), so the effect is written correctly — which means the component is very
+  likely **staying mounted** rather than the cleanup being wrong.
+  **Impact is small and bounded:** one timer, one `setState` per 4.2s, and it cannot accumulate. Worth fixing for
+  tidiness and to avoid a React state-update warning on an offscreen tree, not because it will degrade the drive.
+  **Do not "fix" the effect** — it is already correct. **Establish first whether `ProjectShots` unmounts on stop
+  change**; if it does not, the question is whether the retained `StopCard` is deliberate.
+  **Measurement note for whoever picks this up:** filter by the `4200` delay. An unfiltered patch catches every
+  interval on the page, and re-patching over your own patch double-counts (it did here: 3 → 5 creations for one real
+  one) — `live.size` survives that because a Set dedupes, the raw counters do not.
 
 - **S142 — Both dash toggles are 29×31px, under the 44px comfort target.** _(new, cycle 123)_
   **Measured** at 390×844 and 840×386: the sound and motion toggles are **29×31**. That clears WCAG 2.5.8 AA
