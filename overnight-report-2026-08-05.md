@@ -1,6 +1,49 @@
-# Overnight run — report (rewritten at the end of cycle 106)
+# Overnight run — report (rewritten at the end of cycle 111)
 
-**Branch:** `feat/drive-mode` · **Cycle:** 106 · nothing pushed, all commits local.
+**Branch:** `feat/drive-mode` · **Cycle:** 112 · nothing pushed, all commits local.
+
+## Since cycle 106
+
+| | | |
+| --- | --- | --- |
+| **Gore opening restored** | It had regressed — the barrier was back to a solid wall across the ramp's path, and **this loop committed that regression itself**. Verified with the magenta technique: 45,587px before the crossing → **0 through it** → 48,220px after. | `38d3b6a` |
+| **Descent made legible** | Narrowed the ramp's ground, added a wall climbing back to grade. | `ce94c3f` |
+| **…then reverted** | It worked by putting the exit in a **trench**, with a wall right of the ramp. The owner: "you're only supposed to have that for the highway." | `9298a98` |
+| **Planting on the cut's faces; road no longer buries the grass** | `vegetation` ran *before* the side polygon, which at a 5.5m drop covers exactly the inboard bank. 0 flower px left of camera → 12. | `2c2e16f` |
+| **Scene probe** | The check that would have caught both silent regressions. | `cd96dd3` |
+
+## The model, stated at last — and it is the thing that kept going wrong
+
+**There is exactly one face in this scene: the highway's own embankment, on your left as you descend.** The ramp
+descends to natural ground level; the ground right of it is open. Every fix that went wrong here went wrong by
+inventing a second face.
+
+The trench is the sharpest example: it passed **both** criteria I had written for it — void closed, slope visible —
+because neither asked _"is this still a highway?"_. A check can only catch what it thinks to ask.
+
+## S136 — the descent reads, and it was fixed by work aimed elsewhere
+
+Measured on the current build. Topmost opaque pixel (the highway's silhouette) as a fraction of frame height:
+
+| drop | x=0.15 | x=0.25 | x=0.35 |
+| --- | --- | --- | --- |
+| 0 | 0.434 | 0.434 | 0.434 |
+| −1.91 | 0.350 | 0.377 | 0.402 |
+| −3.84 | 0.293 | 0.334 | 0.375 |
+| −4.84 | **0.278** | 0.323 | 0.368 |
+
+Monotonic at all three columns — the highway rises **15.6% of frame height** beside you. Drop 0 reading an identical
+0.434 at all three columns is the built-in flat control. The batter, the three-material top and the depth sort gave
+the highway a *body*, and a body is what rises beside you. Whether it now **feels** right is perceptual and is left
+with the owner.
+
+## Still open
+
+- **Flank is thin through the first half of a descent** (owner-reported).
+- **NH-9** — `CarInterior.jsx`, `world.js`, `DriveScene.jsx` carry uncommitted third-party edits.
+- **NH-10** — windscreen aperture (~86% of viewport width); widening it trades against cockpit realism. Your call.
+- **No automated guard.** `overnight-scene-probe.md` is a console probe a human must run, not a test that fails a
+  build. The two regressions this run both slipped through the same hole.
 
 ## The headline: a fix of mine regressed silently and nothing caught it
 
