@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 114
+**Cycle:** 115
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3636,6 +3636,30 @@ broken should check for orphaned servers before suspecting the code.**
       **Two of my own timings were discarded, not reported:** a 41.3s "cold to content" that included 17.4s of my own
       harness sleep, and a 12.9s deep-link figure that was really the moment my script started running, since
       `performance.now()` is anchored at navigationStart and the content was already present at the first poll.
+
+### Cycle 114
+
+- [x] **S96 — pedals exercised with touch-type pointers; no stuck-throttle defect.** Every cycle that touched the
+      pedals had verified them with a **mouse**. Exercised with `pointerType: 'touch'` against the live sim:
+
+      | scenario | throttle |
+      | --- | --- |
+      | down → up on the pedal | 1 → 0 |
+      | down → `pointercancel` (browser steals the gesture) | 1 → 0 |
+      | down → finger slides off (`pointerout`, outside `relatedTarget`) | 1 → 0 |
+      | down → up while captured, at off-element coordinates | 1 → 0 |
+
+      **Both branches of the capture logic are safe.** With capture the press survives a slide-off and the retargeted
+      `pointerup` releases it; without capture — `setPointerCapture` throws `NotFoundError` for an inactive pointer,
+      which `Dashboard.jsx:549` already catches — the browser emits leave and `onPointerLeave` releases it. The
+      throttle cannot be stranded either way.
+      **A false positive of mine, caught before it was reported:** dispatching `pointerleave` by hand showed the
+      throttle stuck at full through a slide-off-and-lift. `pointerleave` **does not bubble** and React synthesises
+      `onPointerLeave` from `pointerout`, so the hand-made event never reached the handler. `hasPointerCapture`
+      returning **false** was the tell that the harness, not the pedal, was the anomaly.
+      **Still untested, and not testable here:** whether a long press raises the iOS touch callout. `touch-action`
+      is `none` and the element carries `touch-none select-none`, but the callout is real-device behaviour. Moved to
+      Awaiting scenario rather than claimed.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
