@@ -121,10 +121,18 @@ export function ExitSign({ drive, stop }) {
         // Feet, all the way down. This used to read miles above 0.1 and then
         // switch to *metres* — two units in one readout, the second metric,
         // on an American guide sign in a cockpit whose speedometer says mph
-        // and whose odometer says MI. A leg is 220m = 0.137 miles and the
-        // sign is only ever visible below that, so the "1 MILE / 1/2 / 1/4"
-        // ladder real signage uses above a quarter mile can never apply here;
-        // below a quarter mile, real advance signage is given in feet.
+        // and whose odometer says MI.
+        //
+        // **The justification that used to sit here has expired.** It read: "a
+        // leg is 220m = 0.137 miles and the sign is only ever visible below
+        // that, so the 1 MILE / 1/2 / 1/4 ladder can never apply here." The leg
+        // has been **420m** since cycle 58, so the sign is now visible at
+        // 0.261 miles — measured: it reads `1380 FT` at 420m out, which is
+        // above a quarter mile, exactly where real signage switches to the
+        // ladder. Feet are still correct for most of the approach and the
+        // readout is accurate throughout (1380/1150/820/490/260 FT against a
+        // true 1378/1148/817/486/259), so this is a realism gap, not a bug —
+        // filed as S140 rather than changed on the way past.
         //
         // Derived from METERS_PER_MILE rather than a typed 3.28084: this run
         // has already closed six constants that shadowed a number kept

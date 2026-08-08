@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 119
+**Cycle:** 120
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3955,6 +3955,21 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S140 — The advance sign shows feet above a quarter mile, where real signage uses the ladder.** _(new, cycle 119)_
+  **Measured, and the numbers are right:** the readout is accurate throughout — 1380 / 1150 / 820 / 490 / 260 FT
+  against a true 1378 / 1148 / 817 / 486 / 259, rounded to the nearest 10ft. **This is a realism gap, not a bug.**
+  **What is actually wrong is a premise that expired.** The comment justifying "feet, all the way down" argued that
+  "a leg is 220m = 0.137 miles and the sign is only ever visible below that", so the `1 MILE / 1/2 / 1/4` ladder
+  could never apply. **The leg has been 420m since cycle 58**, so the sign is now visible at 0.261 miles — above a
+  quarter mile, exactly where US signage switches to the ladder. The stale comment is corrected in place; the
+  behaviour is filed here rather than changed on the way past.
+  **The change, if wanted:** show `1/4 MILE` above 1320ft and feet below it. Roughly four lines in `ExitSign.jsx`.
+  **Why it is a suggestion and not a fix:** the owner asked for real interchanges, so the ladder is arguably right —
+  but it is a visible copy change on a sign they designed, and this run has twice shipped "improvements" to visible
+  things that had to be reverted.
+  **Guardrail if taken:** the switch must be derived from `METERS_PER_MILE`, not a typed 1320 — this file already
+  carries a note about six constants that shadowed a number kept somewhere else.
 
 - **S138 — A dev-only debug tint, so the gore invariant stops needing a source edit.** _(new, cycle 116)_
   **Observed need, not invented:** the shoulder barrier's gore opening is the one invariant in

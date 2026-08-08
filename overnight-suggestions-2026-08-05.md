@@ -938,3 +938,11 @@ research I did not run would be worse than a short list._
 - [ ] **S138 — dev-only debug tint so the gore invariant needs no source edit.** _Proposed._ See the backlog entry.
       Comes directly from the fact that the run's most-regressed invariant currently costs an instrumented build to
       check, which is why its regression went unnoticed.
+
+## Cycle 119 — Suggester
+
+- [x] **Audit: advance-sign distances are accurate.** 1380 / 1150 / 820 / 490 / 260 FT against a true
+      1378 / 1148 / 817 / 486 / 259, rounded to the nearest 10ft, sampled while driving a full leg.
+- [ ] **S140 — the sign uses feet above a quarter mile.** _Proposed._ Surfaced by the audit above: the comment
+      justifying feet-only asserted a 220m leg, and the leg has been 420m since cycle 58, so the sign is now visible
+      at 0.261 miles. Stale comment corrected in place; the behaviour change is filed, not made.
