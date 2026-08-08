@@ -934,19 +934,32 @@ export function RoadCanvas({ drive, className }) {
       // On the main highway only: laterally on the mainline AND at mainline grade.
       const onMainHighway = Math.abs(camDrop) < 0.1 && (sim.ramp ?? 0) < 0.8
 
+      const shoulder = BANK_TOP
+      const railClearOfRamp = (s) => {
+        const centre = LANE_OFFSET + rampAt(s)
+        const inner = centre - RAMP_WIDTH / 2 - 0.7
+        const outer = centre + RAMP_WIDTH / 2 + 0.7
+        return shoulder < inner || shoulder > outer
+      }
+
       drawRoadside(sim, colors)
 
-      // Shoulder barrier + scenic guardrail: main highway only. Hidden for the
-      // entire exit/entrance (peel or descent), not merely after drop starts.
+      // **Second body pass, after the furniture.** `highwayBody` already runs
+      // with the graded slices, and it already tops at `point.y` and chunks out
+      // at the intersection. The defect was never its shape: it was painted
+      // before `drawRoadside`, so lamps on the far carriageway landed on top of
+      // it and read as showing through the road. The owner: "they're still seen
+      // through the highway side body plane polygon."
+      //
+      // Repainting an opaque face is idempotent, so this occludes the furniture
+      // behind it without disturbing the ordering the graded pass depends on.
+      highwayBody(GROUND, camDrop)
+
+      // Shoulder barrier: a standing object on the deck, so main highway only.
+      // Hidden for the entire exit/entrance (peel or descent), not merely after
+      // drop starts, or it draws as an endless line beside the ramp.
       if (onMainHighway) {
-        const shoulder = BANK_TOP
         const SIDE_TOP = HIGHWAY_SIDE_TOP
-        const railClearOfRamp = (s) => {
-          const centre = LANE_OFFSET + rampAt(s)
-          const inner = centre - RAMP_WIDTH / 2 - 0.7
-          const outer = centre + RAMP_WIDTH / 2 + 0.7
-          return shoulder < inner || shoulder > outer
-        }
         railRuns(
           shoulder,
           0,
