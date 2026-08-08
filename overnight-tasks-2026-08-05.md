@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
-**Cycle:** 102
+**Phase:** Suggester
+**Cycle:** 103
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3531,6 +3531,22 @@ broken should check for orphaned servers before suspecting the code.**
       not be read, and reporting holes without the position they were measured at would have violated this task's
       own guardrail. The above-horizon control substitutes for it and is weaker: it proves the detector sees
       transparency, not that it would have caught *this specific* seam.
+
+### Cycle 102
+
+- [x] **S131 — The gore is painted.** Observed missing on the running build (travel 302, ramp 6.4m): both roads
+      carried edge lines, the wedge between them was bare verge. Added `goreRuns`, modelled on `embankment` because
+      the gore's two sides move differently — the left edge belongs to the highway and stays put, the right belongs
+      to the ramp and slides, which no `ribbon` helper can express (they take one `follow` flag for both edges).
+      Painted **inside the eyeline clip**. Commit `b137505`.
+      **Verified:** renders at the gore where the same frame was bare before; clip guardrail holds — on the descent
+      (drop −3.58) **0 / 240** samples over open sky are opaque, so nothing hangs above the horizon.
+      **Scope of the verification, stated:** one gore, one stop. A sweep across every stop is the follow-up, and by
+      this run's own repeatedly-paid-for lesson that is not optional.
+- **A stale server nearly invalidated this task.** The `:3009` server was started 18:46 against a build finished
+      20:04 and was serving pre-change code; the earlier `taskkill` had not taken. Caught by comparing process start
+      time against build-manifest mtime **before** measuring, not after. Second time tonight a stale server has stood
+      between a fix and its verification (`:3008` was the first).
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 

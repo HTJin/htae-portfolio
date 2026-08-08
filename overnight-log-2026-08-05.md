@@ -1770,3 +1770,13 @@ It is not. Reading the actual state rather than trusting the first alarming numb
   control was attempted and failed (fiber walk null on the old bundle) and is recorded as a limitation.
 - **Controller:** no source change this cycle and the remaining backlog items are measurements or need their own
   cycle (S107). `Cycle: 102`, `Phase: Suggester`.
+
+### Cycle 102 -> 103
+
+- **Suggester:** live audit of the running build produced **S131** (gore unmarked — observed) and **S132** (vegetation
+  specks — filed as investigate, not fix). No market research this pass; recorded as such.
+- **Builder:** S131 shipped (`b137505`). New `goreRuns` primitive; painted inside the eyeline clip.
+- **Verification:** renders where the frame was previously bare; sky guard 0/240 opaque on the descent. **One gore
+  only** — a per-stop sweep is the follow-up and is explicitly not claimed.
+- **Process:** stale `:3009` server caught by start-time vs build-time before measuring. Second stale server tonight.
+- **Controller:** `Cycle: 103`, `Phase: Suggester`. Backlog: S132 (investigate), S96, S112/S113, S107.
