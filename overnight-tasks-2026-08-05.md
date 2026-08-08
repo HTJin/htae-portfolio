@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 147
+**Cycle:** 148
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3922,7 +3922,9 @@ _(empty)_
   **What would settle it:** say whether you want the pillars pulled back (more scene, less car) or the scene's
   content moved inward so the road's side sits inside the existing aperture.
 
-- **NH-9 — Another writer is editing the drive source concurrently. This loop stopped touching it.** _(cycle 103)_
+- **NH-9 — ✅ RESOLVED (cycle 148). Not another writer: Cursor, driven by the owner.** The owner works this repo with Cursor alongside this loop and feeds its output in. Landed in `b69b0d6` after a clean build and lint. **The premise was wrong for ~40 cycles**, and both halves of the reasoning built on it — refusing to commit _and_ refusing to revert — were wrong with it. Original entry kept below for the trail.
+
+- **NH-9 (original) — Another writer is editing the drive source concurrently. This loop stopped touching it.** _(cycle 103)_
   Four files — `RoadCanvas.jsx`, `CarInterior.jsx`, `world.js`, `DriveScene.jsx` — carry **uncommitted** changes that
   this loop did not make: a new `wall` primitive, `SEGMENTS` raised 130 → 170, and edits to the cockpit and world
   modules. Timestamps place them at **20:17–20:18**, after this loop's last commit (`b137505`) and after the build at
