@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 106
+**Cycle:** 107
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3547,6 +3547,18 @@ broken should check for orphaned servers before suspecting the code.**
   20:04 and was serving pre-change code; the earlier `taskkill` had not taken. Caught by comparing process start
   time against build-manifest mtime **before** measuring, not after. Second time tonight a stale server has stood
   between a fix and its verification (`:3008` was the first).
+
+### Cycle 107
+
+- [x] **S135 — The descent reads as a descent.** The 52m swath of ground that followed the ramp down is now a shelf,
+      and `cutWall` fills the face climbing from that shelf back to the grade beyond it at the bank's own 1:2.6
+      batter. Both halves shipped together deliberately: narrowing alone puts grade-level ground above the eyeline
+      once you drop, the clip correctly removes it, and the right-hand void returns. Commit `ce94c3f`.
+      **Verified against both criteria the task was filed with:** 0 transparent samples below the horizon at drops
+      −0.62 → −5.42 (1813 samples each, sky control 91–100% so the detector was live); and the cut wall visibly
+      rises with a curved crest at 65m and 48m out, where the before-strip was flat.
+      **Stated limit:** at 119–93m out the descent still barely reads, because the drop has genuinely not begun —
+      it starts 110m from the stop. Geometry, not rendering, and untouched here.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
