@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Suggester
+**Phase:** Planner
 **Cycle:** 103
 
 ## Project orientation (so a fresh agent can start cold)
@@ -3519,7 +3519,7 @@ broken should check for orphaned servers before suspecting the code.**
       **13 alpha sweeps** below the horizon across exits 0→3, on both the acceleration and deceleration ramp, at
       drops of 0, −1.9, −2.7, −3.0, −4.5, −4.9 and −5.5, plus open mainline (ramp 0):
       **0 transparent samples in every one** (1406 samples per sweep).
-      **The instrument was proven in the same run:** the identical grid moved *above* the horizon returns
+      **The instrument was proven in the same run:** the identical grid moved _above_ the horizon returns
       **784 / 962 transparent (81.5%)**. A detector that finds 81.5% where sky is expected and 0% where ground is
       expected is measuring something real — this is the control the repo's own rules demand, and without it every
       zero above would be indistinguishable from a broken probe.
@@ -3530,7 +3530,7 @@ broken should check for orphaned servers before suspecting the code.**
       `:3008` — could not be done. The React fiber walk returns null on that older bundle, so the sim state could
       not be read, and reporting holes without the position they were measured at would have violated this task's
       own guardrail. The above-horizon control substitutes for it and is weaker: it proves the detector sees
-      transparency, not that it would have caught *this specific* seam.
+      transparency, not that it would have caught _this specific_ seam.
 
 ### Cycle 102
 
@@ -3544,9 +3544,9 @@ broken should check for orphaned servers before suspecting the code.**
       **Scope of the verification, stated:** one gore, one stop. A sweep across every stop is the follow-up, and by
       this run's own repeatedly-paid-for lesson that is not optional.
 - **A stale server nearly invalidated this task.** The `:3009` server was started 18:46 against a build finished
-      20:04 and was serving pre-change code; the earlier `taskkill` had not taken. Caught by comparing process start
-      time against build-manifest mtime **before** measuring, not after. Second time tonight a stale server has stood
-      between a fix and its verification (`:3008` was the first).
+  20:04 and was serving pre-change code; the earlier `taskkill` had not taken. Caught by comparing process start
+  time against build-manifest mtime **before** measuring, not after. Second time tonight a stale server has stood
+  between a fix and its verification (`:3008` was the first).
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
@@ -3583,6 +3583,21 @@ _(empty — all three long-parked items were cleared in cycle 20 once the window
 _(empty)_
 
 ## Needs human (parked — requires a person; the loop will NOT guess these)
+
+- **NH-9 — Another writer is editing the drive source concurrently. This loop stopped touching it.** _(cycle 103)_
+  Four files — `RoadCanvas.jsx`, `CarInterior.jsx`, `world.js`, `DriveScene.jsx` — carry **uncommitted** changes that
+  this loop did not make: a new `wall` primitive, `SEGMENTS` raised 130 → 170, and edits to the cockpit and world
+  modules. Timestamps place them at **20:17–20:18**, after this loop's last commit (`b137505`) and after the build at
+  20:04.
+  **Why this is parked rather than resolved:** committing them would attribute someone else's work to this run and
+  could capture a half-finished edit mid-save; reverting them would destroy work the loop cannot see the intent of.
+  Neither is the loop's call. The `wall` primitive's own comment — _"a zero-width ribbon collapses to a line with sky
+  showing through every anti-aliased join… use `wall` for anything that has to cover a side face"_ — addresses the
+  **same seam** this run fixed in `1cdd982` by raising the bank to the rail's underside. That is either a better fix
+  for the same defect or a colliding one, and only a person who knows both intents should decide.
+  **What the owner needs to do:** decide whose change survives, then commit or discard the working tree deliberately.
+  **Verified safe meanwhile:** the running `:3009` build (20:04) predates these edits, so cycle 102's S131
+  verification was measured against this loop's own code and is unaffected.
 
 - [ ] **⭐ Two dead links on the Solar Power Indy project (EXIT 11)** _(found cycle 56)_ — Needs human because both
       live in `src/lib/projects.js`, which the Guardrails make **read-only**, and because only the owner knows whether the

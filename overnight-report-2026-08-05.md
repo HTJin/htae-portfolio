@@ -11,7 +11,7 @@ cycles.
 **13 alpha sweeps** across exits 0→3, both the acceleration and deceleration ramp, at drops of 0, −1.9, −2.7, −3.0,
 −4.5, −4.9 and −5.5, plus open mainline: **0 transparent samples below the horizon in every one** (1406 samples each).
 
-**The instrument was proven in the same run** — the identical grid moved *above* the horizon returns **784 / 962
+**The instrument was proven in the same run** — the identical grid moved _above_ the horizon returns **784 / 962
 (81.5%)** transparent. Without that, "0 holes" and "the probe is broken" are the same reading, and this run has
 produced the second more than once.
 
@@ -27,10 +27,10 @@ bundle. That is logged as a limitation, not quietly swapped for the weaker contr
 
 The owner interrupted the loop twice. Both reports were real, and both were in the same few lines of `RoadCanvas`.
 
-| | What was wrong | Evidence |
-| --- | --- | --- |
+|          | What was wrong                                                                                                                                                                                                                                                                                                                                                              | Evidence                                                                                                                                                     |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **S129** | The shoulder guardrail hangs `0.42m` above the mainline grade and the embankment's top stopped **at** grade. Nothing painted the gap. On the mainline the painted verge sits behind it so it is invisible; from the ramp the deck is clipped (a flat surface above your eye cannot be seen) so behind the slot there is **nothing** — the canvas was literally transparent. | `alpha = 0` at y206-212 and y230-236 on a frozen frame at drop −4.18. After: **0 / 1406** transparent samples below the horizon at the deepest drop (−5.5m). |
-| **S130** | The rail was drawn with a `() => true` test — full length, fixed in world space — while the ramp sweeps out past it. Every exit and entrance drove the car through a steel barrier. | Now breaks at the gore, opening derived from the ramp's own footprint. Mainline regression sweep: **0 / 1406** transparent below horizon. |
+| **S130** | The rail was drawn with a `() => true` test — full length, fixed in world space — while the ramp sweeps out past it. Every exit and entrance drove the car through a steel barrier.                                                                                                                                                                                         | Now breaks at the gore, opening derived from the ramp's own footprint. Mainline regression sweep: **0 / 1406** transparent below horizon.                    |
 
 Commit `1cdd982`. Build clean, prettier run, only `RoadCanvas.jsx` touched.
 
@@ -46,7 +46,7 @@ the slope being measured.** A green sweep over the wrong quantity is not evidenc
 ## Corrections logged against my own reporting
 
 - I reported "3 enclosed holes remain" after the fix. **One was real; two were my own detector** counting a lamp halo
-  (alpha 1-7) as opaque and therefore calling the sky either side "enclosed". The third sits *above the horizon* —
+  (alpha 1-7) as opaque and therefore calling the sky either side "enclosed". The third sits _above the horizon_ —
   between the bank's silhouette and the horizon line — which is what you correctly see from inside a cut.
 - A `git add -A` swept **53MB** of `.next-dev` webpack cache into a commit. Reset before it went anywhere; the
   directory is now in `.gitignore`.
@@ -66,6 +66,6 @@ the slope being measured.** A green sweep over the wrong quantity is not evidenc
 
 - **Phase:** Planner, **Cycle:** 101. Backlog holds actionable items — S96 (pedals never exercised on real touch),
   S112 / S113 (measurements), S107 (cluster/wheel proportions, needs its own cycle).
-- **Two servers are running locally:** `:3008` started *before* the current build and serves stale code; **`:3009`
+- **Two servers are running locally:** `:3008` started _before_ the current build and serves stale code; **`:3009`
   serves the current build.** Check `:3009`.
 - Owner-parked items are unchanged in `overnight-ACTION-REQUIRED.md`.

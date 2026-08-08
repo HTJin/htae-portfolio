@@ -1756,7 +1756,7 @@ It is not. Reading the actual state rather than trusting the first alarming numb
   artifacts (lamp halo at alpha 1-7 counted as opaque). Recorded as a correction against my own reporting.
 - **Verification this cycle:** deepest drop (−5.5m) 0/1406 transparent below horizon; open mainline (ramp 0, drop 0)
   0/1406. Controls behaved in both sweeps (ground 255). Caveat: the sky control read 9 rather than 0 in the ramp
-  sweep — a faint glow at that point — so the *ground* reference is the one carrying that sweep.
+  sweep — a faint glow at that point — so the _ground_ reference is the one carrying that sweep.
 - **Controller:** backlog holds actionable items (S96 touch harness, S112/S113 measurements). `Cycle: 101`,
   `Phase: Planner`.
 
@@ -1780,3 +1780,14 @@ It is not. Reading the actual state rather than trusting the first alarming numb
   only** — a per-stop sweep is the follow-up and is explicitly not claimed.
 - **Process:** stale `:3009` server caught by start-time vs build-time before measuring. Second stale server tonight.
 - **Controller:** `Cycle: 103`, `Phase: Suggester`. Backlog: S132 (investigate), S96, S112/S113, S107.
+
+### Cycle 103 — halted on a concurrent-writer hazard
+
+- **No source change, deliberately.** Four drive files carry uncommitted third-party edits (20:17-20:18) made after
+  this loop's last commit and after the running build. Parked as **NH-9** in the Needs human section.
+- **Evidence integrity checked before anything else:** `:3009` build 20:04 / server 20:05 both predate the edits, so
+  cycle 102's verification stands.
+- **The overlap is real:** the new `wall` primitive targets the same seam this run fixed in `1cdd982`. Whose change
+  survives is a human decision.
+- **Controller:** `Cycle: 103`, `Phase: Planner`. Measurement-only work (S132 investigate, per-stop gore sweep) is
+  available but was **not** run — it would have measured a stale build while the tree moves underneath it.

@@ -915,7 +915,7 @@ claiming research I did not run would be worse than a short list._
       it will hang in the sky on the descent exactly as the tarmac did in cycle 58.
 - [ ] **S132 — Investigate: vegetation may read as floating dots near the horizon.** _Status: Proposed._ **This is an
       investigation, not a fix** — I saw scattered pink/orange specks above the road surface near the vanishing point
-      in the gore frame, and I do **not** know whether they are flowers correctly planted on the *previous* exit's
+      in the gore frame, and I do **not** know whether they are flowers correctly planted on the _previous_ exit's
       embankment (which is genuinely in view there) or tufts being drawn where no bank exists. Those two look
       identical at that distance and the difference is the whole question. _Done when:_ the planting's world position
       at those screen coordinates is known — measure whether tufts are emitted at points where `drop` is ~0, which
