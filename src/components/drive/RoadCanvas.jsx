@@ -545,8 +545,6 @@ export function RoadCanvas({ drive, className }) {
       if (run) railFrom(run, lateral, low, high, fill, follow)
     }
 
-    const hasGuardrail = (s) => roadsideAt(s).guardrail
-
     function drawRoadside(sim, colors) {
       const { focal, horizon, width, height } = camera
       const baseCurve = curveAt(sim.travel)
@@ -971,22 +969,22 @@ export function RoadCanvas({ drive, className }) {
           railClearOfRamp
         )
 
-        railRuns(
-          CARRIAGEWAY + 1.9,
-          0.42,
-          0.78,
-          withAlpha(colors.paint, 0.5),
-          hasGuardrail,
-          false
-        )
-        railRuns(
-          CARRIAGEWAY + 1.9,
-          0.2,
-          0.44,
-          withAlpha(colors.vergeDark, 0.95),
-          hasGuardrail,
-          false
-        )
+        // The scenic-overlook guardrail used to stand here, at `CARRIAGEWAY +
+        // 1.9`. Removed: the owner, seeing it from the exit, asked "why is
+        // there an elongated guardrail that shouldn't exist on the right side
+        // of the exit ramp??"
+        //
+        // Two things made it wrong rather than merely extra. It sat 0.8m from
+        // the shoulder barrier at `shoulder + SIDE_OUT`, which was added later
+        // and runs the **whole** route, so it duplicated a rail that already
+        // exists. And it was the **only** rail in the scene tested with
+        // something other than `railClearOfRamp` - it took `hasGuardrail` - so
+        // it never opened at the gore and ran straight across the ramp's path
+        // on every scenic-overlook leg, which is the elongated rail the owner
+        // could see from a road it had no business crossing.
+        //
+        // To bring it back, it needs both: `railClearOfRamp` in its test, and a
+        // lateral that does not shadow the shoulder barrier.
       }
 
       vegetation(sim, colors)
