@@ -802,6 +802,36 @@ export function RoadCanvas({ drive, className }) {
       }
       ctx.closePath()
       ctx.fill()
+      // **Three materials, not one dark plane. This is why it read as the
+      // underside of a bridge deck.**
+      //
+      // Measured mid-descent (drop −3.02) walking down a column: sky, then a
+      // 6px lit cap, then `43,32,33` unbroken for ninety pixels to the ground.
+      // Everything from the barrier's top to the foot of the embankment was one
+      // colour, so the only edge the eye had to work with was the lit line —
+      // and a dark mass with a lit edge and open sky above it is exactly the
+      // silhouette of a soffit. The owner read it correctly; the road had a
+      // side but no top.
+      //
+      // From below a real highway shows, top down: concrete barrier, then the
+      // dark edge of the pavement slab it stands on, then earth falling away.
+      // `rail` already draws a band between two heights at a fixed lateral, so
+      // both are one call each — no new geometry, just the missing materials.
+      //
+      // The barrier occupies everything above grade, which the earth fill had
+      // been claiming.
+      rail(0, SEGMENTS, shoulder + SIDE_OUT, 0, SIDE_TOP, colors.vergeLight)
+      // The deck's own thickness, hanging below grade. This is the band whose
+      // absence made the barrier read as the deck's underside.
+      rail(
+        0,
+        SEGMENTS,
+        shoulder + SIDE_OUT,
+        -0.38,
+        0,
+        withAlpha(colors.tarmacNear, 0.98)
+      )
+
       // Lit cap along the top edge so the ridge reads against the sky.
       ctx.fillStyle = colors.paint
       ctx.beginPath()
