@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 135
+**Cycle:** 136
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3809,6 +3809,28 @@ broken should check for orphaned servers before suspecting the code.**
 
       Exactly `useDrive`'s documented `reducedMotion` path. **Cycle 122's conclusion stands** — the feature is sound
       and the earlier test happened to be right, which is not the same as having been trustworthy.
+
+### Cycle 135
+
+- [x] **Guardrails 22–26 (saved progress) exercised for the first time this run.** Storage is
+      `htae.drive.progress.v1` → `{"index":18,"id":"project-rift"}`: **versioned key, index *and* id**, exactly the
+      shape guardrail 24 prescribes.
+
+      | stored value | resume offered | page |
+      | --- | --- | --- |
+      | the app's own valid value (**control**) | **yes** — "Resume · EXIT 18 Rift" | hydrates |
+      | `index: 999` | no | hydrates |
+      | `index: -5` | no | hydrates |
+      | id mismatch | no | hydrates |
+      | junk JSON (`{not json at all`) | no | hydrates |
+      | wrong shape (`"just a string"`) | no | hydrates |
+
+      Also confirmed: **progress is offered, never applied** — Start Engine is still the primary action in every
+      case (guardrail 25) — and **"Forget my progress" is one click away** on the same screen.
+      **The first control I wrote was invalid and would have voided the result.** I used `{"index":3,"id":null}` as
+      the "valid" case; it returned *no resume*, identical to the corrupt cases, because a null id correctly fails
+      the id-match check. Only by using a value **the app itself had written** did the control pass — and until it
+      did, "corrupt data is rejected" was indistinguishable from "resume never appears in an iframe".
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
