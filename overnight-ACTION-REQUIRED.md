@@ -6,7 +6,7 @@ alone: they are either outside its write scope, or judgement calls it declined t
 The full history is in `overnight-report-2026-08-05.md` and the ledgers beside it. This file exists because those
 have grown past the point where the actionable parts are findable.
 
-_Last confirmed: **cycle 126**, 2026-08-08. Not re-stamped from memory — each of these was re-run:_
+_Last confirmed: **cycle 127**, 2026-08-08. Not re-stamped from memory — each of these was re-run:_
 
 - _**§1 reproduces exactly**, 49 cycles after it was first measured and after a control was added to the dash:
   **−36px at 1920×1080, 1px at 1280×1024, 52px at 1024×1180.**_
