@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 124
+**Cycle:** 125
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3749,6 +3749,27 @@ broken should check for orphaned servers before suspecting the code.**
       the viewport. **The dash/glass fractions at the two small viewports are omitted deliberately** — the figure my
       element-detection produced (8.3% of 844 ≈ 70px) is impossible for a cockpit with a 210px floor, so it found the
       wrong container and is not reported as a pass.
+
+### Cycle 124
+
+- [x] **Lint run after ~15 source edits — clean.** `npm run lint` reports one warning, `SideNav.jsx:38` (missing
+      `useCallback` dep), which is **pre-existing, outside this run's scope**, and already parked for the owner.
+      Nothing tonight's changes introduced.
+- [x] **S140 retired — measured, and the benefit is 0.4 seconds.** The suggestion was to show `1/4 MILE` above
+      1320ft rather than counting feet the whole way. Quantified against the real constants
+      (`VISIBLE_FROM = LEG_LENGTH = 420`):
+
+      | | |
+      | --- | --- |
+      | sign becomes visible at | 420 m (1378 ft) |
+      | quarter mile | 402.3 m (1320 ft) |
+      | so the ladder would apply for | **17.7 m — 4.2% of the approach** |
+      | which at 56–89 mph is | **0.71 s – 0.44 s** |
+
+      **Closed as not worth doing.** It would add a mid-approach unit switch — the exact thing the original comment
+      objected to — to relabel less than a second of a seven-second approach. The stale premise behind it was the
+      real defect and that is already fixed (`2faaece`); the behaviour it implied is not worth the branch.
+      **Left in the ledger as retired, not deleted**, so it does not get re-proposed by a later Suggester pass.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 

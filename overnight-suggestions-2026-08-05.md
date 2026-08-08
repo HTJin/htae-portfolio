@@ -958,3 +958,10 @@ _Research done this pass, unlike cycles 102 and 116 where I recorded skipping it
 - **Research note:** the comparable-site material was mostly template listicles and stack recommendations
       (Next.js/Tailwind/Framer, all of which this project already uses) — no feature gap worth filing from those.
       The one genuinely transferable finding was the canvas-accessibility and motion-sickness angle.
+
+## Cycle 124
+
+- [x] **S140 — RETIRED, not built.** Measured: the `1/4 MILE` ladder would apply for **17.7m of a 420m approach**
+      (4.2%), which is **0.44–0.71 seconds** at driving speed. Adding a mid-approach unit switch to relabel that is
+      not worth the branch. The genuine defect behind S140 — a comment asserting a 220m leg when the leg is 420m —
+      was fixed separately in `2faaece`. Recorded as retired so a later Suggester pass does not re-propose it.
