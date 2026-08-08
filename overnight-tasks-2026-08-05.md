@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 133
+**Cycle:** 134
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -4054,6 +4054,7 @@ _(empty)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
+- **✅ RETIRED — do not mine.** _Cycle 133: the premise was false. Under realistic navigation the cleanup runs — a tracked carousel interval logged `create → clear → create` across two `Next` legs, and live never exceeds 1. **Guardrail 5 is fully satisfied: no stacking and no leak.** The "never cleared" reading came from `drive.goTo()`, a synthetic path that also produced two other false findings the same cycle._
 - **S143 — One carousel interval is never cleared (bounded at one, not stacking).** _(new, cycle 132)_
   **Guardrail 5 is satisfied on its stated concern.** Patching `setInterval`/`clearInterval` and filtering to the
   carousel's own `HOLD = 4200` delay: live intervals **never exceed 1** — across 5 stop changes in a clean run and

@@ -965,3 +965,11 @@ _Research done this pass, unlike cycles 102 and 116 where I recorded skipping it
       (4.2%), which is **0.44–0.71 seconds** at driving speed. Adding a mid-approach unit switch to relabel that is
       not worth the branch. The genuine defect behind S140 — a comment asserting a 220m leg when the leg is 420m —
       was fixed separately in `2faaece`. Recorded as retired so a later Suggester pass does not re-propose it.
+
+## Cycle 133
+
+- [x] **S143 — RETIRED, premise false.** Under realistic navigation (`Next`, autopilot) a **tracked** carousel
+      interval logged **`create → clear → create`** across two legs, live never exceeding 1. The cleanup in
+      `ProjectShots` runs exactly as written. **Guardrail 5 is fully satisfied — no stacking and no leak.**
+      The original "never cleared" observation came from `drive.goTo()`, which leaves the card tree in a state a
+      visitor never reaches.
