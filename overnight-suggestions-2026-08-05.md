@@ -946,3 +946,15 @@ research I did not run would be worse than a short list._
 - [ ] **S140 — the sign uses feet above a quarter mile.** _Proposed._ Surfaced by the audit above: the comment
       justifying feet-only asserted a 220m leg, and the leg has been 420m since cycle 58, so the sign is now visible
       at 0.261 miles. Stale comment corrected in place; the behaviour change is filed, not made.
+
+## Cycle 121 — Suggester (with market research, finally)
+
+_Research done this pass, unlike cycles 102 and 116 where I recorded skipping it._
+
+- [ ] **S141 — no in-page way to reduce motion.** _Proposed._ `prefers-reduced-motion` is honoured in four places;
+      in-page controls: zero. A first-person driving scene is the canonical vestibular trigger, and a canvas removes
+      the accessibility the browser would otherwise provide. Someone on a work laptop who gets motion sick has no
+      lever short of leaving for the classic site. Machinery already exists — it is one boolean in `DriveScene`.
+- **Research note:** the comparable-site material was mostly template listicles and stack recommendations
+      (Next.js/Tailwind/Framer, all of which this project already uses) — no feature gap worth filing from those.
+      The one genuinely transferable finding was the canvas-accessibility and motion-sickness angle.

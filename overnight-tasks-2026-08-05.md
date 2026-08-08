@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 121
+**Cycle:** 122
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3977,6 +3977,23 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S141 — Reduced motion is honoured, but only the OS can ask for it.** _(new, cycle 121; from market research)_
+  **Measured:** `prefers-reduced-motion` is respected in four places — `DriveScene`, `useDrive`, `StopCard`,
+  `ProjectShots` — and verified working in an earlier cycle. **In-page controls: zero matches.**
+  **Why that gap matters here specifically:** this is a first-person driving scene with continuous forward motion,
+  which is the exact pattern flagged as a vestibular trigger, and a canvas "strips away any accessibility the
+  browser gives you for free". A recruiter on a locked-down work laptop, or anyone who gets motion sick but has
+  never set the OS flag, currently has no way to turn the motion down without leaving for the classic site.
+  WCAG 2.2 asks for a *mechanism* to disable non-essential motion, not merely respect for a system setting.
+  **Scope and shape:** in scope — the machinery already exists and is threaded from one boolean in `DriveScene`.
+  The work is a control, not a rewrite: a toggle beside the existing sound button, seeding from
+  `useReducedMotion()` and overridable, passed down the same prop.
+  **Guardrails:** must not persist an "on" that starts motion for a user who asked for stillness — the mirror of the
+  audio rule (cycle 9: a stored "on" would attempt playback before any gesture). And the OS preference must remain
+  the **default**, so a user who set it never has to find this control.
+  **Do not** infer from this that the scene is currently non-compliant for users who *have* set the preference —
+  that path is implemented and was verified.
 
 - **S140 — The advance sign shows feet above a quarter mile, where real signage uses the ladder.** _(new, cycle 119)_
   **Measured, and the numbers are right:** the readout is accurate throughout — 1380 / 1150 / 820 / 490 / 260 FT
