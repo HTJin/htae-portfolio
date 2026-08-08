@@ -436,16 +436,96 @@ export function RoadCanvas({ drive, className }) {
     }
 
     /** Every contiguous run of segments where `test` holds, as one rail. */
+    /**
+     * A point part-way between two segment ends.
+     *
+     * Every field is a linear blend, which is not an approximation here: the
+     * ribbon and rail polygons already draw **straight lines** between adjacent
+     * points, so a blended point lies exactly on the edge that is being drawn.
+     */
+    function between(a, b, t) {
+      return {
+        s: a.s + (b.s - a.s) * t,
+        cx: a.cx + (b.cx - a.cx) * t,
+        y: a.y + (b.y - a.y) * t,
+        yRamp: a.yRamp + (b.yRamp - a.yRamp) * t,
+        scale: a.scale + (b.scale - a.scale) * t,
+        ramp: a.ramp + (b.ramp - a.ramp) * t,
+        drop: a.drop + (b.drop - a.drop) * t,
+      }
+    }
+
+    /** Where `test` flips between two segment ends, to within a metre. */
+    function flipBetween(a, b, test) {
+      let lo = 0
+      let hi = 1
+      const want = test(b.s)
+      for (let i = 0; i < 12; i += 1) {
+        const mid = (lo + hi) / 2
+        if (test(a.s + (b.s - a.s) * mid) === want) hi = mid
+        else lo = mid
+      }
+      return between(a, b, hi)
+    }
+
+    /** One rail from an explicit list of points, so the ends can be anywhere. */
+    function railFrom(pts, lateral, low, high, fill, follow) {
+      if (pts.length < 2) return
+      ctx.fillStyle = fill
+      ctx.beginPath()
+      for (let i = 0; i < pts.length; i += 1) {
+        const p = pts[i]
+        const base = follow ? p.yRamp : p.y
+        const x = p.cx + (lateral + (follow ? p.ramp : 0)) * p.scale
+        if (i === 0) ctx.moveTo(x, base - high * p.scale)
+        else ctx.lineTo(x, base - high * p.scale)
+      }
+      for (let i = pts.length - 1; i >= 0; i -= 1) {
+        const p = pts[i]
+        const base = follow ? p.yRamp : p.y
+        ctx.lineTo(
+          p.cx + (lateral + (follow ? p.ramp : 0)) * p.scale,
+          base - low * p.scale
+        )
+      }
+      ctx.closePath()
+      ctx.fill()
+    }
+
+    /**
+     * Rail runs **cut at the intersection**, not at the nearest segment.
+     *
+     * This used to hand `rail()` a pair of integer segment indices, so a hole in
+     * the barrier could only begin and end where a segment happened to end. With
+     * log-spaced segments the far ones are long, so the gore opening was
+     * quantised: the owner, exactly — _"you're merely changing the polygon's
+     * colour instead of taking a chunk of the polygon out of the point of
+     * intersection"_. Omitting whole segments is a colour decision dressed as
+     * geometry; the barrier has to actually end where the ramp crosses it.
+     *
+     * Each run now carries interpolated end points found by bisecting `test`
+     * between the two segments that straddle the crossing.
+     */
     function railRuns(lateral, low, high, fill, test, follow = false) {
-      let runStart = -1
+      let run = null
       for (let i = 0; i <= SEGMENTS; i += 1) {
-        const on = test(points[i].s)
-        if (on && runStart < 0) runStart = i
-        if (runStart >= 0 && (!on || i === SEGMENTS)) {
-          rail(runStart, i, lateral, low, high, fill, follow)
-          runStart = -1
+        const p = points[i]
+        const on = test(p.s)
+        if (on) {
+          // opening edge: start exactly where the test flipped
+          if (!run) {
+            run = []
+            if (i > 0) run.push(flipBetween(points[i - 1], p, test))
+          }
+          run.push(p)
+        } else if (run) {
+          // closing edge: stop exactly where it flipped back
+          run.push(flipBetween(points[i - 1], p, test))
+          railFrom(run, lateral, low, high, fill, follow)
+          run = null
         }
       }
+      if (run) railFrom(run, lateral, low, high, fill, follow)
     }
 
     const hasGuardrail = (s) => roadsideAt(s).guardrail
