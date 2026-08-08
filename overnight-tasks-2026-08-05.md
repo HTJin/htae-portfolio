@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 122
+**Cycle:** 123
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3717,6 +3717,21 @@ broken should check for orphaned servers before suspecting the code.**
       references the removed name**, so this is clean replacement rather than rot.
       **What makes this class findable at all:** comments that state a number someone else owns. The ones that
       survived the sweep are those written either as derived (`VISIBLE_FROM = LEG_LENGTH`) or as dated history.
+
+### Cycle 122
+
+- [x] **S141 — an in-page motion control, shipped.** Four cycles of nothing shipped ended by reconsidering *why*
+      S141 was filed rather than built. The stated reason — "this run shipped two visible improvements that had to
+      be reverted" — did not survive scrutiny: the trench and the buried planting were **changes to existing
+      geometry the owner had opinions about**. This is **additive, defaults to current behaviour, and closes an
+      accessibility gap**. Nobody's experience changes unless they ask for it. Commit `22e38f2`.
+      **Verified by behaviour, not by the control's own state:** motion allowed → `autopilot true`, travel 0 (drives);
+      motion reduced → `autopilot false`, travel **420** (jumps). That is exactly `useDrive`'s `reducedMotion` path.
+      **An inversion caught before shipping:** `setMotionOverride(was => !(was ?? false))` flips the *override*, not
+      the effective value — for a visitor whose OS already asks for reduced motion the override starts `null`, so
+      the first click would have done nothing.
+      **Not persisted**, mirroring the cycle-9 audio rule: a stored "on" would start motion for someone who had
+      asked for stillness.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
