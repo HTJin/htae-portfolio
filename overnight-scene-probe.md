@@ -80,11 +80,17 @@ const I3 = () => {
 }
 ```
 
-> **Caveat, stated because a weak check presented as strong is worse than none.** Flower pixel counts are tiny —
-> 0 to 12 in the states below — because only one tuft in five carries a flower. That is enough to prove planting
-> renders, and **not** enough to distinguish "planting regressed" from "few flowers in frame". Evaluate it only at a
-> **fully parked stop** (`drop <= -5.45`), and treat a drop to zero on a side that previously had flowers as the
-> signal, not the absolute count.
+**Prefer `?probe=grass`**, which tints the tuft strokes `#ff00ff`. It fixes the *reliability* half of this check: the
+flowers draw at `alpha 0.85` and composite away from their source colour, which defeated three separate probes
+before one worked, whereas magenta appears in no palette and cannot be confused with terrain. Verified inert — the
+I1 void sweep is identical with the flag on and off (0/1813 both).
+
+> **It does not fix the magnitude, and a weak check presented as strong is worse than none.** Tuft strokes are ~1px
+> wide, so counts stay small: **26 px** at a parked stop sampling **every** pixel, and only 6 px at a stride of 2 —
+> the stride, not the tint, is what made this look broken. So: **sample at stride 1**, evaluate at a fully parked
+> stop, and treat **a drop to zero on a side that previously had planting** as the signal rather than the absolute
+> count. That is exactly the regression that occurred (`0` left of camera when the side polygon buried the bank),
+> and it is the shape this check reliably catches.
 
 ## I2 — the gore opening (`?probe=barrier`, no build required)
 

@@ -398,7 +398,15 @@ export function RoadCanvas({ drive, className }) {
           const tip = place(s, x, ground + height)
           if (base.y < camera.horizon || base.scale <= 0) return
 
-          ctx.strokeStyle = withAlpha(colors.vergeLight, 0.85)
+          // `?probe=grass` — same trick as the barrier, for the same reason.
+          // The planting invariant is the weakest one in the probe doc: flowers
+          // are one tuft in five, so the honest signal is 0-12 pixels and cannot
+          // separate "planting regressed" from "few tufts in this frame". Worse,
+          // the flowers draw at alpha 0.85 and composite away from their source
+          // colour, which defeated three probes before one worked. Tinting the
+          // tuft stroke makes the count unambiguous and large.
+          ctx.strokeStyle =
+            probe === 'grass' ? PROBE_TINT : withAlpha(colors.vergeLight, 0.85)
           ctx.lineWidth = Math.max(0.6, 0.05 * base.scale)
           ctx.beginPath()
           ctx.moveTo(base.x, base.y)
