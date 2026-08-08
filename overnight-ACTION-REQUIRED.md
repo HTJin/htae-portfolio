@@ -6,7 +6,7 @@ alone: they are either outside its write scope, or judgement calls it declined t
 The full history is in `overnight-report-2026-08-05.md` and the ledgers beside it. This file exists because those
 have grown past the point where the actionable parts are findable.
 
-_Last confirmed: **cycle 128**, 2026-08-08. Not re-stamped from memory — each of these was re-run:_
+_Last confirmed: **cycle 139**, 2026-08-08. Not re-stamped from memory — each of these was re-run:_
 
 - _**§1 reproduces exactly**, 49 cycles after it was first measured and after a control was added to the dash:
   **−36px at 1920×1080, 1px at 1280×1024, 52px at 1024×1180.**_
@@ -116,11 +116,15 @@ cruising only, excluding the pull-away and the braking into the next stop — bo
 
 **Read this one first.**
 
-- **Someone else edited the drive source while the loop was running, and two files are still uncommitted.**
-  `CarInterior.jsx` and `world.js` carry changes this loop did not make, timestamped after its own commits. It has
-  left them alone throughout: committing them would attribute your work to the run, reverting them would destroy
-  work whose intent it cannot see. `RoadCanvas.jsx` was the third such file, and its changes **were** committed —
-  they had become inseparable from a fix you asked for. **Decide which of those you want kept.** (NH-9.)
+- **Someone else edited the source while the loop was running, and _three_ files are still uncommitted.**
+  `src/components/drive/CarInterior.jsx`, `src/components/drive/world.js` and **`next.config.mjs`** carry changes
+  this loop did not make. It has left all three alone: committing them would attribute your work to the run,
+  reverting them would destroy work whose intent it cannot see. `RoadCanvas.jsx` was a fourth, and its changes
+  **were** committed — they had become inseparable from a fix you asked for. **Decide which you want kept.** (NH-9.)
+
+  _Corrected in cycle 139. This said "two files" from cycle 125 onward. `next.config.mjs` (a `NEXT_DIST_DIR` option)
+  was spotted as not-the-loop's back in cycle 99 and left unstaged, but was never folded into this count._
+
 - **The windscreen shows about 86% of the viewport width.** You reported the view looked cut off at the road's side.
   Measured: the canvas is the full viewport with **no clipping anywhere in its ancestor chain** — the framing is the
   cockpit's own pillars, which is roughly a real windscreen. Pulling them back means less car in frame. Your call.
@@ -135,6 +139,26 @@ cruising only, excluding the pull-away and the braking into the next stop — bo
   decision.)
 
 ---
+
+## Handoff position — measured in cycle 139
+
+**The integration branch is `dev`, not `main`.** There is no `main` in this repo; `dev` exists locally and on
+`origin`. Anything written earlier assuming `main` was wrong about the target.
+
+|                                      |                                                                                                                       |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| `feat/drive-mode` vs `dev`           | **250 commits ahead, 0 behind** — `dev` has not moved, so no rebase is needed                                         |
+| dry merge into `dev`                 | **0 conflicts**                                                                                                       |
+| what it changes vs `dev`             | 21 files, +6280 / −2 — the whole drive feature, including earlier runs                                                |
+| `src/content` and `src/lib` vs `dev` | **empty diff** — your content is untouched against the integration branch, not just against this run's starting point |
+
+Nothing has been pushed. Verify any of it yourself:
+
+```
+git rev-list --count dev..HEAD                 # 250
+git merge-tree $(git merge-base dev HEAD) dev HEAD | grep -c '^<<<<<<<'   # 0
+git diff --numstat dev..HEAD -- src/content src/lib                      # empty
+```
 
 ## What the loop did, in one line
 
