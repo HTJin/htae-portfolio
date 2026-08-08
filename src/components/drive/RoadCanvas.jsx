@@ -752,10 +752,25 @@ export function RoadCanvas({ drive, className }) {
       // (ramp when you have dropped, mainline when you have not), so the face
       // is a full retaining wall from below and a curb on the open road, and
       // it never stops mid-view.
+      // **Battered, not vertical, and that is the whole of this fix.** Both
+      // edges used to sit at the same lateral offset, which makes a plane with
+      // zero run: from below you are looking at the *underside* of a slab, and
+      // wherever the grade changed the foot and the ground met at an angle that
+      // left slivers between them. The owner: "I fucking see the underside of
+      // the road… there are many that show random gaps between the ground."
+      //
+      // The foot now steps out by `SLOPE_RUN` for every metre the face falls —
+      // the same 1:2.6 batter the bank uses — so the face lies back into the
+      // ground instead of standing on it, and the two meet along a surface
+      // rather than an edge. Clamped so it can never run past the ramp's near
+      // edge (paint on tarmac) nor inboard of its own top (an inverted quad).
       const shoulder = CARRIAGEWAY + 2.4
       const SIDE_TOP = HIGHWAY_SIDE_TOP
       const SIDE_OUT = 0.3
-      ctx.fillStyle = colors.vergeLight
+      // Same fill as the bank. They overlap along most of a descent, and two
+      // different greys over one landform is what read as two flat slabs
+      // meeting at a diagonal instead of one hillside.
+      ctx.fillStyle = colors.vergeDark
       ctx.beginPath()
       for (let i = 0; i <= SEGMENTS; i += 1) {
         const point = points[i]
@@ -774,8 +789,14 @@ export function RoadCanvas({ drive, className }) {
         // Taking the deeper of the two keeps the wall full-height for the whole
         // length of the road whenever you are below it.
         const deeper = Math.min(point.drop, sim.drop ?? 0)
+        const top = shoulder + SIDE_OUT
+        // How far out the face has to reach to lie back at the bank's grade.
+        const battered = top + -deeper * SLOPE_RUN
+        // Never onto the ramp's tarmac, and never inboard of its own top.
+        const rampEdge = LANE_OFFSET + point.ramp - RAMP_WIDTH / 2 - 1.2
+        const foot = Math.max(top, Math.min(battered, Math.max(top, rampEdge)))
         ctx.lineTo(
-          point.cx + (shoulder + SIDE_OUT) * point.scale,
+          point.cx + foot * point.scale,
           point.y - deeper * point.scale
         )
       }
