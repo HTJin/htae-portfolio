@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 112
+**Cycle:** 113
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3594,6 +3594,28 @@ broken should check for orphaned servers before suspecting the code.**
       score itself on. The objective cue is present and monotonic; that is all this measurement claims.
       **Unchanged limit:** nothing rises before 110m out, because the drop has not begun. Geometry, not rendering.
 
+### Cycle 112
+
+- [x] **S113 — cold page weight, measured properly at last.** Two previous attempts were invalid (cycle 67 returned
+      0.9KB from cache). Measured over the wire with `curl` so no browser cache could distort it, then cross-checked
+      against Resource Timing to find what a browser *actually* requests.
+
+      | | |
+      | --- | --- |
+      | document (gzip) | 21.7 KB |
+      | JS + CSS (gzip, 12 assets) | 198.4 KB |
+      | fonts actually fetched | **352.5 KB — 62% of the page** |
+      | **cold total** | **572.6 KB** |
+
+      **`Inter-italic.var.woff2` (239 KB) is declared but never requested on `/drive`** — the single largest asset on
+      the site does not cost this page anything, because `@font-face` fetches lazily and nothing on the page is
+      italic.
+      **The cycle-42 figure of 208 KB is not comparable** and should stop being quoted as a baseline: it is within a
+      rounding error of this run's JS+CSS number, so it almost certainly excluded fonts by the same methodology
+      error. This is not evidence of a 2.7× regression.
+      **The drive scene is not the weight.** All of tonight's geometry — ramps, embankment, gore, barrier, depth
+      sort — lives inside the 198 KB of JS, and `/drive`'s own route chunk is 23 KB of that.
+
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
 _(Cycle 57's ramp-taper item was cleared in cycle 58 — moved to Done. See the note below on how, because the
@@ -3830,6 +3852,18 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S137 — Two variable fonts are 62% of the page; subsetting is the only real weight win available.** _(new, cycle 112)_
+  Measured: `Inter-roman.var.woff2` 221.9 KB and `Mona-Sans.var.woff2` 130.6 KB are fetched on `/drive`, against
+  198.4 KB for **all** JS and CSS combined. Nothing else on the page comes close, and no further work on the canvas
+  scene will move the number.
+  **Out of this run's scope** — the fonts live in `public/fonts` and are declared in global CSS, not
+  `src/components/drive/**` — so this is filed, not done.
+  **Worth knowing before acting:** they are *variable* fonts carrying every weight and width; a subset limited to
+  the weights actually used, or a static instance per weight, is typically a 60-80% cut. Verify what is used before
+  subsetting — the site's display face may rely on more axes than it appears to.
+  **Do not** simply delete `Inter-italic.var.woff2` on the strength of this measurement: it is unused **on /drive**,
+  which says nothing about the classic site's pages.
 
 - **S136 — Make the descent legible WITHOUT a trench.** _(refiled from S135, cycle 111)_
   S135 made the drop readable by narrowing the ramp's ground and walling the far side. That worked and was wrong:
