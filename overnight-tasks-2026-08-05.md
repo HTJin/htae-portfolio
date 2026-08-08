@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 148
+**Cycle:** 149
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -4111,6 +4111,21 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S148 — This run violated a tracked project rule roughly 286 times.** _(new, cycle 149)_
+  `.cursor/rules/no-em-dashes.mdc` is committed to the repo with `alwaysApply: true`, and it says: never use the em
+  dash in any output, naming **docs, comments and commit messages** explicitly, because it reads as AI-generated.
+  **Counted:** 203 in drive source comments, 37 in `overnight-ACTION-REQUIRED.md`, 33 in
+  `overnight-report-2026-08-05.md`, 12 in `overnight-scene-probe.md`, 1 in this run's commit messages.
+  **Why it went unnoticed:** the loop read `CLAUDE.md` and the tasks file's guardrails every cycle and never once
+  looked in `.cursor/`. A rule tracked in git, in a directory named for the other client the owner drives, was
+  invisible because nothing pointed at it.
+  **Not bulk-replaced, deliberately.** A blind swap produces comma splices and mangles the em dashes that sit inside
+  quoted owner speech, which must stay verbatim. The rule's own guidance is contextual: commas, periods, colons,
+  parentheses, and a plain hyphen only for compounds and date ranges.
+  **Do it in passes, checking each:** (1) the four run docs, which are user-facing; (2) drive source comments;
+  (3) leave quoted owner speech untouched and say so where it appears.
+  **And add `.cursor/rules/` to the cycle-start read** in the operating rules, so a later shift cannot repeat this.
 
 - **S147 — THE defect the owner has been describing all along: an asymmetric clamp splits the road at its junction.**
   _(new, cycle 144; owner-identified — supersedes the guardrail framing in S146)_
