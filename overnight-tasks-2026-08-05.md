@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 107
+**Cycle:** 108
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3560,6 +3560,15 @@ broken should check for orphaned servers before suspecting the code.**
       **Stated limit:** at 119–93m out the descent still barely reads, because the drop has genuinely not begun —
       it starts 110m from the stop. Geometry, not rendering, and untouched here.
 
+### Cycle 108
+
+- [x] **S135 proven across the route, not just where it was built.** 17 alpha sweeps — legs from 0, 420, 840 and 963,
+      both the acceleration and deceleration ramp, at drops 0, −1.3, −1.6, −1.7, −3.5, −4.3, −4.9 and open mainline:
+      **0 transparent samples below the horizon in every one** (1813 samples each), sky control 93–100% so the
+      detector was live throughout. The narrowed shelf plus `cutWall` does not re-open the void anywhere.
+      Measured against a **fixed** horizon rather than a detected one — the detected version moved when the cut wall
+      changed what sits in its reference column, and nearly condemned the change last cycle.
+
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
 _(Cycle 57's ramp-taper item was cleared in cycle 58 — moved to Done. See the note below on how, because the
@@ -3595,6 +3604,19 @@ _(empty — all three long-parked items were cleared in cycle 20 once the window
 _(empty)_
 
 ## Needs human (parked — requires a person; the loop will NOT guess these)
+
+- **NH-10 — How much windscreen the cockpit should show is your call, not the loop's.** _(cycle 108)_
+  The owner reports the view "doesn't reach to the very side of the highway road and looks cut off".
+  **Measured:** the canvas is the full viewport (1920×895) with **no clipping anywhere in its ancestor chain** —
+  `overflow`, `clip-path` and masks are all clear, and the canvas is the topmost hit-target edge to edge. So nothing
+  is truncating the scene technically. The framing comes from `CarInterior`, which paints the pillars and roof as
+  layered gradients over the canvas; the aperture is roughly **86% of viewport width**, which is about what a real
+  windscreen gives you.
+  **Why this is parked rather than changed:** widening the aperture is a judgment about how much car you want in
+  frame, and it trades directly against the cockpit realism the owner asked for in the first place. It also lands in
+  `CarInterior.jsx`, which still carries the uncommitted third-party edits of **NH-9**.
+  **What would settle it:** say whether you want the pillars pulled back (more scene, less car) or the scene's
+  content moved inward so the road's side sits inside the existing aperture.
 
 - **NH-9 — Another writer is editing the drive source concurrently. This loop stopped touching it.** _(cycle 103)_
   Four files — `RoadCanvas.jsx`, `CarInterior.jsx`, `world.js`, `DriveScene.jsx` — carry **uncommitted** changes that
