@@ -4,8 +4,8 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
-**Cycle:** 116
+**Phase:** Suggester
+**Cycle:** 117
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3660,6 +3660,14 @@ broken should check for orphaned servers before suspecting the code.**
       **Still untested, and not testable here:** whether a long press raises the iOS touch callout. `touch-action`
       is `none` and the element carries `touch-none select-none`, but the callout is real-device behaviour. Moved to
       Awaiting scenario rather than claimed.
+
+### Cycle 116
+
+- [x] **S138 — `?probe=barrier` ships; the gore invariant is now a URL, not a patch.** Verified against all three
+      criteria: the I1 void sweep is **identical with the flag on and off** (0/1813 both, so it moves a fill and not
+      geometry); it is strictly opt-in (magenta 0 without, 5471 with); and the invariant itself now reads without a
+      build — 29,699px at ramp 0.6m, **0 through 2.3–4.1m**, 41,159px at 7.3m, the same shape as the
+      instrumented-build measurement in cycle 105. Commit `ef0f01b`.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
