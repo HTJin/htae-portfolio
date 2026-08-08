@@ -12,6 +12,9 @@ _Last confirmed: **cycle 126**, 2026-08-08. Not re-stamped from memory — each 
   **−36px at 1920×1080, 1px at 1280×1024, 52px at 1024×1180.**_
 - _**§3 reproduces exactly**: `github.com/HTJin/solar-questions` → **404**, `gosolarindy.energy` → **DNS failure**,
   `github.com/HTJin` → **200**. Both of your calls-to-action are dead; your account is not._
+- _**§2 reproduces exactly**: two `canonical` tags with `https://htae.dev` **first**, `og:url` doubled the same way,
+  and `public/sitemap.xml` carrying a single `<loc>` for the homepage._
+- _**§5 was wrong and is corrected** — a leg is **21 s**, not 14.1 s; the route is **~7 min**, not 4.7._
 - _**Structural claims** re-verified by the commands at the foot of this page: still exactly nine committed source
   files, `src/content` and `src/lib` diff still empty, `Projects.jsx` line numbers in §2 still landing correctly._
 
@@ -88,9 +91,15 @@ The rest are still unknowns rather than passes — each is seconds of work with 
 
 ## 5. One preference
 
-**The legs are now 14.1 seconds each** — about **4.7 minutes** to drive the whole route on the accelerator, up from
-~3.1 min when this run started. That is the direct result of your "I want the ride to the next exit a bit longer".
-`Next` still autopilots. Say the word if you want it pulled back.
+**A leg takes about 21 seconds** — roughly **7 minutes** to drive the whole route on the accelerator. That is the
+direct result of your "I want the ride to the next exit a bit longer". `Next` still autopilots, and the deep links
+(`?exit=N`) are instant. Say the word if you want it pulled back.
+
+_Corrected in cycle 127. This section previously said **14.1 seconds and 4.7 minutes**, which was roughly half the
+real figure — you would have been deciding whether to shorten the drive against a number that was not true.
+Re-measured stop to stop over a clean full leg (1260 → 1680, exactly 420m, throttle held, peak 94 mph): **21.1 s**,
+which agrees with an independent 23.4 s measured for the first leg in cycle 113. The old figure probably timed
+cruising only, excluding the pull-away and the braking into the next stop — both of which you sit through._
 
 ## 6. Three toolchain warnings, all out of scope
 
