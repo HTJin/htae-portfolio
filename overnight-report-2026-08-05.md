@@ -2,44 +2,54 @@
 
 **Branch:** `feat/drive-mode` · **Cycle:** 122 · nothing pushed, all commits local.
 
-> ## ⚠ Four cycles have shipped nothing user-facing — this needs your direction
+> ## ⚠ The loop has run out of work it is allowed to do — this needs your direction
 >
-> Cycles 118–121 produced: one corrected comment, two clean audit sweeps, and two filed suggestions. **That is the
-> loop running out of work it is allowed to do, not the loop being stuck.** Every remaining item is one of:
+> Every remaining item is one of:
 >
-> | | |
-> | --- | --- |
-> | **Your decision** | NH-9 (uncommitted third-party edits in three files), NH-10 (windscreen aperture), NH-11 (cluster/wheel ratio) |
-> | **Out of the run's scope** | S137 — two fonts are **62% of a 572.6KB cold page**, the only real weight win left |
-> | **Visible change to something you designed** | S140 (sign shows feet above ¼ mile), S141 (no in-page motion control) |
+> |                                 |                                                                                                                                                                              |
+> | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | **Your decision**               | NH-9 (uncommitted third-party edits, **two** files), NH-10 (windscreen aperture), NH-11 (cluster/wheel ratio), S107 (wheel over brake pedal — explicitly gated on your "go") |
+> | **Out of the run's scope**      | S137 — two fonts are **62% of a 572.6KB cold page**, the only real weight win left                                                                                           |
+> | **Filed, justified, not built** | S142 (both dash toggles are 29×31px)                                                                                                                                         |
 >
-> I have deliberately not built S140 or S141 unasked: this run already shipped two visible "improvements" — the
-> trench and the buried planting — that had to be reverted after you caught them. **Say the word on any of these and
-> they are small pieces of work.** Without direction, the loop will keep auditing, which has diminishing value now
-> that the three scene invariants pass.
+> **Read `overnight-ACTION-REQUIRED.md`** — it is now re-verified end to end rather than re-stamped, and it is where
+> the decisions live.
+>
+> ### What changed in cycles 122–129
+>
+> - **S141 shipped** — an in-page "reduce motion" control. It defaults to your OS setting, so nothing changed for
+>   anyone who does not press it. I had filed rather than built it, citing the trench and the buried planting;
+>   **that comparison did not survive scrutiny** — those changed existing geometry you had opinions about, this is
+>   additive. Four cycles of "nothing shipped" were the cost of applying a caution to a case it did not fit.
+> - **S140 retired on measurement** rather than built: the `1/4 MILE` ladder would apply for **17.7m of a 420m
+>   approach — 0.44s at speed**. The real defect behind it was a stale comment, already fixed.
+> - **The action page was 42 cycles stale and is now re-verified line by line.** §1, §2 and §3 reproduce **exactly**;
+>   §5 was **wrong by ~50%** and is corrected; §4 lost two of its three "unmeasurable" items; §7 was added for five
+>   items the page had never mentioned.
+> - **Lint clean** across ~15 source edits; the one warning is pre-existing and out of scope.
 
 ## Current state: all three scene invariants pass
 
 Re-measured on the current build rather than carried forward, because the cut wall was removed, planting reordered
 and two probe flags added since the last route-wide check.
 
-| invariant | result |
-| --- | --- |
-| **I1 void** — the road is never see-through | 8 samples, two legs, mainline → −5.3m: **0 holes / 1813 every time**, sky control 91–100% |
-| **I2 gore** — the barrier opens where the ramp crosses | 28,222px before → **0 through 2.3–4.1m** → 42,678px after |
-| **I3 planting** — grass on the bank, nowhere else | mainline **0/0** (correctly bare), parked stop **16 left / 0 right** |
+| invariant                                              | result                                                                                    |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| **I1 void** — the road is never see-through            | 8 samples, two legs, mainline → −5.3m: **0 holes / 1813 every time**, sky control 91–100% |
+| **I2 gore** — the barrier opens where the ramp crosses | 28,222px before → **0 through 2.3–4.1m** → 42,678px after                                 |
+| **I3 planting** — grass on the bank, nowhere else      | mainline **0/0** (correctly bare), parked stop **16 left / 0 right**                      |
 
-I3's shape *is* the model: one face, on the left. The right-hand zero is the trench being gone; the mainline zero is
+I3's shape _is_ the model: one face, on the left. The right-hand zero is the trench being gone; the mainline zero is
 a real negative control.
 
 ## Since cycle 111
 
-| | | |
-| --- | --- | --- |
-| Trench removed — the only wall is the highway's own | The owner: "you're only supposed to have that for the highway." Verified the removal did not re-open the void. | `9298a98` |
-| Planting on the bank; road no longer buries the grass | `vegetation` ran before the side polygon, which covers exactly the inboard bank. 0 flower px left → 12. | `2c2e16f` |
-| `?probe=barrier` | The gore invariant becomes a URL instead of an edit-rebuild-revert cycle. | `ef0f01b` |
-| `?probe=grass` | Fixes the planting check's *reliability*, not its magnitude — and says so. | `b618819` |
+|                                                       |                                                                                                                |           |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------- |
+| Trench removed — the only wall is the highway's own   | The owner: "you're only supposed to have that for the highway." Verified the removal did not re-open the void. | `9298a98` |
+| Planting on the bank; road no longer buries the grass | `vegetation` ran before the side polygon, which covers exactly the inboard bank. 0 flower px left → 12.        | `2c2e16f` |
+| `?probe=barrier`                                      | The gore invariant becomes a URL instead of an edit-rebuild-revert cycle.                                      | `ef0f01b` |
+| `?probe=grass`                                        | Fixes the planting check's _reliability_, not its magnitude — and says so.                                     | `b618819` |
 
 ## What measurement cost this run, and what it bought
 
@@ -72,13 +82,13 @@ for it, because neither asked _"is this still a highway?"_.
 
 ## Since cycle 106
 
-| | | |
-| --- | --- | --- |
-| **Gore opening restored** | It had regressed — the barrier was back to a solid wall across the ramp's path, and **this loop committed that regression itself**. Verified with the magenta technique: 45,587px before the crossing → **0 through it** → 48,220px after. | `38d3b6a` |
-| **Descent made legible** | Narrowed the ramp's ground, added a wall climbing back to grade. | `ce94c3f` |
-| **…then reverted** | It worked by putting the exit in a **trench**, with a wall right of the ramp. The owner: "you're only supposed to have that for the highway." | `9298a98` |
-| **Planting on the cut's faces; road no longer buries the grass** | `vegetation` ran *before* the side polygon, which at a 5.5m drop covers exactly the inboard bank. 0 flower px left of camera → 12. | `2c2e16f` |
-| **Scene probe** | The check that would have caught both silent regressions. | `cd96dd3` |
+|                                                                  |                                                                                                                                                                                                                                            |           |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| **Gore opening restored**                                        | It had regressed — the barrier was back to a solid wall across the ramp's path, and **this loop committed that regression itself**. Verified with the magenta technique: 45,587px before the crossing → **0 through it** → 48,220px after. | `38d3b6a` |
+| **Descent made legible**                                         | Narrowed the ramp's ground, added a wall climbing back to grade.                                                                                                                                                                           | `ce94c3f` |
+| **…then reverted**                                               | It worked by putting the exit in a **trench**, with a wall right of the ramp. The owner: "you're only supposed to have that for the highway."                                                                                              | `9298a98` |
+| **Planting on the cut's faces; road no longer buries the grass** | `vegetation` ran _before_ the side polygon, which at a 5.5m drop covers exactly the inboard bank. 0 flower px left of camera → 12.                                                                                                         | `2c2e16f` |
+| **Scene probe**                                                  | The check that would have caught both silent regressions.                                                                                                                                                                                  | `cd96dd3` |
 
 ## The model, stated at last — and it is the thing that kept going wrong
 
@@ -93,16 +103,16 @@ because neither asked _"is this still a highway?"_. A check can only catch what 
 
 Measured on the current build. Topmost opaque pixel (the highway's silhouette) as a fraction of frame height:
 
-| drop | x=0.15 | x=0.25 | x=0.35 |
-| --- | --- | --- | --- |
-| 0 | 0.434 | 0.434 | 0.434 |
-| −1.91 | 0.350 | 0.377 | 0.402 |
-| −3.84 | 0.293 | 0.334 | 0.375 |
-| −4.84 | **0.278** | 0.323 | 0.368 |
+| drop  | x=0.15    | x=0.25 | x=0.35 |
+| ----- | --------- | ------ | ------ |
+| 0     | 0.434     | 0.434  | 0.434  |
+| −1.91 | 0.350     | 0.377  | 0.402  |
+| −3.84 | 0.293     | 0.334  | 0.375  |
+| −4.84 | **0.278** | 0.323  | 0.368  |
 
 Monotonic at all three columns — the highway rises **15.6% of frame height** beside you. Drop 0 reading an identical
 0.434 at all three columns is the built-in flat control. The batter, the three-material top and the depth sort gave
-the highway a *body*, and a body is what rises beside you. Whether it now **feels** right is perceptual and is left
+the highway a _body_, and a body is what rises beside you. Whether it now **feels** right is perceptual and is left
 with the owner.
 
 ## Still open
@@ -126,14 +136,14 @@ is the single most valuable thing left on the list.
 
 ## What shipped since cycle 100
 
-| | | |
-| --- | --- | --- |
-| **S131** | Gore markings — the wedge between mainline and ramp was bare verge | `b137505` |
-| **S133** | Depth-sort the three surfaces at different heights, so near ground buries the distant cut | `403f7f4` |
-| **S129/S130** | Transparent seam under the guardrail; rail crossing the ramp | `1cdd982` |
-| — | Highway given a top (barrier / deck fascia / earth) so it stops reading as a soffit | `ff3586c` |
-| — | Side face battered instead of vertical | `7a666e9` |
-| — | Gore opening restored after regression | `38d3b6a` |
+|               |                                                                                           |           |
+| ------------- | ----------------------------------------------------------------------------------------- | --------- |
+| **S131**      | Gore markings — the wedge between mainline and ramp was bare verge                        | `b137505` |
+| **S133**      | Depth-sort the three surfaces at different heights, so near ground buries the distant cut | `403f7f4` |
+| **S129/S130** | Transparent seam under the guardrail; rail crossing the ramp                              | `1cdd982` |
+| —             | Highway given a top (barrier / deck fascia / earth) so it stops reading as a soffit       | `ff3586c` |
+| —             | Side face battered instead of vertical                                                    | `7a666e9` |
+| —             | Gore opening restored after regression                                                    | `38d3b6a` |
 
 ## Measurement lessons this run paid for, in blood
 
@@ -141,7 +151,7 @@ is the single most valuable thing left on the list.
    violation; I began reverting. The baseline — stashed, rebuilt, same harness — was **83.7ms**. The change costs
    ~1%; the 12fps was the instrument. I nearly threw away the right fix.
 2. **Don't measure a property the background also has.** Counting "bright pixels near the shoulder" to find the
-   barrier also counted the ramp's edge lines, which *grow* as the ramp separates — it would have reported the
+   barrier also counted the ramp's edge lines, which _grow_ as the ramp separates — it would have reported the
    barrier present while it was absent. The **magenta technique** (repaint the one thing in a colour no palette
    contains) settled it in a single run, with the control inherent.
 3. **Alpha, not colour.** Three cycles of colour-matching walked past a hole one alpha read found instantly.
@@ -153,7 +163,7 @@ is the single most valuable thing left on the list.
 ## Open, owner-reported, not fixed
 
 - **S135 — the descent is invisible.** Geometry is sound (110m for 5.5m = **5.0% grade**); the rendering is not: a
-  52m swath of ground follows the ramp *down*, so nothing holds grade to measure the drop against. Filed with its
+  52m swath of ground follows the ramp _down_, so nothing holds grade to measure the drop against. Filed with its
   trap — narrowing that band needs a cut wall outside the ramp **in the same change**, or the right-hand void
   returns.
 - **The flank is thin through the first half of a descent**, and the scene is **clipped at the frame edge** before
