@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 142
+**Cycle:** 143
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -4109,6 +4109,24 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S146 — The guardrail does not share the highway's clamped shape.** _(new, cycle 142; owner-reported)_
+  **The owner:** _"the highway guardrail container is in a fixed position and blocking the view while invisible going
+  down the ramp"_ and _"the guardrail should always match the shape of the main highway."_
+  **What is actually true, checked:** the shoulder rails are drawn with `follow = false`, so they use `point.cx` and
+  `point.y` and **do** track the highway's curve and elevation — they are not screen-anchored. So "fixed position"
+  is not literally the mechanism, but the symptom the owner reports is real and the cause is adjacent:
+  **`ribbon()` now clamps mainline vertices to the camera eye line** (`point.y < horizon ? horizon : point.y`) so a
+  deck above you cannot paint as a sky wedge. **`railFrom()` applies no such clamp.** So on the way down the deck is
+  held at the eye line while the guardrail keeps climbing with the raw `point.y` — the rail rises above the road it
+  belongs to and spans the view, which is exactly "blocking the view" by something you cannot identify.
+  **The requirement, in the owner's words:** the guardrail must always match the shape of the main highway. It is
+  part of that surface, not an independent object drawn beside it — so whatever culling the deck gets, its rail gets.
+  **The fix:** give `railFrom` (and the lit cap, which shares the lateral) the same eye-plane treatment the deck
+  has, derived from the deck's own clamped `y` rather than recomputed. **Do not** clamp it independently with its own
+  rule — two objects clamped by two rules is how the deck and its barrier came apart in the first place.
+  **Done when:** descending at −2, −4 and −5.5 shows no rail above the deck's clamped edge, the gore opening still
+  cuts at the intersection, and the I1 void sweep still returns 0.
 
 - **S145 — The exit ramp draws through the distant ground.** _(new, cycle 141; owner-reported)_
   **The owner:** _"the exit ramp and the exit has higher z index than the ground I see in the horizon so it shows
