@@ -427,15 +427,22 @@ export function RoadCanvas({ drive, className }) {
         const top = BANK_TOP
         const foot = bankFoot(rampAt(s), drop)
 
-        for (let k = 0; k < 4; k += 1) {
-          // Spread across the face, biased away from both edges.
-          const t = 0.12 + (((n * 7 + k * 23) % 76) / 76) * 0.76
-          const x = top + (foot - top) * t
-          const ground = drop * t // the face falls linearly between the grades
-          const height = 0.34 + (((n + k * 5) % 7) / 7) * 0.3
+        // **Both faces of the cut, not just the inboard one.** `cutWall` gave
+        // the exit an outboard face (S135) and the planting did not follow it,
+        // so one side of the same landform was grassed and the other was bare
+        // earth. Its geometry is the mirror: the foot sits at the ramp's grade
+        // and the crest climbs back to grade, so `ground` runs the other way.
+        const outFoot = LANE_OFFSET + rampAt(s) + RAMP_WIDTH / 2 + SHELF_OUT
+        const outCrest = outFoot + -drop * SLOPE_RUN
+
+        // One tuft, wherever it stands. Both faces plant identically, so the
+        // drawing lives here once rather than being copied per face — the same
+        // reason `bankFoot` is shared between the face and its planting.
+        const tuft = (x, ground, seed) => {
+          const height = 0.34 + ((seed % 7) / 7) * 0.3
           const base = place(s, x, ground)
           const tip = place(s, x, ground + height)
-          if (base.y < camera.horizon || base.scale <= 0) continue
+          if (base.y < camera.horizon || base.scale <= 0) return
 
           ctx.strokeStyle = withAlpha(colors.vergeLight, 0.85)
           ctx.lineWidth = Math.max(0.6, 0.05 * base.scale)
@@ -445,16 +452,31 @@ export function RoadCanvas({ drive, className }) {
           ctx.stroke()
 
           // One tuft in five carries a flower, warm against the grass.
-          if ((n + k) % 5 === 0) {
+          if (seed % 5 === 0) {
             const petal = Math.max(0.7, 0.075 * base.scale)
             ctx.fillStyle =
-              (n + k) % 10 === 0
+              seed % 10 === 0
                 ? 'rgba(244, 208, 122, 0.9)'
                 : 'rgba(226, 170, 196, 0.85)'
             ctx.beginPath()
             ctx.arc(tip.x + 0.12 * base.scale, tip.y, petal, 0, Math.PI * 2)
             ctx.fill()
           }
+        }
+
+        for (let k = 0; k < 4; k += 1) {
+          // Spread across the face, biased away from both edges.
+          const t = 0.12 + (((n * 7 + k * 23) % 76) / 76) * 0.76
+          // Inboard: the bank between mainline and ramp. Falls from grade.
+          tuft(top + (foot - top) * t, drop * t, n + k * 5)
+          // Outboard: the cut wall. Climbs from the ramp's grade back to grade,
+          // so the height offset runs from `drop` at the foot to 0 at the crest
+          // — the mirror of the line above, not a copy of it.
+          tuft(
+            outFoot + (outCrest - outFoot) * t,
+            drop * (1 - t),
+            n + k * 5 + 3
+          )
         }
       }
     }
@@ -853,7 +875,6 @@ export function RoadCanvas({ drive, className }) {
       // The far side of the same cut. Painted with the bank, before the
       // planting, so both faces of the exit are one landform.
       cutWall(colors.vergeDark)
-      vegetation(sim, colors)
 
       // ONE continuous side polygon along the entire highway. No gore gate, no
       // "elevated only" gate — those punched holes in the silhouette. Top rides
@@ -978,6 +999,15 @@ export function RoadCanvas({ drive, className }) {
         colors.paint,
         railClearOfRamp
       )
+
+      // **Planting goes on after the faces it grows on, not before them.**
+      // It ran before the highway's side polygon, which at a full 5.5m drop
+      // covers world x 10.9 → 25.2 — precisely where the inboard bank and its
+      // grass are. The face painted straight over them, and the bank the owner
+      // asked to have planted was bare again. Measured: at the stop, **0**
+      // flower pixels left of the camera and 6 to the right, where the new cut
+      // wall is the only planted face not yet buried.
+      vegetation(sim, colors)
 
       // The median barrier. This is what makes it a divided highway rather than
       // a road you may legally overtake into oncoming traffic on: the traffic
