@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 141
+**Cycle:** 142
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3813,7 +3813,7 @@ broken should check for orphaned servers before suspecting the code.**
 ### Cycle 135
 
 - [x] **Guardrails 22–26 (saved progress) exercised for the first time this run.** Storage is
-      `htae.drive.progress.v1` → `{"index":18,"id":"project-rift"}`: **versioned key, index *and* id**, exactly the
+      `htae.drive.progress.v1` → `{"index":18,"id":"project-rift"}`: **versioned key, index _and_ id**, exactly the
       shape guardrail 24 prescribes.
 
       | stored value | resume offered | page |
@@ -4110,6 +4110,18 @@ _(empty)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
+- **S145 — The exit ramp draws through the distant ground.** _(new, cycle 141; owner-reported)_
+  **The owner:** _"the exit ramp and the exit has higher z index than the ground I see in the horizon so it shows
+  through the ground."_
+  A concrete occlusion defect, and **not** the same as the transparency this run already fixed: the ramp is solid,
+  it is simply painted over terrain that should be in front of it. S133 depth-sorted three surfaces — grade ground,
+  ramp-grade ground, ramp tarmac — back to front per slice, so a far ramp slice _should_ be buried by nearer ground.
+  **Where it likely escapes:** within one slice the ramp is painted **last**, and the ramp at full offset (30.2m)
+  reaches laterally past the ground bands that are meant to cover it, so at distance there is no nearer ground
+  painted over those pixels at all. Verify that before changing anything.
+  **Done when:** at a mainline position ~200m out, no ramp tarmac is visible above the terrain silhouette, and the
+  I1 void sweep still returns 0.
+
 - **S144 — The eyeline clip is one global horizontal line, not per-surface elevation.** _(new, cycle 140; owner-reported)_
   **The owner's words:** _"the ramp downhill and uphill work based upon a container divided horizontally but the
   horizontal line never is aligned to the elevation of the actual highway, thus making the ramp road be invisible
@@ -4121,12 +4133,27 @@ _(empty)_
   and is invisible by construction** — only its edge lines (gated on `separated`) hint that it is there.
   **Why this is the deeper of the two defects:** it is the same class as the barrier cut just fixed in `f831a24` —
   a screen-space proxy standing in for real geometry. The barrier's was quantised; this one is elevation-blind.
-  **What a fix has to do:** clip each surface against the viewer's eye plane *relative to that surface's own
-  elevation*, so a ramp at grade is distinguishable from the mainline it sits beside without waiting for a drop.
+  **What a fix has to do:** clip each surface against the viewer's eye plane _relative to that surface's own
+  elevation_, so a ramp at grade is distinguishable from the mainline it sits beside without waiting for a drop.
   **Do not** simply lower the clip line — that is the same global-proxy mistake with a different constant, and it
   will put tarmac in the sky on the descent, which cycle 58 already measured at a 6.5m drop.
-  **Done when:** the ramp reads as a separate road *before* it starts descending, and the descent still shows no
+  **Done when:** the ramp reads as a separate road _before_ it starts descending, and the descent still shows no
   surface above the eyeline at drops of −2, −4 and −5.5.
+
+  **Cycle 141 — the owner restated this as an architectural direction, and it supersedes the framing above:**
+
+  > _"keep the shape of the overall connection of the road from the highway and the exit ramp down and up as the
+  > basis of how the car should be moving and what we should be viewing rather than depending on the viewport of the
+  > horizontal line of vision. the intersection aka the point of entry of the highway road and the exit ramp road is
+  > what i mean for you to keep more aware of."_
+
+  So the governing model is **the continuous road surface** — highway → ramp down → stop → ramp up → highway — as
+  one connected landform. Visibility and occlusion should fall out of **that geometry and its junctions**, not out of
+  a screen-space horizontal line. The **intersection** where the ramp leaves and rejoins the mainline is the
+  structural feature to reason from, and **the car is always on top of that surface**.
+  This is the same species as every defect this run chased: `ctx.rect(0, horizon, …)`, `railRuns` on integer segment
+  indices, and the trench were all **screen-space proxies standing in for world geometry**. Fixing the clip by
+  moving its line would repeat the mistake with a new constant.
 
 - **✅ RETIRED — do not mine.** _Cycle 133: the premise was false. Under realistic navigation the cleanup runs — a tracked carousel interval logged `create → clear → create` across two `Next` legs, and live never exceeds 1. **Guardrail 5 is fully satisfied: no stacking and no leak.** The "never cleared" reading came from `drive.goTo()`, a synthetic path that also produced two other false findings the same cycle._
 - **S143 — One carousel interval is never cleared (bounded at one, not stacking).** _(new, cycle 132)_
