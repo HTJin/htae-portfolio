@@ -158,6 +158,50 @@ export function RoadCanvas({ drive, className }) {
     }
 
     /**
+     * The gore: the wedge of no-man's-land between the mainline's outer edge
+     * and the ramp's inner edge, once the ramp has pulled away.
+     *
+     * Its two sides move differently — the left edge belongs to the highway and
+     * stays put, the right edge belongs to the ramp and slides — so none of the
+     * `ribbon` family can draw it: they take one `follow` flag for both edges.
+     * `embankment` already had this shape (fixed top, computed foot) and this
+     * borrows it.
+     *
+     * `phase` gates which stretches are painted, which is what turns a solid
+     * wedge into hatching. Runs are accumulated the same way `stripes` does, to
+     * avoid anti-aliasing seams between adjacent segments.
+     */
+    function goreRuns(fill, minWidth, phase) {
+      const spans = (point) =>
+        point.ramp - RAMP_WIDTH / 2 - CARRIAGEWAY > minWidth && phase(point)
+      let runStart = -1
+      ctx.fillStyle = fill
+      for (let i = 0; i <= SEGMENTS; i += 1) {
+        const on = spans(points[i])
+        if (on && runStart < 0) runStart = i
+        if (runStart >= 0 && (!on || i === SEGMENTS)) {
+          if (i > runStart) {
+            ctx.beginPath()
+            for (let k = runStart; k <= i; k += 1) {
+              const point = points[k]
+              const x = point.cx + CARRIAGEWAY * point.scale
+              if (k === runStart) ctx.moveTo(x, point.y)
+              else ctx.lineTo(x, point.y)
+            }
+            for (let k = i; k >= runStart; k -= 1) {
+              const point = points[k]
+              const inner = LANE_OFFSET + point.ramp - RAMP_WIDTH / 2
+              ctx.lineTo(point.cx + inner * point.scale, point.yRamp)
+            }
+            ctx.closePath()
+            ctx.fill()
+          }
+          runStart = -1
+        }
+      }
+    }
+
+    /**
      * A rail standing above the verge, filled as one continuous shape between
      * two heights. Same reason `stripes` exists: filling each segment on its
      * own leaves anti-aliasing seams down the length of it.
@@ -621,6 +665,23 @@ export function RoadCanvas({ drive, className }) {
         LANE_OFFSET + RAMP_WIDTH / 2,
         tarmac,
         true
+      )
+
+      // Gore markings. Every real interchange paints this wedge, and it is the
+      // most recognisable marking an exit has — without it the road simply
+      // forks. Deliberately **inside the clip** with the other flat surfaces:
+      // painted after `ctx.restore()` it would hang in the sky on the descent,
+      // which is exactly what the mainline tarmac did in cycle 58.
+      //
+      // Chevrons proper would need per-segment geometry; these are transverse
+      // bands across the wedge, which is what hatching reduces to once the
+      // perspective has flattened it, and they reuse the run-accumulating shape
+      // the rumble strips already use.
+      const GORE_PERIOD = 7
+      goreRuns(
+        withAlpha(colors.paint, 0.34),
+        0.8,
+        (point) => Math.floor(point.s / GORE_PERIOD) % 2 === 0
       )
 
       const paint = withAlpha(colors.paint, 0.82)
