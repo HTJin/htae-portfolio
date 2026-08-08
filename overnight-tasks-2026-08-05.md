@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 146
+**Cycle:** 147
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -4155,6 +4155,23 @@ _(empty)_
   in every call; a `drive` captured before a re-render is a stale closure (cycle 133).
   **The fix was kept rather than reverted** because reverting restores a defect the owner reported across many
   cycles, and the change is minimal and principled. That is a judgement, not a verification, and is recorded as such.
+
+  **Cycle 147 — the owner superseded my fix, and was right to.** My symmetric clamp (`y < horizon ? horizon : y`)
+  removed the seam but introduced a new artifact: **clamping every above-eye vertex to `horizon` collapses them all
+  onto one row**, so instead of culling the surface it painted a **flat asphalt bar along the vanishing line**. The
+  owner's comment says exactly that, and their replacement **skips** above-eye vertices instead of clamping them:
+
+  ```js
+  const yOf = (point) => (follow ? point.yRamp : point.y)
+  // Above the eye: invisible. Do not clamp to horizon (that is the asphalt bar).
+  if (y < horizon) continue
+  ```
+
+  This keeps the property that fixed the seam — **one rule for both surfaces** — while dropping the degenerate
+  geometry a clamp creates. **The lesson is mine to keep: "clamp to the boundary" and "cull past the boundary" are
+  not the same operation**, and I reached for the first because it was a one-line change. A clamp fabricates
+  vertices at the limit; culling removes them.
+  **Still unverified** — the junction seam under the owner's version. The method recorded above still applies.
 
 - **S146 — The guardrail does not share the highway's clamped shape.** _(new, cycle 142; owner-reported)_
   **The owner:** _"the highway guardrail container is in a fixed position and blocking the view while invisible going
