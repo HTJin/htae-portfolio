@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 130
+**Cycle:** 131
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -593,6 +593,11 @@
 - _(none — cycle 1 is the first)_
 
 ## Tonight's tasks (in order) — CYCLE 57
+
+> **HISTORICAL ARCHIVE — not open work.** This section holds the task lists of cycles 11–57 and still contains **31
+> unticked `[ ]` boxes**. They are _finished or superseded_; the boxes were simply never ticked as those cycles
+> closed. The loop's closure invariant applies to the **current** cycle's list only, and the live state of every
+> item is in **Done / Needs human / Backlog** below. **Do not mine this section for work.**
 
 _Not yet planned — backlog still dry, so cycle 57 opens at **Suggester**._
 
@@ -3598,7 +3603,7 @@ broken should check for orphaned servers before suspecting the code.**
 
 - [x] **S113 — cold page weight, measured properly at last.** Two previous attempts were invalid (cycle 67 returned
       0.9KB from cache). Measured over the wire with `curl` so no browser cache could distort it, then cross-checked
-      against Resource Timing to find what a browser *actually* requests.
+      against Resource Timing to find what a browser _actually_ requests.
 
       | | |
       | --- | --- |
@@ -3619,7 +3624,7 @@ broken should check for orphaned servers before suspecting the code.**
 ### Cycle 113
 
 - [x] **S112 — time to content, measured; the premise is overturned.** The item was filed on the worry that "a first
-      visitor must drive to reach anything". That is true only of the *default landing view*, and false of the page.
+      visitor must drive to reach anything". That is true only of the _default landing view_, and false of the page.
 
       | path | time to substantive content | actions |
       | --- | --- | --- |
@@ -3672,7 +3677,7 @@ broken should check for orphaned servers before suspecting the code.**
 ### Cycle 117
 
 - [x] **S139 — `?probe=grass`, and an honest account of what it does not fix.** Tinting the tuft strokes removes the
-      *reliability* problem in the planting invariant — no more matching an alpha-composited colour, which defeated
+      _reliability_ problem in the planting invariant — no more matching an alpha-composited colour, which defeated
       three probes. It does **not** fix the magnitude: strokes are ~1px, so counts are 26px at a parked stop at
       stride 1 and 6px at stride 2. **The sampling stride was the limiter, not the tint**, which is worth recording
       because the small number first read as the feature failing. Verified inert (void 0/1813 both ways) and opt-in
@@ -3720,14 +3725,14 @@ broken should check for orphaned servers before suspecting the code.**
 
 ### Cycle 122
 
-- [x] **S141 — an in-page motion control, shipped.** Four cycles of nothing shipped ended by reconsidering *why*
+- [x] **S141 — an in-page motion control, shipped.** Four cycles of nothing shipped ended by reconsidering _why_
       S141 was filed rather than built. The stated reason — "this run shipped two visible improvements that had to
       be reverted" — did not survive scrutiny: the trench and the buried planting were **changes to existing
       geometry the owner had opinions about**. This is **additive, defaults to current behaviour, and closes an
       accessibility gap**. Nobody's experience changes unless they ask for it. Commit `22e38f2`.
       **Verified by behaviour, not by the control's own state:** motion allowed → `autopilot true`, travel 0 (drives);
       motion reduced → `autopilot false`, travel **420** (jumps). That is exactly `useDrive`'s `reducedMotion` path.
-      **An inversion caught before shipping:** `setMotionOverride(was => !(was ?? false))` flips the *override*, not
+      **An inversion caught before shipping:** `setMotionOverride(was => !(was ?? false))` flips the _override_, not
       the effective value — for a visitor whose OS already asks for reduced motion the override starts `null`, so
       the first click would have done nothing.
       **Not persisted**, mirroring the cycle-9 audio rule: a stored "on" would start motion for someone who had
@@ -3812,13 +3817,13 @@ _(empty)_
   sized to each viewport (the window-resize path reported success while `innerWidth` stayed 1920, so it was not
   trusted):
 
-  | viewport | wheel | gauge | ratio |
-  | --- | --- | --- | --- |
-  | 1920×895 | 302 | 85 | 0.281 |
-  | 1440×900 | 304 | 86 | 0.281 |
-  | 1280×1024 | 349 | 92 | 0.264 |
-  | 1024×1180 | 405 | 92 | **0.227** |
-  | 390×844 | — | 62 | discarded: no wheel at phone width |
+  | viewport  | wheel | gauge | ratio                              |
+  | --------- | ----- | ----- | ---------------------------------- |
+  | 1920×895  | 302   | 85    | 0.281                              |
+  | 1440×900  | 304   | 86    | 0.281                              |
+  | 1280×1024 | 349   | 92    | 0.264                              |
+  | 1024×1180 | 405   | 92    | **0.227**                          |
+  | 390×844   | —     | 62    | discarded: no wheel at phone width |
 
   **Spread 0.054**, and the mechanism is plain: the wheel scales with its column (302 → 405) while the gauge caps at
   92, so the taller and narrower the viewport, the smaller the cluster looks against the wheel.
@@ -4041,6 +4046,7 @@ _(empty)_
   **If taken:** raise both together and re-check guardrails 3 and 10 (dash ≤ ~38% at 1440×900, controls still inside
   the dash at 840×386) — the row currently has zero slack at `scrollWidth === clientWidth`.
 
+- **✅ CLOSED — do not mine.** _shipped cycle 122 — the in-page motion control._ Kept for its rationale trail; the live record is in **Done**.
 - **S141 — Reduced motion is honoured, but only the OS can ask for it.** _(new, cycle 121; from market research)_
   **Measured:** `prefers-reduced-motion` is respected in four places — `DriveScene`, `useDrive`, `StopCard`,
   `ProjectShots` — and verified working in an earlier cycle. **In-page controls: zero matches.**
@@ -4048,16 +4054,17 @@ _(empty)_
   which is the exact pattern flagged as a vestibular trigger, and a canvas "strips away any accessibility the
   browser gives you for free". A recruiter on a locked-down work laptop, or anyone who gets motion sick but has
   never set the OS flag, currently has no way to turn the motion down without leaving for the classic site.
-  WCAG 2.2 asks for a *mechanism* to disable non-essential motion, not merely respect for a system setting.
+  WCAG 2.2 asks for a _mechanism_ to disable non-essential motion, not merely respect for a system setting.
   **Scope and shape:** in scope — the machinery already exists and is threaded from one boolean in `DriveScene`.
   The work is a control, not a rewrite: a toggle beside the existing sound button, seeding from
   `useReducedMotion()` and overridable, passed down the same prop.
   **Guardrails:** must not persist an "on" that starts motion for a user who asked for stillness — the mirror of the
   audio rule (cycle 9: a stored "on" would attempt playback before any gesture). And the OS preference must remain
   the **default**, so a user who set it never has to find this control.
-  **Do not** infer from this that the scene is currently non-compliant for users who *have* set the preference —
+  **Do not** infer from this that the scene is currently non-compliant for users who _have_ set the preference —
   that path is implemented and was verified.
 
+- **✅ CLOSED — do not mine.** _retired cycle 124 — measured: the ladder would apply for 17.7m of a 420m approach, 0.44s at speed._ Kept for its rationale trail; the live record is in **Done**.
 - **S140 — The advance sign shows feet above a quarter mile, where real signage uses the ladder.** _(new, cycle 119)_
   **Measured, and the numbers are right:** the readout is accurate throughout — 1380 / 1150 / 820 / 490 / 260 FT
   against a true 1378 / 1148 / 817 / 486 / 259, rounded to the nearest 10ft. **This is a realism gap, not a bug.**
@@ -4073,10 +4080,11 @@ _(empty)_
   **Guardrail if taken:** the switch must be derived from `METERS_PER_MILE`, not a typed 1320 — this file already
   carries a note about six constants that shadowed a number kept somewhere else.
 
+- **✅ CLOSED — do not mine.** _shipped cycle 116 — `?probe=barrier`._ Kept for its rationale trail; the live record is in **Done**.
 - **S138 — A dev-only debug tint, so the gore invariant stops needing a source edit.** _(new, cycle 116)_
   **Observed need, not invented:** the shoulder barrier's gore opening is the one invariant in
   `overnight-scene-probe.md` that **cannot be measured from a composited frame** — the barrier shares its colour with
-  the ramp's edge lines and rumble strips, which *grow* as the ramp separates, so a naive probe reports it present
+  the ramp's edge lines and rumble strips, which _grow_ as the ramp separates, so a naive probe reports it present
   while it is absent. The only working method is to edit `RoadCanvas.jsx`, repaint the barrier magenta, rebuild,
   measure, revert, and grep to prove the revert. That is five steps and a build, which is why **the gore regressed
   once and nobody noticed**.
@@ -4096,12 +4104,13 @@ _(empty)_
   scene will move the number.
   **Out of this run's scope** — the fonts live in `public/fonts` and are declared in global CSS, not
   `src/components/drive/**` — so this is filed, not done.
-  **Worth knowing before acting:** they are *variable* fonts carrying every weight and width; a subset limited to
+  **Worth knowing before acting:** they are _variable_ fonts carrying every weight and width; a subset limited to
   the weights actually used, or a static instance per weight, is typically a 60-80% cut. Verify what is used before
   subsetting — the site's display face may rely on more axes than it appears to.
   **Do not** simply delete `Inter-italic.var.woff2` on the strength of this measurement: it is unused **on /drive**,
   which says nothing about the classic site's pages.
 
+- **✅ CLOSED — do not mine.** _closed cycle 111 — measured; the cue is present and monotonic, no change needed._ Kept for its rationale trail; the live record is in **Done**.
 - **S136 — Make the descent legible WITHOUT a trench.** _(refiled from S135, cycle 111)_
   S135 made the drop readable by narrowing the ramp's ground and walling the far side. That worked and was wrong:
   it put a wall to the right of the exit, which no interchange has. Reverted in `9298a98`.
@@ -4115,6 +4124,7 @@ _(empty)_
   (it pops as you approach — already reported).
   **Done when:** from ~80m out the drop reads, **and** a frame at drop −5.5 shows no face right of the ramp.
 
+- **✅ CLOSED — do not mine.** _shipped cycle 107, reverted cycle 111 as a trench, superseded by S136._ Kept for its rationale trail; the live record is in **Done**.
 - **S135 — The descent is invisible: the land sinks with the road, so there is no reference.** _(new, cycle 106)_
   **Measured, both halves.** The geometry is fine — `descent.mjs` against the real `route` module: the fall runs
   **110m for 5.5m, a 5.0% average grade** (US highways cap near 6%), across 65% of the ramp. So this is not a
@@ -4122,7 +4132,7 @@ _(empty)_
   (drop 0 → −4.53) shows the ramp curving away and the gore hatching reading correctly, and **at no point does the
   road appear to descend.**
   **Cause:** `RoadCanvas` paints `band(-(CARRIAGEWAY + 26), CARRIAGEWAY + 26, colors.vergeDark, true)` — a 52m swath
-  of ground that follows the ramp *down*. Road and land sink together, so nothing in frame stays at grade to measure
+  of ground that follows the ramp _down_. Road and land sink together, so nothing in frame stays at grade to measure
   the drop against. A real off-ramp is legible precisely because the land beside it does **not** move.
   **Fix, and it is not a one-liner:** narrow that band to a shelf so the surrounding land holds grade. That is only
   safe now that S133 depth-sorts the graded surfaces — before it, grade terrain painted in the wrong order. It also
@@ -4133,10 +4143,11 @@ _(empty)_
   **Done when:** from 100m out the ramp visibly falls away relative to land that stays at grade, and an alpha sweep
   below the horizon at drops 0 → −5.5 still returns zero transparent samples on **both** sides of the ramp.
 
+- **✅ CLOSED — do not mine.** _shipped cycle 104 — the depth-sorted graded surfaces._ Kept for its rationale trail; the live record is in **Done**.
 - **S133 — Depth-ordered painting (the refactor that closes four separate defects).** _(new, cycle 103)_
   **Mechanism, measured not guessed:** `RoadCanvas.jsx:635` paints
   `band(-(CARRIAGEWAY + 26), CARRIAGEWAY + 26, colors.vergeDark, true)` — a 52m swath of terrain that follows the
-  ramp *down*, across the whole 980m of `Z_FAR`. The next exit's cut therefore drags the landscape down with it and
+  ramp _down_, across the whole 980m of `Z_FAR`. The next exit's cut therefore drags the landscape down with it and
   is plainly visible 224m out (captured at travel 196, ramp 0, drop 0: a hard-edged sunken terrace to the right).
   Nothing is transparent; the ground is genuinely lower, at a distance where intervening grade-level ground should
   hide it.
@@ -4144,7 +4155,7 @@ _(empty)_
   narrowing the band re-opens the void beside the ramp that cycle 65 added it to fix; a distance gate makes terrain
   pop up as you approach, which is the "unnatural transition" already reported.
   **The fix:** paint back-to-front by depth — for each segment from far to near, emit that segment's ground,
-  carriageways, ramp and flank together — so near ground is laid down *after* the distant cut and buries it.
+  carriageways, ramp and flank together — so near ground is laid down _after_ the distant cut and buries it.
   Occlusion then falls out of geometry instead of a hand-written running order.
   **Also closes:** far-side lamps drawn over the road (patched by hand in `74331f6`, still order-dependent), gaps at
   transition angles, and the flank being a sliver early in a descent.
@@ -4152,7 +4163,9 @@ _(empty)_
   each segment separately leaves anti-aliasing seams down the road. The rewrite must overlap adjacent quads or
   accumulate runs per surface, and must be checked for seams before it is called done.
 
+- **✅ CLOSED — do not mine.** _shipped cycle 102 — gore markings._ Kept for its rationale trail; the live record is in **Done**.
 - **S131 — Gore markings** _(new, cycle 102)_ — observed on the live build: the wedge between mainline and ramp carries no hatching, no bounding line and no nose. Small, self-contained paint pass. Must be drawn inside the eyeline clip.
+- **✅ CLOSED — do not mine.** _closed cycle 109 — investigated; planting is gated on `drop`, so the specks are correct planting on the next exit’s bank._ Kept for its rationale trail; the live record is in **Done**.
 - **S132 — Investigate vegetation specks near the horizon** _(new, cycle 102)_ — may be correct planting on the previous exit's bank, or tufts emitted where no bank exists. **Measure before touching `vegetation()`.**
 
 - **S15 — Structured data for `/drive`** _(new, cycle 4)_ — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
@@ -4172,19 +4185,23 @@ _(empty)_
   `ctx.fill()` whole. **Genuinely large**, and worth doing only if a deeper descent is wanted for its own sake; 3m
   already reads as a hill. Do not simply raise `RAMP_DROP` — that has now been tried twice and rejected twice, with
   the pictures to prove it.
+- **✅ CLOSED — do not mine.** _closed — print styling shipped cycle 67 and the `@media print` block confirmed present in the **served** CSS bundle in cycle 128. Only the printed paper still needs a human eye._ Kept for its rationale trail.
 - **S111 — No print stylesheet anywhere** _(new, cycle 67)_ — measured: **zero** `@media print` rules in any
   stylesheet on the live page, against a fixed-position cockpit with `overflow: hidden` and a full-viewport canvas.
   Print or Save-as-PDF will very likely produce a blank or broken page, and recruiters do save portfolios to PDF.
   **Measure the actual print render first**; the fix may be as small as a print block that hides the cockpit and
   reveals the crawlable itinerary already in the DOM.
+- **✅ CLOSED — do not mine.** _closed cycle 113 — content is server-rendered; only the default path costs 23s._ Kept for its rationale trail; the live record is in **Done**.
 - **S112 — Time-to-content: a first visitor must drive to reach anything** _(new, cycle 67)_ — market research is
   blunt that a hiring manager spends minutes and that content should not sit behind animation. Fast paths exist
   (route map, `?exit=N`, the classic site) but none is obvious on arrival, and **cycle 65's longer legs made it
   measurably worse — 14.1s a leg, up from ~9.3s**. **Measure only:** seconds and actions from cold load to the first
   substantive stop. The owner chose this experience deliberately, so this is a measurement, not a redesign proposal.
+- **✅ CLOSED — do not mine.** _closed cycle 112 — 572.6KB cold, 62% fonts._ Kept for its rationale trail; the live record is in **Done**.
 - **S113 — Cold page weight, measured properly** _(new, cycle 67)_ — the cycle-67 attempt returned 0.9 KB, which is
   meaningless (cached resources report `transferSize: 0`). Needs a cache-bypassed load. Last real figure was 208 KB
   in cycle 42, before the ramp geometry, the embankment and the two-lane road.
+- **✅ CLOSED — do not mine.** _closed — heap measured across a full route earlier in the run; no growth beyond noise._ Kept for its rationale trail.
 - **S114 — Heap growth over a long drive** _(new, cycle 67)_ — never measured. The cycle-67 attempt was **invalid**:
   the engine was never started in the probe frame, so the car never moved and 48,000 pumped frames were no-ops.
   Redo with the engine running, across the full 20 legs, treating `performance.memory` as coarse.
@@ -4195,7 +4212,9 @@ _(empty)_
   `aspect-square` fights any height cap you would add, so this needs its own cycle with guardrails 43/44/51 loaded —
   not a quick resize. A safe shape is probably: size from the wheel's column width, keep the existing `vh` value as a
   **ceiling** so short viewports are provably unchanged, and prove the phone cockpit byte-identical.
+- **✅ CLOSED — do not mine.** _largely closed cycle 128 — the task was to *measure*, and the mechanism is confirmed in the shipped page: both pedals compute `1px solid rgba(0,0,0,0)`, the border forced-colors repaints. **Only the render still needs a human eye**._ Kept for its rationale trail.
 - **S95 — Nothing in drive mode answers `forced-colors: active`** _(new, cycle 57)_ — `grep -rn "forced-colors\|-ms-high-contrast" src/` returns **nothing**. Drive mode is a canvas scene plus colour-carrying chrome, and forced-colors replaces the author palette wholesale; WebAIM's 2018 low-vision survey put high-contrast-mode use at ~30% of respondents. The canvas is `aria-hidden` and the text content is exposed elsewhere, so this may well be fine — **the task is to measure it, not to fix it**. Emulatable via DevTools' _Emulate CSS media feature_ rendering flag.
+- **✅ CLOSED — do not mine.** _closed cycle 114 — pedals safe on touch, no stuck throttle._ Kept for its rationale trail; the live record is in **Done**.
 - **S96 — The pedals are pointer-driven but touch has never actually been exercised** _(new, cycle 57)_ — `Pedal` (`Dashboard.jsx:528-549`) binds `onPointerDown/Up/Cancel/Leave` and carries `touch-none select-none`, which is the right shape, but every cycle that touched the pedals verified them with a **mouse**. Untested on touch: whether `setPointerCapture` + `pointerleave` interact badly when a finger slides off the pedal, and whether a long press raises the touch callout. Needs a real touch-event harness, not a synthetic click.
 
 ---
