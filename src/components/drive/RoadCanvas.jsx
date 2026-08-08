@@ -249,55 +249,6 @@ export function RoadCanvas({ drive, className }) {
      * ground between the two; nearer the mainline the ramp is still part of the
      * carriageway and there is nothing to embank.
      */
-    /**
-     * The **outside** wall of the cut: ground climbing from the ramp's shelf
-     * back up to grade on the far side of the exit.
-     *
-     * `embankment` fills the face between the mainline and the ramp — the
-     * inboard side. Nothing filled the outboard side, because until the shelf
-     * was narrowed there was no outboard side: the ground simply descended with
-     * the ramp for 26m and met the background. Now that the land beyond the
-     * shelf holds grade, that grade sits above your eye once you have dropped,
-     * the eyeline clip correctly removes it, and without this face you are
-     * looking at open sky where the side of the cut should be — the exact void
-     * reported repeatedly against the inboard side.
-     *
-     * Same 1:2.6 batter as the bank, and the same run-accumulating shape, so
-     * the two sides of the cut are the same landform rather than two ideas.
-     */
-    function cutWall(fill) {
-      const spans = (point) => point.drop < -0.02
-      let runStart = -1
-      ctx.fillStyle = fill
-      for (let i = 0; i <= SEGMENTS; i += 1) {
-        const on = spans(points[i])
-        if (on && runStart < 0) runStart = i
-        if (runStart >= 0 && (!on || i === SEGMENTS)) {
-          if (i > runStart) {
-            ctx.beginPath()
-            // Top edge, at grade, out where the batter finally reaches it.
-            for (let k = runStart; k <= i; k += 1) {
-              const point = points[k]
-              const foot = LANE_OFFSET + point.ramp + RAMP_WIDTH / 2 + SHELF_OUT
-              const crest = foot + -point.drop * SLOPE_RUN
-              const x = point.cx + crest * point.scale
-              if (k === runStart) ctx.moveTo(x, point.y)
-              else ctx.lineTo(x, point.y)
-            }
-            // Back along the foot, at the ramp's own grade.
-            for (let k = i; k >= runStart; k -= 1) {
-              const point = points[k]
-              const foot = LANE_OFFSET + point.ramp + RAMP_WIDTH / 2 + SHELF_OUT
-              ctx.lineTo(point.cx + foot * point.scale, point.yRamp)
-            }
-            ctx.closePath()
-            ctx.fill()
-          }
-          runStart = -1
-        }
-      }
-    }
-
     function embankment(fill) {
       const TOP = BANK_TOP
       const footOf = (point) => bankFoot(point.ramp, point.drop)
@@ -363,18 +314,6 @@ export function RoadCanvas({ drive, className }) {
     const SLOPE_RUN = 2.6
 
     /**
-     * How far the ramp's shelf of ground reaches either side of its tarmac.
-     *
-     * Inboard it only has to reach the embankment's foot, which the bank itself
-     * covers. Outboard it is the verge you would actually see from the ramp,
-     * and beyond it `cutWall` climbs back to grade — so this is the width of
-     * the cut, not the width of the world. It was effectively 26m each way,
-     * which sank the entire landscape with the road.
-     */
-    const SHELF_IN = 3.5
-    const SHELF_OUT = 7
-
-    /**
      * Where the bank meets the lower ground. **One definition, used by both the
      * face and the planting on it** — they each had their own before, and
      * disagreed by ~1.7m at full ramp, which floated the flowers off the slope.
@@ -427,17 +366,9 @@ export function RoadCanvas({ drive, className }) {
         const top = BANK_TOP
         const foot = bankFoot(rampAt(s), drop)
 
-        // **Both faces of the cut, not just the inboard one.** `cutWall` gave
-        // the exit an outboard face (S135) and the planting did not follow it,
-        // so one side of the same landform was grassed and the other was bare
-        // earth. Its geometry is the mirror: the foot sits at the ramp's grade
-        // and the crest climbs back to grade, so `ground` runs the other way.
-        const outFoot = LANE_OFFSET + rampAt(s) + RAMP_WIDTH / 2 + SHELF_OUT
-        const outCrest = outFoot + -drop * SLOPE_RUN
-
-        // One tuft, wherever it stands. Both faces plant identically, so the
-        // drawing lives here once rather than being copied per face — the same
-        // reason `bankFoot` is shared between the face and its planting.
+        // One tuft, wherever it stands. Kept as a helper although only one face
+        // plants now: the outboard face it also served was the trench wall, and
+        // that is gone — there is one bank in this scene, the highway's.
         const tuft = (x, ground, seed) => {
           const height = 0.34 + ((seed % 7) / 7) * 0.3
           const base = place(s, x, ground)
@@ -467,16 +398,8 @@ export function RoadCanvas({ drive, className }) {
         for (let k = 0; k < 4; k += 1) {
           // Spread across the face, biased away from both edges.
           const t = 0.12 + (((n * 7 + k * 23) % 76) / 76) * 0.76
-          // Inboard: the bank between mainline and ramp. Falls from grade.
+          // The bank between mainline and ramp — the one face there is.
           tuft(top + (foot - top) * t, drop * t, n + k * 5)
-          // Outboard: the cut wall. Climbs from the ramp's grade back to grade,
-          // so the height offset runs from `drop` at the foot to 0 at the crest
-          // — the mirror of the line above, not a copy of it.
-          tuft(
-            outFoot + (outCrest - outFoot) * t,
-            drop * (1 - t),
-            n + k * 5 + 3
-          )
         }
       }
     }
@@ -741,23 +664,24 @@ export function RoadCanvas({ drive, className }) {
           fill: colors.vergeDark,
           follow: false,
         },
-        // The ground at the ramp's own grade — a **shelf**, not a landscape.
+        // The ground at the ramp's own grade, following it down.
         //
-        // This was 52m wide, which meant the whole world sank with the ramp.
-        // Nothing in frame stayed at grade, so there was nothing to measure the
-        // drop against and the descent was invisible: a six-frame strip from
-        // 119m out to 48m out never once read as going downhill. A real off-ramp
-        // is legible precisely because the land beside it does *not* move.
+        // **This is deliberately wide, and a narrower shelf was a mistake.**
+        // Cycle 107 cut it back and added a wall climbing from the shelf to the
+        // grade beyond, on the theory that land holding grade beside the ramp
+        // would make the descent legible. It did — and it also put the exit in a
+        // trench, with a wall on the *right* of the ramp. The owner, immediately:
+        // "why the hell am I seeing walls to the right of the highway and exit?
+        // you're only supposed to have that for the highway."
         //
-        // Narrowed to a shelf either side of the ramp. Two things make that safe
-        // now and did not before: the graded surfaces are depth-sorted (S133), so
-        // grade-level ground paints in the right order against it, and
-        // `cutWall` below fills the face between this shelf and the grade beyond
-        // it. Without that wall the clip correctly removes the grade-level ground
-        // once you have dropped and the right-hand void returns.
+        // They are right, and the model is the correction: the highway sits on
+        // an embankment and the ramp descends to *natural ground level* beside
+        // it. There is one face in this scene — the highway's own — and it is on
+        // your left as you come down. To the right the ground simply is the
+        // ground. So it follows the ramp down, as wide as the view needs.
         {
-          from: LANE_OFFSET - RAMP_WIDTH / 2 - SHELF_IN,
-          to: LANE_OFFSET + RAMP_WIDTH / 2 + SHELF_OUT,
+          from: -(CARRIAGEWAY + 26),
+          to: CARRIAGEWAY + 26,
           fill: colors.vergeDark,
           follow: true,
         },
@@ -872,9 +796,6 @@ export function RoadCanvas({ drive, className }) {
 
       // The face between the two grades, filling what the clip just opened up.
       embankment(colors.vergeDark)
-      // The far side of the same cut. Painted with the bank, before the
-      // planting, so both faces of the exit are one landform.
-      cutWall(colors.vergeDark)
 
       // ONE continuous side polygon along the entire highway. No gore gate, no
       // "elevated only" gate — those punched holes in the silhouette. Top rides
