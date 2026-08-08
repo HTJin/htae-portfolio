@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 110
+**Cycle:** 111
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3805,6 +3805,19 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S136 — Make the descent legible WITHOUT a trench.** _(refiled from S135, cycle 111)_
+  S135 made the drop readable by narrowing the ramp's ground and walling the far side. That worked and was wrong:
+  it put a wall to the right of the exit, which no interchange has. Reverted in `9298a98`.
+  **The constraint, now explicit:** there is exactly **one** face in this scene — the highway's embankment, on your
+  left as you descend. The ground right of the ramp is natural ground and must stay open.
+  **So the reference for "am I going downhill" has to be the highway itself**, not land held at grade beside you.
+  Candidates that respect the constraint: make the highway's embankment read taller and closer as you drop (it is
+  the thing genuinely rising beside you); pitch the ramp's own surface more visibly in the near field; or let the
+  mainline's barrier line stay in frame longer so its climb away from you is visible.
+  **Do not:** hold ground at grade beside the ramp, add any face right of the ramp, or gate terrain by distance
+  (it pops as you approach — already reported).
+  **Done when:** from ~80m out the drop reads, **and** a frame at drop −5.5 shows no face right of the ramp.
 
 - **S135 — The descent is invisible: the land sinks with the road, so there is no reference.** _(new, cycle 106)_
   **Measured, both halves.** The geometry is fine — `descent.mjs` against the real `route` module: the fall runs
