@@ -6,7 +6,7 @@ alone: they are either outside its write scope, or judgement calls it declined t
 The full history is in `overnight-report-2026-08-05.md` and the ledgers beside it. This file exists because those
 have grown past the point where the actionable parts are findable.
 
-_Last confirmed: **cycle 127**, 2026-08-08. Not re-stamped from memory — each of these was re-run:_
+_Last confirmed: **cycle 128**, 2026-08-08. Not re-stamped from memory — each of these was re-run:_
 
 - _**§1 reproduces exactly**, 49 cycles after it was first measured and after a control was added to the dash:
   **−36px at 1920×1080, 1px at 1280×1024, 52px at 1024×1180.**_
@@ -15,6 +15,9 @@ _Last confirmed: **cycle 127**, 2026-08-08. Not re-stamped from memory — each 
 - _**§2 reproduces exactly**: two `canonical` tags with `https://htae.dev` **first**, `og:url` doubled the same way,
   and `public/sitemap.xml` carrying a single `<loc>` for the homepage._
 - _**§5 was wrong and is corrected** — a leg is **21 s**, not 14.1 s; the route is **~7 min**, not 4.7._
+- _**§4 narrowed**: two of its three items now have their **mechanism** confirmed in the shipped artifact, leaving
+  only the visual confirmation to a human; and frame-rate **regressions** turn out to be measurable even though the
+  absolute number is not._
 - _**Structural claims** re-verified by the commands at the foot of this page: still exactly nine committed source
   files, `src/content` and `src/lib` diff still empty, `Projects.jsx` line numbers in §2 still landing correctly._
 
@@ -83,11 +86,11 @@ Fonts are the only remaining weight win and are outside this run's scope (ledger
 
 The rest are still unknowns rather than passes — each is seconds of work with DevTools open:
 
-| What                        | How                                                                                                                                                        |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Forced-colors rendering** | Rendering tab → _Emulate CSS media feature forced-colors: active_. The pedals were fixed for this in cycle 64 by inventory, but the render was never seen. |
-| **The printed page**        | Ctrl+P on `/drive`. Print styling was added in cycle 67 and its rules verified, but the paper was never observed.                                          |
-| **Frame rate**              | Any real profiler. Unmeasurable here since cycle 52 — a blank page benchmarks the same as the drive.                                                       |
+| What                        | How                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Forced-colors rendering** | Rendering tab → _Emulate CSS media feature forced-colors: active_. **The mechanism is now confirmed in the shipped page** (cycle 128): both pedals compute to `1px solid rgba(0,0,0,0)` — a real border that forced-colors repaints into a visible outline — against a control element that computes `0px` and correctly fails the same check. Only the **render** still needs a human eye.          |
+| **The printed page**        | Ctrl+P on `/drive`. **The `@media print` block is confirmed present in the served CSS bundle** (cycle 128), which a Tailwind purge or a stale webpack cache could have dropped. Only the **paper** still needs a human eye.                                                                                                                                                                          |
+| **Frame rate**              | Any real profiler for the **absolute** number — a blank page still benchmarks the same as the drive here. **Regressions, however, are measurable**: A/B the same harness against a rebuilt baseline. Done for real in cycle 122 — 84.6 ms with the change against 83.7 ms without, which is how a ~1% cost was distinguished from a guardrail violation and stopped a correct change being reverted. |
 
 ## 5. One preference
 
