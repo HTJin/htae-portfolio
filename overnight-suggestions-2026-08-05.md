@@ -920,3 +920,21 @@ claiming research I did not run would be worse than a short list._
       identical at that distance and the difference is the whole question. _Done when:_ the planting's world position
       at those screen coordinates is known — measure whether tufts are emitted at points where `drop` is ~0, which
       would mean planting with no bank to plant on. Do not change `vegetation()` before that is answered.
+
+## Cycle 116 — Suggester
+
+_Live audit of the running build. **No market research this pass** — the audit filled the batch, and claiming
+research I did not run would be worse than a short list._
+
+- [x] **Audit: console is clean.** A cold load, a full leg driven, route map opened and closed, sound toggled and
+      Back pressed produced **zero** errors or warnings — including no hydration mismatch after ten source changes
+      tonight. **Verified with a control:** a deliberate `console.error`/`console.warn` sentinel *was* captured by the
+      same reader, so the empty result is a real absence rather than a dead probe. (The tool only starts capturing
+      when first called — the first read returned "no messages" for a page that had already loaded, which would have
+      been a false all-clear.)
+- [x] **Audit: deep links are robust.** `?exit=999`, `-1`, `abc`, `1.5` all fall back to index 0, hydrate correctly
+      (`body.overflow === 'hidden'`) and show the default title; `?exit=0` yields `MILE 0`. The differing title on a
+      valid value is the control proving the harness distinguishes states. No crash, no blank card, no stuck state.
+- [ ] **S138 — dev-only debug tint so the gore invariant needs no source edit.** _Proposed._ See the backlog entry.
+      Comes directly from the fact that the run's most-regressed invariant currently costs an instrumented build to
+      check, which is why its regression went unnoticed.

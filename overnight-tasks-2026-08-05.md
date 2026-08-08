@@ -3921,6 +3921,23 @@ _(empty)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
+- **S138 — A dev-only debug tint, so the gore invariant stops needing a source edit.** _(new, cycle 116)_
+  **Observed need, not invented:** the shoulder barrier's gore opening is the one invariant in
+  `overnight-scene-probe.md` that **cannot be measured from a composited frame** — the barrier shares its colour with
+  the ramp's edge lines and rumble strips, which *grow* as the ramp separates, so a naive probe reports it present
+  while it is absent. The only working method is to edit `RoadCanvas.jsx`, repaint the barrier magenta, rebuild,
+  measure, revert, and grep to prove the revert. That is five steps and a build, which is why **the gore regressed
+  once and nobody noticed**.
+  **The idea:** honour a query parameter (e.g. `?probe=barrier`) that tints exactly one element a colour no palette
+  contains. Then the check is a URL, not a patch. Scoped to `src/components/drive/**`; a handful of lines threading
+  a flag into the fill chosen for one `railRuns` call.
+  **Expected impact:** converts the run's most fragile and most-regressed invariant from "requires an instrumented
+  build" to "open a link and count pixels", which is the difference between a check that gets run and one that does
+  not.
+  **Guardrails to carry:** it must be **off unless explicitly asked for** and must not alter geometry, only fill —
+  a debug affordance that changes what is drawn would corrupt the very measurement it exists to enable. Verify by
+  confirming the untinted page is byte-identical in the probe's I1 void sweep with and without the parameter absent.
+
 - **S137 — Two variable fonts are 62% of the page; subsetting is the only real weight win available.** _(new, cycle 112)_
   Measured: `Inter-roman.var.woff2` 221.9 KB and `Mona-Sans.var.woff2` 130.6 KB are fetched on `/drive`, against
   198.4 KB for **all** JS and CSS combined. Nothing else on the page comes close, and no further work on the canvas
