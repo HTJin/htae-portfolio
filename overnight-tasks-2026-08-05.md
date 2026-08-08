@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 118
+**Cycle:** 119
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3677,6 +3677,24 @@ broken should check for orphaned servers before suspecting the code.**
       stride 1 and 6px at stride 2. **The sampling stride was the limiter, not the tint**, which is worth recording
       because the small number first read as the feature failing. Verified inert (void 0/1813 both ways) and opt-in
       (0 magenta without the flag). Commit below.
+
+### Cycle 118 — full regression sweep (Reviewer)
+
+- [x] **All three scene invariants pass on the current build.** The code has changed substantially since the last
+      route-wide check — the cut wall removed, planting reordered, two probe flags added — so every claim was
+      re-measured rather than carried forward.
+
+      | invariant | result |
+      | --- | --- |
+      | **I1 void** | 8 samples across legs from 0 and 420, mainline → −5.3: **0 holes / 1813 every time**, sky control 91–100% |
+      | **I2 gore** (`?probe=barrier`) | 28,222px before the crossing → **0 through 2.3–4.1m** → 42,678px after |
+      | **I3 planting** (`?probe=grass`) | mainline **0/0** (no bank, correctly bare); parked stop **16 left / 0 right** |
+
+      **I3's shape is the one-face model, confirmed:** planting on the highway's bank to the left, nothing right of
+      the ramp now the trench is gone. The mainline zero is a real negative control, not an absent signal.
+      **The MILE-0 trap from cycle 117 was designed out:** each leg waits until the car has actually left the stop
+      (`drop > -1.0`) before sampling, so the starting stop cannot masquerade as a traversal. Four samples per leg
+      is the evidence it worked.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
