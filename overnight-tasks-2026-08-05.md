@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 131
+**Cycle:** 132
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3775,6 +3775,24 @@ broken should check for orphaned servers before suspecting the code.**
       objected to — to relabel less than a second of a seven-second approach. The stale premise behind it was the
       real defect and that is already fixed (`2faaece`); the behaviour it implied is not worth the branch.
       **Left in the ledger as retired, not deleted**, so it does not get re-proposed by a later Suggester pass.
+
+### Cycle 131
+
+- [x] **Guardrail 4 re-verified at 390×844 on the longest-prose stop** (EXIT 04, the sabbatical entry the owner
+      singled out as hard to read). `StopCard` was reworked mid-run and this had not been re-checked since.
+
+      | check | result |
+      | --- | --- |
+      | panel inside the viewport | 358×419 at (16,121) ✓ |
+      | horizontal overflow | **none** ✓ |
+      | content scrolls | scrolled 0 → 400, **reached the end**, last child fully visible ✓ |
+      | Back / Next reachable | both in view ✓ |
+      | columns at phone width | **none** — `columnCount` is unset on every descendant; prose runs one column at 310px ✓ |
+
+      **The control matters:** `document.body` reports `scrollHeight === clientHeight` and correctly fails the same
+      scrollability test, so "the panel scrolls" is a real reading rather than a predicate that is true of anything.
+      **Closes the owner's original complaint at phone width** — the `lg:columns-2` rule does not apply below `lg`,
+      so the passage they called unreadable is a single 310px column here, not three.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
