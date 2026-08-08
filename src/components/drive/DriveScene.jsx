@@ -234,8 +234,28 @@ function Ignition({ onStart, resume, onResume, onForget }) {
 
 export function DriveScene() {
   const router = useRouter()
-  const reducedMotion = useReducedMotion()
-  const drive = useDrive(route, { reducedMotion: Boolean(reducedMotion) })
+  const systemReducedMotion = useReducedMotion()
+  /**
+   * An in-page way to ask for stillness — S141.
+   *
+   * `prefers-reduced-motion` was already honoured in four places, but only the
+   * *operating system* could ask. This is a first-person scene with continuous
+   * forward motion, which is the canonical vestibular trigger, and a canvas
+   * strips away the accessibility a browser would otherwise give for free. A
+   * visitor on a locked-down work laptop, or anyone who has simply never set
+   * the system flag, had no lever short of leaving for the classic site.
+   *
+   * `null` means "nobody has overridden anything", so the OS preference stays
+   * the default and **today's behaviour is unchanged for everyone**.
+   *
+   * Deliberately **not persisted**, which is the mirror of the audio rule in
+   * cycle 9: a stored "on" would start motion for someone who had asked for
+   * stillness, before they could ask again. Sound may only ever be the result
+   * of a gesture in this session; the same applies here.
+   */
+  const [motionOverride, setMotionOverride] = useState(null)
+  const reducedMotion = motionOverride ?? Boolean(systemReducedMotion)
+  const drive = useDrive(route, { reducedMotion })
   const [mapOpen, setMapOpen] = useState(false)
   const deepLinked = useRef(false)
   // Starts null and is filled in after mount: the server has no storage, so
@@ -534,7 +554,7 @@ export function DriveScene() {
       className={`fixed inset-0 overflow-hidden bg-[#03060c] text-white ${styles.printable}`}
       // The dashboard's height, defined once and read by everything that has
       // to line up with it: the dash itself, the arrival panel's bottom edge,
-      // and the bonnet / dash reflection / wipers in `CarInterior`. It used to
+      // and the bonnet / dash reflection in `CarInterior`. It used to
       // be written out three times, and the copies only agreed while `36%` was
       // the winning branch of the clamp — below ~528px tall the floor wins and
       // the car's own bonnet ended up behind the dashboard (guardrail 43).
@@ -686,6 +706,12 @@ export function DriveScene() {
         stop={stop}
         onOpenMap={toggleMap}
         mapOpen={mapOpen}
+        reducedMotion={reducedMotion}
+        // Flips the **effective** value, not the override. `!(was ?? false)`
+        // looks equivalent and is not: for a visitor whose OS already asks for
+        // reduced motion, the override starts `null`, so that form would set it
+        // `true` and the first click would do nothing at all.
+        onToggleMotion={() => setMotionOverride(!reducedMotion)}
       />
 
       <Link

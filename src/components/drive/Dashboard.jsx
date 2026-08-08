@@ -797,6 +797,37 @@ function AudioToggle({ drive }) {
   )
 }
 
+/**
+ * Ask the scene to hold still — S141.
+ *
+ * Shaped after `AudioToggle` on purpose: same size, same two-tone treatment,
+ * same `aria-pressed` contract, so the control row reads as one row of
+ * switches rather than a switch and an afterthought.
+ *
+ * `aria-pressed` tracks **stillness requested**, not motion, so a screen reader
+ * announces the thing the visitor is asking for. The lit state is stillness for
+ * the same reason: the lamp is on when the accommodation is on.
+ */
+function MotionToggle({ reducedMotion, onToggle }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={reducedMotion}
+      aria-label={reducedMotion ? 'Allow scene motion' : 'Reduce scene motion'}
+      title={reducedMotion ? 'Motion reduced' : 'Reduce motion'}
+      className={clsx(
+        'rounded-md border px-2 py-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.14em] transition',
+        reducedMotion
+          ? 'border-sky-300/50 bg-sky-300/10 text-sky-200 hover:bg-sky-300/20'
+          : 'border-white/15 bg-white/5 text-white/50 hover:border-white/30 hover:text-white'
+      )}
+    >
+      <span aria-hidden="true">{reducedMotion ? '❉' : '❋'}</span>
+    </button>
+  )
+}
+
 /** Slatted air vents — the cheapest, most convincing "this is a car" cue. */
 function Vent({ className }) {
   // Display lives in the utility classes, not the module — a module rule of
@@ -815,7 +846,14 @@ function Vent({ className }) {
   )
 }
 
-export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
+export function Dashboard({
+  drive,
+  stop,
+  onOpenMap,
+  mapOpen,
+  reducedMotion,
+  onToggleMotion,
+}) {
   const dashRef = useRef(null)
   const lastFocusedRef = useRef(null)
 
@@ -922,6 +960,10 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
               {mapOpen ? 'Close' : 'Map'}
             </ConsoleButton>
             <AudioToggle drive={drive} />
+            <MotionToggle
+              reducedMotion={reducedMotion}
+              onToggle={onToggleMotion}
+            />
           </div>
           {/* Shorter on a landscape phone — still 42/48px tall, well clear of
               the 24px target floor this run set in cycle 22. */}
@@ -1120,6 +1162,10 @@ export function Dashboard({ drive, stop, onOpenMap, mapOpen }) {
                 {mapOpen ? 'Close map' : 'Route map'}
               </ConsoleButton>
               <AudioToggle drive={drive} />
+              <MotionToggle
+                reducedMotion={reducedMotion}
+                onToggle={onToggleMotion}
+              />
             </div>
           </div>
         </div>
