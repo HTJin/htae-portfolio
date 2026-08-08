@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 120
+**Cycle:** 121
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3695,6 +3695,28 @@ broken should check for orphaned servers before suspecting the code.**
       **The MILE-0 trap from cycle 117 was designed out:** each leg waits until the car has actually left the stop
       (`drop > -1.0`) before sampling, so the starting stop cannot masquerade as a traversal. Four samples per leg
       is the evidence it worked.
+
+### Cycle 120 — expired-premise sweep
+
+- [x] **Swept the drive sources for comments whose premises died when a constant changed.** This class has bitten
+      three times in this run and is insidious: the code still works, so nothing fails — only the justification is
+      false, and the next reader inherits it as fact. **Result: no further instances.**
+
+      | claim | checked against | verdict |
+      | --- | --- | --- |
+      | `1:2.6` batter | `SLOPE_RUN = 2.6` | ✓ |
+      | barrier "at a fixed 10.9m" | `CARRIAGEWAY 8.2 + VERGE 2.4 + SIDE_OUT 0.3` | ✓ |
+      | side face "covers world x 10.9 → 25.2" | `10.9 + 5.5 × 2.6 = 25.2` | ✓ |
+      | `ExitSign` fade window | derived from `LEG_LENGTH`, and the note is written as history ("this **was**") | ✓ drift-proof |
+      | "five ribbons follow the ramp" | 2 graded slices + 2 ramp edge lines + 1 rumble band | ✓ |
+      | 6.5m-drop references | framed as cycle-58 history, not current fact | ✓ |
+
+      **One genuine find, and it is a non-defect:** `SHOULDER_RAIL_FOOT` — the constant the cycle-100 seam fix was
+      built on — has **zero occurrences**. That mechanism was replaced wholesale by `HIGHWAY_SIDE_TOP` and the
+      continuous side polygon. The invariant it protected still holds (0/1813 voids, cycle 118) and **no comment
+      references the removed name**, so this is clean replacement rather than rot.
+      **What makes this class findable at all:** comments that state a number someone else owns. The ones that
+      survived the sweep are those written either as derived (`VISIBLE_FROM = LEG_LENGTH`) or as dated history.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
