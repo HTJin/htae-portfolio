@@ -896,3 +896,27 @@ _(Check the box once you've reviewed the outcome.)_
       highway rail"._ Status: **Done** (`1cdd982`). Rail was `() => true`, full length, fixed in world space, while the
       ramp sweeps past it. Now breaks at the gore, opening derived from the ramp's footprint. Evidence: mainline
       regression sweep 0/1406 transparent below horizon.
+
+## Cycle 102 — Suggester
+
+_Source: live audit of `/drive` on the current build (`:3009`), driven with the engine running and inspected at the
+gore (travel 302, ramp 6.4m, drop 0). **No market research was done this pass** — the audit filled the batch, and
+claiming research I did not run would be worse than a short list._
+
+- [ ] **S131 — The gore has no markings.** _Status: Proposed._ **Observed**, not inferred: at the point where the
+      ramp separates, the wedge between the mainline and the ramp is plain verge. Both roads carry white edge lines,
+      but the gore itself has no diagonal hatching, no bounding solid line, and no painted nose. Every real
+      interchange paints that wedge, and it is the single most recognisable marking of an exit — the owner asked for
+      "a real highway exit", and this is the part of one that is missing. _Scope:_ small and self-contained; the gore
+      wedge already comes out of the geometry (`RoadCanvas`, the ramp `band(..., true)` and the mainline band), so
+      this is a paint pass between two known lateral offsets, in the same `stripes`/`ribbonRuns` idiom already used
+      for the rumble bands. _Expected impact:_ the exit reads as an interchange rather than a road that forks.
+      _Guardrail to carry:_ the hatching must be painted **inside the eyeline clip** with the other flat surfaces, or
+      it will hang in the sky on the descent exactly as the tarmac did in cycle 58.
+- [ ] **S132 — Investigate: vegetation may read as floating dots near the horizon.** _Status: Proposed._ **This is an
+      investigation, not a fix** — I saw scattered pink/orange specks above the road surface near the vanishing point
+      in the gore frame, and I do **not** know whether they are flowers correctly planted on the *previous* exit's
+      embankment (which is genuinely in view there) or tufts being drawn where no bank exists. Those two look
+      identical at that distance and the difference is the whole question. _Done when:_ the planting's world position
+      at those screen coordinates is known — measure whether tufts are emitted at points where `drop` is ~0, which
+      would mean planting with no bank to plant on. Do not change `vegetation()` before that is answered.

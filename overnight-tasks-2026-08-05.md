@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Suggester
+**Phase:** Planner
 **Cycle:** 102
 
 ## Project orientation (so a fresh agent can start cold)
@@ -3740,6 +3740,9 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S131 — Gore markings** _(new, cycle 102)_ — observed on the live build: the wedge between mainline and ramp carries no hatching, no bounding line and no nose. Small, self-contained paint pass. Must be drawn inside the eyeline clip.
+- **S132 — Investigate vegetation specks near the horizon** _(new, cycle 102)_ — may be correct planting on the previous exit's bank, or tufts emitted where no bank exists. **Measure before touching `vegetation()`.**
 
 - **S15 — Structured data for `/drive`** _(new, cycle 4)_ — `_app.jsx:16-48` emits a `@graph` of WebSite / Person / ProfilePage, all `@id`-anchored to the site root, so `/drive` inherits markup that describes the homepage. A route-specific `WebPage` (or `ItemList` of the exits) would let the drive page stand on its own in search. **Blocked behind the Needs-human canonical fix** — adding more page-level head content while two canonicals disagree would just add noise.
 - **S13b — Drifting haze** — **CLOSED as unwanted (cycle 13).** The owner asked for invented atmosphere to come off the road, not be added to. Do not revisit.
