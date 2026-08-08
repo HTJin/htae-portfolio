@@ -6,9 +6,14 @@ alone: they are either outside its write scope, or judgement calls it declined t
 The full history is in `overnight-report-2026-08-05.md` and the ledgers beside it. This file exists because those
 have grown past the point where the actionable parts are findable.
 
-_Last confirmed: **cycle 125**, 2026-08-08. Structural claims re-verified this cycle by running the commands at the
-foot of this page: still exactly nine source files, `src/content` and `src/lib` diff still empty, and the
-`Projects.jsx` line numbers in §2 still land on the right lines._
+_Last confirmed: **cycle 126**, 2026-08-08. Not re-stamped from memory — each of these was re-run:_
+
+- _**§1 reproduces exactly**, 49 cycles after it was first measured and after a control was added to the dash:
+  **−36px at 1920×1080, 1px at 1280×1024, 52px at 1024×1180.**_
+- _**§3 reproduces exactly**: `github.com/HTJin/solar-questions` → **404**, `gosolarindy.energy` → **DNS failure**,
+  `github.com/HTJin` → **200**. Both of your calls-to-action are dead; your account is not._
+- _**Structural claims** re-verified by the commands at the foot of this page: still exactly nine committed source
+  files, `src/content` and `src/lib` diff still empty, `Projects.jsx` line numbers in §2 still landing correctly._
 
 **Nothing on this page was caused by the drive-scene work** — the missing ground, the see-through barrier, the
 90-degree bank, the walls beside the exit and the buried planting were all reported by you, fixed, and verified.
