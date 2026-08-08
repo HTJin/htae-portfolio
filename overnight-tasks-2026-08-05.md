@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 113
+**Cycle:** 114
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3615,6 +3615,27 @@ broken should check for orphaned servers before suspecting the code.**
       error. This is not evidence of a 2.7× regression.
       **The drive scene is not the weight.** All of tonight's geometry — ramps, embankment, gore, barrier, depth
       sort — lives inside the 198 KB of JS, and `/drive`'s own route chunk is 23 KB of that.
+
+### Cycle 113
+
+- [x] **S112 — time to content, measured; the premise is overturned.** The item was filed on the worry that "a first
+      visitor must drive to reach anything". That is true only of the *default landing view*, and false of the page.
+
+      | path | time to substantive content | actions |
+      | --- | --- | --- |
+      | default (start engine, hold accelerator) | 1.6s load + **23.4s driving** | 2 |
+      | deep link `?exit=N` | **server-rendered — in the HTML on first byte** (DOMContentLoaded 0.42s) | 0 |
+
+      **`curl` proves it without any instrument:** the raw 81KB document for `?exit=1` contains
+      "University of Pittsburgh" and "Networks and Security", and **all twenty exits** (`EXIT 01`…`EXIT 20`) are in
+      the markup, along with the screen-reader itinerary. Nothing is gated behind the canvas for a crawler, a screen
+      reader, or anyone with a link.
+      **So the real finding is narrower and more useful than the filed worry:** the content is fine; only the
+      *default* first impression costs 23 seconds of driving. That is the owner's deliberate design, and this task
+      was filed explicitly as a measurement, not a redesign proposal — so it stops here.
+      **Two of my own timings were discarded, not reported:** a 41.3s "cold to content" that included 17.4s of my own
+      harness sleep, and a 12.9s deep-link figure that was really the moment my script started running, since
+      `performance.now()` is anchored at navigationStart and the content was already present at the first poll.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
