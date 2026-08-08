@@ -1,6 +1,22 @@
-# Overnight run — report (rewritten at the end of cycle 118)
+# Overnight run — report (rewritten at the end of cycle 121)
 
-**Branch:** `feat/drive-mode` · **Cycle:** 119 · nothing pushed, all commits local.
+**Branch:** `feat/drive-mode` · **Cycle:** 122 · nothing pushed, all commits local.
+
+> ## ⚠ Four cycles have shipped nothing user-facing — this needs your direction
+>
+> Cycles 118–121 produced: one corrected comment, two clean audit sweeps, and two filed suggestions. **That is the
+> loop running out of work it is allowed to do, not the loop being stuck.** Every remaining item is one of:
+>
+> | | |
+> | --- | --- |
+> | **Your decision** | NH-9 (uncommitted third-party edits in three files), NH-10 (windscreen aperture), NH-11 (cluster/wheel ratio) |
+> | **Out of the run's scope** | S137 — two fonts are **62% of a 572.6KB cold page**, the only real weight win left |
+> | **Visible change to something you designed** | S140 (sign shows feet above ¼ mile), S141 (no in-page motion control) |
+>
+> I have deliberately not built S140 or S141 unasked: this run already shipped two visible "improvements" — the
+> trench and the buried planting — that had to be reverted after you caught them. **Say the word on any of these and
+> they are small pieces of work.** Without direction, the loop will keep auditing, which has diminishing value now
+> that the three scene invariants pass.
 
 ## Current state: all three scene invariants pass
 
