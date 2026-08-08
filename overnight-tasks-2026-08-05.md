@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 134
+**Cycle:** 135
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3793,6 +3793,22 @@ broken should check for orphaned servers before suspecting the code.**
       scrollability test, so "the panel scrolls" is a real reading rather than a predicate that is true of anything.
       **Closes the owner's original complaint at phone width** — the `lg:columns-2` rule does not apply below `lg`,
       so the passage they called unreadable is a single 310px column here, not three.
+
+### Cycle 134
+
+- [x] **S141 re-verified through the pure user path, after cycle 133 discredited the probe its first test leaned on.**
+      Cycle 122 used `drive.goTo(0)` as a reset, and cycle 133 proved `goTo()` produces artifacts — three false
+      findings from one probe. S141 is **shipped code**, so its verification could not be left resting on that.
+
+      Re-tested with the **real toggle** and the **real pedal**, no fiber manipulation, no `goTo()`:
+
+      | motion | 400ms pedal press | travel |
+      | --- | --- | --- |
+      | allowed (default) | normal acceleration | **+1 m** |
+      | reduced (`aria-pressed=true`) | instant | **+420 m**, arrives EXIT 15 |
+
+      Exactly `useDrive`'s documented `reducedMotion` path. **Cycle 122's conclusion stands** — the feature is sound
+      and the earlier test happened to be right, which is not the same as having been trustworthy.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
