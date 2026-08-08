@@ -1,6 +1,6 @@
-# Overnight run — report (rewritten at the end of cycle 129)
+# Overnight run — report (rewritten at the end of cycle 136)
 
-**Branch:** `feat/drive-mode` · **Cycle:** 130 · nothing pushed, all commits local.
+**Branch:** `feat/drive-mode` · **Cycle:** 137 · nothing pushed, all commits local.
 
 > ## ⚠ The loop has run out of work it is allowed to do — this needs your direction
 >
@@ -15,18 +15,32 @@
 > **Read `overnight-ACTION-REQUIRED.md`** — it is now re-verified end to end rather than re-stamped, and it is where
 > the decisions live.
 >
-> ### What changed in cycles 122–129
+> ### What changed in cycles 122–135
 >
-> - **S141 shipped** — an in-page "reduce motion" control. It defaults to your OS setting, so nothing changed for
+> - **S141 shipped** — an in-page "reduce motion" control, defaulting to your OS setting so nothing changed for
 >   anyone who does not press it. I had filed rather than built it, citing the trench and the buried planting;
 >   **that comparison did not survive scrutiny** — those changed existing geometry you had opinions about, this is
 >   additive. Four cycles of "nothing shipped" were the cost of applying a caution to a case it did not fit.
-> - **S140 retired on measurement** rather than built: the `1/4 MILE` ladder would apply for **17.7m of a 420m
->   approach — 0.44s at speed**. The real defect behind it was a stale comment, already fixed.
-> - **The action page was 42 cycles stale and is now re-verified line by line.** §1, §2 and §3 reproduce **exactly**;
->   §5 was **wrong by ~50%** and is corrected; §4 lost two of its three "unmeasurable" items; §7 was added for five
->   items the page had never mentioned.
+> - **S140 retired on measurement**: the `1/4 MILE` ladder would apply for **17.7m of a 420m approach — 0.44s at
+>   speed**. **S143 retired** as a probe artifact.
+> - **The action page was 42 cycles stale and is now re-verified line by line.** §1, §2, §3 reproduce **exactly**;
+>   §5 was **wrong by ~50%** (a leg is 21s, not 14.1s) and is corrected; §4 lost two of its three "unmeasurable"
+>   items; §7 was added for five items the page never mentioned.
+> - **The backlog was 14/22 finished work written as pending** — a future Planner would have redone closed tasks.
+>   All marked. The **tasks file, the report and the action page each had the same defect**: appended to rather than
+>   rewritten.
 > - **Lint clean** across ~15 source edits; the one warning is pre-existing and out of scope.
+>
+> ### Every guardrail with a testable claim has now been exercised
+>
+> |                                |                                                                                             |
+> | ------------------------------ | ------------------------------------------------------------------------------------------- |
+> | **1** hydration                | console clean across a cold load, a full leg, map, sound and Back — with a sentinel control |
+> | **3** cockpit proportions      | dash **36%** / glass **64%** at 1440×900; no overflow at 390×844 or 840×386                 |
+> | **4** arrival panel at 390×844 | scrolls to the end, nothing cut off, no horizontal overflow, one column                     |
+> | **5** carousel timers          | `create → clear → create` across legs; **no stacking, no leak**                             |
+> | **22–26** saved progress       | five corrupt values rejected, page still hydrates, progress offered never applied           |
+> | **scene invariants**           | void **0/1813** everywhere, gore opens, planting on the bank only                           |
 
 ## Current state: all three scene invariants pass
 
@@ -63,8 +77,16 @@ Roughly half of tonight's wrong turns were **the instrument, not the code**. Eac
 - a console reader that only starts capturing **when first called** — its first empty result was a false all-clear
 - a sampling **stride of 2** against 1px strokes — read as "the feature failed"
 - MILE 0, itself a stop at −5.5m, recorded as a **traversal**
+- **`drive.goTo()` — one bad probe, three false findings in a single investigation**: a card "stuck" on the wrong
+  stop, a `<figure>` "persisting" after navigation, and a timer "never cleared". All three were the same artifact.
+  It leaves the card tree in a state no visitor reaches. **Exercise the path the user takes.**
+- **A control that was itself invalid.** Testing saved progress, my "valid" case was `{"index":3,"id":null}` — which
+  correctly fails the id check, so it returned the same "no resume" as every corrupt case. Until a value the app had
+  written itself made the control pass, _"corrupt data is rejected"_ was indistinguishable from _"resume never
+  renders here"_.
 
-The rule that survived all of them: **every invariant carries a control that must come out different.**
+The rule that survived all of them: **every invariant carries a control that must come out different** — and the
+control has to be **known-good, not merely intended-good**.
 
 ## The model, which is what actually kept going wrong
 
