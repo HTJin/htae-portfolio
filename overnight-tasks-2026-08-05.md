@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 145
+**Cycle:** 146
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -4141,6 +4141,20 @@ _(empty)_
   two ribbons resolves to one `y`.
   **Done when:** at drops of −2, −4 and −5.5 there is **no horizontal discontinuity** where the ramp meets the
   mainline; no surface paints above the eye line; and the I1 void sweep still returns 0.
+
+  **Cycle 145 — fix shipped (`1d3eda6`); cycle 146 — verification still outstanding.** `yOf` now applies one clamp
+  to whichever surface the vertex belongs to. What is verified: it builds, and parked at the bottom of a ramp the
+  void sweep is **0/1764** with nothing opaque above the eye line in the sampled sky. **The junction seam itself is
+  still unverified.**
+  **Why, so the next attempt does not repeat it:** five probe calls died on the 45s CDP budget. Driving from a stop
+  to the junction takes most of a leg (~15-20s) and a full-frame `getImageData` on a 3840×1790 canvas costs seconds
+  more — the two together do not fit in one call. Worse, the timed-out calls left the sim **wedged**: `travel: 0`
+  with `parked: false`, unmoving across three `driveToNext` calls, which is the cycle-122 corruption pattern again.
+  **How to do it:** reload first (a wedged sim never recovers), then **split across calls** — one call drives to the
+  junction and stops, a second captures a **small rect** around the junction and classifies rows. Re-read the fiber
+  in every call; a `drive` captured before a re-render is a stale closure (cycle 133).
+  **The fix was kept rather than reverted** because reverting restores a defect the owner reported across many
+  cycles, and the change is minimal and principled. That is a judgement, not a verification, and is recorded as such.
 
 - **S146 — The guardrail does not share the highway's clamped shape.** _(new, cycle 142; owner-reported)_
   **The owner:** _"the highway guardrail container is in a fixed position and blocking the view while invisible going
