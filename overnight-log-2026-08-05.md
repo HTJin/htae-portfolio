@@ -1804,3 +1804,42 @@ It is not. Reading the actual state rather than trusting the first alarming numb
   **S135** with the void-returns trap attached. No source change.
 - **Controller:** `Cycle: 106`. Backlog: S135, S134-shaped gap (no regression guard for visual fixes), S96, S112/S113,
   S107.
+
+### Cycles 107–136 — backfilled in cycle 137
+
+_This log stopped at cycle 106 and ran 31 cycles behind while the tasks file, journal, report and ledger were kept
+current. Backfilled from the journal, which is complete. Recorded as a gap rather than presented as contemporaneous._
+
+**Shipped**
+
+- **107** S135 — narrowed the ramp's ground and added a cut wall so the descent read as a descent.
+- **111** **Reverted it.** It worked by putting the exit in a **trench**, with a wall right of the ramp. The owner:
+  "you're only supposed to have that for the highway." It had passed **both** criteria I wrote for it, because
+  neither asked _"is this still a highway?"_.
+- **109** Planting on both faces, and `vegetation` moved after the side polygon that was burying it (0 → 12 flower px
+  left of camera).
+- **116 / 117** `?probe=barrier` and `?probe=grass` — the gore invariant became a URL instead of an
+  edit-rebuild-revert cycle. Both proven **inert**: the void sweep is identical with the flags on and off.
+- **122** S141 — an in-page "reduce motion" control, defaulting to the OS setting.
+- **119** Corrected an expired premise in `ExitSign` (a comment asserting a 220m leg; it has been 420m since cycle 58).
+
+**Verified**
+
+- **108 / 118** Scene invariants route-wide: void **0/1813** at every sample, gore opens, planting on the bank only.
+- **123** Cockpit guardrails after S141 added a control: dash **36%** / glass **64%** at 1440×900, no overflow.
+- **126 / 127** The action page's §1, §2, §3 reproduce **exactly**; §5 was wrong by ~50% and was corrected.
+- **131** Guardrail 4 at 390×844 on the longest-prose stop: scrolls to the end, one column, no overflow.
+- **132 / 133 / 134** Guardrail 5 and S141, both re-tested through the **user path** after `goTo()` was discredited.
+- **135** Saved progress: five corrupt values rejected, page still hydrates, progress offered never applied.
+
+**Corrected, retired, or found stale**
+
+- **112** Cold page weight measured at **572.6KB**, 62% of it two fonts; the 208KB baseline **retired** as
+  non-comparable rather than reported as a regression.
+- **124** S140 retired on measurement (0.44s of a 420m approach). **133** S143 retired as a probe artifact.
+- **125** The action page was **42 cycles stale**; §7 added for five items it had never mentioned.
+- **129** The report was **accreting, not being rewritten** — two of every section, 242 lines.
+- **130** The backlog was **14/22 finished work written as pending**.
+
+**Controller:** in-scope backlog dry since cycle 115. Everything outstanding is an owner decision (NH-9/10/11,
+S107), out of scope (S137), or filed with justification (S142).
