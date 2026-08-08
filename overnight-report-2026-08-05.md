@@ -1,6 +1,58 @@
-# Overnight run — report (rewritten at the end of cycle 111)
+# Overnight run — report (rewritten at the end of cycle 118)
 
-**Branch:** `feat/drive-mode` · **Cycle:** 112 · nothing pushed, all commits local.
+**Branch:** `feat/drive-mode` · **Cycle:** 119 · nothing pushed, all commits local.
+
+## Current state: all three scene invariants pass
+
+Re-measured on the current build rather than carried forward, because the cut wall was removed, planting reordered
+and two probe flags added since the last route-wide check.
+
+| invariant | result |
+| --- | --- |
+| **I1 void** — the road is never see-through | 8 samples, two legs, mainline → −5.3m: **0 holes / 1813 every time**, sky control 91–100% |
+| **I2 gore** — the barrier opens where the ramp crosses | 28,222px before → **0 through 2.3–4.1m** → 42,678px after |
+| **I3 planting** — grass on the bank, nowhere else | mainline **0/0** (correctly bare), parked stop **16 left / 0 right** |
+
+I3's shape *is* the model: one face, on the left. The right-hand zero is the trench being gone; the mainline zero is
+a real negative control.
+
+## Since cycle 111
+
+| | | |
+| --- | --- | --- |
+| Trench removed — the only wall is the highway's own | The owner: "you're only supposed to have that for the highway." Verified the removal did not re-open the void. | `9298a98` |
+| Planting on the bank; road no longer buries the grass | `vegetation` ran before the side polygon, which covers exactly the inboard bank. 0 flower px left → 12. | `2c2e16f` |
+| `?probe=barrier` | The gore invariant becomes a URL instead of an edit-rebuild-revert cycle. | `ef0f01b` |
+| `?probe=grass` | Fixes the planting check's *reliability*, not its magnitude — and says so. | `b618819` |
+
+## What measurement cost this run, and what it bought
+
+Roughly half of tonight's wrong turns were **the instrument, not the code**. Each is now written into
+`overnight-scene-probe.md`:
+
+- a frame-rate reading with no baseline (84.6ms looked like a violation; the baseline was 83.7ms) — nearly reverted a correct change
+- a **detected** horizon that moved when the scene changed (317 → 294) — nearly condemned another
+- matching a **source** colour through `alpha 0.85` — three probes found nothing while the thing was on screen
+- a timing harness that measured **its own latency** (41.3s, of which 17.4s was my own sleep)
+- a console reader that only starts capturing **when first called** — its first empty result was a false all-clear
+- a sampling **stride of 2** against 1px strokes — read as "the feature failed"
+- MILE 0, itself a stop at −5.5m, recorded as a **traversal**
+
+The rule that survived all of them: **every invariant carries a control that must come out different.**
+
+## The model, which is what actually kept going wrong
+
+**There is exactly one face in this scene: the highway's own embankment, on your left as you descend.** Every fix
+that went wrong invented a second one. The trench is the clearest case — it passed **both** criteria I had written
+for it, because neither asked _"is this still a highway?"_.
+
+## Still open — all yours
+
+- **NH-9** — `CarInterior.jsx`, `world.js`, `DriveScene.jsx` carry uncommitted third-party edits.
+- **NH-10** — windscreen aperture (~86% of viewport width). Widening trades against cockpit realism.
+- **NH-11** — cluster/wheel ratio drifts 0.281 → 0.227; making it constant changes desktop proportions.
+- **S137** — two variable fonts are **62% of a 572.6KB cold page**. The only real weight win, out of this run's scope.
+- **No automated guard.** The probe is a console tool a human runs, not a test that fails a build.
 
 ## Since cycle 106
 
