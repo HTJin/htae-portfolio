@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 117
+**Cycle:** 118
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3668,6 +3668,15 @@ broken should check for orphaned servers before suspecting the code.**
       geometry); it is strictly opt-in (magenta 0 without, 5471 with); and the invariant itself now reads without a
       build — 29,699px at ramp 0.6m, **0 through 2.3–4.1m**, 41,159px at 7.3m, the same shape as the
       instrumented-build measurement in cycle 105. Commit `ef0f01b`.
+
+### Cycle 117
+
+- [x] **S139 — `?probe=grass`, and an honest account of what it does not fix.** Tinting the tuft strokes removes the
+      *reliability* problem in the planting invariant — no more matching an alpha-composited colour, which defeated
+      three probes. It does **not** fix the magnitude: strokes are ~1px, so counts are 26px at a parked stop at
+      stride 1 and 6px at stride 2. **The sampling stride was the limiter, not the tint**, which is worth recording
+      because the small number first read as the feature failing. Verified inert (void 0/1813 both ways) and opt-in
+      (0 magenta without the flag). Commit below.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
