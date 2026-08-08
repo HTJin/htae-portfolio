@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Planner
-**Cycle:** 111
+**Cycle:** 112
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3568,6 +3568,31 @@ broken should check for orphaned servers before suspecting the code.**
       detector was live throughout. The narrowed shelf plus `cutWall` does not re-open the void anywhere.
       Measured against a **fixed** horizon rather than a detected one — the detected version moved when the cut wall
       changed what sits in its reference column, and nearly condemned the change last cycle.
+
+### Cycle 111
+
+- [x] **S136 — measured, and the premise no longer holds.** No source change. The descent was filed as invisible;
+      in the current build the highway's own embankment is the reference and it **does** rise beside you, measurably.
+      Topmost opaque pixel (the highway's silhouette against a DOM sky, so alpha discriminates and no horizon needs
+      detecting) as a fraction of frame height:
+
+      | drop | x=0.15 | x=0.25 | x=0.35 |
+      | --- | --- | --- | --- |
+      | 0 | 0.434 | 0.434 | 0.434 |
+      | −1.00 | 0.398 | 0.410 | 0.423 |
+      | −1.91 | 0.350 | 0.377 | 0.402 |
+      | −2.89 | 0.316 | 0.352 | 0.387 |
+      | −3.84 | 0.293 | 0.334 | 0.375 |
+      | −4.84 | 0.278 | 0.323 | 0.368 |
+
+      **Monotonic at all three columns; 15.6% of frame height at x=0.15.** The control is built in: at drop 0 all
+      three columns read the same 0.434, which is the flat horizon.
+      **Why it changed without being worked on:** the complaint predates the batter (`7a666e9`), the three-material
+      top (`ff3586c`) and the depth sort (`403f7f4`). Those gave the highway a body with a lit crest, and a body is
+      what rises beside you.
+      **Left with the owner:** whether it now *feels* like a descent is perceptual and not something this loop should
+      score itself on. The objective cue is present and monotonic; that is all this measurement claims.
+      **Unchanged limit:** nothing rises before 110m out, because the drop has not begun. Geometry, not rendering.
 
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
