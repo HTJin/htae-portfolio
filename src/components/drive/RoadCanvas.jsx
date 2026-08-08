@@ -852,39 +852,57 @@ export function RoadCanvas({ drive, className }) {
       // `rail` already draws a band between two heights at a fixed lateral, so
       // both are one call each — no new geometry, just the missing materials.
       //
+      // **All three break at the gore, because the ramp drives through here.**
+      //
+      // This opening existed, and was lost when the continuous side polygon
+      // landed — the barrier went back to `rail(0, SEGMENTS, …)`, a solid wall
+      // at a fixed 10.9m running the entire length of the road, while the ramp
+      // sweeps from 6m out to 36m straight across it. That is the owner's
+      // oldest and most-repeated complaint ("we're literally just driving
+      // through the highway rail") and it had silently regressed.
+      //
+      // The face polygon above needs no gate: `deeper` is 0 across the whole
+      // crossing window (the descent is held until the ramp clears the verge),
+      // so it has no height there. These three do — they sit at fixed heights
+      // about grade whether or not anything has dropped, which is precisely why
+      // they are what you hit.
+      const railClearOfRamp = (s) => {
+        const centre = LANE_OFFSET + rampAt(s)
+        const inner = centre - RAMP_WIDTH / 2 - 0.7
+        const outer = centre + RAMP_WIDTH / 2 + 0.7
+        const at = shoulder + SIDE_OUT
+        return at < inner || at > outer
+      }
       // The barrier occupies everything above grade, which the earth fill had
       // been claiming.
-      rail(0, SEGMENTS, shoulder + SIDE_OUT, 0, SIDE_TOP, colors.vergeLight)
+      railRuns(
+        shoulder + SIDE_OUT,
+        0,
+        SIDE_TOP,
+        colors.vergeLight,
+        railClearOfRamp
+      )
       // The deck's own thickness, hanging below grade. This is the band whose
       // absence made the barrier read as the deck's underside.
-      rail(
-        0,
-        SEGMENTS,
+      railRuns(
         shoulder + SIDE_OUT,
         -0.38,
         0,
-        withAlpha(colors.tarmacNear, 0.98)
+        withAlpha(colors.tarmacNear, 0.98),
+        railClearOfRamp
       )
 
-      // Lit cap along the top edge so the ridge reads against the sky.
-      ctx.fillStyle = colors.paint
-      ctx.beginPath()
-      for (let i = 0; i <= SEGMENTS; i += 1) {
-        const point = points[i]
-        const x = point.cx + (shoulder + SIDE_OUT) * point.scale
-        const y = point.y - SIDE_TOP * point.scale
-        if (i === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-      }
-      for (let i = SEGMENTS; i >= 0; i -= 1) {
-        const point = points[i]
-        ctx.lineTo(
-          point.cx + (shoulder + SIDE_OUT) * point.scale,
-          point.y - (SIDE_TOP - 0.12) * point.scale
-        )
-      }
-      ctx.closePath()
-      ctx.fill()
+      // Lit cap along the top edge so the ridge reads against the sky. Gated
+      // with the same predicate: it sits at the same lateral as the barrier, so
+      // left ungated it draws a lit line straight across the opening and the
+      // gap reads as closed even though the barrier itself broke.
+      railRuns(
+        shoulder + SIDE_OUT,
+        SIDE_TOP - 0.12,
+        SIDE_TOP,
+        colors.paint,
+        railClearOfRamp
+      )
 
       // The median barrier. This is what makes it a divided highway rather than
       // a road you may legally overtake into oncoming traffic on: the traffic
