@@ -6,12 +6,16 @@ alone: they are either outside its write scope, or judgement calls it declined t
 The full history is in `overnight-report-2026-08-05.md` and the ledgers beside it. This file exists because those
 have grown past the point where the actionable parts are findable.
 
-_Last confirmed: cycle 83, 2026-08-07. File/line references re-verified in cycle 73; the S107 pixel figures
-re-measured in cycle 77 after later changes to the dash and road._
+_Last confirmed: **cycle 125**, 2026-08-08. Structural claims re-verified this cycle by running the commands at the
+foot of this page: still exactly nine source files, `src/content` and `src/lib` diff still empty, and the
+`Projects.jsx` line numbers in §2 still land on the right lines._
 
-**Nothing on this page was caused by the recent side-profile work** — the exit's missing ground, the see-through
-barrier and the 90-degree bank were all reported by you, fixed, and independently verified (cycles 79–82). They are
-not listed here because they are done.
+**Nothing on this page was caused by the drive-scene work** — the missing ground, the see-through barrier, the
+90-degree bank, the walls beside the exit and the buried planting were all reported by you, fixed, and verified.
+They are not listed here because they are done.
+
+> **Section 7 is new since this page was last written** and holds five items filed between cycles 100 and 123. If
+> you read this page before, that section is the only part you have not seen.
 
 ---
 
@@ -60,13 +64,19 @@ Both live in `src/lib/projects.js`, which the guardrails make read-only, and **o
 lapsed, the repo went private, or there is a new address. The loop will not guess a replacement or delete the
 project.
 
-## 4. Four measurements this environment genuinely cannot take
+## 4. Three measurements this environment genuinely cannot take
 
-Each is seconds of work with DevTools open, and each is currently an unknown rather than a pass:
+**Cold page weight is no longer one of them — it was measured in cycle 112, so please ignore any earlier note asking
+you to take it.** Over the wire, cache bypassed: **572.6 KB**, of which **352.5 KB (62%) is two variable fonts**
+(`Inter-roman` 221.9 KB, `Mona-Sans` 130.6 KB) against 198.4 KB for _all_ JS and CSS. `Inter-italic` (239 KB) is
+declared but never requested on `/drive`. **The old 208 KB figure has been retired, not beaten** — it sits within a
+rounding error of the JS+CSS-only number, so it almost certainly excluded fonts and is not a comparable baseline.
+Fonts are the only remaining weight win and are outside this run's scope (ledger: S137).
+
+The rest are still unknowns rather than passes — each is seconds of work with DevTools open:
 
 | What                        | How                                                                                                                                                        |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Cold page weight**        | Network tab → _Disable cache_ → reload `/drive`. Last real figure was 208 KB in cycle 42, before the ramp geometry, embankment and two-lane road.          |
 | **Forced-colors rendering** | Rendering tab → _Emulate CSS media feature forced-colors: active_. The pedals were fixed for this in cycle 64 by inventory, but the render was never seen. |
 | **The printed page**        | Ctrl+P on `/drive`. Print styling was added in cycle 67 and its rules verified, but the paper was never observed.                                          |
 | **Frame rate**              | Any real profiler. Unmeasurable here since cycle 52 — a blank page benchmarks the same as the drive.                                                       |
@@ -85,6 +95,28 @@ Each is seconds of work with DevTools open, and each is currently an unknown rat
 - **`tailwind.config.js`** safelists `/^apexcharts-.*$/`, which matches no classes. Dead config that makes every
   build print a warning, which is how people learn to ignore build warnings.
 
+## 7. Five things filed since this page was last written
+
+**Read this one first.**
+
+- **Someone else edited the drive source while the loop was running, and two files are still uncommitted.**
+  `CarInterior.jsx` and `world.js` carry changes this loop did not make, timestamped after its own commits. It has
+  left them alone throughout: committing them would attribute your work to the run, reverting them would destroy
+  work whose intent it cannot see. `RoadCanvas.jsx` was the third such file, and its changes **were** committed —
+  they had become inseparable from a fix you asked for. **Decide which of those you want kept.** (NH-9.)
+- **The windscreen shows about 86% of the viewport width.** You reported the view looked cut off at the road's side.
+  Measured: the canvas is the full viewport with **no clipping anywhere in its ancestor chain** — the framing is the
+  cockpit's own pillars, which is roughly a real windscreen. Pulling them back means less car in frame. Your call.
+  (NH-10.)
+- **The cluster/wheel ratio drifts** 0.281 → 0.227 from wide to tall-narrow viewports, because the wheel scales with
+  its column while the gauge caps. Making it constant changes cockpit proportions at every desktop size. (NH-11.)
+- **Both dash toggles are 29×31px** — clears WCAG 2.5.8 AA (24×24), under the 44px comfort target. It is the
+  existing pattern, so enlarging one means enlarging both, in a control row with zero slack. (S142.)
+- **`/drive` now has an in-page "reduce motion" control**, because `prefers-reduced-motion` was honoured but only
+  the OS could ask. It defaults to your system setting, so **nothing changed for anyone who does not press it**, and
+  it is not persisted. Mentioned here only so a new button on your dash is not a surprise. (S141 — done, not a
+  decision.)
+
 ---
 
 ## What the loop did, in one line
@@ -97,6 +129,8 @@ touched across the whole run, every one inside `src/components/drive/**` or `src
 
 **Zero diff to `src/content`, `src/components/sections` and `src/lib`** — your content was never touched, and your
 own pre-existing uncommitted edits are exactly as the run found them.
+
+That count is of **committed** work. Two files also carry **uncommitted** changes the loop did not write — see §7.
 
 Verify any of that yourself:
 
