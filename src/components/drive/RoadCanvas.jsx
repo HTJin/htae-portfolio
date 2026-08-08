@@ -28,7 +28,7 @@ import {
   project,
 } from './world'
 
-const SEGMENTS = 130
+const SEGMENTS = 170
 const DASH_PERIOD = 14 // metres of "on" then "off" for a broken lane line
 const DELINEATOR_SPACING = 24
 const LAMP_SPACING = 72
@@ -205,6 +205,12 @@ export function RoadCanvas({ drive, className }) {
      * A rail standing above the verge, filled as one continuous shape between
      * two heights. Same reason `stripes` exists: filling each segment on its
      * own leaves anti-aliasing seams down the length of it.
+     *
+     * Zero lateral thickness: fine for a median barrier seen head-on, useless
+     * as the *side* of an elevated deck. From the ramp you look at that edge
+     * sideways, and a zero-width ribbon collapses to a line with sky showing
+     * through every anti-aliased join. Use `wall` for anything that has to
+     * cover a side face.
      */
     function rail(first, last, lateral, low, high, fill, follow = false) {
       if (last <= first) return
@@ -267,17 +273,9 @@ export function RoadCanvas({ drive, className }) {
             for (let k = runStart; k <= i; k += 1) {
               const point = points[k]
               const x = point.cx + TOP * point.scale
-              // Up to the **underside of the shoulder rail**, not to the road
-              // surface. This is the void the owner kept reporting and I kept
-              // failing to find: the rail hangs 0.42m above grade, the bank
-              // stopped at grade, and nothing painted the 0.42m between them.
-              // On the mainline that slot is harmless — the verge behind it is
-              // painted. From the ramp it is not: the deck is a flat surface
-              // above the eye and correctly clipped, so behind the slot there
-              // is nothing, and the canvas is transparent there. Measured on a
-              // frozen mid-ramp frame (drop -4.15): alpha **0** at y206-212,
-              // sky showing through a seam between rail and bank.
-              const yTop = point.y - SHOULDER_RAIL_FOOT * point.scale
+              // Up into the continuous highway-side polygon so the bank and
+              // the side face overlap instead of kissing on a sky-coloured line.
+              const yTop = point.y - HIGHWAY_SIDE_TOP * point.scale
               if (k === runStart) ctx.moveTo(x, yTop)
               else ctx.lineTo(x, yTop)
             }
@@ -301,12 +299,10 @@ export function RoadCanvas({ drive, className }) {
     const BANK_TOP = BANK_TOP_OFFSET
 
     /**
-     * How high the shoulder guardrail's underside sits above the mainline
-     * grade. Shared with the `railRuns` call that paints it, so the bank can
-     * close the gap under it exactly — the two drifting apart is what left a
-     * transparent seam along the whole length of every embankment.
+     * Shared with the continuous highway-side polygon below: bank paints up
+     * into that face so they overlap instead of leaving a sky slit.
      */
-    const SHOULDER_RAIL_FOOT = 0.42
+    const HIGHWAY_SIDE_TOP = 0.92
 
     /**
      * How far out the bank runs for every metre it falls. Real highway
@@ -359,7 +355,7 @@ export function RoadCanvas({ drive, className }) {
     function vegetation(sim, colors) {
       const SPACING = 6
       const first = Math.ceil((sim.travel + Z_NEAR) / SPACING)
-      const last = Math.floor((sim.travel + 190) / SPACING)
+      const last = Math.floor((sim.travel + 420) / SPACING)
       const place = (s, x, y) => project(camera, sim, s - sim.travel, x, y)
 
       for (let n = last; n >= first; n -= 1) {
@@ -452,7 +448,7 @@ export function RoadCanvas({ drive, className }) {
 
       // Far to near so nearer objects paint over distant ones.
       const firstLamp = Math.ceil((sim.travel + Z_NEAR) / LAMP_SPACING)
-      const lastLamp = Math.floor((sim.travel + 320) / LAMP_SPACING)
+      const lastLamp = Math.floor((sim.travel + 720) / LAMP_SPACING)
       for (let n = lastLamp; n >= firstLamp; n -= 1) {
         const s = n * LAMP_SPACING
         // Which leg this mast stands on decides whether it stands at all.
@@ -500,7 +496,7 @@ export function RoadCanvas({ drive, className }) {
       // Mile markers: a small plate on a slim post, half a leg apart, so the
       // long stretches between exits still show progress.
       const firstMarker = Math.ceil((sim.travel + Z_NEAR) / MARKER_SPACING)
-      const lastMarker = Math.floor((sim.travel + 260) / MARKER_SPACING)
+      const lastMarker = Math.floor((sim.travel + 600) / MARKER_SPACING)
       for (let n = lastMarker; n >= firstMarker; n -= 1) {
         const s = n * MARKER_SPACING
         // Set further out than the delineator line and standing taller, so a
@@ -529,7 +525,7 @@ export function RoadCanvas({ drive, className }) {
 
       // Reflective delineator posts read as pure speed.
       const firstPost = Math.ceil((sim.travel + Z_NEAR) / DELINEATOR_SPACING)
-      const lastPost = Math.floor((sim.travel + 220) / DELINEATOR_SPACING)
+      const lastPost = Math.floor((sim.travel + 520) / DELINEATOR_SPACING)
       for (let n = lastPost; n >= firstPost; n -= 1) {
         const s = n * DELINEATOR_SPACING
         for (const side of [-1, 1]) {
@@ -732,68 +728,78 @@ export function RoadCanvas({ drive, className }) {
       // End of the flat surfaces. Everything below stands up off the ground.
       ctx.restore()
 
+      // **Roadside furniture goes down before the highway's side face, because
+      // the canvas has no depth buffer — order *is* depth.** Left-hand lamps
+      // stand at `-OPPOSING_EDGE`, on the far side of both carriageways, so
+      // from an exit ramp the entire highway is between you and them. Drawn
+      // after the face they painted straight over it, and the road read as
+      // transparent: the owner, exactly, "I FUCKING SEE THE BACKGROUND
+      // LANDSCAPE AND LIGHT POSTS THAT SHOULD BE ON TOP OF THE HIGHWAY."
+      // They were never see-through — they were simply painted last.
+      //
+      // Ramp-side furniture is outboard of the camera while the face is inboard
+      // of it, so the two occupy opposite halves of the screen and lose nothing
+      // by this order.
+      drawRoadside(sim, colors)
+
       // The face between the two grades, filling what the clip just opened up.
       embankment(colors.vergeDark)
       vegetation(sim, colors)
-      // The highway's outer barrier, running its full length. **This is what
-      // closes the void beside the road, and an 0.18m lip did not.**
-      //
-      // From the ramp you are *below* the mainline, so every flat surface it
-      // has is correctly invisible — you cannot see the top of a road that is
-      // above your eye. The embankment gave the highway a side; but above that
-      // side there was nothing at all, because the deck itself is edge-on and
-      // unseen. The eye reads that as a hole where the road should be.
-      //
-      // A real highway on an embankment is legible from beside it precisely
-      // because its barrier stands against the sky. So the shoulder carries
-      // one, the full length of the road, the same two-tone treatment as the
-      // median barrier: a solid body and a lit cap.
-      // **Opaque.** This was `withAlpha(..., 0.9)` over a `0.5` cap, and a
-      // barrier you can see the sky through is not a barrier — the owner:
-      // "why the hell am I able to see through the road???". Concrete is not
-      // 90% opaque. Only the highlight along the top keeps any alpha, because
-      // a lit edge is a reflection rather than a material.
-      // A **guardrail**, not a wall: it hangs at rail height with the bank
-      // visible under it, so the road's edge still reads against the sky
-      // without putting a slab of concrete beside the carriageway. It was
-      // 0.92m of solid, which is a parapet — and a parapet is the other way of
-      // getting the 90-degree wall the bank was just fixed to avoid.
-      //
-      // **It breaks at the gore, because the ramp crosses it.** It ran the full
-      // length with a `() => true` test, fixed in world space at the mainline's
-      // shoulder, while the ramp sweeps from the running lane out past it — so
-      // every exit and every entrance drove the car straight through a steel
-      // barrier. The owner, plainly: "we're literally just driving through the
-      // highway rail." A barrier that closes the void is worth nothing if the
-      // road goes through it.
-      //
-      // Real interchanges open the shoulder rail at the gore for exactly this
-      // reason and resume it past the nose. The opening is derived from the
-      // ramp's own footprint rather than from a hand-tuned span of `s`, so it
-      // stays correct if `RAMP_OFFSET`, `RAMP_WIDTH` or the ramp curve is
-      // retuned — the same lesson as `RAMP_LENGTH` and `BANK_TOP_OFFSET`.
+
+      // ONE continuous side polygon along the entire highway. No gore gate, no
+      // "elevated only" gate — those punched holes in the silhouette. Top rides
+      // the mainline shoulder; bottom rides the lower grade at every depth
+      // (ramp when you have dropped, mainline when you have not), so the face
+      // is a full retaining wall from below and a curb on the open road, and
+      // it never stops mid-view.
       const shoulder = CARRIAGEWAY + 2.4
-      const GORE_CLEARANCE = 0.7
-      const railClearOfRamp = (s) => {
-        const centre = LANE_OFFSET + rampAt(s)
-        const inner = centre - RAMP_WIDTH / 2 - GORE_CLEARANCE
-        const outer = centre + RAMP_WIDTH / 2 + GORE_CLEARANCE
-        return shoulder < inner || shoulder > outer
+      const SIDE_TOP = HIGHWAY_SIDE_TOP
+      const SIDE_OUT = 0.3
+      ctx.fillStyle = colors.vergeLight
+      ctx.beginPath()
+      for (let i = 0; i <= SEGMENTS; i += 1) {
+        const point = points[i]
+        const x = point.cx + (shoulder + SIDE_OUT) * point.scale
+        const y = point.y - SIDE_TOP * point.scale
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
       }
-      railRuns(
-        shoulder,
-        SHOULDER_RAIL_FOOT,
-        0.72,
-        colors.vergeLight,
-        railClearOfRamp
-      )
-      railRuns(
-        shoulder,
-        0.66,
-        0.72,
-        withAlpha(colors.paint, 0.8),
-        railClearOfRamp
-      )
+      for (let i = SEGMENTS; i >= 0; i -= 1) {
+        const point = points[i]
+        // Down to **whichever grade is lower — this point's or the camera's.**
+        // `point.yRamp` alone collapses the face to nothing wherever the road
+        // ahead is back at mainline grade, which is most of the view while you
+        // sit at the bottom of an exit: the silhouette simply stopped, and the
+        // landscape and the far carriageway's lamps showed through the gap.
+        // Taking the deeper of the two keeps the wall full-height for the whole
+        // length of the road whenever you are below it.
+        const deeper = Math.min(point.drop, sim.drop ?? 0)
+        ctx.lineTo(
+          point.cx + (shoulder + SIDE_OUT) * point.scale,
+          point.y - deeper * point.scale
+        )
+      }
+      ctx.closePath()
+      ctx.fill()
+      // Lit cap along the top edge so the ridge reads against the sky.
+      ctx.fillStyle = colors.paint
+      ctx.beginPath()
+      for (let i = 0; i <= SEGMENTS; i += 1) {
+        const point = points[i]
+        const x = point.cx + (shoulder + SIDE_OUT) * point.scale
+        const y = point.y - SIDE_TOP * point.scale
+        if (i === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      for (let i = SEGMENTS; i >= 0; i -= 1) {
+        const point = points[i]
+        ctx.lineTo(
+          point.cx + (shoulder + SIDE_OUT) * point.scale,
+          point.y - (SIDE_TOP - 0.12) * point.scale
+        )
+      }
+      ctx.closePath()
+      ctx.fill()
 
       // The median barrier. This is what makes it a divided highway rather than
       // a road you may legally overtake into oncoming traffic on: the traffic
@@ -821,8 +827,6 @@ export function RoadCanvas({ drive, className }) {
         hasGuardrail,
         true
       )
-
-      drawRoadside(sim, colors)
 
       // Haze so the tarmac dissolves into the sky instead of ending abruptly.
       const haze = ctx.createLinearGradient(
