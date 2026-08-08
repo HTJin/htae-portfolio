@@ -86,23 +86,39 @@ const I3 = () => {
 > **fully parked stop** (`drop <= -5.45`), and treat a drop to zero on a side that previously had flowers as the
 > signal, not the absolute count.
 
-## I2 — the gore opening (needs an instrumented build)
+## I2 — the gore opening (`?probe=barrier`, no build required)
 
-Cannot be measured from the composited frame: the barrier shares its colour with the ramp's edge lines and rumble
+Cannot be measured from an ordinary frame: the barrier shares its colour with the ramp's edge lines and rumble
 strips, which *grow* as the ramp separates — counting "bright pixels near the shoulder" reports the barrier present
-while it is absent. Use the **magenta technique**: temporarily set the barrier's `railRuns` fill to `'#ff00ff'`,
-rebuild, then count magenta across the crossing window. No palette colour is magenta, so every hit is the barrier.
+while it is absent.
 
-Expected (measured `38d3b6a`): full before the crossing, **zero through it**, full after.
+**Load `/drive?probe=barrier`.** That tints the shoulder barrier `#ff00ff`, a colour no palette contains, so every
+magenta pixel is the barrier and nothing else. It changes a fill only; the I1 void sweep is identical with the flag
+on and off (0/1813 both), which is the check that keeps the affordance honest.
+
+```js
+const count = () => {
+  const px = g.getImageData(0, 0, c.width, c.height).data
+  let n = 0
+  for (let i = 0; i < px.length; i += 4*7) if (px[i] > 200 && px[i+1] < 80 && px[i+2] > 200 && px[i+3] > 0) n++
+  return n
+}
+```
+
+Drive through the crossing and sample by `sim.ramp`. **Pass:** non-zero before, **zero through 2–4m**, non-zero
+after — the opening is derived from the ramp's footprint, so it sits at roughly 1.55–7.35m.
 
 | ramp | barrier px | | ramp | barrier px |
 | --- | --- | --- | --- | --- |
-| 0.7m | 45587 | | 6.1m | 2236 |
-| 1.1m | 44819 | | 7.1m | 48220 |
-| 2.1m | **0** | | 8.0m | 58967 |
-| 3.1m | **0** | | 9.1m | 41019 |
+| 0.6m | 29699 | | 5.4m | 148 |
+| 1.2m | 27599 | | 6.3m | 3133 |
+| 2.3m | **0** | | 7.3m | 41159 |
+| 3.3m | **0** | | 8.3m | 36225 |
+| 4.1m | **0** | | 9.3m | 25483 |
 
-**Revert the probe colour and `grep -c ff00ff` before committing.**
+_Superseded method, kept only as history: editing the `railRuns` fill to `'#ff00ff'`, rebuilding, measuring,
+reverting and grepping the revert. Five steps and a build — which is why this invariant regressed once with nothing
+to catch it._
 
 ## Baseline — current build (cycle 110)
 

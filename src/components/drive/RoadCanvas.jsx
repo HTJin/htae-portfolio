@@ -48,6 +48,29 @@ export function RoadCanvas({ drive, className }) {
     const ctx = canvas.getContext('2d')
     let camera = makeCamera(canvas.clientWidth || 1, canvas.clientHeight || 1)
 
+    /**
+     * `?probe=barrier` — tint one element a colour no palette contains.
+     *
+     * The shoulder barrier's gore opening is the one scene invariant that
+     * **cannot** be measured from a composited frame: the barrier shares its
+     * colour with the ramp's edge lines and the rumble strips, and those *grow*
+     * as the ramp separates, so counting bright pixels near the shoulder reports
+     * the barrier present while it is absent. The only method that works is to
+     * repaint it magenta — which until now meant editing this file, rebuilding,
+     * measuring, reverting, and grepping to prove the revert. Five steps and a
+     * build is why **that opening regressed once and nothing caught it**.
+     *
+     * Read here, inside the effect, and never during render: the server has no
+     * `location`, and branching on it in the render path is the hydration
+     * mismatch guardrail 1 exists for.
+     *
+     * It changes a **fill and nothing else**. A debug affordance that moved
+     * geometry would corrupt the very measurement it exists to enable, so the
+     * void sweep must come out identical with the flag on and off.
+     */
+    const probe = new URLSearchParams(window.location.search).get('probe')
+    const PROBE_TINT = '#ff00ff'
+
     const points = []
 
     /**
@@ -896,7 +919,7 @@ export function RoadCanvas({ drive, className }) {
         shoulder + SIDE_OUT,
         0,
         SIDE_TOP,
-        colors.vergeLight,
+        probe === 'barrier' ? PROBE_TINT : colors.vergeLight,
         railClearOfRamp
       )
       // The deck's own thickness, hanging below grade. This is the band whose
