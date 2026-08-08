@@ -5,7 +5,7 @@
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
 **Phase:** Suggester
-**Cycle:** 123
+**Cycle:** 124
 
 ## Project orientation (so a fresh agent can start cold)
 
@@ -3733,6 +3733,23 @@ broken should check for orphaned servers before suspecting the code.**
       **Not persisted**, mirroring the cycle-9 audio rule: a stored "on" would start motion for someone who had
       asked for stillness.
 
+### Cycle 123
+
+- [x] **Paid a debt: S141 shipped a control into the cockpit and the cockpit guardrails were never checked.**
+      Guardrails 3 and 10 require glass ≥ ~50% and dash ≤ ~38% at 1440×900, controls fitting inside the dash at
+      840×386, and no overflow at 390×844. Measured after the fact:
+
+      | viewport | dash | glass | toggle in viewport | horizontal overflow |
+      | --- | --- | --- | --- | --- |
+      | 1440×900 | **36%** (≤38 ✓) | **64%** (≥50 ✓) | yes | none |
+      | 390×844 | — | — | yes | none |
+      | 840×386 | — | — | yes | none |
+
+      Control row at both tight sizes: `scrollWidth === clientWidth`, all five children inside the row, row inside
+      the viewport. **The dash/glass fractions at the two small viewports are omitted deliberately** — the figure my
+      element-detection produced (8.3% of 844 ≈ 70px) is impossible for a cockpit with a 210px floor, so it found the
+      wrong container and is not reported as a pass.
+
 ## Needs testing (testable now — Reviewer must clear all of these each run)
 
 _(Cycle 57's ramp-taper item was cleared in cycle 58 — moved to Done. See the note below on how, because the
@@ -3992,6 +4009,16 @@ _(empty)_
   one only to the page changes nothing, and it would have looked fixed.)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
+
+- **S142 — Both dash toggles are 29×31px, under the 44px comfort target.** _(new, cycle 123)_
+  **Measured** at 390×844 and 840×386: the sound and motion toggles are **29×31**. That clears WCAG 2.5.8 AA
+  (24×24) and is **not** a violation, but it is well under the 44×44 that touch guidance recommends, on the controls
+  most likely to be tapped with a thumb while the other hand holds the phone.
+  **This is pre-existing, not new:** `MotionToggle` copies `AudioToggle`'s classes exactly, so the size is the
+  established pattern. Filed rather than changed for that reason — enlarging one means enlarging both, which is a
+  visible change to a control row the owner designed, inside a dash-height budget three cycles tuned.
+  **If taken:** raise both together and re-check guardrails 3 and 10 (dash ≤ ~38% at 1440×900, controls still inside
+  the dash at 840×386) — the row currently has zero slack at `scrollWidth === clientWidth`.
 
 - **S141 — Reduced motion is honoured, but only the OS can ask for it.** _(new, cycle 121; from market research)_
   **Measured:** `prefers-reduced-motion` is respected in four places — `DriveScene`, `useDrive`, `StopCard`,
