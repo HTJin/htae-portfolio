@@ -3,7 +3,7 @@ import { paletteAt, withAlpha } from './daylight'
 import {
   BANK_TOP_OFFSET,
   LEG_LENGTH,
-  RAMP_OFFSET,
+  RAMP_OFFSET_MAX,
   RAMP_SEPARATES,
   RAMP_WIDTH,
   rampAt,
@@ -354,7 +354,7 @@ export function RoadCanvas({ drive, className }) {
         const base = follow ? point.yRamp : point.y
         ctx.lineTo(
           point.cx + (lateral + (follow ? point.ramp : 0)) * point.scale,
-          base - low * point.scale
+          base - low * point.scale,
         )
       }
       ctx.closePath()
@@ -431,7 +431,7 @@ export function RoadCanvas({ drive, className }) {
               // Foot on the ramp road itself — aligned to the white stripe.
               ctx.lineTo(
                 point.cx + rampInnerOf(point) * point.scale,
-                point.yRamp
+                point.yRamp,
               )
             }
             ctx.closePath()
@@ -603,7 +603,7 @@ export function RoadCanvas({ drive, className }) {
         const base = follow ? p.yRamp : p.y
         ctx.lineTo(
           p.cx + (lateral + (follow ? p.ramp : 0)) * p.scale,
-          base - low * p.scale
+          base - low * p.scale,
         )
       }
       ctx.closePath()
@@ -712,7 +712,7 @@ export function RoadCanvas({ drive, className }) {
           0,
           arm.x,
           arm.y,
-          glow * 3
+          glow * 3,
         )
         halo.addColorStop(0, withAlpha(colors.lamp, 0.55 * colors.lampAlpha))
         halo.addColorStop(1, withAlpha(colors.lamp, 0))
@@ -919,7 +919,7 @@ export function RoadCanvas({ drive, className }) {
           ? [
               {
                 from: -(OPPOSING_EDGE + 22),
-                to: CARRIAGEWAY + RAMP_OFFSET + 22,
+                to: CARRIAGEWAY + RAMP_OFFSET_MAX + 22,
                 fill: GROUND,
                 follow: false,
               },
@@ -1005,7 +1005,7 @@ export function RoadCanvas({ drive, className }) {
       goreRuns(
         withAlpha(colors.paint, 0.34),
         0.8,
-        (point) => Math.floor(point.s / GORE_PERIOD) % 2 === 0
+        (point) => Math.floor(point.s / GORE_PERIOD) % 2 === 0,
       )
 
       const paint = withAlpha(colors.paint, 0.82)
@@ -1029,7 +1029,7 @@ export function RoadCanvas({ drive, className }) {
             -MEDIAN_WIDTH - at - 0.15,
             -MEDIAN_WIDTH - at + 0.15,
             DASH_PERIOD,
-            laneLine
+            laneLine,
           )
         }
         ctx.globalAlpha = 1
@@ -1051,7 +1051,7 @@ export function RoadCanvas({ drive, className }) {
             LANE_OFFSET - RAMP_WIDTH / 2,
             LANE_OFFSET + RAMP_WIDTH / 2,
             tarmac,
-            true
+            true,
           )
         }
       }
@@ -1063,13 +1063,13 @@ export function RoadCanvas({ drive, className }) {
         LANE_OFFSET - RAMP_WIDTH / 2 + 0.05,
         LANE_OFFSET - RAMP_WIDTH / 2 + 0.35,
         paint,
-        separated
+        separated,
       )
       ribbonRuns(
         LANE_OFFSET + RAMP_WIDTH / 2 - 0.35,
         LANE_OFFSET + RAMP_WIDTH / 2 - 0.05,
         paint,
-        separated
+        separated,
       )
 
       // End of the flat surfaces. Standing geometry follows.
@@ -1128,21 +1128,21 @@ export function RoadCanvas({ drive, className }) {
           0,
           SIDE_TOP,
           probe === 'barrier' ? PROBE_TINT : colors.vergeLight,
-          railClearOfRamp
+          railClearOfRamp,
         )
         railRuns(
           shoulder,
           -0.38,
           0,
           withAlpha(colors.tarmacNear, 0.98),
-          railClearOfRamp
+          railClearOfRamp,
         )
         railRuns(
           shoulder,
           SIDE_TOP - 0.12,
           SIDE_TOP,
           colors.paint,
-          railClearOfRamp
+          railClearOfRamp,
         )
 
         // The scenic-overlook guardrail used to stand here, at `CARRIAGEWAY +
@@ -1196,7 +1196,7 @@ export function RoadCanvas({ drive, className }) {
       haze.addColorStop(0, withAlpha(colors.haze, 0))
       haze.addColorStop(
         Math.min(HAZE_RAMP / hazeDepth, 0.5),
-        withAlpha(colors.haze, colors.hazeAlpha)
+        withAlpha(colors.haze, colors.hazeAlpha),
       )
       haze.addColorStop(1, withAlpha(colors.haze, 0))
       ctx.fillStyle = haze
