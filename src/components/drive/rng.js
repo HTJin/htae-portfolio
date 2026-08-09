@@ -1,10 +1,10 @@
 /**
- * Zero-dep Mulberry32 PRNG for drive geometry / itinerary draws (st023 / st025).
+ * Zero-dep Mulberry32 for drive seeded draws (st025 miles / st023–st024 ramps).
  *
- * Not used for Sky / engineAudio noise; those keep their own LCGs.
- * Never use non-seeded Math.random for ramp length or miles: same seed must replay.
+ * Never use Math.random for geometry or mile labels: same seed must replay.
+ * Sky / engineAudio keep their own LCGs; this is the shared route helper.
  *
- * Reference shape: https://github.com/bryc/code/blob/master/jshash/PRNGs.md
+ * Reference: https://gist.github.com/tommyettinger/46a874533244883189fc (public domain)
  */
 
 /** @param {number} seed unsigned 32-bit-ish integer */

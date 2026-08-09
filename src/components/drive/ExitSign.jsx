@@ -21,12 +21,15 @@ const ANCHOR_Y = 90
  * The sign stands on the far verge of the ramp it names.
  *
  * It is anchored at the stop's own `s`, which is the end of the off-ramp, so
- * the ramp has carried the road to `RAMP_OFFSET` by the time you reach it —
- * leaving this at `CARRIAGEWAY + 4.6` would have planted the sign in the middle
- * of the ramp's tarmac. Derived from the ramp's own geometry so it stays put if
- * either changes.
+ * the ramp has carried the road to that stop's peak offset by the time you
+ * reach it — leaving this at `CARRIAGEWAY + 4.6` would have planted the sign
+ * in the middle of the ramp's tarmac. Derived from the stop's own geometry so
+ * it tracks per-stop peels (st024).
  */
-const OFFSET_X = LANE_OFFSET + RAMP_OFFSET + RAMP_WIDTH / 2 + 2
+function signOffsetX(stop) {
+  const peak = stop?.rampOffset ?? RAMP_OFFSET
+  return LANE_OFFSET + peak + RAMP_WIDTH / 2 + 2
+}
 
 /**
  * The sign's whole approach is scaled to the leg you actually drive.
@@ -81,7 +84,7 @@ export function ExitSign({ drive, stop }) {
         camera,
         sim,
         z,
-        OFFSET_X,
+        signOffsetX(stop),
         MOUNT_HEIGHT + rampDropAt(stop.s)
       )
       const size = (SIGN_METERS * scale) / DESIGN_WIDTH
@@ -171,7 +174,7 @@ export function ExitSign({ drive, stop }) {
           className="absolute -top-[30px] right-0 rounded-t-md border-[5px] border-b-0 border-white/90 px-3 pb-0.5 pt-1 text-center font-display leading-none text-white"
           style={{ backgroundColor: start.signFace }}
         >
-          <span className="text-white/85 block text-[11px] font-semibold uppercase tracking-[0.2em]">
+          <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/85">
             {exitWord}
           </span>
           <span className="block text-[19px] font-bold tracking-tight">
