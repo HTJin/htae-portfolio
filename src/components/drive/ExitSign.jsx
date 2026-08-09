@@ -82,13 +82,13 @@ export function ExitSign({ drive, stop }) {
         sim,
         z,
         signOffsetX(stop),
-        MOUNT_HEIGHT + rampDropAt(stop.s),
+        MOUNT_HEIGHT + rampDropAt(stop.s)
       )
       const size = (SIGN_METERS * scale) / DESIGN_WIDTH
 
       wrapper.style.visibility = 'visible'
       wrapper.style.opacity = String(
-        Math.min(1, (VISIBLE_FROM - z) / FADE_OVER),
+        Math.min(1, (VISIBLE_FROM - z) / FADE_OVER)
       )
       wrapper.style.transform = `translate(${x}px, ${y}px) scale(${size}) translate(-50%, -${ANCHOR_Y}px)`
 
@@ -171,7 +171,7 @@ export function ExitSign({ drive, stop }) {
           className="absolute -top-[30px] right-0 rounded-t-md border-[5px] border-b-0 border-white/90 px-3 pb-0.5 pt-1 text-center font-display leading-none text-white"
           style={{ backgroundColor: start.signFace }}
         >
-          <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-white/85">
+          <span className="text-white/85 block text-[11px] font-semibold uppercase tracking-[0.2em]">
             {exitWord}
           </span>
           <span className="block text-[19px] font-bold tracking-tight">

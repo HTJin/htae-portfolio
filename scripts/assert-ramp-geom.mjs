@@ -12,7 +12,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-register('./worktree-alias-hook.mjs', pathToFileURL(path.join(root, 'scripts/')))
+register(
+  './worktree-alias-hook.mjs',
+  pathToFileURL(path.join(root, 'scripts/'))
+)
 
 async function main() {
   const routeMod = await import('../src/components/drive/route.js')
@@ -73,7 +76,11 @@ async function main() {
     const mid = LEG_LENGTH / 2
     const p = rampProgress(mid)
     ok('B_midleg_progress_near_zero', p < 1e-6, `progress(${mid})=${p}`)
-    ok('B_midleg_rampAt_near_zero', Math.abs(rampAt(mid)) < 1e-6, `rampAt=${rampAt(mid)}`)
+    ok(
+      'B_midleg_rampAt_near_zero',
+      Math.abs(rampAt(mid)) < 1e-6,
+      `rampAt=${rampAt(mid)}`
+    )
   }
 
   // Control C: every consecutive pair leaves open mainline
@@ -166,9 +173,15 @@ async function main() {
   {
     const g = previewRampGeometry(99)
     const correlated = g.every(
-      (row, i) => Math.abs(row.length / LEG_LENGTH - (row.offset - CARRIAGEWAY) / 23) < 0.02
+      (row, i) =>
+        Math.abs(row.length / LEG_LENGTH - (row.offset - CARRIAGEWAY) / 23) <
+        0.02
     )
-    ok('H_axes_not_single_scalar', !correlated || g.length < 2, 'separate salted streams')
+    ok(
+      'H_axes_not_single_scalar',
+      !correlated || g.length < 2,
+      'separate salted streams'
+    )
   }
 
   if (fails.length) {
