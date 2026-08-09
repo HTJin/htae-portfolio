@@ -1,4 +1,5 @@
 import { education, experience, meta, projects, skills } from '@/content'
+import { drawLegMiles, seedFromStopIds } from './rng'
 import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
 
 /**
@@ -379,23 +380,45 @@ function destinationStop() {
  * The full itinerary, ordered as a drive: where it started, the career
  * highway in chronological order, the side builds, the toolbox, then the
  * destination. Each stop is pinned to a fixed world position.
+ *
+ * Display miles between stops (st025) are seeded RNG integers 1–99. World
+ * geometry stays `index * LEG_LENGTH`; itinerary MI labels use these fields.
  */
-export const route = [
+const routeStops = [
   originStop(),
   educationStop(),
   ...experienceStops(),
   ...projectStops(),
   skillsStop(),
   destinationStop(),
-].map((stop, index, all) => ({
-  ...stop,
-  index,
-  s: index * LEG_LENGTH,
-  exitLabel: index === 0 ? 'MILE 0' : `EXIT ${String(index).padStart(2, '0')}`,
-  isLast: index === all.length - 1,
-}))
+]
+
+/** Content-derived seed: ordered stop ids. Same ids → same leg-mile sequence. */
+export const routeMilesSeed = seedFromStopIds(routeStops.map((stop) => stop.id))
+
+/** One integer mile draw per consecutive pair; length === route.length - 1. */
+export const legMiles = drawLegMiles(routeMilesSeed, routeStops.length - 1)
+
+export const route = routeStops.map((stop, index, all) => {
+  let milesFromStart = 0
+  for (let i = 0; i < index; i += 1) milesFromStart += legMiles[i]
+  return {
+    ...stop,
+    index,
+    s: index * LEG_LENGTH,
+    exitLabel:
+      index === 0 ? 'MILE 0' : `EXIT ${String(index).padStart(2, '0')}`,
+    isLast: index === all.length - 1,
+    milesFromPrev: index === 0 ? 0 : legMiles[index - 1],
+    milesToNext: index < legMiles.length ? legMiles[index] : 0,
+    milesFromStart,
+  }
+})
 
 export const routeLength = (route.length - 1) * LEG_LENGTH
+
+/** Sum of RNG leg miles (itinerary trip total; not world metres). */
+export const tripMiles = legMiles.reduce((sum, miles) => sum + miles, 0)
 
 /**
  * The last stop's index, used by `rampAt` to clamp. Declared here rather than
@@ -479,9 +502,10 @@ const LAST_DATED_S = DATED.length ? DATED[DATED.length - 1].s : 0
  * The trip you just drove, in numbers — shown only at the destination.
  *
  * Every figure is derived from the content, never written down: the counts come
- * from the arrays themselves and the distance from the route's own length. Add
- * a role or a build and these follow automatically, which is the only way a
- * number on someone's résumé is safe to display (guardrail 13).
+ * from the arrays themselves and the distance from the seeded itinerary miles
+ * (st026), not world metres. Add a role or a build and these follow
+ * automatically, which is the only way a number on someone's résumé is safe to
+ * display (guardrail 13).
  */
 export const tripSummary = [
   {
