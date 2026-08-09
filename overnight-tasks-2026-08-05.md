@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Critic
+**Phase:** Builder
 **Cycle:** 152
 
 ## Project orientation (so a fresh agent can start cold)
@@ -4234,6 +4234,29 @@ looked at the merge geometry.
       **Done-when:** the sweep from T152-1 shows no step in value or first difference, and the build is clean.
       **Guardrail:** do not adjust `RAMP_OFFSET` or `RAMP_LENGTH` to make a number look better. If the easing
       function is the wrong shape, change the easing function.
+
+### Critic pre-mortem for CYCLE 152
+
+1. **_Failure: two writers on one file._ THIS IS THE BINDING ONE THIS CYCLE.** A clustered consensus workflow is
+   live and its Coder consensus applies changes to `RoadCanvas.jsx` / `world.js` / `route.js` in the main repo.
+   T152-2 would edit the same files. Two writers on one file produces a merge neither can untangle, and this run
+   has already lost work to a concurrent writer once (NH-9, where uncommitted Cursor edits sat quarantined for ~40
+   cycles). **Guardrail:** T152-1 is READ-ONLY and safe to run now. **T152-2 must not edit anything until the
+   workflow has landed its commit.** Check `git log` for the consensus commit before touching a drive file, and if
+   the tree is dirty, stop.
+2. _Failure: replicating the constants instead of running the module._ The tempting way to sweep `rampAt` is to
+   retype `RAMP_OFFSET`, `RAMP_LENGTH` and `smoothstep` into a scratch script. That is inspection wearing the
+   costume of execution: it proves what I typed, not what the page runs, and the two have disagreed before
+   (`VERGE_WIDTH` was two independent numbers for four cycles). **Guardrail:** sweep the real imported module, or
+   sweep in the browser against the running bundle, and say which was used.
+3. _Failure: declaring the merge smooth because `smoothstep` has zero slope at its ends._ True of the easing in
+   isolation, and irrelevant if the composition `dropProgress(rampProgress(s))` or the `Math.round` leg index
+   introduces a step elsewhere. **Guardrail:** the claim must come from sampled numbers across the merge, not from
+   reading the easing function.
+4. _Failure: sampling too coarsely to see a kink._ A derivative discontinuity is invisible at 5m spacing.
+   **Guardrail:** sample at <= 0.5m through the merge window, and report the grid used.
+5. _Failure: no control._ **Guardrail:** run the identical sweep on open mainline, where all three quantities are
+   flat zero. If that also shows a step, the sampler is wrong and no conclusion about the road may be drawn.
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
