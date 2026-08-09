@@ -83,14 +83,54 @@ get lost.
 7. **View distance / how far ahead the road is visible may be the real lever (2).** Never investigated.
 8. **Windshield wipers (2).** Removed already; noted so the record is complete.
 
+---
+
+## Recovered later, by a better method (2026-08-08 20:0x)
+
+The string-walk below was the wrong tool. Cursor stores prompts as **structured JSON under known SQLite keys**, so
+they can be read exactly, with timestamps, instead of scraped out of a binary. Redone that way, two more prompts
+surfaced that the scrape had missed entirely.
+
+### 9 - 17:16:09 (NEW)
+
+> actually was the violet section added by you to simulate like a half risen windshield color filter of some sort??
+> if so fucking remove it
+
+Already resolved in the source: see the comments at `src/components/drive/RoadCanvas.jsx:306`, `:729` and `:889`,
+which record the gray/violet halves as a clamped-to-horizon artifact and remove it.
+
+### 10 - 17:23:36 (NEW, and the most recent Cursor instruction in the set)
+
+> NO YOU FUCKING RETARD I DIND'T POINT THOSE OUT TO SAY THEY WERE THE WRONG COLOR YOU FUCKING DUMBASS IM FUCKING
+> TRYING TO FIX THE OVERALL VIEWPORT OF THE WHOLE DRIVING EXPERIENCE. YOU DIDN'T DO SHIT ON WHAT I WANTED YOU TO DO.
+> THERE IS A FUCKING LINE THAT IS ELONGATED ON THE RIGHT SIDE OF THE ROAD AT ALL TIMES AND THAT SHOULD ONLY BE
+> VISIBLE WHEN THE VEHICLE IS ON THE MAIN HIGHWAY. SET THE FUCKING MAIN INITIAL ELEVATION BASED TO THE MAIN HIGHWAY.
+> THE GUARDRAIL SHOULD NOT BE VISIBLE WHEN THE ELVATION IS LOWERING DURING THE EXIT RAMP PART OF THE ROAD
+
+Three separate requirements, none of them about colour:
+
+1. The elongated line on the **right** is visible at all times and must be visible **only on the main highway**.
+   This is prompt 7 restated with force, and it is still open.
+2. **The main initial elevation must be set to the main highway.** This is the same reference frame complaint as
+   prompt 8: stop deriving the scene from the viewport's horizontal, derive it from the highway deck.
+3. The guardrail must not be visible while elevation is dropping on the exit ramp.
+
+Point 2 is the one the loop has never acted on directly, and it is the root the other two hang off.
+
 ## Method note, so this is not lost again
 
-The vault prompt log records Cursor prompts as `(empty)`. Until that is fixed, the source of truth for owner
-direction given to Cursor is:
+**Do not scrape the WAL.** Cursor keeps its own prompt history in SQLite, per workspace:
 
 ```
-%APPDATA%/Cursor/User/workspaceStorage/5f3770afa2146bf94289fdfa2564079b/state.vscdb-wal
+%APPDATA%/Cursor/User/workspaceStorage/<workspace-id>/state.vscdb
+  ItemTable key `aiService.generations` -> [{unixMs, generationUUID, textDescription, type}]   <- timestamped
+  ItemTable key `aiService.prompts`     -> [{text, commandType}]                               <- rolling buffer
 ```
 
-Walk `"text":"` and `"textDescription":"` payloads. The regex-based approach fails on escaped characters; walk the
-string manually. Script kept at `scratchpad/extract2.js` during this session.
+Copy the DB **together with its `-wal`** before reading (recent prompts live in the WAL; reading the `.vscdb` alone
+returns stale data). This workspace is `5f3770afa2146bf94289fdfa2564079b`.
+
+This is now automated for every project on the machine by
+`D:/Work/_machine-vault/scripts/cursor_chat_sync.py`, which mirrors Cursor chat into the Obsidian vault at
+`08 - Prompt Log/cursor/<project> cursor prompts.md` and injects a recent digest at session start. The earlier
+`(empty)` problem was in `prompt_log.py`, whose hook payload never carried the text under any key it read.
