@@ -1,5 +1,5 @@
 /**
- * Zero-dep Mulberry32 for drive seeded draws (st025 miles / st023–st024 ramps).
+ * Zero-dep Mulberry32 for drive seeded draws (st025 miles / st023-st024 ramps).
  *
  * Never use Math.random for geometry or mile labels: same seed must replay.
  * Sky / engineAudio keep their own LCGs; this is the shared route helper.
@@ -24,7 +24,7 @@ export function intInclusive(u01, min, max) {
 }
 
 /**
- * FNV-1a 32-bit hash of a string → seed for Mulberry32.
+ * FNV-1a 32-bit hash of a string -> seed for Mulberry32.
  * Content-derived so ordered stop ids produce a stable sequence without storage.
  */
 export function hashSeed(text) {
