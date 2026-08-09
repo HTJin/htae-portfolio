@@ -527,3 +527,18 @@ One line per task as it completes.
 - **Cycle 151 - I set up the four-role pipeline and then did not use it.** The owner had to ask "are you sure you
   are using all 4 of the agentic roles i specified earlier". I had written the charters and gone straight back to
   coding solo. Structure that is not invoked is decoration.
+
+- **Cycle 152 - the Critic earned its keep for once.** It caught that a clustered consensus workflow was live and
+  writing the same three drive files T152-2 would edit. Two writers on one file is how this run lost ~40 cycles to
+  a quarantined Cursor edit. T152-2 was barred rather than attempted.
+- **Cycle 152 - I built the harness I was told to build, and it does not run.** The sweep imports the real
+  `route.js` through a resolve hook rather than retyping its constants. The alias resolves; Node then dies on JSX
+  in the import graph. Committed as blocked, with the better instrument named: sample `(travel, drop, ramp)` from
+  `simRef` in the browser, which is `rampAt`/`rampDropAt` as evaluated by the shipped bundle. Importing the source
+  was always the second-best evidence.
+- **Cycle 152 - the temptation was to "just" copy the constants into a scratch file.** That is the exact move
+  guardrail 2 forbids, written by me four hours earlier, for the reason `VERGE_WIDTH` taught this repo: a
+  replicated constant proves what you typed. Recording a blocked task is cheaper than a confident wrong number.
+- **Cycle 152 - the owner asked why no tester ports were up, and he was right.** The four-port staggered config is
+  in the script; the run had only reached the Coders stage, so it had never executed. Configuration is not
+  execution, and I should have said so before he had to ask.

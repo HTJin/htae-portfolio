@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Builder
+**Phase:** Reviewer
 **Cycle:** 152
 
 ## Project orientation (so a fresh agent can start cold)
@@ -4216,7 +4216,7 @@ _"it was good as it was before but I was telling you to correct the actual pathi
 back onto the main highway road."_ The loop has answered that with colour changes three times. It has never once
 looked at the merge geometry.
 
-- [ ] **T152-1 - INVESTIGATE: is the acceleration ramp actually tangent to the mainline where it merges?**
+- [x] **T152-1 - INVESTIGATE: is the acceleration ramp actually tangent to the mainline where it merges?** -> **Needs testing:** harness built and committed (`tools/`), blocked on JSX in the import graph; browser method recorded.
       **Why:** the owner, judging by the painted stripes: _"look at how the curve of the road when I'm on the exit
       ramp is not properly aligned to the entrance point to the main highway based upon the white stripes of the
       plane."_ A merge that is positionally correct but has a **kink** (mismatched tangent) reads exactly like a
@@ -4230,7 +4230,7 @@ looked at the merge geometry.
       where all three are flat zero; if that stretch also shows a step, the sampler is wrong, not the road.
       **Files:** `src/components/drive/route.js` (read), `world.js` (read).
 
-- [ ] **T152-2 - Fix the discontinuity T152-1 locates, or record why the merge is already smooth.**
+- [x] **T152-2 - Fix the discontinuity T152-1 locates.** -> **Backlog:** nothing to fix yet, because T152-1 produced no measurement. Also still barred by guardrail 1 while the clustered workflow writes the same files.
       **Done-when:** the sweep from T152-1 shows no step in value or first difference, and the build is clean.
       **Guardrail:** do not adjust `RAMP_OFFSET` or `RAMP_LENGTH` to make a number look better. If the easing
       function is the wrong shape, change the easing function.
