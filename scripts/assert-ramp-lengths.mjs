@@ -36,6 +36,8 @@ const pairGapOk = rampLengths.every((len, i) => {
   return len + rampLengths[i + 1] < LEG
 })
 
+const eachMainlineGapOk = rampLengths.every((len) => 2 * len < LEG)
+
 const bandOk = rampLengths.every(
   (len) =>
     len >= LEG * RAMP_FRAC_MIN - 1e-9 && len <= LEG * RAMP_FRAC_MAX + 1e-9
@@ -59,8 +61,9 @@ const seedDiffers = lengthsA[stopIndex] !== lengthsB[stopIndex]
 // Same seed replay matches module table
 const sameSeedReplay = lengthsA.every((v, i) => v === rampLengths[i])
 
-// Lateral offset untouched (st024 out of scope)
-const offsetFrozen = RAMP_OFFSET === 8.2 + 22
+// Lateral offset table is st024; length leaf only requires the legacy constant
+// remains the documented mid-band default (not that peak peel is frozen).
+const offsetLegacyDefault = RAMP_OFFSET === 8.2 + 22
 
 const checks = {
   legFrozen: LEG_LENGTH === LEG,
@@ -68,11 +71,12 @@ const checks = {
   tableSize: rampLengths.length === route.length,
   bandOk,
   pairGapOk,
+  eachMainlineGapOk,
   seedDiffers,
   sameSeedReplay,
   midRampMatchesLength: Math.abs(midP - expectedMid) < 1e-9,
   openMainlineZero: openP === 0,
-  offsetFrozen,
+  offsetLegacyDefault,
   noMathRandomInLengths: true, // structural: attachRampLengths uses mulberry32 only
 }
 
