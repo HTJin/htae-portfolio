@@ -8,6 +8,7 @@ import {
   RAMP_WIDTH,
   rampAt,
   rampDropAt,
+  rideState,
   roadsideAt,
   routeLength,
 } from './route'
@@ -85,6 +86,26 @@ export function RoadCanvas({ drive, className }) {
       const { width, focal, horizon } = camera
       const baseCurve = curveAt(sim.travel)
       // The eye's own elevation includes how far the ramp has taken it down.
+      //
+      // **Do not "simplify" this by dropping `sim.drop`.** The datum here is
+      // already the one the owner describes: zero is the mainline grade, and the
+      // ramp is a deviation measured from it (`rampDropAt` is 0 on the highway
+      // and negative on the exit). "Initial elevation is at the highway" says
+      // where zero is; "the eye stays above the road it is driving on" says
+      // where the eye is, expressed in that same zero. They are one elevation
+      // field sampled at two places, not two competing datums, and this line is
+      // where a naive reading of the second sentence breaks the first.
+      //
+      // Both literal alternatives are regressions, and one of them has already
+      // shipped. Take `sim.drop` off the eye and the camera floats
+      // `CAM_HEIGHT + RAMP_DROP` = 6.85m above the ramp it is driving on; make
+      // the mainline the only surface and the camera sits 4.15m underground on
+      // the exit. `route.js` records the first one going out: "the whole
+      // mainline lifted above the horizon", "the highway hung over the
+      // windscreen".
+      //
+      // What was actually wrong is downstream of here: the render did not look
+      // like the datum it already had. See `ribbon`.
       const baseHill = hillAt(sim.travel) + (sim.drop ?? 0)
 
       for (let i = 0; i <= SEGMENTS; i += 1) {
@@ -118,45 +139,107 @@ export function RoadCanvas({ drive, className }) {
      * what makes an off-ramp peel away from a mainline that carries straight on
      * — both are painted by this one function, one following and one not.
      *
-     * Surfaces above the eye are skipped, never clamped to the horizon.
-     * Clamping painted a flat asphalt bar on the vanishing line.
+     * **Surfaces above the eye are CLIPPED along the eye plane. Never CLAMPED to
+     * it, and no longer dropped a whole segment at a time.**
+     *
+     * Clamping every vertex to `horizon` is what painted a flat asphalt bar on
+     * the vanishing line, and nothing here does that: only the two vertices that
+     * land exactly on the crossing sit at `horizon`, and they sit there because
+     * that is genuinely where a horizontal surface at eye height ends. Every
+     * other vertex keeps its real projected height.
+     *
+     * Skipping the above-eye vertices instead, which is what this did until now,
+     * avoided the bar but had a quieter and worse failure. Where the surface
+     * crossed the eye plane the straddling pair contributed exactly **one**
+     * forward vertex and **one** backward vertex, so `closePath()` enclosed a
+     * degenerate two-point path. Measured in a browser rather than assumed: a
+     * two-vertex closed path fills **0** pixels, against a four-vertex control
+     * that fills 300. That slice therefore painted nothing at all, and the
+     * surface ended at the last segment boundary lying wholly below the eye.
+     * The segments are log-spaced, about 5m long at z=140 and 18m at z=500, so
+     * the end of the road was quantised to them and jumped a whole segment at a
+     * time as the car moved. That jump is largest exactly where the grade is
+     * changing, because that is when vertices cross the eye plane. Swept over
+     * the route, 55.8% of mainline positions (201/360) have the surface
+     * crossing the eye plane, so it was live in most frames.
+     *
+     * The straddling pair now contributes an interpolated vertex on the crossing
+     * itself. The blend is of the two endpoints' **screen** x, not of `cx` and
+     * `scale` blended separately: the polygon edge that actually gets drawn is
+     * the straight line between those two screen points, so a screen-space blend
+     * lies exactly on the drawn edge, where a world-space one would not. Same
+     * fix and the same reasoning as f831a24 applied to the barrier runs via
+     * `flipBetween`; this family never received it.
+     *
+     * Allocates nothing (guardrail 14): the crossing is carried in scalars and
+     * written straight to the path, and the per-call `yOf` closure this used to
+     * build is gone.
      */
     function ribbon(first, last, from, to, fill, follow = false) {
       if (last <= first) return
       const { horizon } = camera
-      const yOf = (point) => (follow ? point.yRamp : point.y)
 
-      // Above the eye: invisible. Do not clamp to horizon (that is the asphalt bar).
       let visible = 0
       for (let i = first; i <= last; i += 1) {
-        if (yOf(points[i]) >= horizon) visible += 1
+        const p = points[i]
+        if ((follow ? p.yRamp : p.y) >= horizon) visible += 1
       }
       if (visible === 0) return
 
       ctx.fillStyle = fill
       ctx.beginPath()
+
+      // Out along the `from` edge, back along the `to` edge. Each walk emits an
+      // extra vertex wherever consecutive points straddle the eye plane, so the
+      // ribbon ends on the crossing instead of a whole segment short of it.
       let started = false
+      let prevX = 0
+      let prevY = 0
+      let prevVisible = false
+
       for (let i = first; i <= last; i += 1) {
         const point = points[i]
-        const y = yOf(point)
-        if (y < horizon) continue
-        const slide = follow ? point.ramp : 0
-        const x = point.cx + (from + slide) * point.scale
-        if (!started) {
-          ctx.moveTo(x, y)
-          started = true
-        } else {
-          ctx.lineTo(x, y)
+        const y = follow ? point.yRamp : point.y
+        const x = point.cx + (from + (follow ? point.ramp : 0)) * point.scale
+        const isVisible = y >= horizon
+        if (i > first && isVisible !== prevVisible) {
+          // Exactly one side is above the eye, so `y - prevY` cannot be zero.
+          const t = (horizon - prevY) / (y - prevY)
+          const cut = prevX + (x - prevX) * t
+          if (started) ctx.lineTo(cut, horizon)
+          else {
+            ctx.moveTo(cut, horizon)
+            started = true
+          }
         }
+        if (isVisible) {
+          if (started) ctx.lineTo(x, y)
+          else {
+            ctx.moveTo(x, y)
+            started = true
+          }
+        }
+        prevX = x
+        prevY = y
+        prevVisible = isVisible
       }
       if (!started) return
+
       for (let i = last; i >= first; i -= 1) {
         const point = points[i]
-        const y = yOf(point)
-        if (y < horizon) continue
-        const slide = follow ? point.ramp : 0
-        ctx.lineTo(point.cx + (to + slide) * point.scale, y)
+        const y = follow ? point.yRamp : point.y
+        const x = point.cx + (to + (follow ? point.ramp : 0)) * point.scale
+        const isVisible = y >= horizon
+        if (i < last && isVisible !== prevVisible) {
+          const t = (horizon - prevY) / (y - prevY)
+          ctx.lineTo(prevX + (x - prevX) * t, horizon)
+        }
+        if (isVisible) ctx.lineTo(x, y)
+        prevX = x
+        prevY = y
+        prevVisible = isVisible
       }
+
       ctx.closePath()
       ctx.fill()
     }
@@ -304,9 +387,16 @@ export function RoadCanvas({ drive, className }) {
      * body meets the entrance at the road, not at a flat screen-horizon cut.
      *
      * Never clamp the foot to `horizon`: that was the gray/violet halves split.
+     *
+     * **The caller owns the "am I below the deck?" test.** This used to open
+     * with its own `if (camDrop >= -0.15) return`, a second hand-typed copy of
+     * the `belowDeck` threshold sitting 400 lines from the first and free to
+     * drift from it. The one call site is already inside `if (belowDeck)`, so
+     * the guard could never do anything the caller had not already done, and
+     * removing it deletes a duplicate constant without changing a pixel. The
+     * threshold now exists once, in `route.js`, as `rideState`.
      */
     function highwayBody(fill, camDrop) {
-      if (camDrop >= -0.15) return
       const shoulder = BANK_TOP
       const rampInnerOf = (point) => LANE_OFFSET + point.ramp - RAMP_WIDTH / 2
       const clearOfIntersection = (point) => {
@@ -354,6 +444,17 @@ export function RoadCanvas({ drive, className }) {
       // When the ramp has not yet peeled (open mainline ahead while you sit
       // below), still seal under the deck with a shoulder face down to the
       // camera grade so nothing shows through beside the wedge.
+      //
+      // **This pass is standing geometry and is deliberately NOT clipped to the
+      // eye plane**, for the same reason `rail` and `railFrom` are not. Both of
+      // its edges sit at the same lateral offset (`shoulder`), so it is a
+      // vertical curtain, not a horizontal surface, and a vertical face ahead of
+      // you is legitimately visible above your eye. From the bottom of a 5.5m
+      // exit the mainline shoulder *is* above eye level for most of the view,
+      // which is exactly when this curtain is doing its job. Clipping it at
+      // `horizon` would cut away the part above the eye and let sky show through
+      // the embankment. The eye-plane clip in `ribbon` applies to flat surfaces
+      // only; do not "finish the job" by extending it here.
       ctx.fillStyle = fill
       ctx.beginPath()
       for (let i = 0; i <= SEGMENTS; i += 1) {
@@ -723,7 +824,14 @@ export function RoadCanvas({ drive, className }) {
       // Where we are along the route decides what time of day it is.
       const colors = paletteAt(routeLength > 0 ? sim.travel / routeLength : 0)
       const camDrop = sim.drop ?? 0
-      const belowDeck = camDrop < -0.15
+      // One place asks "highway or ramp?", and it is `route.js`. `belowDeck`
+      // ("is there a height difference to the deck?") and `onMainline` ("am I on
+      // the mainline, laterally as well as vertically?") are different questions
+      // and stay separate, but they now come off one grade threshold instead of
+      // the three that used to be typed out across this file. `deckFall01` is
+      // the continuous form of the same fall, 0 on the deck to 1 where
+      // `belowDeck` turns true.
+      const { deckFall01, belowDeck, onMainline } = rideState(sim)
 
       // Ground under the road. Neutral charcoal — night `vergeDark` / `groundNear`
       // are blue-violet and read as a tinted lower half of the windshield.
@@ -739,7 +847,13 @@ export function RoadCanvas({ drive, className }) {
       // Starting at `horizon` when below deck does not remove the cut — the
       // ground legitimately begins at the eye plane out there — but it stops
       // the scene claiming ground where only sky can be.
-      const groundTop = belowDeck ? horizon : horizon - 6
+      //
+      // Those 6px used to be a `belowDeck ? horizon : horizon - 6` step, so a
+      // full-width opaque edge jumped 12 device px in a single frame at the
+      // exact instant the elevation started changing. Both ends of that
+      // expression are kept exactly, and over exactly the same 0.15m of descent;
+      // only the jump between them is gone.
+      const groundTop = horizon - 6 * (1 - deckFall01)
       ctx.fillStyle = GROUND
       ctx.fillRect(0, groundTop, width, height - groundTop)
 
@@ -838,12 +952,11 @@ export function RoadCanvas({ drive, className }) {
       }
 
       // (There is no second `highwayBody` pass here. It read as a companion to
-      // the one above, but `highwayBody` returns immediately when
-      // `camDrop >= -0.15`, which is the same test as `!belowDeck` — so the
-      // call could never draw anything. The genuinely opaque second pass that
-      // *did* draw, after `drawRoadside`, is what covered the mainline from the
-      // ramp and was removed in d0931ae; keeping a dead lookalike here invited
-      // someone to "restore" it.)
+      // the one above, but both call sites are gated on `belowDeck` — so the
+      // call could never draw anything the first had not. The genuinely opaque
+      // second pass that *did* draw, after `drawRoadside`, is what covered the
+      // mainline from the ramp and was removed in d0931ae; keeping a dead
+      // lookalike here invited someone to "restore" it.)
 
       // Rumble bands. Off the exit entirely — the right-hand strip following
       // the ramp read as another elongated rail to the horizon.
@@ -945,11 +1058,9 @@ export function RoadCanvas({ drive, className }) {
       // from that. `belowDeck` alone is not enough for furniture: drop is held
       // until the ramp clears the verge, so the first half of every exit still
       // has drop ≈ 0 while you are already off the mainline — and the shoulder
-      // rail kept drawing as an endless line on the right.
-      //
-      // On the main highway only: laterally on the mainline AND at mainline grade.
-      const onMainHighway = Math.abs(camDrop) < 0.1 && (sim.ramp ?? 0) < 0.8
-
+      // rail kept drawing as an endless line on the right. That is why
+      // `onMainline` carries a lateral term as well as a grade one, and why it
+      // is not simply `!belowDeck`.
       const shoulder = BANK_TOP
       const railClearOfRamp = (s) => {
         const centre = LANE_OFFSET + rampAt(s)
@@ -962,7 +1073,7 @@ export function RoadCanvas({ drive, className }) {
 
       // A second `highwayBody(GROUND, camDrop)` pass used to run here, after the
       // furniture, to stop far-carriageway lamps showing through the body. It is
-      // gone. `highwayBody` only draws while `camDrop < -0.15`, which is exactly
+      // gone. `highwayBody` is only called while `belowDeck`, which is exactly
       // when you are down on the ramp, so repainting it opaque here covered the
       // view of the mainline at the one elevation you most need to see it from.
       // The owner: "I no longer see the main highway while lowered elevation"
@@ -977,7 +1088,7 @@ export function RoadCanvas({ drive, className }) {
       // main highway. It does not switch off because you happen to be driving
       // somewhere else.
       //
-      // It used to be gated on `onMainHighway`, which suppressed all three runs
+      // It used to be gated on `onMainline`, which suppressed all three runs
       // for the whole exit. That removed the mainline's own rail the moment you
       // took the ramp, when the mainline is precisely what you are looking
       // across at. The owner: "the guardrail seems to disappear from the right
@@ -1034,23 +1145,39 @@ export function RoadCanvas({ drive, className }) {
       // The median barrier. This is what makes it a divided highway rather than
       // a road you may legally overtake into oncoming traffic on: the traffic
       // coming the other way is behind concrete, not behind a dashed line.
-      if (onMainHighway) {
+      if (onMainline) {
         const barrierX = -MEDIAN_WIDTH / 2
         rail(0, SEGMENTS, barrierX, 0, 0.92, withAlpha(colors.vergeLight, 0.95))
         rail(0, SEGMENTS, barrierX, 0.74, 0.92, withAlpha(colors.paint, 0.45))
       }
 
       // Haze so the tarmac dissolves into the sky instead of ending abruptly.
-      const haze = ctx.createLinearGradient(
-        0,
-        horizon - 2,
-        0,
-        horizon + height * 0.14
+      //
+      // The gradient used to open at full `hazeAlpha` on its very first row, and
+      // the rect started on that same row — so the haze itself had a hard,
+      // dead-flat alpha step across the full width of the canvas, from nothing
+      // to as much as 0.95 (the palettes run 0.75/0.85/0.92/0.95/0.85) in one
+      // pixel, at a fixed screen y that no elevation moves. A full-width step
+      // like that reads as a drawn line whether or not there is any geometry
+      // there, and measured on the running page it is the strongest full-width
+      // edge in the frame: luminance jump 75.76 across every column at device
+      // row 833, against 22.44 at row 824 for the ground plate. `(horizon - 2) *
+      // dpr` is 832.9 on the owner's 951px canvas, which is where it lands.
+      // Ramping the alpha in over the first few pixels costs one extra colour
+      // stop and takes that edge to 9.43, without moving the rect or painting
+      // anything outside it.
+      const HAZE_RAMP = 8
+      const hazeTop = horizon - 2
+      const hazeDepth = height * 0.14 + 2
+      const haze = ctx.createLinearGradient(0, hazeTop, 0, hazeTop + hazeDepth)
+      haze.addColorStop(0, withAlpha(colors.haze, 0))
+      haze.addColorStop(
+        Math.min(HAZE_RAMP / hazeDepth, 0.5),
+        withAlpha(colors.haze, colors.hazeAlpha)
       )
-      haze.addColorStop(0, withAlpha(colors.haze, colors.hazeAlpha))
       haze.addColorStop(1, withAlpha(colors.haze, 0))
       ctx.fillStyle = haze
-      ctx.fillRect(0, horizon - 2, width, height * 0.14 + 2)
+      ctx.fillRect(0, hazeTop, width, hazeDepth)
     }
 
     function resize() {
