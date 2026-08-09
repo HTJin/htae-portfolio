@@ -308,6 +308,59 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     arriveAt(sim.target)
   }, [arriveAt])
 
+  // R4 harness: ?probe=rejoin exposes depart/continue vs hold-parked controls.
+  // Park@LEG_LENGTH / drop −5.5 is designed arrival — do not rewrite route mesh.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('probe') !== 'rejoin') return undefined
+    const api = {
+      snapshot: () => {
+        const sim = simRef.current
+        return {
+          travel: sim.travel,
+          drop: sim.drop,
+          parked: sim.parked,
+          target: sim.target,
+          speed: sim.speed,
+          autopilot: sim.autopilot,
+        }
+      },
+      /** Control: stay parked at stop.s / drop −5.5. */
+      holdParked: () => {
+        const sim = simRef.current
+        sim.autopilot = false
+        sim.throttle = 0
+        sim.speed = 0
+        sim.parked = true
+        publish()
+        return api.snapshot()
+      },
+      /**
+       * Treat: depart park and continue onto the entrance climb
+       * (travel into the acceleration window past the stop).
+       */
+      departContinue: () => {
+        const sim = simRef.current
+        if (sim.parked) {
+          driveToNext()
+        } else {
+          sim.autopilot = true
+        }
+        publish()
+        return api.snapshot()
+      },
+      goToStop: (stopIndex) => {
+        goTo(stopIndex)
+        return api.snapshot()
+      },
+    }
+    window.__cr010Rejoin = api
+    return () => {
+      if (window.__cr010Rejoin === api) delete window.__cr010Rejoin
+    }
+  }, [driveToNext, goTo, publish])
+
   return useMemo(
     () => ({
       simRef,
