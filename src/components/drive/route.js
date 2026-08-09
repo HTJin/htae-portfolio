@@ -140,7 +140,7 @@ function dropProgress(s) {
  */
 const DROP_HOLD = Math.min(
   0.9,
-  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET
+  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET,
 )
 
 /**
@@ -304,7 +304,7 @@ function projectStops() {
   return projects.map((project) => {
     // Every capture the project ships, in order — the stop card cycles them.
     const images = (project.screenshots ?? []).map(
-      (shot) => `/images/projects/${project.name}${shot}`
+      (shot) => `/images/projects/${project.name}${shot}`,
     )
 
     return {
