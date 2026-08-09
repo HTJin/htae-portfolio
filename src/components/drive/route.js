@@ -1,4 +1,5 @@
 import { education, experience, meta, projects, skills } from '@/content'
+import { hashSeed, mulberry32 } from './rng'
 import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
 
 /**
@@ -21,15 +22,67 @@ export const METERS_PER_MILE = 1609.34
  * The two are the same shape mirrored about the stop, so one function describes
  * both.
  *
- * `RAMP_LENGTH` is derived from `LEG_LENGTH` rather than typed, because the two
- * quantities have to agree about something neither can see: the entrance ramp
- * out of one exit must finish before the exit ramp into the next one starts, or
- * the road never returns to the mainline and the "highway" is just a slalom. At
- * 0.4 of a leg each, the middle 20% of every leg is mainline. (Same lesson as
- * `MARKER_SPACING` in cycle 32 — a constant that must match another constant
- * gets computed from it.)
+ * Along-s length is a per-stop table from a seeded draw (st023). Fraction of
+ * that stop's leg stays in ~0.25-0.40, then a left-to-right pairwise pass keeps
+ * `entrance(i) + exit(i+1) < legBetween` so open mainline never collapses.
+ * `RAMP_LENGTH` remains the band-top legacy default for callers that only need
+ * a typical scale; prefer `rampLengthFor`.
  */
-export const RAMP_LENGTH = LEG_LENGTH * 0.4
+export const RAMP_LENGTH_FRAC_MIN = 0.25
+export const RAMP_LENGTH_FRAC_MAX = 0.4
+/** Minimum open mainline (metres) between adjacent entrance and exit. */
+export const RAMP_MAINLINE_GAP_MIN = 0.05
+/** Band-top / legacy default (= `LEG_LENGTH * 0.4`). Prefer `rampLengthFor`. */
+export const RAMP_LENGTH = LEG_LENGTH * RAMP_LENGTH_FRAC_MAX
+
+/**
+ * World metres for the leg ending at stop `index` (from the previous stop).
+ * Frozen at `LEG_LENGTH` this round (display-only miles); table API so a later
+ * per-leg world scale does not rewrite ramp callers. Index 0 has no inbound leg.
+ */
+export function legLengthFor(_index) {
+  return LEG_LENGTH
+}
+
+/**
+ * Draw one along-s ramp length: fraction of its leg, hard-capped under half a
+ * leg. Pairwise gap is enforced separately in `buildRampLengthTable`.
+ */
+export function drawRampLength(u01, legLength = LEG_LENGTH) {
+  const frac =
+    RAMP_LENGTH_FRAC_MIN + u01 * (RAMP_LENGTH_FRAC_MAX - RAMP_LENGTH_FRAC_MIN)
+  const raw = frac * legLength
+  const hardMax = legLength / 2 - RAMP_MAINLINE_GAP_MIN
+  return Math.min(raw, hardMax)
+}
+
+/**
+ * Seeded per-stop along-s lengths (table only; does not decorate stop objects).
+ * Separate draw channel from itinerary miles and from later lateral offset
+ * (st024). After independent draws, shrink the downstream stop on each leg so
+ * `lengths[i] + lengths[i+1] < legBetween` always holds (safer than per-stop
+ * half-leg alone when legs later become unequal).
+ */
+export function buildRampLengthTable(
+  stopCount,
+  seed,
+  legLengthAt = legLengthFor,
+) {
+  const next = mulberry32(seed >>> 0)
+  const lengths = new Array(stopCount)
+  for (let i = 0; i < stopCount; i += 1) {
+    lengths[i] = drawRampLength(next(), legLengthAt(i))
+  }
+  for (let i = 0; i < stopCount - 1; i += 1) {
+    const legBetween = legLengthAt(i + 1)
+    const maxDownstream = legBetween - lengths[i] - RAMP_MAINLINE_GAP_MIN
+    if (lengths[i + 1] > maxDownstream) {
+      lengths[i + 1] = Math.max(0, maxDownstream)
+    }
+  }
+  return lengths
+}
+
 /**
  * How far right of the mainline lane the ramp has carried you at the stop.
  *
@@ -139,7 +192,7 @@ function dropProgress(s) {
  */
 const DROP_HOLD = Math.min(
   0.9,
-  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET
+  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET,
 )
 
 /**
@@ -209,9 +262,15 @@ export function rideState(sim) {
 /** 0 on the open mainline, 1 at a stop; smoothstepped, so both ends are flush. */
 function rampProgress(s) {
   const index = clamp(Math.round(s / LEG_LENGTH), 0, ROUTE_LAST)
-  const distance = Math.abs(s - index * LEG_LENGTH)
-  if (distance >= RAMP_LENGTH) return 0
-  return smoothstep(1 - distance / RAMP_LENGTH)
+  const length = rampLengths[index]
+  const distance = Math.abs(s - stopS[index])
+  if (distance >= length) return 0
+  return smoothstep(1 - distance / length)
+}
+
+/** Exported for mid-ramp probes (Tester controls). Same as internal progress. */
+export function rampProgressAt(s) {
+  return rampProgress(s)
 }
 
 const byDateAscending = (a, b) => new Date(a.date) - new Date(b.date)
@@ -303,7 +362,7 @@ function projectStops() {
   return projects.map((project) => {
     // Every capture the project ships, in order — the stop card cycles them.
     const images = (project.screenshots ?? []).map(
-      (shot) => `/images/projects/${project.name}${shot}`
+      (shot) => `/images/projects/${project.name}${shot}`,
     )
 
     return {
@@ -379,6 +438,9 @@ function destinationStop() {
  * The full itinerary, ordered as a drive: where it started, the career
  * highway in chronological order, the side builds, the toolbox, then the
  * destination. Each stop is pinned to a fixed world position.
+ *
+ * Stop objects stay free of ramp geometry fields (table API only). Lateral
+ * offset (st024) will land in a sibling table, not on these records.
  */
 export const route = [
   originStop(),
@@ -394,6 +456,30 @@ export const route = [
   exitLabel: index === 0 ? 'MILE 0' : `EXIT ${String(index).padStart(2, '0')}`,
   isLast: index === all.length - 1,
 }))
+
+/**
+ * Content-derived seed for along-s ramp lengths (st023). Separate channel from
+ * itinerary miles and from lateral offset (st024); suffix keeps them apart.
+ */
+export const RAMP_LENGTH_SEED = hashSeed(
+  `${route.map((stop) => stop.id).join('|')}|ramp-length`,
+)
+
+/** Per-stop along-s ramp lengths in world metres (length === route.length). */
+export const rampLengths = buildRampLengthTable(
+  route.length,
+  RAMP_LENGTH_SEED,
+  legLengthFor,
+)
+
+/** Stop world positions; rampProgress keys distance off these, not index*LEG. */
+const stopS = route.map((stop) => stop.s)
+
+/** Along-s length for stop `index` (clamped). */
+export function rampLengthFor(index) {
+  const i = clamp(Math.round(index), 0, rampLengths.length - 1)
+  return rampLengths[i]
+}
 
 export const routeLength = (route.length - 1) * LEG_LENGTH
 
