@@ -908,11 +908,11 @@ export function RoadCanvas({ drive, className }) {
       // fade, not a wall of fills. End state matches the old gate: nothing of
       // these paints remains once `deckAlpha` hits 0 (asphalt bar stays dead).
       // Binary geometry (`highwayBody`, deferred ramp pass, `farExitCut`) keeps
-      // its boolean gates — those are "does this face exist?", not a fade.
+      // its boolean gates: those are "does this face exist?", not a fade.
       const deckAlpha = 1 - deckFall01
 
       const graded = [
-        // Mainline-grade verge — fades with the deck. From an exit at full
+        // Mainline-grade verge fades with the deck. From an exit at full
         // fall it sat near the vanishing line as a dark gray horizon bar; at
         // `deckAlpha === 0` it is gone the same as the old `!belowDeck` skip.
         ...(deckAlpha > 0
@@ -958,7 +958,7 @@ export function RoadCanvas({ drive, className }) {
           if (belowDeck && layer.follow && layer.fill === tarmac) continue
           if (farExitCut && layer.follow && layer.fill === tarmac) continue
           // Mainline-grade verge only: fade with deckAlpha. Ramp-grade layers
-          // stay opaque — they are the surface you are on / the ground under it.
+          // stay opaque: they are the surface you are on / the ground under it.
           const fadeDeck = !layer.follow && layer.fill === GROUND
           if (fadeDeck) ctx.globalAlpha = deckAlpha
           ribbon(i, i + 1, layer.from, layer.to, layer.fill, layer.follow)
@@ -976,11 +976,11 @@ export function RoadCanvas({ drive, className }) {
       // Rumble / mainline tarmac / markings: one `deckAlpha` fade instead of
       // three `!belowDeck` flips. `globalAlpha` covers the tarmac gradient
       // (`withAlpha` only rewrites `rgb(...)` strings). Skip when fully faded
-      // so the below-deck end state still paints zero of these — the ribbon
+      // so the below-deck end state still paints zero of these. The ribbon
       // eye-plane clip is the other half of keeping the asphalt bar dead.
       if (deckAlpha > 0) {
         ctx.globalAlpha = deckAlpha
-        // Rumble bands. Off the exit entirely at full fall — the right-hand
+        // Rumble bands. Off the exit entirely at full fall: the right-hand
         // strip following the ramp read as another elongated rail to the horizon.
         stripes(-(OPPOSING_EDGE + 2.4), -OPPOSING_EDGE, 9, colors.vergeLight)
         stripes(CARRIAGEWAY, CARRIAGEWAY + 2.4, 9, colors.vergeLight, true)
@@ -1013,7 +1013,7 @@ export function RoadCanvas({ drive, className }) {
       // that used to be carried by the centre line this replaces.
       const medianLine = withAlpha(colors.centreLine, 0.85)
 
-      // Mainline markings stay with the mainline tarmac — fade with the deck.
+      // Mainline markings stay with the mainline tarmac; fade with the deck.
       if (deckAlpha > 0) {
         ctx.globalAlpha = deckAlpha
         band(0.25, 0.55, medianLine)
