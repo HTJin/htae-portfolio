@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Planner
+**Phase:** Critic
 **Cycle:** 152
 
 ## Project orientation (so a fresh agent can start cold)
@@ -64,6 +64,15 @@
   instruction above still stands, and a divider implies opposing traffic without the loop inventing vehicles for it.
 
 **Pre-mortem guardrails (prevent likely failure modes):**
+
+0. _Failure (cycle 151, BROKE THE OWNER'S RUNNING APP): `npm run build` while a server is live._ They share `.next`.
+   The build swaps `BUILD_ID`, but a running `next start` cached its route manifest at boot, so `/drive`'s page chunk
+   starts returning **404** while the file sits on disk. The owner saw no road, no driving, and every React-driven
+   control dead (back / next / map), while brake and go still looked responsive because they are styled elements.
+   Nothing was wrong with the code and nothing needed reverting. **Guardrail:** before `npm run build`, check for a
+   listening server (`netstat -ano | grep :30`); if one exists either skip the build or restart that server
+   immediately after, and re-check that the page chunk returns 200, not merely that the build succeeded. This rule
+   was already in `CLAUDE.md` and the loop broke it anyway, so it now lives here, where the loop actually reads.
 
 1. _Failure: hydration mismatch._ The gauges already round coordinates to keep SSR and client byte-identical (`Dashboard.jsx:11-17`). Any new SVG geometry computed with `Math.*` must be rounded the same way, and nothing may branch on `window`/`Date` during render. **Guardrail:** after every visual change, check the browser console for a hydration warning before calling the task built.
 2. _Failure: the 60fps loop gets slower._ The sim pushes state via `drive.subscribe(...)` and writes to refs, deliberately bypassing React re-renders. **Guardrail:** never add per-frame React state to the drive loop; new live readouts must use the `subscribe` + `ref.textContent`/`style.transform` pattern already in `Dashboard.jsx:32-45`.
@@ -4199,6 +4208,32 @@ the conclusion sound without it, but the direct observation is still owed.
   with elevation. Re-run the detector recorded in the T151-1 result.
   **Guardrail:** cull, never clamp. And note the plate exists for a reason: it is what stops the sky showing through
   under the road, so it cannot simply be deleted.
+
+## Tonight's tasks - CYCLE 152 (Planner)
+
+Leading with the owner's oldest unaddressed ask. He has now said twice that the black plane was **not** the point:
+_"it was good as it was before but I was telling you to correct the actual pathing of the road from the exit ramp
+back onto the main highway road."_ The loop has answered that with colour changes three times. It has never once
+looked at the merge geometry.
+
+- [ ] **T152-1 - INVESTIGATE: is the acceleration ramp actually tangent to the mainline where it merges?**
+      **Why:** the owner, judging by the painted stripes: _"look at how the curve of the road when I'm on the exit
+      ramp is not properly aligned to the entrance point to the main highway based upon the white stripes of the
+      plane."_ A merge that is positionally correct but has a **kink** (mismatched tangent) reads exactly like a
+      misaligned entrance, and no amount of recolouring will fix it.
+      **What to check, in `route.js`, no browser needed:** at the merge point `s_merge`, all three of these must go
+      to zero **together and smoothly**: `rampAt(s)` (lateral offset), `d/ds rampAt(s)` (tangent), and
+      `rampDropAt(s)` (elevation). Sample each on a fine grid either side of the merge and look for a step in the
+      value or a step in the first difference. A discontinuity in the derivative is the kink.
+      **Done-when:** a printed table of `rampAt`, its first difference, and `rampDropAt` across the merge, with the
+      discontinuity either located or ruled out. **Control:** run the same sweep across a stretch of open mainline,
+      where all three are flat zero; if that stretch also shows a step, the sampler is wrong, not the road.
+      **Files:** `src/components/drive/route.js` (read), `world.js` (read).
+
+- [ ] **T152-2 - Fix the discontinuity T152-1 locates, or record why the merge is already smooth.**
+      **Done-when:** the sweep from T152-1 shows no step in value or first difference, and the build is clean.
+      **Guardrail:** do not adjust `RAMP_OFFSET` or `RAMP_LENGTH` to make a number look better. If the easing
+      function is the wrong shape, change the easing function.
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
