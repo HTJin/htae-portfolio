@@ -69,8 +69,13 @@ export function RoadCanvas({ drive, className }) {
      * geometry would corrupt the very measurement it exists to enable, so the
      * void sweep must come out identical with the flag on and off.
      */
-    const probe = new URLSearchParams(window.location.search).get('probe')
+    const params = new URLSearchParams(window.location.search)
+    const probe = params.get('probe')
+    // R1a skip-layer ID: mutually exclusive plate | haze | body. Full scene
+    // (no skip) is the open-mainline / mid-exit control for the same instrument.
+    const skip = params.get('skip')
     const PROBE_TINT = '#ff00ff'
+    const GROUND_RGB = 'rgb(12, 14, 18)'
 
     const points = []
 
@@ -854,8 +859,22 @@ export function RoadCanvas({ drive, className }) {
       // expression are kept exactly, and over exactly the same 0.15m of descent;
       // only the jump between them is gone.
       const groundTop = horizon - 6 * (1 - deckFall01)
-      ctx.fillStyle = GROUND
-      ctx.fillRect(0, groundTop, width, height - groundTop)
+      // R1a: ?skip=plate. R1b: when deckFall01 > 0 the hard top of the charcoal
+      // plate is a false full-width step; soft-alpha the top few CSS px and keep
+      // #0c0e12. Ribbon eye-plane clip stays untouched.
+      if (skip !== 'plate') {
+        const softPx = deckFall01 > 0 ? Math.min(5, 2 + 3 * deckFall01) : 0
+        const solidTop = groundTop + softPx
+        ctx.fillStyle = GROUND
+        ctx.fillRect(0, solidTop, width, height - solidTop)
+        if (softPx > 0) {
+          const fade = ctx.createLinearGradient(0, groundTop, 0, solidTop)
+          fade.addColorStop(0, withAlpha(GROUND_RGB, 0))
+          fade.addColorStop(1, withAlpha(GROUND_RGB, 1))
+          ctx.fillStyle = fade
+          ctx.fillRect(0, groundTop, width, softPx + 0.5)
+        }
+      }
 
       buildPoints(sim)
 
@@ -944,7 +963,7 @@ export function RoadCanvas({ drive, className }) {
 
       // Opaque highway profile — charcoal, not night vergeDark (blue).
       // Genuinely binary: the embankment face either exists or it does not.
-      if (belowDeck) {
+      if (belowDeck && skip !== 'body') {
         highwayBody(GROUND, camDrop)
       }
 
@@ -1092,7 +1111,67 @@ export function RoadCanvas({ drive, className }) {
         return shoulder < inner || shoulder > outer
       }
 
-      drawRoadside(sim, colors)
+      // R1c: clip roadside furniture against the embankment / deck silhouette
+      // (MDN Path2D + evenodd clip) instead of a second opaque highwayBody.
+      // Control: ?skip=body leaves posts unoccluded / see-through.
+      if (belowDeck && skip !== 'body') {
+        const shoulder = BANK_TOP
+        const bodyPath = new Path2D()
+        const rampInnerOf = (point) => LANE_OFFSET + point.ramp - RAMP_WIDTH / 2
+        const clearOfIntersection = (point) => {
+          const centre = LANE_OFFSET + point.ramp
+          const inner = centre - RAMP_WIDTH / 2 - 0.7
+          const outer = centre + RAMP_WIDTH / 2 + 0.7
+          return shoulder < inner || shoulder > outer
+        }
+        const spans = (point) =>
+          clearOfIntersection(point) && rampInnerOf(point) - shoulder > 0.15
+        let runStart = -1
+        for (let i = 0; i <= SEGMENTS; i += 1) {
+          const on = spans(points[i])
+          if (on && runStart < 0) runStart = i
+          if (runStart >= 0 && (!on || i === SEGMENTS)) {
+            if (i > runStart) {
+              for (let k = runStart; k <= i; k += 1) {
+                const point = points[k]
+                const x = point.cx + shoulder * point.scale
+                if (k === runStart) bodyPath.moveTo(x, point.y)
+                else bodyPath.lineTo(x, point.y)
+              }
+              for (let k = i; k >= runStart; k -= 1) {
+                const point = points[k]
+                bodyPath.lineTo(
+                  point.cx + rampInnerOf(point) * point.scale,
+                  point.yRamp
+                )
+              }
+              bodyPath.closePath()
+            }
+            runStart = -1
+          }
+        }
+        for (let i = 0; i <= SEGMENTS; i += 1) {
+          const point = points[i]
+          const x = point.cx + shoulder * point.scale
+          if (i === 0) bodyPath.moveTo(x, point.y)
+          else bodyPath.lineTo(x, point.y)
+        }
+        for (let i = SEGMENTS; i >= 0; i -= 1) {
+          const point = points[i]
+          const footY = point.y - camDrop * point.scale
+          bodyPath.lineTo(point.cx + shoulder * point.scale, footY)
+        }
+        bodyPath.closePath()
+        ctx.save()
+        const outside = new Path2D()
+        outside.rect(0, 0, width, height)
+        outside.addPath(bodyPath)
+        ctx.clip(outside, 'evenodd')
+        drawRoadside(sim, colors)
+        ctx.restore()
+      } else {
+        drawRoadside(sim, colors)
+      }
 
       // A second `highwayBody(GROUND, camDrop)` pass used to run here, after the
       // furniture, to stop far-carriageway lamps showing through the body. It is
@@ -1199,8 +1278,10 @@ export function RoadCanvas({ drive, className }) {
         withAlpha(colors.haze, colors.hazeAlpha)
       )
       haze.addColorStop(1, withAlpha(colors.haze, 0))
-      ctx.fillStyle = haze
-      ctx.fillRect(0, hazeTop, width, hazeDepth)
+      if (skip !== 'haze') {
+        ctx.fillStyle = haze
+        ctx.fillRect(0, hazeTop, width, hazeDepth)
+      }
     }
 
     function resize() {
