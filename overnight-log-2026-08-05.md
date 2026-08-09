@@ -1843,3 +1843,20 @@ current. Backfilled from the journal, which is complete. Recorded as a gap rathe
 
 **Controller:** in-scope backlog dry since cycle 115. Everything outstanding is an owner decision (NH-9/10/11,
 S107), out of scope (S137), or filed with justification (S142).
+
+## Cycle 151 (Reviewer)
+
+- **T151-1 Done, verified by measurement.** Full-width horizontal cut at y=832, fraction 1.000 across 480 columns,
+  attributed to the ground plate at `RoadCanvas.jsx:732` (`horizon - 6` = 830.9, ~1px). Control in the same run:
+  topmost painted row per column was 474 / 796 / 824, so the detector does not report everything as flat.
+- **T151-2 -> S152 (Backlog), deliberately not shipped.** Changing the scene's base occlusion surface while the
+  verification harness wedges the sim would repeat the clamp and the trench.
+- **`d0931ae` built, browser verification outstanding.** Removed the post-furniture `highwayBody` pass (owner
+  regression) and the wholesale `onMainHighway` gate on the shoulder barrier. Lint unchanged (one pre-existing
+  SideNav warning), build clean. **Not** exercised in a browser by this session.
+- **Instrument note, cost this cycle real time:** port 3008 was a stale server process whose CSS 404s and which
+  renders unstyled HTML. Caught only because a screenshot looked wrong. All measurements were taken on 3009, whose
+  build id matches `.next/BUILD_ID`. Check the server, not just the build timestamp.
+- **Four-role pipeline invoked** (workflow `wknw370xe`): Architect -> Coder -> Tester (3 adversarial lenses) ->
+  Manager, with the Manager writing the intake note into the vault. The browser verification `d0931ae` still owes
+  is the Tester's third lens.
