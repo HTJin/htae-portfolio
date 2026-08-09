@@ -728,8 +728,20 @@ export function RoadCanvas({ drive, className }) {
       // Ground under the road. Neutral charcoal — night `vergeDark` / `groundNear`
       // are blue-violet and read as a tinted lower half of the windshield.
       const GROUND = '#0c0e12'
+      // The plate starts 6px *above* the horizon on the mainline, where the
+      // overlap is buried under tarmac and haze and closes the seam against
+      // the sky div. Below deck there is no tarmac up there to bury it, so
+      // those 6px are bare ground painted above the eye plane — which no
+      // elevation can produce, since the true horizon is at eye level at every
+      // grade. Measured mid-descent (drop -4.17) the topmost opaque pixel from
+      // 52% of the width rightward was a dead-flat row 775 device px, and
+      // `(horizon - 6) * dpr` predicts 775.6. That is the cut the owner sees.
+      // Starting at `horizon` when below deck does not remove the cut — the
+      // ground legitimately begins at the eye plane out there — but it stops
+      // the scene claiming ground where only sky can be.
+      const groundTop = belowDeck ? horizon : horizon - 6
       ctx.fillStyle = GROUND
-      ctx.fillRect(0, horizon - 6, width, height - horizon + 6)
+      ctx.fillRect(0, groundTop, width, height - groundTop)
 
       buildPoints(sim)
 
@@ -825,9 +837,13 @@ export function RoadCanvas({ drive, className }) {
         }
       }
 
-      if (!belowDeck) {
-        highwayBody(GROUND, camDrop)
-      }
+      // (There is no second `highwayBody` pass here. It read as a companion to
+      // the one above, but `highwayBody` returns immediately when
+      // `camDrop >= -0.15`, which is the same test as `!belowDeck` — so the
+      // call could never draw anything. The genuinely opaque second pass that
+      // *did* draw, after `drawRoadside`, is what covered the mainline from the
+      // ramp and was removed in d0931ae; keeping a dead lookalike here invited
+      // someone to "restore" it.)
 
       // Rumble bands. Off the exit entirely — the right-hand strip following
       // the ramp read as another elongated rail to the horizon.
