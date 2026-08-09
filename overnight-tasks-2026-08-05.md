@@ -4112,6 +4112,28 @@ _(empty)_
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
+- **S150 - Set the scene's reference frame to the main highway deck.** _(new, cycle 151, owner-directed)_
+  Recovered from the owner's most recent Cursor prompt, 2026-08-08 17:23:36, which the loop had never seen:
+  "SET THE FUCKING MAIN INITIAL ELEVATION BASED TO THE MAIN HIGHWAY." This is the same reference-frame complaint as
+  the 16:43 prompt about the container "divided horizontally" where "the horizontal line never is aligned to the
+  elevation of the actual highway". Every derived surface currently keys off `camera.horizon`, a viewport constant,
+  rather than off the highway deck's own projected elevation. **This is the root the next two items hang off, and
+  the loop has never acted on it directly.** Done-when: the surfaces that currently test against `horizon` test
+  against the deck instead, and the ramp is legible without waiting for an elevation change.
+  **Guardrail:** do not clamp anything to the new reference either. Clamping to `horizon` is what painted the
+  asphalt bar and the gray/violet halves; culling is the fix, per `RoadCanvas.jsx:306`.
+
+- **S151 - The elongated line on the right must appear only on the main highway.** _(new, cycle 151, owner-directed)_
+  Same 17:23:36 prompt: "THERE IS A FUCKING LINE THAT IS ELONGATED ON THE RIGHT SIDE OF THE ROAD AT ALL TIMES AND
+  THAT SHOULD ONLY BE VISIBLE WHEN THE VEHICLE IS ON THE MAIN HIGHWAY", and "THE GUARDRAIL SHOULD NOT BE VISIBLE
+  WHEN THE ELVATION IS LOWERING DURING THE EXIT RAMP PART OF THE ROAD". Restates the 17:18:40 prompt about an
+  elongated guardrail on the right of the exit ramp. `onMainHighway` already gates the shoulder structure, and a
+  `?probe=barrier` run measured 0 barrier pixels at drop -5.5, so **whatever the owner is still seeing is not that
+  barrier**. Done-when: the surviving right-side line is identified by measurement at a mid-descent sample, not at
+  the endpoints, and gated to the main highway.
+  **Guardrail:** the probe that returned 0 had no passing control. Run a control that must come out different
+  before believing any zero.
+
 - **S148 — This run violated a tracked project rule roughly 286 times.** _(new, cycle 149)_
   `.cursor/rules/no-em-dashes.mdc` is committed to the repo with `alwaysApply: true`, and it says: never use the em
   dash in any output, naming **docs, comments and commit messages** explicitly, because it reads as AI-generated.
