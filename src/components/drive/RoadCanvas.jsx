@@ -944,21 +944,34 @@ export function RoadCanvas({ drive, className }) {
 
       drawRoadside(sim, colors)
 
-      // **Second body pass, after the furniture.** `highwayBody` already runs
-      // with the graded slices, and it already tops at `point.y` and chunks out
-      // at the intersection. The defect was never its shape: it was painted
-      // before `drawRoadside`, so lamps on the far carriageway landed on top of
-      // it and read as showing through the road. The owner: "they're still seen
-      // through the highway side body plane polygon."
+      // A second `highwayBody(GROUND, camDrop)` pass used to run here, after the
+      // furniture, to stop far-carriageway lamps showing through the body. It is
+      // gone. `highwayBody` only draws while `camDrop < -0.15`, which is exactly
+      // when you are down on the ramp, so repainting it opaque here covered the
+      // view of the mainline at the one elevation you most need to see it from.
+      // The owner: "I no longer see the main highway while lowered elevation"
+      // and "why teh hell did you replace the plane polygon area with just solid
+      // black???? it was good as it was before".
       //
-      // Repainting an opaque face is idempotent, so this occludes the furniture
-      // behind it without disturbing the ordering the graded pass depends on.
-      highwayBody(GROUND, camDrop)
+      // The lamp z-order it was meant to fix is real but is not worth this: fix
+      // it by ordering the lamps against the body, not by painting a black face
+      // over the scene.
 
-      // Shoulder barrier: a standing object on the deck, so main highway only.
-      // Hidden for the entire exit/entrance (peel or descent), not merely after
-      // drop starts, or it draws as an endless line beside the ramp.
-      if (onMainHighway) {
+      // Shoulder barrier: it belongs to the **main highway**, so it follows the
+      // main highway. It does not switch off because you happen to be driving
+      // somewhere else.
+      //
+      // It used to be gated on `onMainHighway`, which suppressed all three runs
+      // for the whole exit. That removed the mainline's own rail the moment you
+      // took the ramp, when the mainline is precisely what you are looking
+      // across at. The owner: "the guardrail seems to disappear from the right
+      // side of the main highway when exit ramp is accessed. it should only
+      // disappear from the right side of the exit ramp."
+      //
+      // `railClearOfRamp` already does that, per segment: it opens the rail only
+      // where the ramp actually crosses the shoulder, and closes it again after.
+      // That is the correct instrument, and it was already being passed in.
+      {
         const SIDE_TOP = HIGHWAY_SIDE_TOP
         railRuns(
           shoulder,
