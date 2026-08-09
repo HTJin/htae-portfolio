@@ -520,7 +520,7 @@ export const tripSummary = [
     label: 'Side builds',
     value: String(route.filter((stop) => stop.kind === 'project').length),
   },
-  { label: 'Miles driven', value: formatMiles(routeLength) },
+  { label: 'Miles driven', value: String(tripMiles) },
 ]
 
 /**
