@@ -902,11 +902,20 @@ export function RoadCanvas({ drive, className }) {
        * in here: there the neighbour is a different colour and the seam shows,
        * which is the whole reason those helpers accumulate runs.
        */
+      // Opacity of mainline coplanar paints over the same 0.15 m that slides
+      // the plate. 1 on the deck, 0 once `belowDeck` saturates. Soft-blends the
+      // paints that used to hard-flip on `!belowDeck` so crossing −0.15 is a
+      // fade, not a wall of fills. End state matches the old gate: nothing of
+      // these paints remains once `deckAlpha` hits 0 (asphalt bar stays dead).
+      // Binary geometry (`highwayBody`, deferred ramp pass, `farExitCut`) keeps
+      // its boolean gates — those are "does this face exist?", not a fade.
+      const deckAlpha = 1 - deckFall01
+
       const graded = [
-        // Mainline-grade verge — only while you are on the mainline. From an
-        // exit it sits near the vanishing line and paints the dark gray
-        // horizontal bar across the horizon.
-        ...(!belowDeck
+        // Mainline-grade verge — fades with the deck. From an exit at full
+        // fall it sat near the vanishing line as a dark gray horizon bar; at
+        // `deckAlpha === 0` it is gone the same as the old `!belowDeck` skip.
+        ...(deckAlpha > 0
           ? [
               {
                 from: -(OPPOSING_EDGE + 22),
@@ -934,6 +943,7 @@ export function RoadCanvas({ drive, className }) {
       const FAR_EXIT_Z = 140
 
       // Opaque highway profile — charcoal, not night vergeDark (blue).
+      // Genuinely binary: the embankment face either exists or it does not.
       if (belowDeck) {
         highwayBody(GROUND, camDrop)
       }
@@ -947,7 +957,12 @@ export function RoadCanvas({ drive, className }) {
           // Defer the live ramp tarmac until after the body when below.
           if (belowDeck && layer.follow && layer.fill === tarmac) continue
           if (farExitCut && layer.follow && layer.fill === tarmac) continue
+          // Mainline-grade verge only: fade with deckAlpha. Ramp-grade layers
+          // stay opaque — they are the surface you are on / the ground under it.
+          const fadeDeck = !layer.follow && layer.fill === GROUND
+          if (fadeDeck) ctx.globalAlpha = deckAlpha
           ribbon(i, i + 1, layer.from, layer.to, layer.fill, layer.follow)
+          if (fadeDeck) ctx.globalAlpha = 1
         }
       }
 
@@ -958,19 +973,24 @@ export function RoadCanvas({ drive, className }) {
       // mainline from the ramp and was removed in d0931ae; keeping a dead
       // lookalike here invited someone to "restore" it.)
 
-      // Rumble bands. Off the exit entirely — the right-hand strip following
-      // the ramp read as another elongated rail to the horizon.
-      if (!belowDeck) {
+      // Rumble / mainline tarmac / markings: one `deckAlpha` fade instead of
+      // three `!belowDeck` flips. `globalAlpha` covers the tarmac gradient
+      // (`withAlpha` only rewrites `rgb(...)` strings). Skip when fully faded
+      // so the below-deck end state still paints zero of these — the ribbon
+      // eye-plane clip is the other half of keeping the asphalt bar dead.
+      if (deckAlpha > 0) {
+        ctx.globalAlpha = deckAlpha
+        // Rumble bands. Off the exit entirely at full fall — the right-hand
+        // strip following the ramp read as another elongated rail to the horizon.
         stripes(-(OPPOSING_EDGE + 2.4), -OPPOSING_EDGE, 9, colors.vergeLight)
         stripes(CARRIAGEWAY, CARRIAGEWAY + 2.4, 9, colors.vergeLight, true)
-      }
 
-      // Mainline tarmac. When the camera is below the deck, the elevated body
-      // already represents the highway — painting full-length tarmac here is
-      // what left the asphalt bar on the horizon (clamped deck edge).
-      if (!belowDeck) {
+        // Mainline tarmac. When the camera is below the deck, the elevated body
+        // already represents the highway — painting full-length tarmac here is
+        // what left the asphalt bar on the horizon (clamped deck edge).
         band(-OPPOSING_EDGE, -MEDIAN_WIDTH, tarmac)
         band(0, CARRIAGEWAY, tarmac)
+        ctx.globalAlpha = 1
       }
 
       // Gore markings. Every real interchange paints this wedge, and it is the
@@ -993,8 +1013,9 @@ export function RoadCanvas({ drive, className }) {
       // that used to be carried by the centre line this replaces.
       const medianLine = withAlpha(colors.centreLine, 0.85)
 
-      // Mainline markings stay with the mainline tarmac — hidden when below.
-      if (!belowDeck) {
+      // Mainline markings stay with the mainline tarmac — fade with the deck.
+      if (deckAlpha > 0) {
+        ctx.globalAlpha = deckAlpha
         band(0.25, 0.55, medianLine)
         band(CARRIAGEWAY - 0.55, CARRIAGEWAY - 0.25, paint)
         band(-MEDIAN_WIDTH - 0.55, -MEDIAN_WIDTH - 0.25, medianLine)
@@ -1011,11 +1032,13 @@ export function RoadCanvas({ drive, className }) {
             laneLine
           )
         }
+        ctx.globalAlpha = 1
       }
 
       // The ramp you are on — painted last so it is the topmost plane and its
       // white edge lines meet the highway body at the entrance instead of
-      // sitting under a separate gray/violet half.
+      // sitting under a separate gray/violet half. Binary paint-order gate: the
+      // deferred pass only exists once the body is drawn under `belowDeck`.
       if (belowDeck) {
         for (let i = SEGMENTS - 1; i >= 0; i -= 1) {
           const point = points[i]
