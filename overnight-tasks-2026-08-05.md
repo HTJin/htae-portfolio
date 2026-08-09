@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Suggester
+**Phase:** Builder
 **Cycle:** 151
 
 ## Project orientation (so a fresh agent can start cold)
@@ -4109,6 +4109,46 @@ _(empty)_
 
   _(The loop deliberately did not bodge a half-fix into `drive.jsx` alone: without a `key` on the `_app` side, adding
   one only to the page changes nothing, and it would have looked fixed.)_
+
+## Tonight's tasks - CYCLE 151 (Planner, owner-directed)
+
+Sourced from the owner's Cursor prompt of 2026-08-08 17:23:36, recovered this cycle. Owner direction outranks
+anything the loop chose for itself, so the Suggester pass was skipped: the backlog was refilled from his own words,
+which is strictly better than generated ideas.
+
+- [ ] **T151-1 - INVESTIGATE: which surfaces key off a fixed screen y instead of the highway deck.**
+      **Why:** the owner has said three times, in different words, that the scene is built on a horizontal division
+      that does not track the highway's elevation ("a container divided horizontally but the horizontal line never is
+      aligned to the elevation of the actual highway", "that distinct halves of the darker gray upper section vs
+      lower violet section", "SET THE FUCKING MAIN INITIAL ELEVATION BASED TO THE MAIN HIGHWAY"). Two uses of a fixed
+      `camera.horizon` are visible in the source without measuring anything: the ground plate at `RoadCanvas.jsx:732`
+      (`fillRect(0, horizon - 6, ...)`) and the eyeline cull in `ribbon()` at `:142`/`:156`.
+      **This is an investigate task, not a fix task.** Which of those the owner is actually looking at is unproven,
+      and a fix aimed at the wrong one is how the trench and the clamp both happened.
+      **Files:** `src/components/drive/RoadCanvas.jsx` (read), plus a browser measurement.
+      **Done-when:** a mid-descent sample reports, for a named pixel column, where the sky/ground boundary sits and
+      where the highway deck's projected edge sits, with a control that must come out different.
+
+- [ ] **T151-2 - Fix whatever T151-1 identifies, or record why it cannot be fixed yet.**
+      **Why:** the owner's requirement is that the deck, not the viewport, is the reference frame.
+      **Done-when:** the measurement from T151-1 changes in the predicted direction after the change, and the build
+      is clean.
+
+### Critic pre-mortem for CYCLE 151
+
+1. _Failure: measuring at the endpoints._ Parked at a stop, or out on the open mainline, the ramp offset sits at its
+   extremes and the descent is not happening. `CLAUDE.md` records that this exact mistake missed three defects in a
+   row. **Guardrail:** sample with `drop` strictly between 0 and -5.5, and print the drop with the result.
+2. _Failure: believing a zero with no control._ The `?probe=barrier` run that returned 0 barrier pixels had no
+   passing control, so it proved nothing. **Guardrail:** every probe carries a control that must come out different,
+   and the control is reported alongside the result.
+3. _Failure: fixing the ground plate because it is the easier of the two, without evidence it is the one._
+   **Guardrail:** T151-1 must name which use of `horizon` the measurement implicates before T151-2 edits either.
+4. _Failure: clamping to the new reference._ Clamping to `horizon` is what painted the asphalt bar and the
+   gray/violet halves (`RoadCanvas.jsx:306`). **Guardrail:** cull, never clamp; a vertex outside the frame is
+   removed, never moved to the boundary.
+5. _Failure: measuring a colour the background also has._ **Guardrail:** use alpha or the magenta `?probe=` tint,
+   never a palette colour, and check what the reference sample actually is before comparing against it.
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
