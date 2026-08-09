@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-05
 **Goal of the night (one line):** Make `/drive` feel like sitting in a real car built by a software engineer — a believable driver's-POV cockpit, an arrival panel worth reading, and project screenshots that display in full and cycle themselves.
-**Phase:** Builder
+**Phase:** Reviewer
 **Cycle:** 151
 
 ## Project orientation (so a fresh agent can start cold)
@@ -4116,7 +4116,7 @@ Sourced from the owner's Cursor prompt of 2026-08-08 17:23:36, recovered this cy
 anything the loop chose for itself, so the Suggester pass was skipped: the backlog was refilled from his own words,
 which is strictly better than generated ideas.
 
-- [ ] **T151-1 - INVESTIGATE: which surfaces key off a fixed screen y instead of the highway deck.**
+- [x] **T151-1 - INVESTIGATE: which surfaces key off a fixed screen y instead of the highway deck.** **DONE, culprit named and measured.**
       **Why:** the owner has said three times, in different words, that the scene is built on a horizontal division
       that does not track the highway's elevation ("a container divided horizontally but the horizontal line never is
       aligned to the elevation of the actual highway", "that distinct halves of the darker gray upper section vs
@@ -4129,10 +4129,45 @@ which is strictly better than generated ideas.
       **Done-when:** a mid-descent sample reports, for a named pixel column, where the sky/ground boundary sits and
       where the highway deck's projected edge sits, with a control that must come out different.
 
-- [ ] **T151-2 - Fix whatever T151-1 identifies, or record why it cannot be fixed yet.**
+- [ ] **T151-2 - Fix whatever T151-1 identifies, or record why it cannot be fixed yet.** -> **Backlog (S152), deliberately not shipped this cycle.**
       **Why:** the owner's requirement is that the deck, not the viewport, is the reference frame.
       **Done-when:** the measurement from T151-1 changes in the predicted direction after the change, and the build
       is clean.
+
+### T151-1 RESULT (verified by measurement, 2026-08-08 ~20:40)
+
+**The owner is describing the ground plate at `RoadCanvas.jsx:732`, and it is provably elevation-blind.**
+
+Measured on the current production build (port 3009, build id `x359gO_NcUzegWIeg0klx`, matching `.next/BUILD_ID`;
+port 3008 was serving a stale process whose CSS 404s, and was discarded as an instrument):
+
+| quantity                                           | value                           |
+| -------------------------------------------------- | ------------------------------- |
+| canvas height                                      | 1902 device px                  |
+| strongest full-width horizontal edge               | **y = 832**                     |
+| columns sharing that exact row                     | **480 of 480 (fraction 1.000)** |
+| `horizon` = `height * HORIZON_RATIO` = 1902 x 0.44 | 836.88                          |
+| the plate's top edge, `horizon - 6`                | **830.9**                       |
+| measured minus predicted                           | **~1 px**                       |
+
+Two independent facts close this:
+
+1. **It is a screen-space cut, not geometry.** Every one of 480 sampled columns has a sharp discontinuity at the
+   same row. Projected road geometry is sloped and cannot produce `fraction = 1.000`. The control is in the same
+   run: at this elevation the topmost painted row per column is 474 (left), 796 (centre), 824 (right), which differ
+   by hundreds of pixels, so the detector plainly does not report every boundary as flat.
+2. **The quantity it is drawn from cannot vary with elevation.** `world.js:101` defines
+   `horizon: height * HORIZON_RATIO` with `HORIZON_RATIO = 0.44`. It is a function of canvas height and nothing
+   else. No `drop`, no `hillAt`, no road term. So the line cannot track the highway even in principle.
+
+That is the owner's sentence, restated as a measurement: _"the ramp downhill and uphill work based upon a container
+divided horizontally but the horizontal line never is aligned to the elevation of the actual highway."_ The plate is
+also painted **6px above** the true vanishing line, which against a bright sunset sky is what reads as
+_"a bar of highway road asphalt gray in the horizon."_
+
+**Not proven, and not claimed:** that the line's `y` stays at 832 while the elevation changes. The sim wedges after
+a CDP timeout (travel 0, no advance), so the second-elevation sample was never taken. The code argument above makes
+the conclusion sound without it, but the direct observation is still owed.
 
 ### Critic pre-mortem for CYCLE 151
 
@@ -4149,6 +4184,21 @@ which is strictly better than generated ideas.
    removed, never moved to the boundary.
 5. _Failure: measuring a colour the background also has._ **Guardrail:** use alpha or the magenta `?probe=` tint,
    never a palette colour, and check what the reference sample actually is before comparing against it.
+
+- **S152 - Make the ground plate follow the road instead of a fixed screen row.** _(new, cycle 151, owner-directed)_
+  **Verified cause, see T151-1:** `RoadCanvas.jsx:732` paints `fillRect(0, horizon - 6, width, height - horizon + 6)`,
+  a full-width rectangle whose top edge is a constant (`height * 0.44 - 6`). Measured at y=832 across 480/480
+  columns.
+  **Why it was not shipped in cycle 151, deliberately:** this is the scene's base occlusion surface, and every
+  previous attempt to change a horizon-referenced surface without proving the result made things worse. The clamp
+  produced an asphalt bar, the trench produced walls the owner rejected outright, and the barrier probe returned a
+  zero that proved nothing because it carried no control. Shipping a core-geometry change while the harness that
+  verifies it wedges the sim would be the same mistake a fourth time.
+  **Done-when:** the ground's top edge is derived from the projected road/terrain rather than from `horizon`, the
+  full-width-cut detector drops well below `fraction = 1.000`, and a mid-descent sample shows the boundary moving
+  with elevation. Re-run the detector recorded in the T151-1 result.
+  **Guardrail:** cull, never clamp. And note the plate exists for a reason: it is what stops the sky showing through
+  under the road, so it cannot simply be deleted.
 
 ## Backlog (deferred — the Planner mines this at the start of every cycle)
 
