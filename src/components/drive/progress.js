@@ -101,36 +101,46 @@ export function readProgress() {
 /**
  * Remember furthest exit + outcomes. Only ever move the furthest index forward.
  * Live `outcomes` from useDrive is authoritative per index.
+ *
+ * Index 0 alone does not write (same as v1), but if outcomes include a
+ * disposition past mile 0 (e.g. skipped while still staged at 0), persist
+ * using the furthest disposition index so Q053 reload still works.
  */
 export function writeProgress(index, outcomes = {}) {
   const store = storage()
   if (!store) return
 
-  const stop = route[index]
-  if (!stop || index <= 0) return
+  const nextOutcomes = normalizeOutcomes(outcomes)
+  const fromOutcomes = Object.keys(nextOutcomes).reduce(
+    (max, key) => Math.max(max, Number(key) || 0),
+    0
+  )
+  const writeIndex = Math.max(index > 0 ? index : 0, fromOutcomes)
+  const stop = route[writeIndex]
+  if (!stop || writeIndex <= 0) return
 
   try {
     const previous = readProgress()
-    const nextOutcomes = {
+    const merged = {
       ...(previous?.outcomes ?? {}),
-      ...normalizeOutcomes(outcomes),
+      ...nextOutcomes,
     }
 
-    if (!nextOutcomes[index]) {
-      nextOutcomes[index] = ARRIVED
+    if (!merged[writeIndex]) {
+      merged[writeIndex] = ARRIVED
     }
 
     const furthest =
-      previous && previous.index >= index
+      previous && previous.index >= writeIndex
         ? { index: previous.index, id: route[previous.index].id }
-        : { index, id: stop.id }
+        : { index: writeIndex, id: stop.id }
 
     store.setItem(
       KEY,
       JSON.stringify({
         index: furthest.index,
         id: furthest.id,
-        outcomes: nextOutcomes,
+        outcomes: merged,
       })
     )
   } catch {
