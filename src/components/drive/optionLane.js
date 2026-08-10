@@ -32,7 +32,7 @@ export const DISPOSITION_UNSET = 'unset'
 
 /**
  * Resolve option-lane commit while the decision window is open.
- * Window: `0 < remaining ≤ COMMIT_WINDOW` (=== RAMP_LENGTH). Once locked, stays locked.
+ * Window: `0 < remaining <= COMMIT_WINDOW` (=== RAMP_LENGTH). Once locked, stays locked.
  *
  * @param {{ commit: string, brake: number, throttle: number, x: number, autopilot: boolean }} sim
  * @param {{ remaining: number, lastStop: boolean }} ctx
