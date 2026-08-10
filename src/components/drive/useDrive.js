@@ -120,20 +120,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     })
   }, [])
 
-  /**
-   * Legacy v1 resume: fill unset stops through index as arrived. Prefer
-   * restoreOutcomes when outcomes exist so skips are not painted as passed.
-   */
-  const markVisitedThrough = useCallback((stopIndex) => {
-    setStopStatus((previous) => {
-      const next = new Map(previous)
-      for (let i = 0; i <= stopIndex; i += 1) {
-        if (!next.has(i)) next.set(i, 'arrived')
-      }
-      return next
-    })
-  }, [])
-
   const arriveAt = useCallback(
     (stopIndex) => {
       setIndex(stopIndex)
@@ -273,24 +259,27 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   }, [])
 
   const goTo = useCallback(
-    (stopIndex) => {
+    (stopIndex, { markArrived = false } = {}) => {
       const all = stopsRef.current
       const next = clamp(stopIndex, 0, all.length - 1)
       const sim = simRef.current
       sim.target = next
       sim.travel = all[next].s
-      // Teleporting (Back, the route map, reduced motion) moves `travel`
-      // without going through `step`, so the ramp has to follow here too.
+      // Teleporting (Back, the route map, deep link) moves `travel` without
+      // going through `step`, so the ramp has to follow here too.
+      // Do not invent disposition (A5): map jump / ?exit= settle only.
       sim.ramp = rampAt(sim.travel)
       sim.drop = rampDropAt(sim.travel)
       sim.speed = 0
       sim.parked = true
       sim.autopilot = false
       sim.throttleLock = sim.throttle > 0
-      arriveAt(next)
+      setIndex(next)
+      setParked(true)
+      if (markArrived) setDisposition(next, 'arrived')
       publish()
     },
-    [arriveAt, publish]
+    [publish, setDisposition]
   )
 
   const driveToNext = useCallback(() => {
@@ -303,7 +292,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       depart(sim.target)
     }
     if (reducedMotion) {
-      goTo(sim.target)
+      goTo(sim.target, { markArrived: true })
       return
     }
     sim.autopilot = true
@@ -339,8 +328,12 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     const sim = simRef.current
     sim.running = true
     setStarted(true)
-    arriveAt(sim.target)
-  }, [arriveAt])
+    setIndex(sim.target)
+    setParked(true)
+    // Do not setDisposition here. Deep link / resume / map jump must not
+    // invent passed/skipped history (A5). Mile 0 is already arrived in the
+    // initial stopStatus map; real arrivals go through arriveAt in step().
+  }, [])
 
   // Derived for any leftover callers; map truth is stopStatus.
   const visited = useMemo(() => {
@@ -363,7 +356,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       visited,
       markSkipped,
       restoreOutcomes,
-      markVisitedThrough,
       stop: stops[index],
       goTo,
       goBack,
@@ -383,7 +375,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       visited,
       markSkipped,
       restoreOutcomes,
-      markVisitedThrough,
       stops,
       goTo,
       goBack,

@@ -368,13 +368,9 @@ export function DriveScene() {
     if (!resume) return
     drive.goTo(resume.index)
     drive.start()
-    // Restore after start: goTo/start both call arriveAt, which must not
-    // overwrite a saved skipped disposition on the furthest stop.
-    if (resume.outcomes && Object.keys(resume.outcomes).length > 0) {
-      drive.restoreOutcomes(resume.outcomes)
-    } else {
-      drive.markVisitedThrough(resume.index)
-    }
+    // Restore after start so arriveAt on the tip cannot leave a false arrived
+    // over a saved skipped. Never fall back to mark-through (Q053).
+    if (resume.outcomes) drive.restoreOutcomes(resume.outcomes)
   }, [drive, resume])
 
   const forgetProgress = useCallback(() => {
