@@ -256,13 +256,15 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
 
         if (sim.commit === 'pass' && !lastStop) {
           // Mainline-through: disposition only (no visit / progress / panel).
+          // Do not call `depart`: DriveScene `writeProgress(index)` on index
+          // change would persist progress past an unvisited exit (T3).
+          // React index stays on the last arrived stop; sim.target advances.
           const passedIndex = sim.target
           markPassed(passedIndex)
           sim.passHoldUntil = current.s + RAMP_LENGTH
           sim.target = passedIndex + 1
           sim.commit = 'open'
           sim.autopilot = false
-          depart(sim.target)
         } else {
           sim.travel = current.s
           sim.speed = 0
