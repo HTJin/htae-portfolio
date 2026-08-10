@@ -20,12 +20,12 @@ const GEAR_RATIOS = [0, 7, 13, 20, 28, 36, MAX_SPEED]
 // never write steerInput. Gains chosen so strong |curveAhead| samples clear
 // ~40deg under AP while full lock (~130deg) still belongs to the player.
 const WHEEL_STEER = 130
-const WHEEL_CURVE_GAIN = 16
+const WHEEL_CURVE_GAIN = 10
 const WHEEL_CURVE_MAX = 70
 const WHEEL_RAMP_LOOKAHEAD = 40
-const WHEEL_RAMP_GAIN = 8
+const WHEEL_RAMP_GAIN = 2
 const WHEEL_RAMP_MAX = 35
-const WHEEL_X_HOLD = 16
+const WHEEL_X_HOLD = 18
 const WHEEL_PATH_SPEED_EPS = 0.5
 
 function gearFor(speed) {
