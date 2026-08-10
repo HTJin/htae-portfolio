@@ -11,7 +11,7 @@ const CREEP_SPEED = 2.4
 const ARRIVAL_WINDOW = 0.6
 /**
  * Max lane offset (`sim.x`) still counted as "stay left" for a PASS commit.
- * ~⅓ of `LANE_DRIFT` (≈1.70); rightward past this toward the peel locks TAKE.
+ * ~1/3 of `LANE_DRIFT` (≈1.70); rightward past this toward the peel locks TAKE.
  * Locked by cr049 architect-consensus / Q041 option-lane.
  */
 const PASS_LATERAL_MAX = 0.55
@@ -53,7 +53,7 @@ function createSim() {
     target: 0,
     parked: true,
     // Option-lane commit for the upcoming interchange: open | take | pass.
-    // Durable decline token on the disposition map is `skipped` (Q065) — never
+    // Durable decline token on the disposition map is `skipped` (Q065)  -  never
     // name it `passed` (st011 uses that for arrive). Cabin `passedStop` is
     // previous-title only and must not carry disposition.
     commit: 'open',
@@ -115,7 +115,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
    *
    * Saved progress only ever advances **on arrival** and only **forwards**, so
    * a stored index is proof the visitor arrived at every exit before it. Used
-   * by the resume path alone — a `?exit=` deep link must not claim its holder
+   * by the resume path alone  -  a `?exit=` deep link must not claim its holder
    * drove the road, because they followed a link instead.
    */
   const markVisitedThrough = useCallback((stopIndex) => {
@@ -192,9 +192,9 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         return
       }
 
-      // L1a — Option-lane commit window (RAMP_LENGTH, not stoppingDistance).
+      // L1a  -  Option-lane commit window (RAMP_LENGTH, not stoppingDistance).
       // TAKE any: brake, rightward of PASS_LATERAL_MAX, or autopilot / Drive-on.
-      // PASS all: throttle held, brake === 0, sim.x ≤ PASS_LATERAL_MAX, not AP.
+      // PASS all: throttle held, brake === 0, sim.x <= PASS_LATERAL_MAX, not AP.
       // Last stop cannot lock PASS.
       if (remaining > 0 && remaining <= RAMP_LENGTH && sim.commit === 'open') {
         if (sim.brake > 0 || sim.x > PASS_LATERAL_MAX || sim.autopilot) {
@@ -209,7 +209,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         }
       }
 
-      // L1b — Brake assist only when not PASS-locked. Never globally kill assist.
+      // L1b  -  Brake assist only when not PASS-locked. Never globally kill assist.
       const stoppingDistance = (sim.speed * sim.speed) / (2 * BRAKING) + 8
       const assist =
         sim.commit !== 'pass' && remaining < stoppingDistance
@@ -249,7 +249,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         if (lastStop && sim.commit === 'pass') sim.commit = 'take'
 
         if (sim.commit === 'pass') {
-          // L1b/L1c/L1d — Pass-through: keep rolling, no park / arriveAt /
+          // L1b/L1c/L1d  -  Pass-through: keep rolling, no park / arriveAt /
           // visited-as-arrived. Disposition decline = `skipped` (not `passed`).
           // Ego peel stays on rampAt/rampDropAt this hop (st072 owns zeroing).
           const skippedIndex = sim.target
@@ -269,8 +269,8 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         }
       }
 
-      // One assignment covers both places `travel` moves above — the metre-by-
-      // metre integration and the snap onto the stop — so the ramp can never be
+      // One assignment covers both places `travel` moves above  -  the metre-by-
+      // metre integration and the snap onto the stop  -  so the ramp can never be
       // a frame behind the car sitting on it. The parked early-return skips it,
       // which is correct: `travel` did not move, so neither did the ramp.
       // st072 will fork ego peel on PASS; ribbons still paint via rampAt.
@@ -336,7 +336,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       depart(sim.target)
     }
     if (reducedMotion) {
-      // L1e — Drive-on / RM default is TAKE via park-goTo. Never fake PASS
+      // L1e  -  Drive-on / RM default is TAKE via park-goTo. Never fake PASS
       // with goTo (goTo parks + arriveAt). If PASS already locked, stay on
       // the rolling step() path.
       if (sim.commit === 'pass') return
@@ -360,7 +360,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       if (value > 0) sim.autopilot = false
       if (reducedMotion && value > 0 && sim.parked && !sim.throttleLock) {
         // Parked RM throttle is Drive-on TAKE (goTo). PASS under RM must stay
-        // on the rolling step() path — never park-goTo for decline.
+        // on the rolling step() path  -  never park-goTo for decline.
         driveToNext()
       }
     },
