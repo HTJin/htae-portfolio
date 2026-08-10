@@ -49,18 +49,18 @@ function cockpitWheelTarget(sim) {
   const curveTerm = clamp(
     curveAhead * WHEEL_CURVE_GAIN,
     -WHEEL_CURVE_MAX,
-    WHEEL_CURVE_MAX,
+    WHEEL_CURVE_MAX
   )
   const rampTerm = clamp(
     rampRate * WHEEL_RAMP_GAIN,
     -WHEEL_RAMP_MAX,
-    WHEEL_RAMP_MAX,
+    WHEEL_RAMP_MAX
   )
   // Soft hold: release-while-sliding feel. Secondary to steer and path terms.
   const softHold = clamp(
     (sim.x / LANE_DRIFT) * WHEEL_X_HOLD,
     -WHEEL_X_HOLD,
-    WHEEL_X_HOLD,
+    WHEEL_X_HOLD
   )
   return steerTerm + curveTerm + rampTerm + softHold
 }
@@ -149,7 +149,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setParked(true)
       markVisited(stopIndex)
     },
-    [markVisited],
+    [markVisited]
   )
 
   const depart = useCallback((stopIndex) => {
@@ -175,7 +175,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
         -LANE_DRIFT,
-        LANE_DRIFT,
+        LANE_DRIFT
       )
 
       const wheelTarget = cockpitWheelTarget(sim)
@@ -255,7 +255,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.ramp = rampAt(sim.travel)
       sim.drop = rampDropAt(sim.travel)
     },
-    [arriveAt, depart],
+    [arriveAt, depart]
   )
 
   useEffect(() => {
@@ -298,7 +298,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       arriveAt(next)
       publish()
     },
-    [arriveAt, publish],
+    [arriveAt, publish]
   )
 
   const driveToNext = useCallback(() => {
@@ -331,7 +331,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         driveToNext()
       }
     },
-    [driveToNext, reducedMotion],
+    [driveToNext, reducedMotion]
   )
 
   const setBrake = useCallback((value) => {
@@ -384,6 +384,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setThrottle,
       setBrake,
       setSteer,
-    ],
+    ]
   )
 }
