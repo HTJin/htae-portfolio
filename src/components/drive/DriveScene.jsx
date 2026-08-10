@@ -63,8 +63,8 @@ function ArrivalAnnouncer({ started, parked, stop }) {
   const text = !(started && parked)
     ? ''
     : stop.index === 0
-      ? `At the start line — ${stop.title}`
-      : `Arrived at ${stop.exitLabel} — ${stop.title}`
+    ? `At the start line — ${stop.title}`
+    : `Arrived at ${stop.exitLabel} — ${stop.title}`
 
   return (
     <p className="sr-only" role="status" aria-live="polite">
@@ -305,7 +305,7 @@ export function DriveScene() {
       drive.goTo(stopIndex)
       setMapOpen(false)
     },
-    [drive],
+    [drive]
   )
 
   useEffect(() => {
@@ -357,6 +357,25 @@ export function DriveScene() {
     setResume(readProgress())
   }, [router.isReady, router.query.exit])
 
+  /**
+   * Rehydrate per-stop dispositions from progress v2 on every entry.
+   *
+   * The URL often still has `?exit=` after a prior session, so the ignition
+   * resume button is suppressed and the deep-link path runs instead. That path
+   * must not invent history for unmarked stops, but it also must not drop
+   * durable skips already stored under Q053. Restore once; deep-link / map
+   * jump still only mark the landed stop via arriveAt.
+   */
+  const outcomesHydrated = useRef(false)
+  useEffect(() => {
+    if (!router.isReady || outcomesHydrated.current) return
+    const saved = readProgress()
+    if (saved?.outcomes) {
+      drive.restoreOutcomes(saved.outcomes)
+    }
+    outcomesHydrated.current = true
+  }, [router.isReady, drive])
+
   /** Remember furthest exit + per-stop outcomes (progress v2 / Q053). */
   useEffect(() => {
     if (!started) return
@@ -390,7 +409,7 @@ export function DriveScene() {
     router.replace(
       { pathname: '/drive', query: next ? { exit: next } : {} },
       undefined,
-      { shallow: true },
+      { shallow: true }
     )
   }, [router, index, started])
 
