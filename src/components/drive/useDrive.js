@@ -15,13 +15,13 @@ const ARRIVAL_WINDOW = 0.6
 // full-lock steer (~130°) still dominates, and absolute peel with rate≈0 does
 // not invent a large angle (st012 / architect consensus).
 const WHEEL_K_STEER = 130
-const WHEEL_K_CURVE = 12
+const WHEEL_K_CURVE = 14
 const WHEEL_CURVE_MAX = 70
-const WHEEL_RAMP_LOOKAHEAD = 45
-const WHEEL_K_RAMP = 3.5
+const WHEEL_RAMP_LOOKAHEAD = 40
+const WHEEL_K_RAMP = 2.2
 const WHEEL_RAMP_MAX = 35
-const WHEEL_K_X_HOLD = 18
-const WHEEL_PATH_SPEED_EPS = 0.35
+const WHEEL_K_X_HOLD = 16
+const WHEEL_PATH_SPEED_EPS = 0.5
 
 // Top gear ends at MAX_SPEED by construction. It used to be typed as `42`
 // beside a `MAX_SPEED` of 42: raise one alone and the tachometer pegs for the
@@ -159,7 +159,11 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       const pathTerm = pathLive
         ? clamp(curveAhead * WHEEL_K_CURVE, -WHEEL_CURVE_MAX, WHEEL_CURVE_MAX) +
           clamp(rampRate * WHEEL_K_RAMP, -WHEEL_RAMP_MAX, WHEEL_RAMP_MAX) +
-          (sim.x / LANE_DRIFT) * WHEEL_K_X_HOLD
+          clamp(
+            (sim.x / LANE_DRIFT) * WHEEL_K_X_HOLD,
+            -WHEEL_K_X_HOLD,
+            WHEEL_K_X_HOLD
+          )
         : 0
       const wheelTarget = sim.steer * WHEEL_K_STEER + pathTerm
       sim.wheel += (wheelTarget - sim.wheel) * Math.min(1, dt * 4)
