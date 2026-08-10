@@ -17,7 +17,8 @@ const GEAR_RATIOS = [0, 7, 13, 20, 28, 36, MAX_SPEED]
 
 // Cockpit wheel degrees (st012). Path-follow angle causes, not parked metres.
 // AP stays throttle-only; these terms never write steerInput.
-// Caps stack to C_MAX+R_MAX+X_HOLD <= ~113 so full-lock steer (130) still wins (A6).
+// K_CURVE=12 so strong |curveAhead| samples clear ~40deg (A8); path stack
+// C_MAX+R_MAX+X_HOLD <= ~113 so full-lock steer (130) still wins (A6).
 const K_STEER = 130
 const K_CURVE = 12
 const C_MAX = 60
