@@ -63,8 +63,8 @@ function ArrivalAnnouncer({ started, parked, stop }) {
   const text = !(started && parked)
     ? ''
     : stop.index === 0
-    ? `At the start line — ${stop.title}`
-    : `Arrived at ${stop.exitLabel} — ${stop.title}`
+      ? `At the start line — ${stop.title}`
+      : `Arrived at ${stop.exitLabel} — ${stop.title}`
 
   return (
     <p className="sr-only" role="status" aria-live="polite">
@@ -292,7 +292,7 @@ export function DriveScene() {
       drive.goTo(stopIndex)
       setMapOpen(false)
     },
-    [drive]
+    [drive],
   )
 
   useEffect(() => {
@@ -344,19 +344,23 @@ export function DriveScene() {
     setResume(readProgress())
   }, [router.isReady, router.query.exit])
 
-  /** Remember the furthest exit reached. Never from inside the frame loop. */
+  /** Remember furthest exit + per-stop outcomes (Q053). Never from the frame loop. */
   useEffect(() => {
     if (!started) return
-    writeProgress(index)
-  }, [started, index])
+    writeProgress(index, drive.stopStatus)
+  }, [started, index, drive.stopStatus])
 
   const resumeDrive = useCallback(() => {
     if (!resume) return
     drive.goTo(resume.index)
-    // They really did drive every exit up to here — saved progress only
-    // advances on arrival, and only forwards — so the route map should say so.
-    drive.markVisitedThrough(resume.index)
     drive.start()
+    // Restore after start: goTo/start both call arriveAt, which must not
+    // overwrite a saved skipped disposition on the furthest stop.
+    if (resume.outcomes && Object.keys(resume.outcomes).length > 0) {
+      drive.restoreOutcomes(resume.outcomes)
+    } else {
+      drive.markVisitedThrough(resume.index)
+    }
   }, [drive, resume])
 
   const forgetProgress = useCallback(() => {
@@ -377,7 +381,7 @@ export function DriveScene() {
     router.replace(
       { pathname: '/drive', query: next ? { exit: next } : {} },
       undefined,
-      { shallow: true }
+      { shallow: true },
     )
   }, [router, index, started])
 
@@ -726,7 +730,7 @@ export function DriveScene() {
         onClose={() => setMapOpen(false)}
         onSelect={selectStop}
         currentIndex={index}
-        visited={drive.visited}
+        stopStatus={drive.stopStatus}
       />
 
       <AnimatePresence>

@@ -57,6 +57,10 @@ function createSim() {
  * things that change rarely (which stop we are at, whether we are parked);
  * everything that moves at 60fps lives on a ref and is pushed to subscribers
  * so gauges and the road can paint themselves without re-rendering the tree.
+ *
+ * Stop disposition (st011): Map index → `arrived` | `skipped`. UI badges are
+ * passed / skipped. st071 pass-through must call `markSkipped` (never emit a
+ * token named passed for decline). Cabin `passedStop` is unrelated.
  */
 export function useDrive(stops, { reducedMotion = false } = {}) {
   const simRef = useRef(createSim())
@@ -67,7 +71,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   const [started, setStarted] = useState(false)
   const [index, setIndex] = useState(0)
   const [parked, setParked] = useState(true)
-  const [visited, setVisited] = useState(() => new Set([0]))
+  const [stopStatus, setStopStatus] = useState(() => new Map([[0, 'arrived']]))
 
   const subscribe = useCallback((listener) => {
     listeners.current.add(listener)
@@ -75,27 +79,57 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     return () => listeners.current.delete(listener)
   }, [])
 
-  const markVisited = useCallback((stopIndex) => {
-    setVisited((previous) => {
-      if (previous.has(stopIndex)) return previous
-      const next = new Set(previous)
-      next.add(stopIndex)
+  const setDisposition = useCallback((stopIndex, disposition) => {
+    if (disposition !== 'arrived' && disposition !== 'skipped') return
+    setStopStatus((previous) => {
+      if (previous.get(stopIndex) === disposition) return previous
+      const next = new Map(previous)
+      next.set(stopIndex, disposition)
       return next
     })
   }, [])
 
   /**
-   * Restore the history behind a resumed position.
-   *
-   * Saved progress only ever advances **on arrival** and only **forwards**, so
-   * a stored index is proof the visitor arrived at every exit before it. Used
-   * by the resume path alone — a `?exit=` deep link must not claim its holder
-   * drove the road, because they followed a link instead.
+   * Owner-skipped: continue without taking the exit (st071 pass-through).
+   * Do not name this emit "passed" , owner passed means arrived/parked.
+   */
+  const markSkipped = useCallback(
+    (stopIndex) => {
+      setDisposition(stopIndex, 'skipped')
+    },
+    [setDisposition],
+  )
+
+  /**
+   * Restore Q053 outcomes after resume. Replaces the map so goTo→arriveAt
+   * cannot leave a false arrived on a skipped stop. Deep-link / map-jump must
+   * not call this (must not invent history for intermediates).
+   */
+  const restoreOutcomes = useCallback((outcomes) => {
+    setStopStatus(() => {
+      const next = new Map()
+      if (outcomes && typeof outcomes === 'object') {
+        for (const [key, value] of Object.entries(outcomes)) {
+          const i = Number(key)
+          if (!Number.isInteger(i) || i < 0) continue
+          if (value !== 'arrived' && value !== 'skipped') continue
+          next.set(i, value)
+        }
+      }
+      return next
+    })
+  }, [])
+
+  /**
+   * Legacy v1 resume: fill unset stops through index as arrived. Prefer
+   * restoreOutcomes when outcomes exist so skips are not painted as passed.
    */
   const markVisitedThrough = useCallback((stopIndex) => {
-    setVisited((previous) => {
-      const next = new Set(previous)
-      for (let i = 0; i <= stopIndex; i += 1) next.add(i)
+    setStopStatus((previous) => {
+      const next = new Map(previous)
+      for (let i = 0; i <= stopIndex; i += 1) {
+        if (!next.has(i)) next.set(i, 'arrived')
+      }
       return next
     })
   }, [])
@@ -104,9 +138,9 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     (stopIndex) => {
       setIndex(stopIndex)
       setParked(true)
-      markVisited(stopIndex)
+      setDisposition(stopIndex, 'arrived')
     },
-    [markVisited]
+    [setDisposition],
   )
 
   const depart = useCallback((stopIndex) => {
@@ -132,7 +166,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
         -LANE_DRIFT,
-        LANE_DRIFT
+        LANE_DRIFT,
       )
 
       const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
@@ -206,14 +240,14 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         arriveAt(sim.target)
       }
 
-      // One assignment covers both places `travel` moves above — the metre-by-
-      // metre integration and the snap onto the stop — so the ramp can never be
+      // One assignment covers both places `travel` moves above , the metre-by-
+      // metre integration and the snap onto the stop , so the ramp can never be
       // a frame behind the car sitting on it. The parked early-return skips it,
       // which is correct: `travel` did not move, so neither did the ramp.
       sim.ramp = rampAt(sim.travel)
       sim.drop = rampDropAt(sim.travel)
     },
-    [arriveAt, depart]
+    [arriveAt, depart],
   )
 
   useEffect(() => {
@@ -256,7 +290,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       arriveAt(next)
       publish()
     },
-    [arriveAt, publish]
+    [arriveAt, publish],
   )
 
   const driveToNext = useCallback(() => {
@@ -289,7 +323,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         driveToNext()
       }
     },
-    [driveToNext, reducedMotion]
+    [driveToNext, reducedMotion],
   )
 
   const setBrake = useCallback((value) => {
@@ -308,6 +342,15 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     arriveAt(sim.target)
   }, [arriveAt])
 
+  // Derived for any leftover callers; map truth is stopStatus.
+  const visited = useMemo(() => {
+    const next = new Set()
+    for (const [i, disposition] of stopStatus) {
+      if (disposition === 'arrived' || disposition === 'skipped') next.add(i)
+    }
+    return next
+  }, [stopStatus])
+
   return useMemo(
     () => ({
       simRef,
@@ -316,7 +359,10 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       start,
       index,
       parked,
+      stopStatus,
       visited,
+      markSkipped,
+      restoreOutcomes,
       markVisitedThrough,
       stop: stops[index],
       goTo,
@@ -333,7 +379,10 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       start,
       index,
       parked,
+      stopStatus,
       visited,
+      markSkipped,
+      restoreOutcomes,
       markVisitedThrough,
       stops,
       goTo,
@@ -342,6 +391,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setThrottle,
       setBrake,
       setSteer,
-    ]
+    ],
   )
 }

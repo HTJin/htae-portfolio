@@ -8,7 +8,13 @@ const LEGS = legsOf(route)
 
 const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])'
 
-export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
+export function RouteMap({
+  open,
+  onClose,
+  onSelect,
+  currentIndex,
+  stopStatus,
+}) {
   const panelRef = useRef(null)
   const returnFocusRef = useRef(null)
   const currentRef = useRef(null)
@@ -48,8 +54,8 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
       0,
       Math.min(
         scroller.scrollTop + delta,
-        scroller.scrollHeight - scroller.clientHeight
-      )
+        scroller.scrollHeight - scroller.clientHeight,
+      ),
     )
   }, [open, currentIndex])
 
@@ -78,7 +84,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
     const onKeyDown = (event) => {
       if (event.key !== 'Tab' || !panel) return
       const items = [...panel.querySelectorAll(TABBABLE)].filter(
-        (node) => node.offsetParent !== null || node === document.activeElement
+        (node) => node.offsetParent !== null || node === document.activeElement,
       )
       if (!items.length) return
 
@@ -148,15 +154,14 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                           type="button"
                           ref={stop.index === currentIndex ? currentRef : null}
                           onClick={() => onSelect(stop.index)}
-                          // Where you are was said in colour alone — a border
-                          // and a tint — so a screen reader met twenty-one
+                          // Where you are was said in colour alone: a border
+                          // and a tint, so a screen reader met twenty-one
                           // near-identical buttons with nothing to separate
-                          // them. "driven" below is real text and always did
-                          // announce; only the current position was silent.
-                          // `location` is the ARIA token for the current place
-                          // within an environment, which is exactly what a
-                          // route map is; anything a reader does not know
-                          // degrades to "true" per spec.
+                          // them. Disposition badges below are real text
+                          // (passed / skipped). Colour alone must never be the
+                          // only cue (WCAG 1.4.1). `location` is the ARIA token
+                          // for the current place within an environment; do not
+                          // overload it for disposition.
                           aria-current={
                             stop.index === currentIndex ? 'location' : undefined
                           }
@@ -164,7 +169,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                             'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
                             stop.index === currentIndex
                               ? 'border-sky-400/50 bg-sky-400/10'
-                              : 'border-transparent hover:border-white/15 hover:bg-white/5'
+                              : 'border-transparent hover:border-white/15 hover:bg-white/5',
                           )}
                         >
                           <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">
@@ -178,9 +183,13 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                               {stop.subtitle ?? stop.signSub}
                             </span>
                           </span>
-                          {visited.has(stop.index) ? (
+                          {stopStatus?.get(stop.index) === 'arrived' ? (
                             <span className="shrink-0 text-[0.625rem] uppercase tracking-[0.14em] text-emerald-300/70">
-                              driven
+                              passed
+                            </span>
+                          ) : stopStatus?.get(stop.index) === 'skipped' ? (
+                            <span className="shrink-0 text-[0.625rem] uppercase tracking-[0.14em] text-amber-300/70">
+                              skipped
                             </span>
                           ) : null}
                         </button>
