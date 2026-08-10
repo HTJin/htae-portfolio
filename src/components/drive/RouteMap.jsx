@@ -1,24 +1,31 @@
-import { useEffect, useRef } from 'react'
-import Link from 'next/link'
-import clsx from 'clsx'
-import { AnimatePresence, motion } from 'framer-motion'
-import { legsOf, route } from './route'
+import { useEffect, useRef } from "react";
+import Link from "next/link";
+import clsx from "clsx";
+import { AnimatePresence, motion } from "framer-motion";
+import { badgeFor } from "./disposition";
+import { legsOf, route } from "./route";
 
-const LEGS = legsOf(route)
+const LEGS = legsOf(route);
 
-const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])'
+const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])';
 
-export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
-  const panelRef = useRef(null)
-  const returnFocusRef = useRef(null)
-  const currentRef = useRef(null)
-  const scrollRef = useRef(null)
+export function RouteMap({
+  open,
+  onClose,
+  onSelect,
+  currentIndex,
+  stopStatus,
+}) {
+  const panelRef = useRef(null);
+  const returnFocusRef = useRef(null);
+  const currentRef = useRef(null);
+  const scrollRef = useRef(null);
 
   /**
    * Open the list at the exit you are actually at.
    *
    * The map highlights the current exit, which is its own admission that
-   * "where you are" is the useful thing — and then it opened at MILE 0 every
+   * "where you are" is the useful thing  -  and then it opened at MILE 0 every
    * time. On a landscape phone that means three visible rows out of
    * twenty-one, with the current one 800px down.
    *
@@ -26,78 +33,80 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
    * `scrollIntoView`, which walks up the tree and can move ancestors it was
    * never asked to. It is instant on purpose: a smooth scroll would be motion
    * nobody requested, and would need a reduced-motion branch to be honest.
-   * Deliberately does not touch focus — the effect below owns that.
+   * Deliberately does not touch focus  -  the effect below owns that.
    *
    * The measurement is a rect delta rather than `offsetTop`: the scroll
    * container is not positioned, so a row's `offsetParent` is the dialog
-   * backdrop and its `offsetTop` is measured from there — 111px out, which
+   * backdrop and its `offsetTop` is measured from there  -  111px out, which
    * scrolled the current row clean past the top of the window.
    */
   useEffect(() => {
-    if (!open) return
-    const scroller = scrollRef.current
-    const current = currentRef.current
-    if (!scroller || !current) return
+    if (!open) return;
+    const scroller = scrollRef.current;
+    const current = currentRef.current;
+    if (!scroller || !current) return;
 
-    const box = scroller.getBoundingClientRect()
-    const row = current.getBoundingClientRect()
+    const box = scroller.getBoundingClientRect();
+    const row = current.getBoundingClientRect();
     // Where the row sits now, relative to the window, minus where it should
     // sit to be centred. At MILE 0 this clamps to 0 and nothing moves.
-    const delta = row.top - box.top - (box.height - row.height) / 2
+    const delta = row.top - box.top - (box.height - row.height) / 2;
     scroller.scrollTop = Math.max(
       0,
       Math.min(
         scroller.scrollTop + delta,
-        scroller.scrollHeight - scroller.clientHeight
-      )
-    )
-  }, [open, currentIndex])
+        scroller.scrollHeight - scroller.clientHeight,
+      ),
+    );
+  }, [open, currentIndex]);
 
   /**
    * This dialog says `aria-modal`, which promises assistive technology that
-   * everything behind it is inert — so it has to actually behave that way.
+   * everything behind it is inert  -  so it has to actually behave that way.
    * Focus moves in on open, cycles inside on Tab, and goes back to whatever
    * opened it on close. Escape is deliberately left alone: `DriveScene` binds
    * it globally along with the driving keys, and swallowing it here would stop
    * the map closing.
    */
   useEffect(() => {
-    if (!open) return undefined
+    if (!open) return undefined;
 
     returnFocusRef.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
-        : null
+        : null;
 
-    const panel = panelRef.current
-    const first = panel?.querySelector(TABBABLE)
+    const panel = panelRef.current;
+    const first = panel?.querySelector(TABBABLE);
     // Focus the panel itself rather than the first control, so a screen reader
     // reads the dialog's label before its contents.
-    ;(panel ?? first)?.focus?.()
+    (panel ?? first)?.focus?.();
 
     const onKeyDown = (event) => {
-      if (event.key !== 'Tab' || !panel) return
+      if (event.key !== "Tab" || !panel) return;
       const items = [...panel.querySelectorAll(TABBABLE)].filter(
-        (node) => node.offsetParent !== null || node === document.activeElement
-      )
-      if (!items.length) return
+        (node) => node.offsetParent !== null || node === document.activeElement,
+      );
+      if (!items.length) return;
 
-      const edge = event.shiftKey ? items[0] : items[items.length - 1]
+      const edge = event.shiftKey ? items[0] : items[items.length - 1];
       if (
         document.activeElement === edge ||
         !panel.contains(document.activeElement)
       ) {
-        event.preventDefault()
-        ;(event.shiftKey ? items[items.length - 1] : items[0]).focus()
+        event.preventDefault();
+        (event.shiftKey ? items[items.length - 1] : items[0]).focus();
       }
-    }
+    };
 
-    document.addEventListener('keydown', onKeyDown, true)
+    document.addEventListener("keydown", onKeyDown, true);
     return () => {
-      document.removeEventListener('keydown', onKeyDown, true)
-      returnFocusRef.current?.focus?.()
-    }
-  }, [open])
+      document.removeEventListener("keydown", onKeyDown, true);
+      returnFocusRef.current?.focus?.();
+    };
+  }, [open]);
+
+  const statuses = stopStatus ?? {};
 
   return (
     <AnimatePresence>
@@ -142,50 +151,63 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                     {leg.name}
                   </div>
                   <ul className="space-y-1">
-                    {leg.stops.map((stop) => (
-                      <li key={stop.id}>
-                        <button
-                          type="button"
-                          ref={stop.index === currentIndex ? currentRef : null}
-                          onClick={() => onSelect(stop.index)}
-                          // Where you are was said in colour alone — a border
-                          // and a tint — so a screen reader met twenty-one
-                          // near-identical buttons with nothing to separate
-                          // them. "driven" below is real text and always did
-                          // announce; only the current position was silent.
-                          // `location` is the ARIA token for the current place
-                          // within an environment, which is exactly what a
-                          // route map is; anything a reader does not know
-                          // degrades to "true" per spec.
-                          aria-current={
-                            stop.index === currentIndex ? 'location' : undefined
-                          }
-                          className={clsx(
-                            'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
-                            stop.index === currentIndex
-                              ? 'border-sky-400/50 bg-sky-400/10'
-                              : 'border-transparent hover:border-white/15 hover:bg-white/5'
-                          )}
-                        >
-                          <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">
-                            {stop.exitLabel}
-                          </span>
-                          <span className="min-w-0 flex-auto">
-                            <span className="block truncate text-sm text-white">
-                              {stop.title}
+                    {leg.stops.map((stop) => {
+                      const badge = badgeFor(statuses[stop.index]);
+                      return (
+                        <li key={stop.id}>
+                          <button
+                            type="button"
+                            ref={
+                              stop.index === currentIndex ? currentRef : null
+                            }
+                            onClick={() => onSelect(stop.index)}
+                            // Where you are was said in colour alone  -  a border
+                            // and a tint  -  so a screen reader met twenty-one
+                            // near-identical buttons with nothing to separate
+                            // them. Disposition badges below are real text
+                            // (`passed` / `skipped`); only the current position
+                            // needs `aria-current`. Do not overload it for
+                            // disposition. `location` is the ARIA token for the
+                            // current place within an environment.
+                            aria-current={
+                              stop.index === currentIndex
+                                ? "location"
+                                : undefined
+                            }
+                            className={clsx(
+                              "flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition",
+                              stop.index === currentIndex
+                                ? "border-sky-400/50 bg-sky-400/10"
+                                : "border-transparent hover:border-white/15 hover:bg-white/5",
+                            )}
+                          >
+                            <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">
+                              {stop.exitLabel}
                             </span>
-                            <span className="block truncate text-[0.75rem] text-white/40">
-                              {stop.subtitle ?? stop.signSub}
+                            <span className="min-w-0 flex-auto">
+                              <span className="block truncate text-sm text-white">
+                                {stop.title}
+                              </span>
+                              <span className="block truncate text-[0.75rem] text-white/40">
+                                {stop.subtitle ?? stop.signSub}
+                              </span>
                             </span>
-                          </span>
-                          {visited.has(stop.index) ? (
-                            <span className="shrink-0 text-[0.625rem] uppercase tracking-[0.14em] text-emerald-300/70">
-                              driven
-                            </span>
-                          ) : null}
-                        </button>
-                      </li>
-                    ))}
+                            {badge ? (
+                              <span
+                                className={clsx(
+                                  "shrink-0 text-[0.625rem] uppercase tracking-[0.14em]",
+                                  badge === "skipped"
+                                    ? "text-amber-300/70"
+                                    : "text-emerald-300/70",
+                                )}
+                              >
+                                {badge}
+                              </span>
+                            ) : null}
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}
@@ -203,5 +225,5 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
         </motion.div>
       ) : null}
     </AnimatePresence>
-  )
+  );
 }

@@ -263,6 +263,19 @@ export function DriveScene() {
   // the server markup.
   const [resume, setResume] = useState(null)
 
+  // Dev / tester harness (st011): tip may lack st071 skip physics. Expose
+  // markSkipped without inventing brake-suppress. Production builds omit this.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return undefined
+    window.__driveDisposition = {
+      markSkipped: drive.markSkipped,
+      stopStatus: () => drive.stopStatus,
+    }
+    return () => {
+      delete window.__driveDisposition
+    }
+  }, [drive])
+
   // The label of whichever itinerary link currently has focus, or null. Drives
   // the chip below — see the comment beside it.
   const [outlineFocus, setOutlineFocus] = useState(null)
@@ -344,18 +357,18 @@ export function DriveScene() {
     setResume(readProgress())
   }, [router.isReady, router.query.exit])
 
-  /** Remember the furthest exit reached. Never from inside the frame loop. */
+  /** Remember furthest exit + per-stop outcomes (progress v2 / Q053). */
   useEffect(() => {
     if (!started) return
-    writeProgress(index)
-  }, [started, index])
+    writeProgress(index, drive.stopStatus)
+  }, [started, index, drive.stopStatus])
 
   const resumeDrive = useCallback(() => {
     if (!resume) return
+    // Restore exact outcomes (skipped stays skipped). goTo / start settle
+    // without inventing disposition. Deep-link must not call restoreStopStatus.
+    drive.restoreStopStatus(resume.outcomes)
     drive.goTo(resume.index)
-    // They really did drive every exit up to here — saved progress only
-    // advances on arrival, and only forwards — so the route map should say so.
-    drive.markVisitedThrough(resume.index)
     drive.start()
   }, [drive, resume])
 
@@ -726,7 +739,7 @@ export function DriveScene() {
         onClose={() => setMapOpen(false)}
         onSelect={selectStop}
         currentIndex={index}
-        visited={drive.visited}
+        stopStatus={drive.stopStatus}
       />
 
       <AnimatePresence>
