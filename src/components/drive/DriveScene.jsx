@@ -63,8 +63,8 @@ function ArrivalAnnouncer({ started, parked, stop }) {
   const text = !(started && parked)
     ? ''
     : stop.index === 0
-    ? `At the start line — ${stop.title}`
-    : `Arrived at ${stop.exitLabel} — ${stop.title}`
+      ? `At the start line — ${stop.title}`
+      : `Arrived at ${stop.exitLabel} — ${stop.title}`
 
   return (
     <p className="sr-only" role="status" aria-live="polite">
@@ -263,6 +263,19 @@ export function DriveScene() {
   // the server markup.
   const [resume, setResume] = useState(null)
 
+  // Dev / tester harness (st011): tip may lack st071 skip physics. Expose
+  // markSkipped without inventing brake-suppress. Production builds omit this.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return undefined
+    window.__driveDisposition = {
+      markSkipped: drive.markSkipped,
+      outcomes: () => drive.outcomes,
+    }
+    return () => {
+      delete window.__driveDisposition
+    }
+  }, [drive])
+
   // The label of whichever itinerary link currently has focus, or null. Drives
   // the chip below — see the comment beside it.
   const [outlineFocus, setOutlineFocus] = useState(null)
@@ -292,7 +305,7 @@ export function DriveScene() {
       drive.goTo(stopIndex)
       setMapOpen(false)
     },
-    [drive]
+    [drive],
   )
 
   useEffect(() => {
@@ -344,18 +357,18 @@ export function DriveScene() {
     setResume(readProgress())
   }, [router.isReady, router.query.exit])
 
-  /** Remember the furthest exit reached. Never from inside the frame loop. */
+  /** Remember furthest exit + per-stop outcomes (progress v2 / Q053). */
   useEffect(() => {
     if (!started) return
-    writeProgress(index)
-  }, [started, index])
+    writeProgress(index, drive.outcomes)
+  }, [started, index, drive.outcomes])
 
   const resumeDrive = useCallback(() => {
     if (!resume) return
     drive.goTo(resume.index)
-    // They really did drive every exit up to here — saved progress only
-    // advances on arrival, and only forwards — so the route map should say so.
-    drive.markVisitedThrough(resume.index)
+    // Restore exact dispositions; never invent arrived for gaps (skips must
+    // stay skipped). Deep-link path must not call restoreOutcomes.
+    drive.restoreOutcomes(resume.outcomes)
     drive.start()
   }, [drive, resume])
 
@@ -377,7 +390,7 @@ export function DriveScene() {
     router.replace(
       { pathname: '/drive', query: next ? { exit: next } : {} },
       undefined,
-      { shallow: true }
+      { shallow: true },
     )
   }, [router, index, started])
 
@@ -726,7 +739,7 @@ export function DriveScene() {
         onClose={() => setMapOpen(false)}
         onSelect={selectStop}
         currentIndex={index}
-        visited={drive.visited}
+        outcomes={drive.outcomes}
       />
 
       <AnimatePresence>
