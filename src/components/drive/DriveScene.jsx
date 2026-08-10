@@ -292,7 +292,7 @@ export function DriveScene() {
       drive.goTo(stopIndex)
       setMapOpen(false)
     },
-    [drive],
+    [drive]
   )
 
   useEffect(() => {
@@ -381,7 +381,7 @@ export function DriveScene() {
     router.replace(
       { pathname: '/drive', query: next ? { exit: next } : {} },
       undefined,
-      { shallow: true },
+      { shallow: true }
     )
   }, [router, index, started])
 

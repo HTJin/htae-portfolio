@@ -54,8 +54,8 @@ export function RouteMap({
       0,
       Math.min(
         scroller.scrollTop + delta,
-        scroller.scrollHeight - scroller.clientHeight,
-      ),
+        scroller.scrollHeight - scroller.clientHeight
+      )
     )
   }, [open, currentIndex])
 
@@ -84,7 +84,7 @@ export function RouteMap({
     const onKeyDown = (event) => {
       if (event.key !== 'Tab' || !panel) return
       const items = [...panel.querySelectorAll(TABBABLE)].filter(
-        (node) => node.offsetParent !== null || node === document.activeElement,
+        (node) => node.offsetParent !== null || node === document.activeElement
       )
       if (!items.length) return
 
@@ -169,7 +169,7 @@ export function RouteMap({
                             'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
                             stop.index === currentIndex
                               ? 'border-sky-400/50 bg-sky-400/10'
-                              : 'border-transparent hover:border-white/15 hover:bg-white/5',
+                              : 'border-transparent hover:border-white/15 hover:bg-white/5'
                           )}
                         >
                           <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">

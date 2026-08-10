@@ -97,7 +97,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     (stopIndex) => {
       setDisposition(stopIndex, 'skipped')
     },
-    [setDisposition],
+    [setDisposition]
   )
 
   /**
@@ -140,7 +140,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setParked(true)
       setDisposition(stopIndex, 'arrived')
     },
-    [setDisposition],
+    [setDisposition]
   )
 
   const depart = useCallback((stopIndex) => {
@@ -166,7 +166,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
         -LANE_DRIFT,
-        LANE_DRIFT,
+        LANE_DRIFT
       )
 
       const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
@@ -247,7 +247,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.ramp = rampAt(sim.travel)
       sim.drop = rampDropAt(sim.travel)
     },
-    [arriveAt, depart],
+    [arriveAt, depart]
   )
 
   useEffect(() => {
@@ -290,7 +290,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       arriveAt(next)
       publish()
     },
-    [arriveAt, publish],
+    [arriveAt, publish]
   )
 
   const driveToNext = useCallback(() => {
@@ -323,7 +323,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         driveToNext()
       }
     },
-    [driveToNext, reducedMotion],
+    [driveToNext, reducedMotion]
   )
 
   const setBrake = useCallback((value) => {
@@ -391,6 +391,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setThrottle,
       setBrake,
       setSteer,
-    ],
+    ]
   )
 }

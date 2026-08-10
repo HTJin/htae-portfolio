@@ -161,7 +161,7 @@ export function writeProgress(index, status) {
         index: nextIndex,
         id: nextStop.id,
         outcomes: normalizeOutcomes(outcomes),
-      }),
+      })
     )
     try {
       store.removeItem(LEGACY_KEY)
