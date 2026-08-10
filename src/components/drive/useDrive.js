@@ -133,7 +133,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       markVisited(stopIndex)
       markDisposition(stopIndex, 'taken')
     },
-    [markVisited, markDisposition],
+    [markVisited, markDisposition]
   )
 
   const depart = useCallback((stopIndex) => {
@@ -159,7 +159,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
         -LANE_DRIFT,
-        LANE_DRIFT,
+        LANE_DRIFT
       )
 
       const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
@@ -277,7 +277,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.ramp = rampAt(sim.travel)
       sim.drop = rampDropAt(sim.travel)
     },
-    [arriveAt, depart, markDisposition],
+    [arriveAt, depart, markDisposition]
   )
 
   useEffect(() => {
@@ -322,7 +322,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       arriveAt(next)
       publish()
     },
-    [arriveAt, publish],
+    [arriveAt, publish]
   )
 
   const driveToNext = useCallback(() => {
@@ -364,7 +364,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         driveToNext()
       }
     },
-    [driveToNext, reducedMotion],
+    [driveToNext, reducedMotion]
   )
 
   const setBrake = useCallback((value) => {
@@ -385,7 +385,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
 
   const dispositionOf = useCallback(
     (stopIndex) => disposition.get(stopIndex) ?? 'unset',
-    [disposition],
+    [disposition]
   )
 
   return useMemo(
@@ -429,7 +429,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setThrottle,
       setBrake,
       setSteer,
-    ],
+    ]
   )
 }
 
