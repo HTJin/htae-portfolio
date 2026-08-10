@@ -32,15 +32,19 @@ export const DISPOSITION_UNSET = 'unset'
 
 /**
  * Resolve option-lane commit while the decision window is open.
- * Window: `0 < remaining <= COMMIT_WINDOW` (=== RAMP_LENGTH). Once locked, stays locked.
+ * Window: `0 < remaining <= commitWindow` (caller passes route.RAMP_LENGTH).
+ * Once locked, stays locked.
  *
  * @param {{ commit: string, brake: number, throttle: number, x: number, autopilot: boolean }} sim
- * @param {{ remaining: number, lastStop: boolean }} ctx
+ * @param {{ remaining: number, lastStop: boolean, commitWindow?: number }} ctx
  * @returns {'open'|'take'|'pass'}
  */
-export function resolveCommit(sim, { remaining, lastStop }) {
+export function resolveCommit(
+  sim,
+  { remaining, lastStop, commitWindow = COMMIT_WINDOW }
+) {
   if (sim.commit !== COMMIT_OPEN) return sim.commit
-  if (!(remaining > 0 && remaining <= COMMIT_WINDOW)) return COMMIT_OPEN
+  if (!(remaining > 0 && remaining <= commitWindow)) return COMMIT_OPEN
 
   // TAKE wins on brake, rightward lean, or autopilot / Drive-on.
   if (sim.brake > 0 || sim.x > PASS_LATERAL_MAX || sim.autopilot) {

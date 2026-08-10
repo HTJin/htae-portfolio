@@ -12,7 +12,7 @@ import {
   assistAllowed,
   resolveGore,
 } from './optionLane'
-import { rampAt, rampDropAt } from './route'
+import { RAMP_LENGTH, rampAt, rampDropAt } from './route'
 import { LANE_DRIFT, clamp, curveAt } from './world'
 
 const MAX_SPEED = 42 // m/s, about 94 mph
@@ -198,7 +198,11 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       }
 
       // Option-lane commit (extracted helper - alternate to fully-inline FSM).
-      sim.commit = resolveCommit(sim, { remaining, lastStop })
+      sim.commit = resolveCommit(sim, {
+        remaining,
+        lastStop,
+        commitWindow: RAMP_LENGTH,
+      })
 
       // Brake assist: TAKE (and unresolved open) still roll to a halt.
       // Locked PASS must not be overridden by assist (Q036 / Q041).
@@ -402,7 +406,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setSteer,
       maxSpeed: MAX_SPEED,
       passLateralMax: PASS_LATERAL_MAX,
-      rampLength: COMMIT_WINDOW,
+      rampLength: RAMP_LENGTH,
       arrivalWindow: ARRIVAL_WINDOW,
     }),
     [
