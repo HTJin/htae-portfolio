@@ -33,6 +33,28 @@ export const RAMP_FRAC_MAX = 0.4
 export const RAMP_LENGTH = LEG_LENGTH * RAMP_FRAC_MAX
 
 /**
+ * Pairwise mainline-gap clamp: entrance out of i + exit into i+1 must leave
+ * open mainline (`sum < legLength`). Mutates and returns `lengths`.
+ * Under the Q042 0.40 ceiling this is usually a no-op on live draws; keep as
+ * defense for later variable legs / forced oversize pairs in asserts.
+ *
+ * @param {number[]} lengths
+ * @param {number} legLength
+ * @returns {number[]}
+ */
+export function enforceMainlineGap(lengths, legLength) {
+  for (let i = 0; i < lengths.length - 1; i += 1) {
+    const sum = lengths[i] + lengths[i + 1]
+    if (sum >= legLength) {
+      const scale = (legLength * (1 - 1e-4)) / sum
+      lengths[i] *= scale
+      lengths[i + 1] *= scale
+    }
+  }
+  return lengths
+}
+
+/**
  * Seeded per-stop along-s ramp lengths (world metres).
  *
  * Separate draw channel from itinerary miles (st025): salt includes
@@ -53,16 +75,7 @@ export function attachRampLengths(stopCount, legLength = LEG_LENGTH, seed = 0) {
     const frac = RAMP_FRAC_MIN + next() * (RAMP_FRAC_MAX - RAMP_FRAC_MIN)
     lengths.push(clamp(frac * legLength, minLen, maxLen))
   }
-  // Pairwise mainline gap: entrance out of i + exit into i+1 < leg.
-  for (let i = 0; i < lengths.length - 1; i += 1) {
-    const sum = lengths[i] + lengths[i + 1]
-    if (sum >= legLength) {
-      const scale = (legLength * (1 - 1e-4)) / sum
-      lengths[i] *= scale
-      lengths[i + 1] *= scale
-    }
-  }
-  return lengths
+  return enforceMainlineGap(lengths, legLength)
 }
 /**
  * How far right of the mainline lane the ramp has carried you at the stop.
