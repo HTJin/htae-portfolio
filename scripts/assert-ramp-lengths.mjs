@@ -28,7 +28,7 @@ const lengthsA = attachRampLengths(route.length, LEG, RAMP_LENGTH_SEED)
 const lengthsB = attachRampLengths(
   route.length,
   LEG,
-  RAMP_LENGTH_SEED ^ 0xabcdef
+  RAMP_LENGTH_SEED ^ 0xabcdef,
 )
 
 const pairGapOk = rampLengths.every((len, i) => {
@@ -38,7 +38,7 @@ const pairGapOk = rampLengths.every((len, i) => {
 
 const bandOk = rampLengths.every(
   (len) =>
-    len >= LEG * RAMP_FRAC_MIN - 1e-9 && len <= LEG * RAMP_FRAC_MAX + 1e-9
+    len >= LEG * RAMP_FRAC_MIN - 1e-9 && len <= LEG * RAMP_FRAC_MAX + 1e-9,
 )
 
 // Mid-ramp at stop 1: progress matches that stop's length (not global RAMP_LENGTH).
@@ -95,14 +95,14 @@ console.log(
       checks,
     },
     null,
-    2
-  )
+    2,
+  ),
 )
 
 if (failed.length) {
   console.error(
     'FAIL',
-    failed.map(([k]) => k)
+    failed.map(([k]) => k),
   )
   process.exit(1)
 }

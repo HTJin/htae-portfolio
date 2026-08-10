@@ -37,7 +37,7 @@ export const RAMP_LENGTH = LEG_LENGTH * RAMP_FRAC_MAX
  *
  * Separate draw channel from itinerary miles (st025): salt includes
  * `ramp-length` so the two axes never share one scalar. Fraction band is
- * band-at-current-scale until Q024; never Math.random.
+ * Q042 lock (`follow-Q023-fraction-0.25-0.40`); never Math.random.
  *
  * @param {number} stopCount
  * @param {number} [legLength=LEG_LENGTH] world metres between consecutive stops
@@ -173,7 +173,7 @@ function dropProgress(s) {
  */
 const DROP_HOLD = Math.min(
   0.9,
-  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET
+  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET,
 )
 
 /**
@@ -343,7 +343,7 @@ function projectStops() {
   return projects.map((project) => {
     // Every capture the project ships, in order — the stop card cycles them.
     const images = (project.screenshots ?? []).map(
-      (shot) => `/images/projects/${project.name}${shot}`
+      (shot) => `/images/projects/${project.name}${shot}`,
     )
 
     return {
@@ -450,14 +450,14 @@ const ROUTE_LAST = route.length - 1
  * Distinct salt from itinerary miles so axes stay independent.
  */
 export const RAMP_LENGTH_SEED = hashSeed(
-  `drive:ramp-length:${route.map((stop) => stop.id).join('|')}`
+  `drive:ramp-length:${route.map((stop) => stop.id).join('|')}`,
 )
 
 /** Per-stop along-s ramp lengths (world metres). Built once at module load. */
 export const rampLengths = attachRampLengths(
   route.length,
   LEG_LENGTH,
-  RAMP_LENGTH_SEED
+  RAMP_LENGTH_SEED,
 )
 
 /**
