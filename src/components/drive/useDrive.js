@@ -10,6 +10,19 @@ const AIR_DRAG = 0.018
 const CREEP_SPEED = 2.4
 const ARRIVAL_WINDOW = 0.6
 
+// Cockpit wheel (degrees). Path terms are visual only: autopilot never writes
+// steerInput. Gains tuned so strong mid-curve AP samples clear ~40° while
+// full-lock steer (~130°) still dominates, and absolute peel with rate≈0 does
+// not invent a large angle (st012 / architect consensus).
+const WHEEL_K_STEER = 130
+const WHEEL_K_CURVE = 12
+const WHEEL_CURVE_MAX = 70
+const WHEEL_RAMP_LOOKAHEAD = 45
+const WHEEL_K_RAMP = 3.5
+const WHEEL_RAMP_MAX = 35
+const WHEEL_K_X_HOLD = 18
+const WHEEL_PATH_SPEED_EPS = 0.35
+
 // Top gear ends at MAX_SPEED by construction. It used to be typed as `42`
 // beside a `MAX_SPEED` of 42: raise one alone and the tachometer pegs for the
 // whole of top gear, because `inGear` would run past 1 and clamp.
@@ -135,8 +148,20 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         LANE_DRIFT
       )
 
+      // Wheel tracks steering angle causes (steer + curve feedforward + mild
+      // ramp *rate* + soft ego-x hold), not accumulated lateral metres and not
+      // absolute peel / cameraX. Gate path assist when parked or nearly stopped
+      // so the rim is not "alive" at a stop.
       const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
-      const wheelTarget = sim.steer * 130 + clamp(curveAhead * 5, -70, 70)
+      const rampRate =
+        rampAt(sim.travel + WHEEL_RAMP_LOOKAHEAD) - rampAt(sim.travel)
+      const pathLive = !sim.parked && sim.speed > WHEEL_PATH_SPEED_EPS
+      const pathTerm = pathLive
+        ? clamp(curveAhead * WHEEL_K_CURVE, -WHEEL_CURVE_MAX, WHEEL_CURVE_MAX) +
+          clamp(rampRate * WHEEL_K_RAMP, -WHEEL_RAMP_MAX, WHEEL_RAMP_MAX) +
+          (sim.x / LANE_DRIFT) * WHEEL_K_X_HOLD
+        : 0
+      const wheelTarget = sim.steer * WHEEL_K_STEER + pathTerm
       sim.wheel += (wheelTarget - sim.wheel) * Math.min(1, dt * 4)
 
       if (!target) return
