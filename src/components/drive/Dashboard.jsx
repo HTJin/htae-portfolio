@@ -89,8 +89,8 @@ function Gauge({
                 hot
                   ? 'rgba(248, 113, 113, 0.95)'
                   : major
-                  ? 'rgba(226, 240, 252, 0.8)'
-                  : 'rgba(160, 190, 216, 0.45)'
+                    ? 'rgba(226, 240, 252, 0.8)'
+                    : 'rgba(160, 190, 216, 0.45)'
               }
               strokeWidth={hot ? 2.6 : major ? 2 : 1.2}
               strokeLinecap="round"
@@ -170,7 +170,7 @@ function TellTale({ children, title, tone, lit, blink }) {
         tone === 'green' && 'text-emerald-300',
         tone === 'amber' && 'text-amber-300',
         tone === 'red' && 'text-rose-400',
-        tone === 'blue' && 'text-sky-300'
+        tone === 'blue' && 'text-sky-300',
       )}
     >
       {children}
@@ -195,7 +195,7 @@ function TellTales({ drive }) {
         set(brakeRef.current, sim.brake > 0 || sim.parked)
         set(cruiseRef.current, sim.autopilot)
       }),
-    [drive]
+    [drive],
   )
 
   return (
@@ -259,7 +259,7 @@ function GearSelector({ drive }) {
             : String(Math.max(1, sim.gear))
         }
       }),
-    [drive]
+    [drive],
   )
 
   return (
@@ -369,23 +369,29 @@ function SteeringWheel({ drive }) {
       drive.subscribe((sim) => {
         if (wheelRef.current) {
           wheelRef.current.style.transform = `rotate(${sim.wheel.toFixed(
-            2
+            2,
           )}deg)`
         }
       }),
-    [drive]
+    [drive],
   )
 
   return (
     // The wrapper owns the centring; the SVG owns the rotation. Keep them on
-    // separate elements — the per-frame `style.transform` would otherwise
+    // separate elements: the per-frame `style.transform` would otherwise
     // overwrite the translate that centres the wheel on the driver's axis.
     <div className="pointer-events-none absolute left-1/2 top-[40%] aspect-square h-full -translate-x-1/2">
       <svg
         ref={wheelRef}
         viewBox="0 0 200 200"
         className="h-full w-full origin-center"
-        style={{ willChange: 'transform' }}
+        style={{
+          willChange: 'transform',
+          // SVG defaults transform-box to view-box; fill-box keeps origin on
+          // the rim's own box so rotate() spins in place (MDN transform-box).
+          transformBox: 'fill-box',
+          transformOrigin: 'center',
+        }}
         aria-hidden="true"
       >
         <defs>
@@ -519,7 +525,7 @@ function ConsoleButton({ children, onClick, disabled, title, label, accent }) {
         'disabled:cursor-not-allowed disabled:opacity-30',
         accent
           ? 'border-sky-400/50 bg-sky-400/10 text-sky-200 hover:bg-sky-400/20'
-          : 'border-white/15 bg-white/5 text-white/60 hover:border-white/30 hover:text-white'
+          : 'border-white/15 bg-white/5 text-white/60 hover:border-white/30 hover:text-white',
       )}
     >
       {children}
@@ -596,7 +602,7 @@ function Pedal({ label, hint, name, onPress, onRelease, tone, disabled }) {
         styles.pedal,
         tone === 'go'
           ? 'text-emerald-200 enabled:hover:brightness-125'
-          : 'text-rose-200 enabled:hover:brightness-125'
+          : 'text-rose-200 enabled:hover:brightness-125',
       )}
     >
       <span className="font-display text-sm font-semibold tracking-normal drop-shadow">
@@ -622,7 +628,7 @@ function TripComputer({ drive, stop }) {
           barRef.current.style.width = `${clamp(
             (sim.travel / routeLength) * 100,
             0,
-            100
+            100,
           ).toFixed(2)}%`
         }
         if (nextRef.current) {
@@ -637,7 +643,7 @@ function TripComputer({ drive, stop }) {
           yearRef.current.textContent = year === null ? 'NOW' : String(year)
         }
       }),
-    [drive, stop]
+    [drive, stop],
   )
 
   return (
@@ -719,7 +725,7 @@ function AudioToggle({ drive }) {
       engineRef.current?.close()
       engineRef.current = null
     },
-    []
+    [],
   )
 
   useEffect(() => {
@@ -789,7 +795,7 @@ function AudioToggle({ drive }) {
         'rounded-md border px-2 py-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.14em] transition',
         on
           ? 'border-amber-300/50 bg-amber-300/10 text-amber-200 hover:bg-amber-300/20'
-          : 'border-white/15 bg-white/5 text-white/50 hover:border-white/30 hover:text-white'
+          : 'border-white/15 bg-white/5 text-white/50 hover:border-white/30 hover:text-white',
       )}
     >
       <span aria-hidden="true">{on ? '♪' : '♪̸'}</span>
@@ -820,7 +826,7 @@ function MotionToggle({ reducedMotion, onToggle }) {
         'rounded-md border px-2 py-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.14em] transition',
         reducedMotion
           ? 'border-sky-300/50 bg-sky-300/10 text-sky-200 hover:bg-sky-300/20'
-          : 'border-white/15 bg-white/5 text-white/50 hover:border-white/30 hover:text-white'
+          : 'border-white/15 bg-white/5 text-white/50 hover:border-white/30 hover:text-white',
       )}
     >
       <span aria-hidden="true">{reducedMotion ? '❉' : '❋'}</span>
@@ -912,7 +918,7 @@ export function Dashboard({
       className={clsx(
         // Height comes from `--dash` on the scene root — see DriveScene.
         'absolute inset-x-0 bottom-0 z-30 h-[var(--dash)] outline-none',
-        styles.dash
+        styles.dash,
       )}
     >
       {/* The cowl lip catching light off the glass. */}

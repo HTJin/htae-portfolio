@@ -15,6 +15,17 @@ const ARRIVAL_WINDOW = 0.6
 // whole of top gear, because `inGear` would run past 1 and clamp.
 const GEAR_RATIOS = [0, 7, 13, 20, 28, 36, MAX_SPEED]
 
+// Cockpit wheel degrees (st012). Path-follow angle causes, not parked metres.
+// AP stays throttle-only; these terms never write steerInput.
+const K_STEER = 130
+const K_CURVE = 9
+const C_MAX = 70
+const RAMP_LOOKAHEAD = 40
+const K_RAMP = 2.5
+const R_MAX = 40
+const X_HOLD = 22
+const PATH_SPEED_EPS = 0.5
+
 function gearFor(speed) {
   for (let gear = 1; gear < GEAR_RATIOS.length; gear += 1) {
     if (speed <= GEAR_RATIOS[gear]) return gear
@@ -106,7 +117,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setParked(true)
       markVisited(stopIndex)
     },
-    [markVisited]
+    [markVisited],
   )
 
   const depart = useCallback((stopIndex) => {
@@ -132,11 +143,25 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
         -LANE_DRIFT,
-        LANE_DRIFT
+        LANE_DRIFT,
       )
 
-      const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
-      const wheelTarget = sim.steer * 130 + clamp(curveAhead * 5, -70, 70)
+      // Rim tracks steer + path lateral rate (curve / ramp rate) + soft x hold.
+      // Path terms gate off when parked or nearly stopped so constant peel
+      // cannot invent a living wheel (C0 / C5).
+      const steerTerm = sim.steer * K_STEER
+      let pathTerm = 0
+      let softHold = 0
+      if (!sim.parked && sim.speed > PATH_SPEED_EPS) {
+        const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
+        const rampRate =
+          rampAt(sim.travel + RAMP_LOOKAHEAD) - rampAt(sim.travel)
+        pathTerm =
+          clamp(curveAhead * K_CURVE, -C_MAX, C_MAX) +
+          clamp(rampRate * K_RAMP, -R_MAX, R_MAX)
+        softHold = clamp((sim.x / LANE_DRIFT) * X_HOLD, -X_HOLD, X_HOLD)
+      }
+      const wheelTarget = steerTerm + pathTerm + softHold
       sim.wheel += (wheelTarget - sim.wheel) * Math.min(1, dt * 4)
 
       if (!target) return
@@ -213,7 +238,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.ramp = rampAt(sim.travel)
       sim.drop = rampDropAt(sim.travel)
     },
-    [arriveAt, depart]
+    [arriveAt, depart],
   )
 
   useEffect(() => {
@@ -256,7 +281,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       arriveAt(next)
       publish()
     },
-    [arriveAt, publish]
+    [arriveAt, publish],
   )
 
   const driveToNext = useCallback(() => {
@@ -289,7 +314,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         driveToNext()
       }
     },
-    [driveToNext, reducedMotion]
+    [driveToNext, reducedMotion],
   )
 
   const setBrake = useCallback((value) => {
@@ -342,6 +367,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setThrottle,
       setBrake,
       setSteer,
-    ]
+    ],
   )
 }
