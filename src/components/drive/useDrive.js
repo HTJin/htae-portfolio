@@ -15,6 +15,14 @@ import {
 import { RAMP_LENGTH, rampAt, rampDropAt } from './route'
 import { LANE_DRIFT, clamp, curveAt } from './world'
 
+// Fail-loud if optionLane's verify default drifts from route.RAMP_LENGTH.
+// Runtime always passes commitWindow: RAMP_LENGTH; this guards the literal.
+if (COMMIT_WINDOW !== RAMP_LENGTH) {
+  throw new Error(
+    `optionLane COMMIT_WINDOW (${COMMIT_WINDOW}) !== route.RAMP_LENGTH (${RAMP_LENGTH})`,
+  )
+}
+
 const MAX_SPEED = 42 // m/s, about 94 mph
 const ACCELERATION = 8
 const BRAKING = 16
