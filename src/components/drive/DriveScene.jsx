@@ -256,6 +256,20 @@ export function DriveScene() {
   const [motionOverride, setMotionOverride] = useState(null)
   const reducedMotion = motionOverride ?? Boolean(systemReducedMotion)
   const drive = useDrive(route, { reducedMotion })
+
+  // Dev / tester harness (st011): tip may lack st071 skip physics. Expose
+  // markSkipped without inventing brake-suppress. Production builds omit this.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return undefined
+    window.__driveDisposition = {
+      markSkipped: drive.markSkipped,
+      stopStatus: () => drive.stopStatus,
+    }
+    return () => {
+      delete window.__driveDisposition
+    }
+  }, [drive])
+
   const [mapOpen, setMapOpen] = useState(false)
   const deepLinked = useRef(false)
   // Starts null and is filled in after mount: the server has no storage, so
