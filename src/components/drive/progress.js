@@ -1,5 +1,5 @@
 import { route } from './route'
-import { ARRIVED, SKIPPED, isDisposition } from './disposition'
+import { ARRIVED, isDisposition } from './disposition'
 
 /**
  * How far a visitor got last time, plus per-stop disposition (st011 / Q053).
@@ -100,7 +100,7 @@ export function readProgress() {
 
 /**
  * Remember furthest exit + outcomes. Only ever move the furthest index forward.
- * Outcomes merge: a recorded skip is never collapsed to arrived by a later write.
+ * Live `outcomes` from useDrive is authoritative per index.
  */
 export function writeProgress(index, outcomes = {}) {
   const store = storage()
@@ -111,12 +111,9 @@ export function writeProgress(index, outcomes = {}) {
 
   try {
     const previous = readProgress()
-    const incoming = normalizeOutcomes(outcomes)
-    const nextOutcomes = { ...(previous?.outcomes ?? {}) }
-    for (const [key, value] of Object.entries(incoming)) {
-      const stopIndex = Number(key)
-      if (nextOutcomes[stopIndex] === SKIPPED && value === ARRIVED) continue
-      nextOutcomes[stopIndex] = value
+    const nextOutcomes = {
+      ...(previous?.outcomes ?? {}),
+      ...normalizeOutcomes(outcomes),
     }
 
     if (!nextOutcomes[index]) {
@@ -134,7 +131,7 @@ export function writeProgress(index, outcomes = {}) {
         index: furthest.index,
         id: furthest.id,
         outcomes: nextOutcomes,
-      }),
+      })
     )
   } catch {
     // Storage full or unavailable: losing progress is not worth an error.
