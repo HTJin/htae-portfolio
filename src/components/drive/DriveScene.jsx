@@ -370,7 +370,7 @@ export function DriveScene() {
 
   /** Keep the URL on the exit you are parked at, so it can be copied. */
   useEffect(() => {
-    if (!router.isReady || !started) return
+    if (!router.isReady || !started || !parked) return
 
     const current = Array.isArray(router.query.exit)
       ? router.query.exit[0]
@@ -383,7 +383,7 @@ export function DriveScene() {
       undefined,
       { shallow: true }
     )
-  }, [router, index, started])
+  }, [router, index, started, parked])
 
   useEffect(() => {
     if (!started) return undefined
