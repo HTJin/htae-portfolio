@@ -3,7 +3,7 @@ import { paletteAt, withAlpha } from './daylight'
 import {
   BANK_TOP_OFFSET,
   LEG_LENGTH,
-  RAMP_OFFSET,
+  RAMP_OFFSET_MAX,
   RAMP_SEPARATES,
   RAMP_WIDTH,
   rampAt,
@@ -919,7 +919,7 @@ export function RoadCanvas({ drive, className }) {
           ? [
               {
                 from: -(OPPOSING_EDGE + 22),
-                to: CARRIAGEWAY + RAMP_OFFSET + 22,
+                to: CARRIAGEWAY + RAMP_OFFSET_MAX + 22,
                 fill: GROUND,
                 follow: false,
               },

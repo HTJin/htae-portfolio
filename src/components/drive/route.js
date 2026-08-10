@@ -1,4 +1,5 @@
 import { education, experience, meta, projects, skills } from '@/content'
+import { hashSeed, mulberry32 } from './rng'
 import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
 
 /**
@@ -21,15 +22,48 @@ export const METERS_PER_MILE = 1609.34
  * The two are the same shape mirrored about the stop, so one function describes
  * both.
  *
- * `RAMP_LENGTH` is derived from `LEG_LENGTH` rather than typed, because the two
- * quantities have to agree about something neither can see: the entrance ramp
- * out of one exit must finish before the exit ramp into the next one starts, or
- * the road never returns to the mainline and the "highway" is just a slalom. At
- * 0.4 of a leg each, the middle 20% of every leg is mainline. (Same lesson as
- * `MARKER_SPACING` in cycle 32 — a constant that must match another constant
- * gets computed from it.)
+ * Along-s length is no longer one global constant: each stop draws a fraction of
+ * its leg in `[RAMP_FRAC_MIN, RAMP_FRAC_MAX]` (st023), then clamps so entrance
+ * out of N finishes before exit into N+1 (`rampLengths[i] + rampLengths[i+1] <
+ * legLength`). `RAMP_LENGTH` remains the historical max (`LEG_LENGTH * 0.4`) for
+ * tools and as the band ceiling.
  */
-export const RAMP_LENGTH = LEG_LENGTH * 0.4
+export const RAMP_FRAC_MIN = 0.25
+export const RAMP_FRAC_MAX = 0.4
+export const RAMP_LENGTH = LEG_LENGTH * RAMP_FRAC_MAX
+
+/**
+ * Seeded per-stop along-s ramp lengths (world metres).
+ *
+ * Separate draw channel from itinerary miles (st025): salt includes
+ * `ramp-length` so the two axes never share one scalar. Fraction band is
+ * band-at-current-scale until Q024; never Math.random.
+ *
+ * @param {number} stopCount
+ * @param {number} [legLength=LEG_LENGTH] world metres between consecutive stops
+ * @param {number} [seed]
+ * @returns {number[]} length per stop index
+ */
+export function attachRampLengths(stopCount, legLength = LEG_LENGTH, seed = 0) {
+  const next = mulberry32(seed >>> 0)
+  const lengths = []
+  const maxLen = legLength * RAMP_FRAC_MAX
+  const minLen = legLength * RAMP_FRAC_MIN
+  for (let i = 0; i < stopCount; i += 1) {
+    const frac = RAMP_FRAC_MIN + next() * (RAMP_FRAC_MAX - RAMP_FRAC_MIN)
+    lengths.push(clamp(frac * legLength, minLen, maxLen))
+  }
+  // Pairwise mainline gap: entrance out of i + exit into i+1 < leg.
+  for (let i = 0; i < lengths.length - 1; i += 1) {
+    const sum = lengths[i] + lengths[i + 1]
+    if (sum >= legLength) {
+      const scale = (legLength * (1 - 1e-4)) / sum
+      lengths[i] *= scale
+      lengths[i + 1] *= scale
+    }
+  }
+  return lengths
+}
 /**
  * How far right of the mainline lane the ramp has carried you at the stop.
  *
@@ -37,8 +71,37 @@ export const RAMP_LENGTH = LEG_LENGTH * 0.4
  * enough to be a separate ribbon of tarmac, not enough to feel like you had
  * left. At `CARRIAGEWAY + 22` the stop sits well clear
  * of the running lanes, with the gore opening into real verge between them.
+ *
+ * Live peels are per-stop (st024) in `rampOffsets`; this constant stays the
+ * legacy / mid-band default for docs, DROP_HOLD fallback, and tools.
  */
+export const RAMP_EXTRA_MIN = 12
+export const RAMP_EXTRA_MAX = 35
 export const RAMP_OFFSET = CARRIAGEWAY + 22
+/** Band ceiling: canvas terrain extent uses this so the widest peel still fits. */
+export const RAMP_OFFSET_MAX = CARRIAGEWAY + RAMP_EXTRA_MAX
+
+/**
+ * Seeded per-stop peak lateral offsets (world metres).
+ *
+ * Separate draw channel from along-s lengths (st023): salt includes
+ * `ramp-offset`. Band is extras past carriageway in [12, 35] until Q023/Q024.
+ * Always clears `RAMP_SEPARATES` at full peel for this scene scale.
+ *
+ * @param {number} stopCount
+ * @param {number} [seed]
+ * @returns {number[]} peak offset per stop index
+ */
+export function attachRampOffsets(stopCount, seed = 0) {
+  const next = mulberry32(seed >>> 0)
+  const offsets = []
+  for (let i = 0; i < stopCount; i += 1) {
+    const extra = RAMP_EXTRA_MIN + next() * (RAMP_EXTRA_MAX - RAMP_EXTRA_MIN)
+    offsets.push(CARRIAGEWAY + extra)
+  }
+  return offsets
+}
+
 /** The ramp is a single lane, centred on the car. */
 export const RAMP_WIDTH = 4.4
 
@@ -82,6 +145,18 @@ export const RAMP_SEPARATES = CARRIAGEWAY - LANE_OFFSET + RAMP_WIDTH / 2
 export const VERGE_WIDTH = 2.4
 export const BANK_TOP_OFFSET = CARRIAGEWAY + VERGE_WIDTH
 
+/**
+ * Descent hold fraction for a peak offset (bank foot stays outboard).
+ * Recomputed per stop in st024 so short peels still wait until the near edge
+ * clears the bank top.
+ */
+export function dropHoldFor(offset) {
+  return Math.min(
+    0.9,
+    (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / offset
+  )
+}
+
 /** Smoothstep: zero slope at both ends, so the ramp meets the mainline flush. */
 function smoothstep(t) {
   return t * t * (3 - 2 * t)
@@ -90,12 +165,13 @@ function smoothstep(t) {
 /**
  * How far the ramp has carried the road off the mainline at world position `s`.
  *
- * Zero on the open highway, `RAMP_OFFSET` at a stop. Keyed off the *object's*
- * own position, never the camera's, so the road does not change shape as you
- * approach it (guardrail 17).
+ * Zero on the open highway, that stop's peak offset at the stop. Keyed off the
+ * *object's* own position, never the camera's, so the road does not change
+ * shape as you approach it (guardrail 17). Never writes into `sim.x`.
  */
 export function rampAt(s) {
-  return RAMP_OFFSET * rampProgress(s)
+  const index = clamp(Math.round(s / LEG_LENGTH), 0, ROUTE_LAST)
+  return rampOffsetAt(index) * rampProgress(s)
 }
 
 /**
@@ -124,23 +200,21 @@ export function rampDropAt(s) {
  * impossible region entirely rather than clamping around it: wherever there is
  * a height difference, there is now real ground to slope. The stop is still
  * `RAMP_DROP` below the mainline — only the shape of getting there changed.
+ * `dropHold` is per-stop (st024): it scales with that stop's peak offset.
  */
 function dropProgress(s) {
+  const index = clamp(Math.round(s / LEG_LENGTH), 0, ROUTE_LAST)
   const lateral = rampProgress(s)
-  if (lateral <= DROP_HOLD) return 0
-  return smoothstep((lateral - DROP_HOLD) / (1 - DROP_HOLD))
+  const hold = dropHoldAt(index)
+  if (lateral <= hold) return 0
+  return smoothstep((lateral - hold) / (1 - hold))
 }
 
 /**
- * The lateral progress at which the ramp's near edge finally clears the top of
- * the bank, so there is ground to slope. Derived, not typed: it has to agree
- * with where `RoadCanvas` puts that top, which is why `VERGE_WIDTH` is defined
- * here and imported there rather than written down twice.
+ * Legacy / fallback hold derived from the default `RAMP_OFFSET`. Live peels use
+ * `dropHoldAt(index)` instead.
  */
-const DROP_HOLD = Math.min(
-  0.9,
-  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET
-)
+export const DROP_HOLD = dropHoldFor(RAMP_OFFSET)
 
 /**
  * How far below the mainline grade the car has to be before the scene treats it
@@ -207,11 +281,36 @@ export function rideState(sim) {
 }
 
 /** 0 on the open mainline, 1 at a stop; smoothstepped, so both ends are flush. */
-function rampProgress(s) {
+export function rampProgress(s) {
   const index = clamp(Math.round(s / LEG_LENGTH), 0, ROUTE_LAST)
+  const length = rampLengthAt(index)
   const distance = Math.abs(s - index * LEG_LENGTH)
-  if (distance >= RAMP_LENGTH) return 0
-  return smoothstep(1 - distance / RAMP_LENGTH)
+  if (distance >= length) return 0
+  return smoothstep(1 - distance / length)
+}
+
+/**
+ * World metres between stop `index` and the next. Frozen at `LEG_LENGTH` this
+ * round (cr014 display-only miles); callers use the table API so a later
+ * per-leg scale need not rewrite geometry consumers.
+ */
+export function legLengthFor(_index) {
+  return LEG_LENGTH
+}
+
+/** Along-s ramp length (world metres) for a stop index. */
+export function rampLengthAt(index) {
+  return rampLengths[clamp(index, 0, rampLengths.length - 1)]
+}
+
+/** Peak lateral offset (world metres) for a stop index. */
+export function rampOffsetAt(index) {
+  return rampOffsets[clamp(index, 0, rampOffsets.length - 1)]
+}
+
+/** Per-stop DROP_HOLD fraction for embankment descent gating. */
+export function dropHoldAt(index) {
+  return dropHoldFor(rampOffsetAt(index))
 }
 
 const byDateAscending = (a, b) => new Date(a.date) - new Date(b.date)
@@ -404,6 +503,32 @@ export const routeLength = (route.length - 1) * LEG_LENGTH
  * evaluating, so the ordering is safe.
  */
 const ROUTE_LAST = route.length - 1
+
+/**
+ * Content-derived seed for along-s ramp lengths. Same stop ids → same lengths.
+ * Distinct salt from itinerary miles so axes stay independent.
+ */
+export const RAMP_LENGTH_SEED = hashSeed(
+  `drive:ramp-length:${route.map((stop) => stop.id).join('|')}`
+)
+
+/** Per-stop along-s ramp lengths (world metres). Built once at module load. */
+export const rampLengths = attachRampLengths(
+  route.length,
+  LEG_LENGTH,
+  RAMP_LENGTH_SEED
+)
+
+/**
+ * Content-derived seed for peak lateral offsets. Distinct salt from lengths
+ * so the two axes never share one scalar draw.
+ */
+export const RAMP_OFFSET_SEED = hashSeed(
+  `drive:ramp-offset:${route.map((stop) => stop.id).join('|')}`
+)
+
+/** Per-stop peak lateral offsets (world metres). Built once at module load. */
+export const rampOffsets = attachRampOffsets(route.length, RAMP_OFFSET_SEED)
 
 /**
  * What the roadside looks like on each leg. Every mile used to carry identical
