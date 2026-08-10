@@ -128,7 +128,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setParked(true)
       markArrived(stopIndex)
     },
-    [markArrived],
+    [markArrived]
   )
 
   const depart = useCallback((stopIndex) => {
@@ -154,7 +154,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
         -LANE_DRIFT,
-        LANE_DRIFT,
+        LANE_DRIFT
       )
 
       const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
@@ -235,7 +235,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.ramp = rampAt(sim.travel)
       sim.drop = rampDropAt(sim.travel)
     },
-    [arriveAt, depart],
+    [arriveAt, depart]
   )
 
   useEffect(() => {
@@ -275,10 +275,13 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.parked = true
       sim.autopilot = false
       sim.throttleLock = sim.throttle > 0
-      arriveAt(next)
+      // Settle position only — do not invent passed/skipped (A5). Real
+      // arrivals go through step → arriveAt; skips via markSkipped (st071).
+      setIndex(next)
+      setParked(true)
       publish()
     },
-    [arriveAt, publish],
+    [publish]
   )
 
   const driveToNext = useCallback(() => {
@@ -292,10 +295,12 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     }
     if (reducedMotion) {
       goTo(sim.target)
+      // Reduced-motion "drive" is an intentional arrival, not a map jump.
+      arriveAt(sim.target)
       return
     }
     sim.autopilot = true
-  }, [depart, goTo, reducedMotion])
+  }, [arriveAt, depart, goTo, reducedMotion])
 
   const goBack = useCallback(() => {
     goTo(simRef.current.target - 1)
@@ -311,7 +316,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         driveToNext()
       }
     },
-    [driveToNext, reducedMotion],
+    [driveToNext, reducedMotion]
   )
 
   const setBrake = useCallback((value) => {
@@ -327,8 +332,9 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     const sim = simRef.current
     sim.running = true
     setStarted(true)
-    arriveAt(sim.target)
-  }, [arriveAt])
+    // Do not arriveAt: deep-link / resume must not stamp the tip as passed.
+    // Mile 0 stays arrived via initial outcomes; step owns later arrivals.
+  }, [])
 
   return useMemo(
     () => ({
@@ -339,6 +345,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       index,
       parked,
       outcomes,
+      markArrived,
       markSkipped,
       restoreOutcomes,
       stop: stops[index],
@@ -357,6 +364,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       index,
       parked,
       outcomes,
+      markArrived,
       markSkipped,
       restoreOutcomes,
       stops,
@@ -366,6 +374,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setThrottle,
       setBrake,
       setSteer,
-    ],
+    ]
   )
 }

@@ -268,6 +268,7 @@ export function DriveScene() {
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') return undefined
     window.__driveDisposition = {
+      markArrived: drive.markArrived,
       markSkipped: drive.markSkipped,
       outcomes: () => drive.outcomes,
     }
