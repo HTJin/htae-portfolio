@@ -1,4 +1,5 @@
 import { education, experience, meta, projects, skills } from '@/content'
+import { hashSeed, mulberry32 } from './rng'
 import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
 
 /**
@@ -21,15 +22,71 @@ export const METERS_PER_MILE = 1609.34
  * The two are the same shape mirrored about the stop, so one function describes
  * both.
  *
- * `RAMP_LENGTH` is derived from `LEG_LENGTH` rather than typed, because the two
- * quantities have to agree about something neither can see: the entrance ramp
- * out of one exit must finish before the exit ramp into the next one starts, or
- * the road never returns to the mainline and the "highway" is just a slalom. At
- * 0.4 of a leg each, the middle 20% of every leg is mainline. (Same lesson as
- * `MARKER_SPACING` in cycle 32 — a constant that must match another constant
- * gets computed from it.)
+ * Along-s length is per-stop (st023 / Q042): each stop draws a fraction of its
+ * leg in `[RAMP_FRAC_MIN, RAMP_FRAC_MAX]`, then pairwise clamp leaves open
+ * mainline (`rampLengths[i] + rampLengths[i+1] < legLength`). `RAMP_LENGTH`
+ * stays the historical max (`LEG_LENGTH * RAMP_FRAC_MAX`) for tools and as the
+ * band ceiling. Lateral peak (`RAMP_OFFSET`) is frozen for sibling st024.
  */
-export const RAMP_LENGTH = LEG_LENGTH * 0.4
+export const RAMP_FRAC_MIN = 0.25
+export const RAMP_FRAC_MAX = 0.4
+export const RAMP_LENGTH = LEG_LENGTH * RAMP_FRAC_MAX
+
+/**
+ * Shrink consecutive pairs so entrance out of i + exit into i+1 leave a
+ * positive open mainline. Usually a no-op under the 0.40 ceiling; kept as
+ * defense for later variable legs (Q042 / architect consensus A6).
+ *
+ * @param {number[]} lengths mutated in place
+ * @param {number} legLength
+ * @returns {number[]}
+ */
+export function enforceMainlineGap(lengths, legLength) {
+  for (let i = 0; i < lengths.length - 1; i += 1) {
+    const sum = lengths[i] + lengths[i + 1]
+    if (sum >= legLength) {
+      const scale = (legLength * (1 - 1e-4)) / sum
+      lengths[i] *= scale
+      lengths[i + 1] *= scale
+    }
+  }
+  return lengths
+}
+
+/**
+ * Seeded per-stop along-s ramp lengths (world metres).
+ *
+ * Separate draw channel from itinerary miles (st025): salt includes
+ * `ramp-length` so the two axes never share one cursor. Fraction band is
+ * Q042 `follow-Q023-fraction-0.25-0.40`; never Math.random / literal 1-99 m.
+ *
+ * @param {number} stopCount
+ * @param {number} [legLength=LEG_LENGTH] world metres between consecutive stops
+ * @param {number} [seed]
+ * @returns {number[]} length per stop index
+ */
+export function attachRampLengths(stopCount, legLength = LEG_LENGTH, seed = 0) {
+  const next = mulberry32(seed >>> 0)
+  const lengths = []
+  const maxLen = legLength * RAMP_FRAC_MAX
+  const minLen = legLength * RAMP_FRAC_MIN
+  for (let i = 0; i < stopCount; i += 1) {
+    const frac = RAMP_FRAC_MIN + next() * (RAMP_FRAC_MAX - RAMP_FRAC_MIN)
+    lengths.push(clamp(frac * legLength, minLen, maxLen))
+  }
+  return enforceMainlineGap(lengths, legLength)
+}
+
+/**
+ * World metres between consecutive stops. Frozen at LEG_LENGTH this round;
+ * exported so tools can query without hard-coding the constant.
+ * @param {number} [_index]
+ * @returns {number}
+ */
+export function legLengthFor(_index) {
+  return LEG_LENGTH
+}
+
 /**
  * How far right of the mainline lane the ramp has carried you at the stop.
  *
@@ -139,7 +196,7 @@ function dropProgress(s) {
  */
 const DROP_HOLD = Math.min(
   0.9,
-  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET
+  (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / RAMP_OFFSET,
 )
 
 /**
@@ -207,11 +264,17 @@ export function rideState(sim) {
 }
 
 /** 0 on the open mainline, 1 at a stop; smoothstepped, so both ends are flush. */
-function rampProgress(s) {
+export function rampProgress(s) {
   const index = clamp(Math.round(s / LEG_LENGTH), 0, ROUTE_LAST)
+  const length = rampLengthAt(index)
   const distance = Math.abs(s - index * LEG_LENGTH)
-  if (distance >= RAMP_LENGTH) return 0
-  return smoothstep(1 - distance / RAMP_LENGTH)
+  if (distance >= length) return 0
+  return smoothstep(1 - distance / length)
+}
+
+/** Along-s ramp length (world metres) for a stop index. */
+export function rampLengthAt(index) {
+  return rampLengths[clamp(index, 0, rampLengths.length - 1)]
 }
 
 const byDateAscending = (a, b) => new Date(a.date) - new Date(b.date)
@@ -303,7 +366,7 @@ function projectStops() {
   return projects.map((project) => {
     // Every capture the project ships, in order — the stop card cycles them.
     const images = (project.screenshots ?? []).map(
-      (shot) => `/images/projects/${project.name}${shot}`
+      (shot) => `/images/projects/${project.name}${shot}`,
     )
 
     return {
@@ -404,6 +467,21 @@ export const routeLength = (route.length - 1) * LEG_LENGTH
  * evaluating, so the ordering is safe.
  */
 const ROUTE_LAST = route.length - 1
+
+/**
+ * Content-derived seed for along-s ramp lengths. Same stop ids → same lengths.
+ * Distinct salt from itinerary miles so axes stay independent.
+ */
+export const RAMP_LENGTH_SEED = hashSeed(
+  `drive:ramp-length:${route.map((stop) => stop.id).join('|')}`,
+)
+
+/** Per-stop along-s ramp lengths (world metres). Built once at module load. */
+export const rampLengths = attachRampLengths(
+  route.length,
+  LEG_LENGTH,
+  RAMP_LENGTH_SEED,
+)
 
 /**
  * What the roadside looks like on each leg. Every mile used to carry identical
