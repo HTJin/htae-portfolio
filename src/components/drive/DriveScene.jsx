@@ -63,8 +63,8 @@ function ArrivalAnnouncer({ started, parked, stop }) {
   const text = !(started && parked)
     ? ''
     : stop.index === 0
-    ? `At the start line — ${stop.title}`
-    : `Arrived at ${stop.exitLabel} — ${stop.title}`
+      ? `At the start line — ${stop.title}`
+      : `Arrived at ${stop.exitLabel} — ${stop.title}`
 
   return (
     <p className="sr-only" role="status" aria-live="polite">
@@ -256,6 +256,20 @@ export function DriveScene() {
   const [motionOverride, setMotionOverride] = useState(null)
   const reducedMotion = motionOverride ?? Boolean(systemReducedMotion)
   const drive = useDrive(route, { reducedMotion })
+
+  // Dev / tester harness (st011): tip may lack st071 skip physics. Expose
+  // markSkipped without inventing brake-suppress. Production builds omit this.
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return undefined
+    window.__driveDisposition = {
+      markSkipped: drive.markSkipped,
+      stopStatus: () => drive.stopStatus,
+    }
+    return () => {
+      delete window.__driveDisposition
+    }
+  }, [drive])
+
   const [mapOpen, setMapOpen] = useState(false)
   const deepLinked = useRef(false)
   // Starts null and is filled in after mount: the server has no storage, so
@@ -344,19 +358,19 @@ export function DriveScene() {
     setResume(readProgress())
   }, [router.isReady, router.query.exit])
 
-  /** Remember the furthest exit reached. Never from inside the frame loop. */
+  /** Remember furthest exit + per-stop outcomes (Q053). Never from the frame loop. */
   useEffect(() => {
     if (!started) return
-    writeProgress(index)
-  }, [started, index])
+    writeProgress(index, drive.stopStatus)
+  }, [started, index, drive.stopStatus])
 
   const resumeDrive = useCallback(() => {
     if (!resume) return
     drive.goTo(resume.index)
-    // They really did drive every exit up to here — saved progress only
-    // advances on arrival, and only forwards — so the route map should say so.
-    drive.markVisitedThrough(resume.index)
     drive.start()
+    // Restore after start so arriveAt on the tip cannot leave a false arrived
+    // over a saved skipped. Never fall back to mark-through (Q053).
+    if (resume.outcomes) drive.restoreOutcomes(resume.outcomes)
   }, [drive, resume])
 
   const forgetProgress = useCallback(() => {
@@ -726,7 +740,7 @@ export function DriveScene() {
         onClose={() => setMapOpen(false)}
         onSelect={selectStop}
         currentIndex={index}
-        visited={drive.visited}
+        stopStatus={drive.stopStatus}
       />
 
       <AnimatePresence>
