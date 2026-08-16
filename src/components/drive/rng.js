@@ -38,3 +38,29 @@ export function hashSeed(text) {
   }
   return h >>> 0
 }
+
+/**
+ * Stable uint32 seed from ordered stop ids (content-derived, no browser entropy).
+ *
+ * Bare NUL join, deliberately unsalted: the miles axis is pinned to this exact
+ * string. Do not harmonize with the salted pipe join used for ramp lengths.
+ * @param {string[]} ids
+ */
+export function seedFromStopIds(ids) {
+  return hashSeed(ids.join('\0'))
+}
+
+/**
+ * Draw one integer mile per consecutive pair.
+ * @param {number} seed
+ * @param {number} legCount
+ * @returns {number[]}
+ */
+export function drawLegMiles(seed, legCount) {
+  const next = mulberry32(seed)
+  const miles = []
+  for (let i = 0; i < legCount; i += 1) {
+    miles.push(intInclusive(next(), 1, 99))
+  }
+  return miles
+}
