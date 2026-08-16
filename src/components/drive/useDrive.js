@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { rampAt, rampDropAt } from './route'
+import { RAMP_LENGTH, rampAt, rampDropAt } from './route'
 import { LANE_DRIFT, clamp, curveAt } from './world'
 
 const MAX_SPEED = 42 // m/s, about 94 mph
@@ -9,6 +9,12 @@ const ROLLING_DRAG = 1.1
 const AIR_DRAG = 0.018
 const CREEP_SPEED = 2.4
 const ARRIVAL_WINDOW = 0.6
+/**
+ * Max lane offset (`sim.x`) still counted as "stay left" for a PASS commit.
+ * ~1/3 of `LANE_DRIFT` (≈1.70); rightward past this toward the peel locks TAKE.
+ * Locked by cr049 architect-consensus / Q041 option-lane.
+ */
+const PASS_LATERAL_MAX = 0.55
 
 // Top gear ends at MAX_SPEED by construction. It used to be typed as `42`
 // beside a `MAX_SPEED` of 42: raise one alone and the tachometer pegs for the
@@ -46,6 +52,11 @@ function createSim() {
     autopilot: false,
     target: 0,
     parked: true,
+    // Option-lane commit for the upcoming interchange: open | take | pass.
+    // Durable decline token on the disposition map is `skipped` (Q065)  -  never
+    // name it `passed` (st011 uses that for arrive). Cabin `passedStop` is
+    // previous-title only and must not carry disposition.
+    commit: 'open',
     gear: 1,
     rpm: 0,
     running: false,
@@ -57,6 +68,9 @@ function createSim() {
  * things that change rarely (which stop we are at, whether we are parked);
  * everything that moves at 60fps lives on a ref and is pushed to subscribers
  * so gauges and the road can paint themselves without re-rendering the tree.
+ *
+ * @see https://react.dev/reference/react/useRef
+ * @see https://react.dev/learn/referencing-values-with-refs
  */
 export function useDrive(stops, { reducedMotion = false } = {}) {
   const simRef = useRef(createSim())
@@ -68,6 +82,9 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   const [index, setIndex] = useState(0)
   const [parked, setParked] = useState(true)
   const [visited, setVisited] = useState(() => new Set([0]))
+  // Per-stop durable outcome for Testers / st072 / st011. Missing key = unset.
+  // Tokens: taken | skipped | unset. Never overload cabin `passedStop`.
+  const [disposition, setDisposition] = useState(() => new Map([[0, 'taken']]))
 
   const subscribe = useCallback((listener) => {
     listeners.current.add(listener)
@@ -84,12 +101,21 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     })
   }, [])
 
+  const markDisposition = useCallback((stopIndex, value) => {
+    setDisposition((previous) => {
+      if (previous.get(stopIndex) === value) return previous
+      const next = new Map(previous)
+      next.set(stopIndex, value)
+      return next
+    })
+  }, [])
+
   /**
    * Restore the history behind a resumed position.
    *
    * Saved progress only ever advances **on arrival** and only **forwards**, so
    * a stored index is proof the visitor arrived at every exit before it. Used
-   * by the resume path alone — a `?exit=` deep link must not claim its holder
+   * by the resume path alone  -  a `?exit=` deep link must not claim its holder
    * drove the road, because they followed a link instead.
    */
   const markVisitedThrough = useCallback((stopIndex) => {
@@ -105,8 +131,9 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setIndex(stopIndex)
       setParked(true)
       markVisited(stopIndex)
+      markDisposition(stopIndex, 'taken')
     },
-    [markVisited]
+    [markVisited, markDisposition]
   )
 
   const depart = useCallback((stopIndex) => {
@@ -150,11 +177,13 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       ) {
         sim.target += 1
         sim.parked = false
+        sim.commit = 'open'
         depart(sim.target)
       }
 
       const current = all[sim.target]
       const remaining = current.s - sim.travel
+      const lastStop = sim.target >= all.length - 1
 
       if (sim.parked) {
         sim.speed = 0
@@ -163,10 +192,27 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         return
       }
 
-      // Brake assist: the car always rolls to a halt at the next exit sign.
+      // L1a  -  Option-lane commit window (RAMP_LENGTH, not stoppingDistance).
+      // TAKE any: brake, rightward of PASS_LATERAL_MAX, or autopilot / Drive-on.
+      // PASS all: throttle held, brake === 0, sim.x <= PASS_LATERAL_MAX, not AP.
+      // Last stop cannot lock PASS.
+      if (remaining > 0 && remaining <= RAMP_LENGTH && sim.commit === 'open') {
+        if (sim.brake > 0 || sim.x > PASS_LATERAL_MAX || sim.autopilot) {
+          sim.commit = 'take'
+        } else if (
+          !lastStop &&
+          sim.throttle > 0 &&
+          sim.brake === 0 &&
+          sim.x <= PASS_LATERAL_MAX
+        ) {
+          sim.commit = 'pass'
+        }
+      }
+
+      // L1b  -  Brake assist only when not PASS-locked. Never globally kill assist.
       const stoppingDistance = (sim.speed * sim.speed) / (2 * BRAKING) + 8
       const assist =
-        remaining < stoppingDistance
+        sim.commit !== 'pass' && remaining < stoppingDistance
           ? clamp((stoppingDistance - remaining) / stoppingDistance, 0, 1)
           : 0
 
@@ -183,8 +229,8 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       }
       sim.speed = clamp(sim.speed, 0, MAX_SPEED)
 
-      // Creep the last few metres so brake assist can never stall us short.
-      if (remaining < 14 && sim.speed < CREEP_SPEED) {
+      // Creep aims at a park; skip under PASS so we do not stall short of N.
+      if (sim.commit !== 'pass' && remaining < 14 && sim.speed < CREEP_SPEED) {
         sim.speed = Math.min(CREEP_SPEED, sim.speed + 6 * dt)
       }
 
@@ -197,23 +243,41 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.rpm +=
         (clamp(0.15 + inGear * 0.75, 0, 1) - sim.rpm) * Math.min(1, dt * 6)
 
+      // Gore / arrival band: unresolved open → TAKE. Last stop demotes PASS.
       if (current.s - sim.travel <= ARRIVAL_WINDOW) {
-        sim.travel = current.s
-        sim.speed = 0
-        sim.parked = true
-        sim.autopilot = false
-        sim.throttleLock = sim.throttle > 0
-        arriveAt(sim.target)
+        if (sim.commit === 'open') sim.commit = 'take'
+        if (lastStop && sim.commit === 'pass') sim.commit = 'take'
+
+        if (sim.commit === 'pass') {
+          // L1b/L1c/L1d  -  Pass-through: keep rolling, no park / arriveAt /
+          // visited-as-arrived. Disposition decline = `skipped` (not `passed`).
+          // Ego peel stays on rampAt/rampDropAt this hop (st072 owns zeroing).
+          const skippedIndex = sim.target
+          markDisposition(skippedIndex, 'skipped')
+          sim.target = skippedIndex + 1
+          sim.commit = 'open'
+          sim.autopilot = false
+          depart(sim.target)
+        } else {
+          sim.travel = current.s
+          sim.speed = 0
+          sim.parked = true
+          sim.autopilot = false
+          sim.throttleLock = sim.throttle > 0
+          sim.commit = 'open'
+          arriveAt(sim.target)
+        }
       }
 
-      // One assignment covers both places `travel` moves above — the metre-by-
-      // metre integration and the snap onto the stop — so the ramp can never be
+      // One assignment covers both places `travel` moves above  -  the metre-by-
+      // metre integration and the snap onto the stop  -  so the ramp can never be
       // a frame behind the car sitting on it. The parked early-return skips it,
       // which is correct: `travel` did not move, so neither did the ramp.
+      // st072 will fork ego peel on PASS; ribbons still paint via rampAt.
       sim.ramp = rampAt(sim.travel)
       sim.drop = rampDropAt(sim.travel)
     },
-    [arriveAt, depart]
+    [arriveAt, depart, markDisposition]
   )
 
   useEffect(() => {
@@ -245,6 +309,8 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       const sim = simRef.current
       sim.target = next
       sim.travel = all[next].s
+      // Teleport / map / ?exit= remain TAKE/arrive, not drive-past.
+      sim.commit = 'open'
       // Teleporting (Back, the route map, reduced motion) moves `travel`
       // without going through `step`, so the ramp has to follow here too.
       sim.ramp = rampAt(sim.travel)
@@ -266,12 +332,19 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     if (sim.parked) {
       sim.target = clamp(sim.target + 1, 0, all.length - 1)
       sim.parked = false
+      sim.commit = 'open'
       depart(sim.target)
     }
     if (reducedMotion) {
+      // L1e  -  Drive-on / RM default is TAKE via park-goTo. Never fake PASS
+      // with goTo (goTo parks + arriveAt). If PASS already locked, stay on
+      // the rolling step() path.
+      if (sim.commit === 'pass') return
       goTo(sim.target)
       return
     }
+    // Drive-on arms TAKE via autopilot (unless PASS already locked).
+    if (sim.commit !== 'pass') sim.commit = 'take'
     sim.autopilot = true
   }, [depart, goTo, reducedMotion])
 
@@ -286,6 +359,8 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       if (value === 0) sim.throttleLock = false
       if (value > 0) sim.autopilot = false
       if (reducedMotion && value > 0 && sim.parked && !sim.throttleLock) {
+        // Parked RM throttle is Drive-on TAKE (goTo). PASS under RM must stay
+        // on the rolling step() path  -  never park-goTo for decline.
         driveToNext()
       }
     },
@@ -308,6 +383,11 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     arriveAt(sim.target)
   }, [arriveAt])
 
+  const dispositionOf = useCallback(
+    (stopIndex) => disposition.get(stopIndex) ?? 'unset',
+    [disposition]
+  )
+
   return useMemo(
     () => ({
       simRef,
@@ -317,6 +397,8 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       index,
       parked,
       visited,
+      disposition,
+      dispositionOf,
       markVisitedThrough,
       stop: stops[index],
       goTo,
@@ -326,6 +408,9 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setBrake,
       setSteer,
       maxSpeed: MAX_SPEED,
+      passLateralMax: PASS_LATERAL_MAX,
+      rampLength: RAMP_LENGTH,
+      arrivalWindow: ARRIVAL_WINDOW,
     }),
     [
       subscribe,
@@ -334,6 +419,8 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       index,
       parked,
       visited,
+      disposition,
+      dispositionOf,
       markVisitedThrough,
       stops,
       goTo,
@@ -345,3 +432,5 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     ]
   )
 }
+
+export { PASS_LATERAL_MAX, ARRIVAL_WINDOW }
