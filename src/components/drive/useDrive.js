@@ -15,11 +15,54 @@ const ARRIVAL_WINDOW = 0.6
 // whole of top gear, because `inGear` would run past 1 and clamp.
 const GEAR_RATIOS = [0, 7, 13, 20, 28, 36, MAX_SPEED]
 
+// Cockpit rim degrees (st012). Tracks steering / path-follow *angle* causes,
+// not accumulated lateral metres. Autopilot stays throttle-only; these terms
+// never write steerInput. Gains chosen so strong |curveAhead| samples clear
+// ~40deg under AP while full lock (~130deg) still belongs to the player.
+const WHEEL_STEER = 130
+const WHEEL_CURVE_GAIN = 10
+const WHEEL_CURVE_MAX = 70
+const WHEEL_RAMP_LOOKAHEAD = 40
+const WHEEL_RAMP_GAIN = 2
+const WHEEL_RAMP_MAX = 35
+const WHEEL_X_HOLD = 18
+const WHEEL_PATH_SPEED_EPS = 0.5
+
 function gearFor(speed) {
   for (let gear = 1; gear < GEAR_RATIOS.length; gear += 1) {
     if (speed <= GEAR_RATIOS[gear]) return gear
   }
   return GEAR_RATIOS.length - 1
+}
+
+/**
+ * Target rim angle in degrees. Path feedforward is gated off when parked or
+ * nearly stopped so a constant peel / lane offset cannot invent a living wheel.
+ */
+function cockpitWheelTarget(sim) {
+  const steerTerm = sim.steer * WHEEL_STEER
+  if (sim.parked || sim.speed <= WHEEL_PATH_SPEED_EPS) return steerTerm
+
+  const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
+  const rampRate =
+    rampAt(sim.travel + WHEEL_RAMP_LOOKAHEAD) - rampAt(sim.travel)
+  const curveTerm = clamp(
+    curveAhead * WHEEL_CURVE_GAIN,
+    -WHEEL_CURVE_MAX,
+    WHEEL_CURVE_MAX
+  )
+  const rampTerm = clamp(
+    rampRate * WHEEL_RAMP_GAIN,
+    -WHEEL_RAMP_MAX,
+    WHEEL_RAMP_MAX
+  )
+  // Soft hold: release-while-sliding feel. Secondary to steer and path terms.
+  const softHold = clamp(
+    (sim.x / LANE_DRIFT) * WHEEL_X_HOLD,
+    -WHEEL_X_HOLD,
+    WHEEL_X_HOLD
+  )
+  return steerTerm + curveTerm + rampTerm + softHold
 }
 
 function createSim() {
@@ -135,8 +178,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         LANE_DRIFT
       )
 
-      const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
-      const wheelTarget = sim.steer * 130 + clamp(curveAhead * 5, -70, 70)
+      const wheelTarget = cockpitWheelTarget(sim)
       sim.wheel += (wheelTarget - sim.wheel) * Math.min(1, dt * 4)
 
       if (!target) return
