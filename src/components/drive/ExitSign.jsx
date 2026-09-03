@@ -3,9 +3,9 @@ import { paletteAt } from './daylight'
 import {
   LEG_LENGTH,
   METERS_PER_MILE,
-  RAMP_OFFSET,
   RAMP_WIDTH,
   rampDropAt,
+  rampOffsetAt,
   routeLength,
 } from './route'
 import { LANE_OFFSET, makeCamera, project } from './world'
@@ -20,13 +20,13 @@ const ANCHOR_Y = 90
 /**
  * The sign stands on the far verge of the ramp it names.
  *
- * It is anchored at the stop's own `s`, which is the end of the off-ramp, so
- * the ramp has carried the road to `RAMP_OFFSET` by the time you reach it —
- * leaving this at `CARRIAGEWAY + 4.6` would have planted the sign in the middle
- * of the ramp's tarmac. Derived from the ramp's own geometry so it stays put if
- * either changes.
+ * Anchored at the stop's own `s` (end of the off-ramp). Peak peel is per-stop
+ * (st024), so lateral placement follows `rampOffsetAt(stop.index)`.
  */
-const OFFSET_X = LANE_OFFSET + RAMP_OFFSET + RAMP_WIDTH / 2 + 2
+function signOffsetX(stop) {
+  const peak = rampOffsetAt(stop.index)
+  return LANE_OFFSET + peak + RAMP_WIDTH / 2 + 2
+}
 
 /**
  * The sign's whole approach is scaled to the leg you actually drive.
@@ -81,7 +81,7 @@ export function ExitSign({ drive, stop }) {
         camera,
         sim,
         z,
-        OFFSET_X,
+        signOffsetX(stop),
         MOUNT_HEIGHT + rampDropAt(stop.s)
       )
       const size = (SIGN_METERS * scale) / DESIGN_WIDTH

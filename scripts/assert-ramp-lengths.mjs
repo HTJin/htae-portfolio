@@ -10,6 +10,7 @@
  *   - pairwise gap open (may be dormant under ceiling; still asserted)
  */
 import {
+  CARRIAGEWAY,
   LEG_LENGTH,
   RAMP_FRAC_MAX,
   RAMP_FRAC_MIN,
@@ -37,7 +38,7 @@ const lengthsA = attachRampLengths(route.length, LEG, RAMP_LENGTH_SEED)
 const lengthsB = attachRampLengths(
   route.length,
   LEG,
-  RAMP_LENGTH_SEED ^ 0xabcdef,
+  RAMP_LENGTH_SEED ^ 0xabcdef
 )
 
 // Forced oversize pair → clamp must shrink (control that clamp is not dead code)
@@ -51,7 +52,7 @@ const pairGapOk = rampLengths.every((len, i) => {
 
 const bandOk = rampLengths.every(
   (len) =>
-    len >= LEG * RAMP_FRAC_MIN - 1e-9 && len <= LEG * RAMP_FRAC_MAX + 1e-9,
+    len >= LEG * RAMP_FRAC_MIN - 1e-9 && len <= LEG * RAMP_FRAC_MAX + 1e-9
 )
 
 const stopS = STOP * LEG
@@ -62,6 +63,9 @@ const expectedMid = smoothstep(0.5)
 
 const openS = stopS + LEG / 2
 const openP = rampProgress(openS)
+
+const eachMainlineGapOk = rampLengths.every((len) => 2 * len < LEG)
+const offsetLegacyDefault = RAMP_OFFSET === CARRIAGEWAY + 22
 
 const checks = {
   legFrozen: LEG_LENGTH === LEG,
@@ -76,6 +80,8 @@ const checks = {
   midRampMatchesLength: Math.abs(midP - expectedMid) < 1e-9,
   openMainlineZero: openP === 0,
   offsetFrozen: RAMP_OFFSET === 8.2 + 22,
+  eachMainlineGapOk,
+  offsetLegacyDefault,
 }
 
 const failed = Object.entries(checks).filter(([, ok]) => !ok)
@@ -95,17 +101,18 @@ console.log(
       lengthsSample: rampLengths.slice(0, 5),
       controlSeedSample: lengthsB.slice(0, 5),
       rampAtStop: rampAt(stopS),
+      controlKeyCount: Object.keys(checks).length,
       checks,
     },
     null,
-    2,
-  ),
+    2
+  )
 )
 
 if (failed.length) {
   console.error(
     'FAIL',
-    failed.map(([k]) => k),
+    failed.map(([k]) => k)
   )
   process.exit(1)
 }
