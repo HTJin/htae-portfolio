@@ -7,6 +7,7 @@ import { CarInterior } from './CarInterior'
 import { Dashboard } from './Dashboard'
 import { ExitSign } from './ExitSign'
 import { RoadCanvas } from './RoadCanvas'
+import { RoadScene } from './RoadScene'
 import { RouteMap } from './RouteMap'
 import { Sky } from './Sky'
 import { StopCard } from './StopCard'
@@ -255,6 +256,16 @@ export function DriveScene() {
    */
   const [motionOverride, setMotionOverride] = useState(null)
   const reducedMotion = motionOverride ?? Boolean(systemReducedMotion)
+  // ?renderer=2d falls back to the Canvas 2D renderer.
+  //
+  // Read AFTER mount, not during render. Reading window.location during render made
+  // the server emit the 3D branch and the client emit the 2D branch, which is a
+  // hydration mismatch: it threw 11 "initial UI does not match" errors. The flag
+  // costs one extra paint on the 2D path and none on the default path.
+  const [use2d, setUse2d] = useState(false)
+  useEffect(() => {
+    setUse2d(new URLSearchParams(window.location.search).get('renderer') === '2d')
+  }, [])
   const drive = useDrive(route, { reducedMotion })
   const [mapOpen, setMapOpen] = useState(false)
   const deepLinked = useRef(false)
@@ -657,7 +668,15 @@ export function DriveScene() {
       <ArrivalAnnouncer started={started} parked={parked} stop={stop} />
 
       <Sky drive={drive} />
-      <RoadCanvas drive={drive} className="absolute inset-0 h-full w-full" />
+      {/* Renderer swap. RoadScene draws the same world with a real depth buffer, so
+          the ramp cannot show through the ground and no bar smears along the horizon.
+          RoadCanvas is kept behind ?renderer=2d so the two can be compared on the same
+          sim, and so a regression has somewhere to fall back to. */}
+      {use2d ? (
+        <RoadCanvas drive={drive} className="absolute inset-0 h-full w-full" />
+      ) : (
+        <RoadScene drive={drive} className="absolute inset-0 h-full w-full" />
+      )}
       <ExitSign drive={drive} stop={stop} />
       <CarInterior passedStop={passedStop} />
 
