@@ -1,12 +1,27 @@
 export const experience = [
   {
+    id: 'senior-enterprise-solutions-engineer-i',
+    title: 'Senior Enterprise Solutions Engineer I',
+    date: '2026-09-08',
+    company: 'Stellix',
+    location: 'Foxborough, MA',
+    workMode: 'Remote',
+    lead: 'Sep 2026 - Present',
+    // No bullets, deliberately. The start date is 2026-09-08 and this was written on
+    // 2026-09-04, so no work has been done here yet. The four bullets that used to sit
+    // here were lifted from the LinkedIn posting: Syncade installs, VBS/C#/XSLT, SSRS
+    // and Crystal Reports, cGMP. That is the employer's description of the role, not a
+    // record of anything the owner did, and presenting it as experience is a false
+    // claim. Fill this in from real work once there is real work.
+  },
+  {
     id: 'senior-mes-devops-engineer',
     title: 'Senior MES DevOps Engineer',
     date: '2025-12-01',
     company: 'StarPlus Energy',
     location: 'Kokomo, IN',
     workMode: 'On-site',
-    lead: 'Dec 2025 - Present',
+    lead: 'Dec 2025 - Sep 2026',
     bullets: [
       'Deploy and test MES releases across Mixing, Electrode, Stack, and Assembly on a live production line',
       'Own month-end ERP settlement and scheduled Oracle maintenance, including data purges, production corrections, and KPI reporting queries',
