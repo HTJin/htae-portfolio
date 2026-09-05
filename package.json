@@ -13,7 +13,8 @@
     "lint": "next lint",
     "prettier": "prettier --write .",
     "verify:stops": "node scripts/verify-stop-status.mjs",
-    "verify:miles": "node scripts/verify-leg-miles.mjs"
+    "verify:miles": "node scripts/verify-leg-miles.mjs",
+    "verify:visits": "bun scripts/verify-visit-status.mjs"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {

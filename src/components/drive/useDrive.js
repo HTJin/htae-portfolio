@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { rampAt, rampDropAt } from './route'
+import { writeStopStatus } from './progress'
+import { JUMPED, SKIPPED, TAKEN } from './stopStatus'
 import { CARRIAGEWAY, LANE_OFFSET, clamp, curveAt } from './world'
 
 /** Keeps the wheels off the outer paint when steering to the edge lanes. */
@@ -136,13 +138,39 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     })
   }, [])
 
+  /**
+   * Durable record of what happened at one stop.
+   *
+   * Q053, answered 2026-08-09, binding: "persist_outcomes: bump progress key and
+   * store per-stop disposition". progress.js v2 has held that shape since st132,
+   * but nothing wrote to it, so every outcome died with the tab. This is the one
+   * place the drive layer reaches storage, and `writeStopStatus` never
+   * downgrades, so a second lap cannot erase what the first one earned.
+   */
+  const recordStatus = useCallback((stopIndex, status) => {
+    const stop = stopsRef.current[stopIndex]
+    if (stop?.id) writeStopStatus(stop.id, status)
+  }, [])
+
+  /**
+   * `how` is the whole point of st135.
+   *
+   * TAKEN is a claim that the visitor drove here and the car came to rest, so
+   * only the arrival snap in `step` may make it - and that snap already sets
+   * `speed = 0` and `parked` in the same frame, which is what "settles" means
+   * here. Every other way of landing on a stop is a JUMP: the route map, Back,
+   * reduced motion, and an `?exit=` deep link that starts the engine already
+   * parked on an exit. Those did not drive the road, and calling them visited
+   * would put words in the visitor's mouth.
+   */
   const arriveAt = useCallback(
-    (stopIndex) => {
+    (stopIndex, how = 'drove') => {
       setIndex(stopIndex)
       setParked(true)
       markVisited(stopIndex)
+      recordStatus(stopIndex, how === 'jumped' ? JUMPED : TAKEN)
     },
-    [markVisited]
+    [markVisited, recordStatus]
   )
 
   const depart = useCallback((stopIndex) => {
@@ -216,6 +244,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         sim.target < all.length - 1
       ) {
         sim.dispositions[current.id ?? sim.target] = 'passed'
+        recordStatus(sim.target, SKIPPED)
         sim.target += 1
         current = all[sim.target]
         remaining = current.s - sim.travel
@@ -306,7 +335,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.ramp = sim.exiting ? rampHere : 0
       sim.drop = sim.exiting ? rampDropAt(sim.travel) : 0
     },
-    [arriveAt, depart]
+    [arriveAt, depart, recordStatus]
   )
 
   useEffect(() => {
@@ -346,7 +375,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.parked = true
       sim.autopilot = false
       sim.throttleLock = sim.throttle > 0
-      arriveAt(next)
+      arriveAt(next, 'jumped')
       publish()
     },
     [arriveAt, publish]
@@ -398,7 +427,10 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     const sim = simRef.current
     sim.running = true
     setStarted(true)
-    arriveAt(sim.target)
+    // MILE 0 is the start line, so starting there is not a claim about driving.
+    // Starting anywhere else means `?exit=` put the car on that stop, which is a
+    // jump: turning the key must never mark an exit as read.
+    arriveAt(sim.target, sim.target === 0 ? 'drove' : 'jumped')
   }, [arriveAt])
 
   return useMemo(
