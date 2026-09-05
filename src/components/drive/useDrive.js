@@ -401,7 +401,13 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       depart(sim.target)
     }
     if (reducedMotion) {
-      goTo(sim.target)
+      // 'drove', not the goTo default of 'jumped'. Reduced motion is how this
+      // visitor DRIVES: they press the same accelerator and the scene moves them
+      // without the motion they asked not to see. Recording that as a jump gave
+      // them a route map of dotted lines, a permanently second class record of
+      // using the site exactly as intended. My own regression, from making goTo
+      // default to 'jumped' for the route map's sake.
+      goTo(sim.target, 'drove')
       return
     }
     sim.autopilot = true

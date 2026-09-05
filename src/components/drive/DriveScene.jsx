@@ -255,7 +255,24 @@ export function DriveScene() {
    * of a gesture in this session; the same applies here.
    */
   const [motionOverride, setMotionOverride] = useState(null)
-  const reducedMotion = motionOverride ?? Boolean(systemReducedMotion)
+  /**
+   * Same lesson as `use2d` below, and it was missed here.
+   *
+   * There is no media query on the server, so `useReducedMotion` answers false
+   * there and true on a client that has asked for stillness. The motion toggle
+   * renders a different glyph for each, so a visitor with
+   * prefers-reduced-motion set met a hydration failure: 9 console errors, React
+   * throwing away the server HTML for that subtree and painting it again.
+   * Measured with a reduced-motion browser, which is the only way to see it.
+   *
+   * The preference is therefore read after mount, exactly like the renderer
+   * flag. It costs that visitor one paint with motion allowed, which is the
+   * same trade already accepted below.
+   */
+  const [motionPreferenceRead, setMotionPreferenceRead] = useState(false)
+  useEffect(() => setMotionPreferenceRead(true), [])
+  const reducedMotion =
+    motionOverride ?? (motionPreferenceRead && Boolean(systemReducedMotion))
   // ?renderer=2d falls back to the Canvas 2D renderer.
   //
   // Read AFTER mount, not during render. Reading window.location during render made
