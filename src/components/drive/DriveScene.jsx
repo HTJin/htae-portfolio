@@ -139,6 +139,26 @@ function Itinerary() {
 }
 
 function Ignition({ onStart, resume, onResume, onForget }) {
+  /**
+   * Put the keyboard on the one control this screen is asking for.
+   *
+   * Measured before this existed: Start engine was the THIRTY FOURTH thing in
+   * the tab order. Tab 1 is the skip link, and tabs 2 to 33 are the links inside
+   * the stop cards behind this overlay, LinkedIn, GitHub, certificates and a
+   * Live site and Source pair for every project. So a keyboard visitor met a
+   * screen saying "Start engine", pressed Tab, and spent thirty three presses
+   * inside content they could not see and could not use yet.
+   *
+   * Focusing the button is the smallest fix that answers that, and it is what
+   * the screen already implies. It runs after mount, so it cannot affect the
+   * server paint, and it happens before the visitor has expressed any intent of
+   * their own, so it steals nothing from them.
+   */
+  const startRef = useRef(null)
+  useEffect(() => {
+    startRef.current?.focus()
+  }, [])
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -172,6 +192,7 @@ function Ignition({ onStart, resume, onResume, onForget }) {
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row [@media(max-height:430px)]:mt-4 [@media(max-height:430px)]:flex-row">
           <button
             type="button"
+            ref={startRef}
             onClick={onStart}
             className={`rounded-full border border-yellow-300/60 bg-yellow-300/10 px-8 py-3 font-display text-sm font-semibold uppercase tracking-[0.2em] text-yellow-200 transition hover:bg-yellow-300/20 ${styles.ignition}`}
           >

@@ -29,6 +29,7 @@ const SUITES = [
   { name: 'reduced motion', file: 'scripts/verify-reduced-motion.mjs', server: true },
   { name: 'degraded browsers', file: 'scripts/verify-webgl-fallback.mjs', server: true },
   { name: 'the phone drive', file: 'scripts/verify-phone.mjs', server: true },
+  { name: 'the keyboard drive', file: 'scripts/verify-keyboard.mjs', server: true },
 ]
 
 async function serving() {
