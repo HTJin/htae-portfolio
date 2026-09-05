@@ -27,6 +27,7 @@ const SUITES = [
   { name: 'what each exit records', file: 'scripts/verify-visit-status.mjs', server: true },
   { name: 'the route map', file: 'scripts/verify-route-map.mjs', server: true },
   { name: 'reduced motion', file: 'scripts/verify-reduced-motion.mjs', server: true },
+  { name: 'degraded browsers', file: 'scripts/verify-webgl-fallback.mjs', server: true },
 ]
 
 async function serving() {

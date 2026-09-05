@@ -233,6 +233,38 @@ function Ignition({ onStart, resume, onResume, onForget }) {
   )
 }
 
+/**
+ * Can this browser draw with WebGL at all?
+ *
+ * Measured, because it is not hypothetical: with getContext returning null for
+ * every webgl type, three.js throws "Error creating WebGL context." from its own
+ * constructor, during a layout effect, and React unwinds the whole tree. The
+ * visitor gets a blank page, not a degraded one. That happens on machines with
+ * hardware acceleration switched off, on locked down corporate builds and on
+ * older devices, and none of them get an explanation.
+ *
+ * The fallback already existed. RoadCanvas has been kept behind ?renderer=2d so
+ * the two renderers could be compared, and it draws the same world without
+ * WebGL, so the honest thing is to reach for it automatically rather than to add
+ * anything new.
+ *
+ * The probe canvas is 1x1 and is never attached to the document. A browser that
+ * supports WebGL but refuses this context, having exhausted its context limit,
+ * for instance, also lands on the 2D path, which is the right answer for it too.
+ */
+function hasWebgl() {
+  try {
+    const canvas = document.createElement('canvas')
+    return Boolean(
+      canvas.getContext('webgl2') ||
+        canvas.getContext('webgl') ||
+        canvas.getContext('experimental-webgl')
+    )
+  } catch {
+    return false
+  }
+}
+
 export function DriveScene() {
   const router = useRouter()
   const systemReducedMotion = useReducedMotion()
@@ -281,7 +313,9 @@ export function DriveScene() {
   // costs one extra paint on the 2D path and none on the default path.
   const [use2d, setUse2d] = useState(false)
   useEffect(() => {
-    setUse2d(new URLSearchParams(window.location.search).get('renderer') === '2d')
+    const asked =
+      new URLSearchParams(window.location.search).get('renderer') === '2d'
+    setUse2d(asked || !hasWebgl())
   }, [])
   const drive = useDrive(route, { reducedMotion })
   const [mapOpen, setMapOpen] = useState(false)
