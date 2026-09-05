@@ -3,6 +3,7 @@ import Link from 'next/link'
 import clsx from 'clsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import { legsOf, route } from './route'
+import { legMilesAt } from './legMiles'
 
 const LEGS = legsOf(route)
 
@@ -178,6 +179,19 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                               {stop.subtitle ?? stop.signSub}
                             </span>
                           </span>
+                          {/* Miles for the stretch that ENDS at this exit.
+                              Q182, binding: "Add mile numbers to the new route
+                              map picture". Q044, binding: display-only, so this
+                              never touches LEG_LENGTH or the geometry. MILE 0
+                              has nothing before it, so it shows none. */}
+                          {stop.index > 0 ? (
+                            <span
+                              className="shrink-0 font-mono text-[0.625rem] tabular-nums tracking-[0.08em] text-white/45"
+                              title={`${legMilesAt(stop.index)} miles from the previous exit`}
+                            >
+                              {legMilesAt(stop.index)} MI
+                            </span>
+                          ) : null}
                           {visited.has(stop.index) ? (
                             <span className="shrink-0 text-[0.625rem] uppercase tracking-[0.14em] text-emerald-300/70">
                               driven
