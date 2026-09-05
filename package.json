@@ -18,7 +18,8 @@
     "verify:map": "bun scripts/verify-route-map.mjs",
     "verify:motion": "bun scripts/verify-reduced-motion.mjs",
     "verify": "bun scripts/verify-all.mjs",
-    "verify:fallback": "bun scripts/verify-webgl-fallback.mjs"
+    "verify:fallback": "bun scripts/verify-webgl-fallback.mjs",
+    "verify:phone": "bun scripts/verify-phone.mjs"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {

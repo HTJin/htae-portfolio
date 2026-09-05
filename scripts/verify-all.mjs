@@ -28,6 +28,7 @@ const SUITES = [
   { name: 'the route map', file: 'scripts/verify-route-map.mjs', server: true },
   { name: 'reduced motion', file: 'scripts/verify-reduced-motion.mjs', server: true },
   { name: 'degraded browsers', file: 'scripts/verify-webgl-fallback.mjs', server: true },
+  { name: 'the phone drive', file: 'scripts/verify-phone.mjs', server: true },
 ]
 
 async function serving() {
