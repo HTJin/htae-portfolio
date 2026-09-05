@@ -225,6 +225,13 @@
 .footwell::before {
   content: '';
   position: absolute;
+  /* Decorative, and it has to stay that way. On a phone `.footwell` wraps the
+     whole control row, not just the pedals, and this absolutely positioned
+     shadow paints over the in-flow buttons under it. Measured at 844x390 and
+     390x844: elementFromPoint at the centre of the Map button returned the
+     footwell, not the button, so Back, Next, Map, audio and motion all lost
+     taps across their lower two thirds. A shadow must never take a tap. */
+  pointer-events: none;
   inset: 26% -14% -10% -6%;
   border-radius: 50% 50% 0 0 / 40% 40% 0 0;
   background: radial-gradient(
