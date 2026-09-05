@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { createEngineAudio } from './engineAudio'
-import { formatMiles, route, routeLength, yearAt } from './route'
+import { METERS_PER_MILE, formatMiles, route, routeLength, yearAt } from './route'
 import { clamp } from './world'
 import styles from '@/styles/drive.module.css'
 
@@ -237,6 +237,35 @@ function TellTales({ drive }) {
 
 const PRND = ['P', 'R', 'N', 'D']
 
+/**
+ * Trip odometer, in the cluster where a driver looks for it.
+ *
+ * Owner: "I don't see an odometer in the car dash". Distance travelled was only
+ * ever shown in the side panel, which is the nav screen and not the instrument
+ * binnacle. Written straight to the node through drive.subscribe, like the gauges
+ * and the gear selector, so it costs no React render per frame.
+ */
+function Odometer({ drive }) {
+  const ref = useRef(null)
+  useEffect(
+    () =>
+      drive.subscribe((sim) => {
+        if (!ref.current) return
+        ref.current.textContent = (sim.travel / METERS_PER_MILE).toFixed(1)
+      }),
+    [drive],
+  )
+  return (
+    <div className="flex flex-col items-center leading-none">
+      <span className="font-mono text-[0.5rem] tracking-[0.18em] text-white/35">ODO</span>
+      <span className="font-mono text-[0.7rem] font-bold tabular-nums text-sky-200/90">
+        <span ref={ref}>0.0</span>
+        <span className="ml-0.5 text-[0.5rem] text-white/35">MI</span>
+      </span>
+    </div>
+  )
+}
+
 function GearSelector({ drive }) {
   const refs = useRef({})
   const numberRef = useRef(null)
@@ -320,8 +349,9 @@ function Binnacle({ drive }) {
             redline={1.1}
             className="h-[clamp(58px,9.5vh,92px)] w-[clamp(58px,9.5vh,92px)]"
           />
-          <div className="pb-[8%]">
+          <div className="flex flex-col items-center gap-[6%] pb-[8%]">
             <GearSelector drive={drive} />
+            <Odometer drive={drive} />
           </div>
         </div>
       </div>

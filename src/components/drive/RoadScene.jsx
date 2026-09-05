@@ -219,14 +219,21 @@ function Director({ simRef, registry }) {
     sampleProfile(travel)
     const colors = paletteAt(routeLength > 0 ? travel / routeLength : 0)
     if (scene.fog) scene.fog.color.set(colors.skyHorizon)
+    // Use sim.drop, NOT rampDropAt(travel).
+    //
+    // useDrive gates sim.ramp and sim.drop on whether the driver actually chose the
+    // exit. Reading rampDropAt straight from the route ignored that gate, so a driver
+    // who stayed on the mainline still sank 5.5m and drove under the highway they
+    // were supposed to be on. cameraX already reads the gated sim.ramp, which is why
+    // the lateral was right and only the elevation was wrong.
     const lat = cameraX(sim)
-    camera.position.set(
-      curveAt(travel) + lat,
-      hillAt(travel) + rampDropAt(travel) + CAM_HEIGHT,
-      -travel,
-    )
+    const drop = sim.drop ?? 0
+    camera.position.set(curveAt(travel) + lat, hillAt(travel) + drop + CAM_HEIGHT, -travel)
     const a = travel + 55
-    camera.lookAt(curveAt(a) + lat, hillAt(a) + rampDropAt(a) + CAM_HEIGHT * 0.85, -a)
+    // The look-ahead has to use the same gate, or the view pitches toward a ramp the
+    // car is not taking.
+    const dropAhead = sim.exiting ? rampDropAt(a) : 0
+    camera.lookAt(curveAt(a) + lat, hillAt(a) + dropAhead + CAM_HEIGHT * 0.85, -a)
     for (const r of registry.current) {
       if (r.update) {
         r.update()

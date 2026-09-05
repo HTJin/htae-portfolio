@@ -1,9 +1,34 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { rampAt, rampDropAt } from './route'
-import { LANE_DRIFT, clamp, curveAt } from './world'
+import { CARRIAGEWAY, LANE_OFFSET, clamp, curveAt } from './world'
 
-const MAX_SPEED = 42 // m/s, about 94 mph
-const ACCELERATION = 8
+/** Keeps the wheels off the outer paint when steering to the edge lanes. */
+const LANE_EDGE_MARGIN = 1.1
+
+/**
+ * Speed and gearing, rebuilt to behave like a car.
+ *
+ * Owner: "the car also accelerates at a very unrealistic way where gear is
+ * shifting whenever it just reaches the end and the app is suggesting to break
+ * the law by over speeding but it only goes up to 94."
+ *
+ * Both halves were true. ACCELERATION was a flat 8 m/s^2, which is 0-60mph in
+ * 3.4 seconds, so the car slammed into the ceiling and every upshift happened in
+ * the last moment before it got there. And the ceiling was 42 m/s, 94 mph, which
+ * is not a speed to invite anyone to hold on a public road.
+ *
+ * SPEED_LIMIT is the posted limit the car cruises at. MAX_SPEED leaves a little
+ * over it, because a car that physically cannot exceed the limit feels broken,
+ * but nothing encourages going there.
+ */
+const SPEED_LIMIT = 31.3 // m/s, 70 mph
+const MAX_SPEED = 35.8 // m/s, 80 mph, reachable but never suggested
+/**
+ * Peak acceleration, in m/s^2, near standstill. Real drive falls away with speed
+ * as drag and gearing bite, which is what makes an upshift feel like an upshift
+ * rather than a number changing at the top of the range.
+ */
+const ACCELERATION = 3.4
 const BRAKING = 16
 const ROLLING_DRAG = 1.1
 const AIR_DRAG = 0.018
@@ -13,7 +38,7 @@ const ARRIVAL_WINDOW = 0.6
 // Top gear ends at MAX_SPEED by construction. It used to be typed as `42`
 // beside a `MAX_SPEED` of 42: raise one alone and the tachometer pegs for the
 // whole of top gear, because `inGear` would run past 1 and clamp.
-const GEAR_RATIOS = [0, 7, 13, 20, 28, 36, MAX_SPEED]
+const GEAR_RATIOS = [0, 5.5, 10.5, 16, 22, 28.5, MAX_SPEED]
 
 function gearFor(speed) {
   for (let gear = 1; gear < GEAR_RATIOS.length; gear += 1) {
@@ -131,10 +156,17 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       // Bounded by the lane, not by a typed number: the carriageway now has
       // two lanes, and a drift limit left at the old 2.3 would let the car
       // wander across the lane line the moment the lane got narrower.
+      // Steering now crosses the whole carriageway, not just one lane.
+      //
+      // Owner: "make sure we're also able to drive on the left lane of the road".
+      // The clamp was +/- LANE_DRIFT, which is half a lane, so the car could wander
+      // inside its own lane and nothing more. The bounds are the carriageway edges
+      // measured from the lane the camera starts in, less a margin so the wheels
+      // stay on tarmac rather than riding the paint.
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
-        -LANE_DRIFT,
-        LANE_DRIFT
+        -(LANE_OFFSET - LANE_EDGE_MARGIN),
+        CARRIAGEWAY - LANE_OFFSET - LANE_EDGE_MARGIN
       )
 
       const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
@@ -165,10 +197,16 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         return
       }
 
-      // Brake assist: the car always rolls to a halt at the next exit sign.
+      // Brake assist rolls the car to a halt at the next exit sign, but ONLY for a
+      // driver who is actually taking that exit.
+      //
+      // Owner: "you still come to a stop at the resume item". Gating sim.ramp alone
+      // was half a fix: the car stayed on the mainline laterally and then still
+      // braked to a stop beside an exit it was driving past. Staying on the highway
+      // has to mean not stopping either.
       const stoppingDistance = (sim.speed * sim.speed) / (2 * BRAKING) + 8
       const assist =
-        remaining < stoppingDistance
+        sim.exiting && remaining < stoppingDistance
           ? clamp((stoppingDistance - remaining) / stoppingDistance, 0, 1)
           : 0
 
@@ -179,7 +217,12 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         sim.speed -= BRAKING * brake * dt
       } else if (throttle > 0) {
         sim.speed +=
-          ACCELERATION * throttle * dt * (1 - (sim.speed / MAX_SPEED) * 0.8)
+          // Falloff is measured against SPEED_LIMIT, not MAX_SPEED, so the car
+          // settles at the posted limit on its own and only creeps past it under
+          // sustained throttle. Measured against MAX_SPEED it pinned to the
+          // ceiling every time, which is what made 94mph feel like the intended
+          // cruising speed.
+          ACCELERATION * throttle * dt * Math.max(0.12, 1 - (sim.speed / SPEED_LIMIT) * 0.88)
       } else {
         sim.speed -= (ROLLING_DRAG + AIR_DRAG * sim.speed) * dt
       }
@@ -199,7 +242,12 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.rpm +=
         (clamp(0.15 + inGear * 0.75, 0, 1) - sim.rpm) * Math.min(1, dt * 6)
 
-      if (current.s - sim.travel <= ARRIVAL_WINDOW) {
+      // Arrival snaps the car onto the stop and parks it. Like brake assist, this
+      // only applies to a driver who chose the exit. Without the gate a car that
+      // stayed on the mainline was still teleported onto the stop and halted, which
+      // is the third place the old unconditional behaviour was written down and the
+      // reason gating sim.ramp alone did not deliver "keep driving".
+      if (sim.exiting && current.s - sim.travel <= ARRIVAL_WINDOW) {
         sim.travel = current.s
         sim.speed = 0
         sim.parked = true
