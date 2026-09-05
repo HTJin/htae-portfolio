@@ -85,7 +85,20 @@ function ArrivalAnnouncer({ started, parked, stop }) {
  */
 function Itinerary() {
   return (
-    <div className="sr-only">
+    /*
+     * A `main` landmark, because this really is the main content.
+     *
+     * Measured: the home page carries a `main` and a `nav`, and /drive carried
+     * no landmark of any kind. So a screen reader on the drive had no way to
+     * jump to the one readable copy of the resume, ten kilobytes of it, and had
+     * to walk the whole tab order instead, which starts thirty stops from here.
+     * The rest of the site already answers this; the drive had simply never
+     * been given the same thing.
+     *
+     * `main` rather than a role: the element is the landmark, and there is only
+     * one on the page, which is what the role requires anyway.
+     */
+    <main className="sr-only">
       <h1>Drive mode - the résumé of Hyun-Tae Jin as a road trip</h1>
       {LEGS.map((leg) => (
         <section key={leg.name} aria-label={leg.name}>
@@ -134,7 +147,7 @@ function Itinerary() {
           ))}
         </section>
       ))}
-    </div>
+    </main>
   )
 }
 
