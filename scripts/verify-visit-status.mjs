@@ -164,13 +164,20 @@ async function resumeAfterSkipping() {
   await page.waitForSelector('[role="dialog"] button', { timeout: 10000 })
   await page.waitForTimeout(1500)
 
+  // st133 replaced the "driven" badge with the rail, so the outcome is read
+  // from the rail's accessible name now. Same question, different surface.
   const rows = await page.evaluate(() => {
     const dialog = document.querySelector('[role="dialog"]')
     if (!dialog) return []
-    return [...dialog.querySelectorAll('button')].map((b) => ({
-      text: b.innerText.replace(/\s+/g, ' ').trim().slice(0, 60),
-      driven: b.innerText.toUpperCase().includes('DRIVEN'),
-    }))
+    return [...dialog.querySelectorAll('button')].map((b) => {
+      const rail = b.querySelector('svg[role="img"]')
+      const label = rail ? rail.getAttribute('aria-label') : null
+      return {
+        text: b.innerText.replace(/\s+/g, ' ').trim().slice(0, 60),
+        label,
+        driven: label === 'visited' || label === 'jumped to',
+      }
+    })
   })
   const after = await page.evaluate((k) => {
     try { return JSON.parse(localStorage.getItem(k) || '{}') } catch { return {} }
@@ -179,7 +186,7 @@ async function resumeAfterSkipping() {
   console.log(`  ARM E, drove past 1 and stopped at 2: ${JSON.stringify(before)}`)
   console.log(`  ARM E, after pressing Resume:          ${JSON.stringify(after)}`)
   console.log(`  ARM E, resume offered: ${offered}, map rows marked driven: ${rows.filter((r) => r.driven).length} of ${rows.length}`)
-  console.log('  ARM E, first rows:', JSON.stringify(rows.slice(0, 4).map((r) => r.text)))
+  console.log('  ARM E, first rows:', JSON.stringify(rows.slice(0, 4).map((r) => `${r.text} [${r.label}]`)))
   return { before, after, rows, offered }
 }
 

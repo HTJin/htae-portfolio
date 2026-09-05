@@ -14,7 +14,8 @@
     "prettier": "prettier --write .",
     "verify:stops": "node scripts/verify-stop-status.mjs",
     "verify:miles": "node scripts/verify-leg-miles.mjs",
-    "verify:visits": "bun scripts/verify-visit-status.mjs"
+    "verify:visits": "bun scripts/verify-visit-status.mjs",
+    "verify:map": "bun scripts/verify-route-map.mjs"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {

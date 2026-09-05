@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { rampAt, rampDropAt } from './route'
 import { readStopStatuses, writeStopStatus } from './progress'
-import { JUMPED, SKIPPED, TAKEN } from './stopStatus'
+import { JUMPED, SKIPPED, TAKEN, UNREACHED, strongerStatus } from './stopStatus'
 import { CARRIAGEWAY, LANE_OFFSET, clamp, curveAt } from './world'
 
 /** Keeps the wheels off the outer paint when steering to the edge lanes. */
@@ -105,21 +105,12 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   const [started, setStarted] = useState(false)
   const [index, setIndex] = useState(0)
   const [parked, setParked] = useState(true)
-  const [visited, setVisited] = useState(() => new Set([0]))
+  const [statuses, setStatuses] = useState({})
 
   const subscribe = useCallback((listener) => {
     listeners.current.add(listener)
     listener(simRef.current)
     return () => listeners.current.delete(listener)
-  }, [])
-
-  const markVisited = useCallback((stopIndex) => {
-    setVisited((previous) => {
-      if (previous.has(stopIndex)) return previous
-      const next = new Set(previous)
-      next.add(stopIndex)
-      return next
-    })
   }, [])
 
   /**
@@ -140,14 +131,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   useEffect(() => {
     const stored = readStopStatuses()
     if (!Object.keys(stored).length) return
-    setVisited((previous) => {
-      const next = new Set(previous)
-      stopsRef.current.forEach((stop, i) => {
-        const status = stored[stop.id]
-        if (status === TAKEN || status === JUMPED) next.add(i)
-      })
-      return next
-    })
+    setStatuses((previous) => ({ ...stored, ...previous }))
   }, [])
 
   /**
@@ -161,7 +145,16 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
    */
   const recordStatus = useCallback((stopIndex, status) => {
     const stop = stopsRef.current[stopIndex]
-    if (stop?.id) writeStopStatus(stop.id, status)
+    if (!stop?.id) return
+    writeStopStatus(stop.id, status)
+    // Mirrored into state as well as storage, and by the same rule, so the map
+    // redraws this frame instead of waiting for the next mount. strongerStatus
+    // in both places means the two can never disagree about a second lap.
+    setStatuses((previous) => {
+      const next = strongerStatus(previous[stop.id] ?? UNREACHED, status)
+      if (next === previous[stop.id]) return previous
+      return { ...previous, [stop.id]: next }
+    })
   }, [])
 
   /**
@@ -185,10 +178,9 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setIndex(stopIndex)
       setParked(true)
       if (how === 'none') return
-      markVisited(stopIndex)
       recordStatus(stopIndex, how === 'jumped' ? JUMPED : TAKEN)
     },
-    [markVisited, recordStatus]
+    [recordStatus]
   )
 
   const depart = useCallback((stopIndex) => {
@@ -459,7 +451,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       start,
       index,
       parked,
-      visited,
+      statuses,
       stop: stops[index],
       goTo,
       goBack,
@@ -475,7 +467,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       start,
       index,
       parked,
-      visited,
+      statuses,
       stops,
       goTo,
       goBack,

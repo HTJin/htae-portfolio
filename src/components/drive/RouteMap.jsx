@@ -4,12 +4,85 @@ import clsx from 'clsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import { legsOf, route } from './route'
 import { legMilesAt } from './legMiles'
+import {
+  JUMPED,
+  SKIPPED,
+  STOP_STATUS_LABEL,
+  TAKEN,
+  UNREACHED,
+} from './stopStatus'
 
 const LEGS = legsOf(route)
 
 const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])'
 
-export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
+/**
+ * The rail: what happened at each exit, drawn rather than named.
+ *
+ * Q050, answered 2026-08-13, binding and verbatim: "could be more of a visual
+ * roadmap of the experiences that went over in a dotted line node to node for
+ * destinations and it will show which path I didn't take that way without
+ * having to ponder about menial terminology such as passed or skipped".
+ *
+ * So the outcome is carried by the LINE, and the word that used to sit in a
+ * green badge moves into the accessible name, where a screen reader needs it and
+ * nobody else has to read it. That is also why the four looks differ in SHAPE
+ * and not only in colour: a map that says "solid green against faint green" says
+ * nothing at all to a visitor who cannot separate the two.
+ */
+const RAIL = {
+  [TAKEN]: { dash: null, width: 2.2, opacity: 0.9, node: 'solid' },
+  [SKIPPED]: { dash: '7 5', width: 2, opacity: 0.55, node: 'ring' },
+  [JUMPED]: { dash: '1.5 4.5', width: 2, opacity: 0.55, node: 'ring' },
+  [UNREACHED]: { dash: '1.5 4.5', width: 1, opacity: 0.2, node: 'faint' },
+}
+
+function Rail({ status, first, last }) {
+  const look = RAIL[status] ?? RAIL[UNREACHED]
+  const line = {
+    stroke: 'currentColor',
+    strokeWidth: look.width,
+    strokeDasharray: look.dash ?? undefined,
+    opacity: look.opacity,
+    vectorEffect: 'non-scaling-stroke',
+  }
+  return (
+    <svg
+      // The rail is the only thing in this row that means something you can see
+      // and a reader cannot, so role="img" belongs here and nowhere else. Its
+      // name is the row's text equivalent.
+      role="img"
+      aria-label={STOP_STATUS_LABEL[status] ?? STOP_STATUS_LABEL[UNREACHED]}
+      viewBox="0 0 14 100"
+      preserveAspectRatio="none"
+      className="pointer-events-none absolute inset-y-0 left-2 w-[14px] text-emerald-300"
+    >
+      {/* Drawn as two half segments rather than one line, so the node sits in a
+          gap of its own and the stroke never runs through it. */}
+      {first ? null : <line x1="7" y1="0" x2="7" y2="41" {...line} />}
+      {last ? null : <line x1="7" y1="59" x2="7" y2="100" {...line} />}
+      <circle
+        cx="7"
+        cy="50"
+        r={look.node === 'faint' ? 2 : 3.2}
+        fill={look.node === 'solid' ? 'currentColor' : '#050b14'}
+        stroke="currentColor"
+        strokeWidth={look.node === 'faint' ? 1 : 1.6}
+        opacity={look.node === 'faint' ? 0.28 : 0.9}
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  )
+}
+
+export function RouteMap({
+  open,
+  onClose,
+  onSelect,
+  currentIndex,
+  statuses,
+  reducedMotion = false,
+}) {
   const panelRef = useRef(null)
   const returnFocusRef = useRef(null)
   const currentRef = useRef(null)
@@ -104,10 +177,10 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
     <AnimatePresence>
       {open ? (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={{ opacity: reducedMotion ? 1 : 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: reducedMotion ? 1 : 0 }}
+          transition={{ duration: reducedMotion ? 0 : 0.2 }}
           className="bg-[#03070e]/92 absolute inset-0 z-40 flex items-start justify-center px-4 py-6 backdrop-blur-sm sm:py-10"
           role="dialog"
           aria-modal="true"
@@ -139,10 +212,12 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
             <div ref={scrollRef} className="overflow-y-auto px-5 py-4">
               {LEGS.map((leg) => (
                 <div key={leg.name} className="mb-5 last:mb-0">
-                  <div className="mb-2 text-[0.625rem] uppercase tracking-[0.24em] text-sky-300/70">
+                  {/* Same left inset as the rows, so the rail passes beside the
+                      leg name rather than through the letters of it. */}
+                  <div className="mb-2 pl-9 text-[0.625rem] uppercase tracking-[0.24em] text-sky-300/70">
                     {leg.name}
                   </div>
-                  <ul className="space-y-1">
+                  <ul>
                     {leg.stops.map((stop) => (
                       <li key={stop.id}>
                         <button
@@ -162,12 +237,17 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                             stop.index === currentIndex ? 'location' : undefined
                           }
                           className={clsx(
-                            'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
+                            'relative flex w-full items-baseline gap-3 rounded-md border py-2 pl-9 pr-3 text-left transition',
                             stop.index === currentIndex
                               ? 'border-sky-400/50 bg-sky-400/10'
                               : 'border-transparent hover:border-white/15 hover:bg-white/5'
                           )}
                         >
+                          <Rail
+                            status={statuses[stop.id] ?? UNREACHED}
+                            first={stop.index === 0}
+                            last={stop.index === route.length - 1}
+                          />
                           <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">
                             {stop.exitLabel}
                           </span>
@@ -190,11 +270,6 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                               title={`${legMilesAt(stop.index)} miles from the previous exit`}
                             >
                               {legMilesAt(stop.index)} MI
-                            </span>
-                          ) : null}
-                          {visited.has(stop.index) ? (
-                            <span className="shrink-0 text-[0.625rem] uppercase tracking-[0.14em] text-emerald-300/70">
-                              driven
                             </span>
                           ) : null}
                         </button>

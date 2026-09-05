@@ -748,7 +748,8 @@ export function DriveScene() {
         onClose={() => setMapOpen(false)}
         onSelect={selectStop}
         currentIndex={index}
-        visited={drive.visited}
+        statuses={drive.statuses}
+        reducedMotion={reducedMotion}
       />
 
       <AnimatePresence>
