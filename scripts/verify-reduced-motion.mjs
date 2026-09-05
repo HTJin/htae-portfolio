@@ -17,7 +17,7 @@
  * dotted lines, as though they had never driven any of it.
  *
  * Needs a running dev server.
- *   node node_modules/next/dist/bin/next dev --port 3031
+ *   node node_modules/next/dist/bin/next dev --port 3041
  *   bun run verify:motion
  */
 const { chromium } = await import(
@@ -25,7 +25,7 @@ const { chromium } = await import(
     'file:///C:/Users/htae/AppData/Roaming/npm/node_modules/playwright/index.mjs'
 )
 
-const URL = process.env.DRIVE_URL || 'http://localhost:3031/drive'
+const URL = process.env.DRIVE_URL || 'http://localhost:3041/drive'
 const KEY = 'htae.drive.progress.v2'
 
 const browser = await chromium.launch()
