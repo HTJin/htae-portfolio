@@ -34,6 +34,12 @@ const ROLLING_DRAG = 1.1
 const AIR_DRAG = 0.018
 const CREEP_SPEED = 2.4
 const ARRIVAL_WINDOW = 0.6
+/**
+ * How far past an exit the car must be before the pass is committed, in metres.
+ * A margin rather than zero so a car creeping over the sign, or a frame that
+ * overshoots at speed, cannot flicker the target back and forth.
+ */
+const PASS_MARGIN = 12
 
 // Top gear ends at MAX_SPEED by construction. It used to be typed as `42`
 // beside a `MAX_SPEED` of 42: raise one alone and the tachometer pegs for the
@@ -60,6 +66,9 @@ function createSim() {
     // the car sitting on the mainline before it snapped onto the ramp.
     // Latched by steering right beside a ramp; see the assignment in the tick.
     exiting: true,
+    // Durable per-stop outcome, keyed by stop id. 'passed' is written by the
+    // pass-through commit; visiting a stop is still recorded through arriveAt.
+    dispositions: {},
     ramp: rampAt(0),
     // Same reasoning for the ramp's vertical: MILE 0 sits at the bottom of the
     // entrance ramp, below the mainline grade.
@@ -187,8 +196,31 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         depart(sim.target)
       }
 
-      const current = all[sim.target]
-      const remaining = current.s - sim.travel
+      let current = all[sim.target]
+      let remaining = current.s - sim.travel
+
+      // PASS: the driver declined this exit and drove by it.
+      //
+      // st071 M3 and M4. Suppressing brake assist and auto-park was only half the
+      // leaf: without advancing the target, the nav kept pointing at an exit that
+      // was already behind the car, which is why the banner still read NEXT EXIT for
+      // a stop the driver had passed. `arriveAt` is deliberately NOT called, so the
+      // stop is never recorded as visited.
+      //
+      // The disposition is durable and keyed by stop id, so a later route map can
+      // draw passed differently from visited without re-deriving it from distance.
+      if (
+        !sim.parked &&
+        !sim.exiting &&
+        remaining < -PASS_MARGIN &&
+        sim.target < all.length - 1
+      ) {
+        sim.dispositions[current.id ?? sim.target] = 'passed'
+        sim.target += 1
+        current = all[sim.target]
+        remaining = current.s - sim.travel
+        depart(sim.target)
+      }
 
       if (sim.parked) {
         sim.speed = 0
