@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { rampAt, rampDropAt } from './route'
-import { writeStopStatus } from './progress'
+import { readStopStatuses, writeStopStatus } from './progress'
 import { JUMPED, SKIPPED, TAKEN } from './stopStatus'
 import { CARRIAGEWAY, LANE_OFFSET, clamp, curveAt } from './world'
 
@@ -123,17 +123,29 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   }, [])
 
   /**
-   * Restore the history behind a resumed position.
+   * Restore what actually happened, from what was actually recorded.
    *
-   * Saved progress only ever advances **on arrival** and only **forwards**, so
-   * a stored index is proof the visitor arrived at every exit before it. Used
-   * by the resume path alone - a `?exit=` deep link must not claim its holder
-   * drove the road, because they followed a link instead.
+   * This replaces `markVisitedThrough`, which marked EVERY stop up to a resumed
+   * index as visited on the argument that saved progress only advances on
+   * arrival. That argument stopped being true when st071 shipped: `index` now
+   * advances when the driver PASSES an exit as well, so a visitor who drove by
+   * ten exits and stopped at the eleventh came back to a map claiming they had
+   * read all eleven. progress.js says the same thing about its own v1 migration:
+   * guessing the prefix "would put words in the visitor's mouth".
+   *
+   * So nothing is inferred. Only stops with a recorded outcome come back, and
+   * only TAKEN or JUMPED put a mark on the map, because SKIPPED is precisely the
+   * stop they did not visit.
    */
-  const markVisitedThrough = useCallback((stopIndex) => {
+  useEffect(() => {
+    const stored = readStopStatuses()
+    if (!Object.keys(stored).length) return
     setVisited((previous) => {
       const next = new Set(previous)
-      for (let i = 0; i <= stopIndex; i += 1) next.add(i)
+      stopsRef.current.forEach((stop, i) => {
+        const status = stored[stop.id]
+        if (status === TAKEN || status === JUMPED) next.add(i)
+      })
       return next
     })
   }, [])
@@ -162,11 +174,17 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
    * reduced motion, and an `?exit=` deep link that starts the engine already
    * parked on an exit. Those did not drive the road, and calling them visited
    * would put words in the visitor's mouth.
+   *
+   * 'none' is the third case, and st134 asks for it by name: an `?exit=` deep
+   * link "writes no outcome". Someone handed a URL has not navigated anywhere,
+   * so the page must position the car and record nothing at all - not even a
+   * jump, which would still be a claim they had been here.
    */
   const arriveAt = useCallback(
     (stopIndex, how = 'drove') => {
       setIndex(stopIndex)
       setParked(true)
+      if (how === 'none') return
       markVisited(stopIndex)
       recordStatus(stopIndex, how === 'jumped' ? JUMPED : TAKEN)
     },
@@ -361,7 +379,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   }, [])
 
   const goTo = useCallback(
-    (stopIndex) => {
+    (stopIndex, how = 'jumped') => {
       const all = stopsRef.current
       const next = clamp(stopIndex, 0, all.length - 1)
       const sim = simRef.current
@@ -375,7 +393,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.parked = true
       sim.autopilot = false
       sim.throttleLock = sim.throttle > 0
-      arriveAt(next, 'jumped')
+      arriveAt(next, how)
       publish()
     },
     [arriveAt, publish]
@@ -423,14 +441,14 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     simRef.current.steerInput = clamp(value, -1, 1)
   }, [])
 
-  const start = useCallback(() => {
+  const start = useCallback((how) => {
     const sim = simRef.current
     sim.running = true
     setStarted(true)
     // MILE 0 is the start line, so starting there is not a claim about driving.
-    // Starting anywhere else means `?exit=` put the car on that stop, which is a
-    // jump: turning the key must never mark an exit as read.
-    arriveAt(sim.target, sim.target === 0 ? 'drove' : 'jumped')
+    // Anywhere else, the caller says: the deep link and the resume button both
+    // pass 'none', because neither drove here.
+    arriveAt(sim.target, how ?? (sim.target === 0 ? 'drove' : 'none'))
   }, [arriveAt])
 
   return useMemo(
@@ -442,7 +460,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       index,
       parked,
       visited,
-      markVisitedThrough,
       stop: stops[index],
       goTo,
       goBack,
@@ -459,7 +476,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       index,
       parked,
       visited,
-      markVisitedThrough,
       stops,
       goTo,
       goBack,

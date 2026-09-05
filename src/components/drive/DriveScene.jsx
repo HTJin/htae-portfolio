@@ -338,8 +338,11 @@ export function DriveScene() {
       return
     }
 
-    drive.goTo(target)
-    drive.start()
+    // 'none' on both: a visitor handed a URL has not driven here and has not
+    // navigated here either, so nothing about this stop is recorded. st134
+    // names this case, "?exit= writes no outcome".
+    drive.goTo(target, 'none')
+    drive.start('none')
   }, [router.isReady, router.query.exit, router, drive])
 
   /**
@@ -363,11 +366,11 @@ export function DriveScene() {
 
   const resumeDrive = useCallback(() => {
     if (!resume) return
-    drive.goTo(resume.index)
-    // They really did drive every exit up to here - saved progress only
-    // advances on arrival, and only forwards - so the route map should say so.
-    drive.markVisitedThrough(resume.index)
-    drive.start()
+    // Also 'none'. Picking up where you left off is not a new outcome, and the
+    // old code claimed one for every stop before this index. `useDrive` restores
+    // the real history from what was recorded at the time instead.
+    drive.goTo(resume.index, 'none')
+    drive.start('none')
   }, [drive, resume])
 
   const forgetProgress = useCallback(() => {
