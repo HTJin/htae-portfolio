@@ -40,6 +40,10 @@ const check = (cond, msg) => {
 for (const size of [
   { name: 'landscape phone', width: 844, height: 390 },
   { name: 'portrait phone', width: 390, height: 844 },
+  // WCAG 1.4.10 reflow. 320x256 is a 1280x1024 screen at 400 percent zoom, and
+  // 320 CSS pixels wide is the width the guideline names, so this is the
+  // narrowest the drive has to survive rather than an arbitrary small number.
+  { name: '320 CSS px, 400 percent zoom', width: 320, height: 256 },
 ]) {
   const page = await browser.newPage({ viewport: { width: size.width, height: size.height } })
   await page.goto(URL, { waitUntil: 'networkidle' })
@@ -70,6 +74,23 @@ for (const size of [
   const scrolls = await page.evaluate(() =>
     document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)
   check(!scrolls, `${size.name}: the page does not scroll sideways`)
+
+  /*
+   * There is deliberately no "text over text" check here, and it is worth
+   * saying why, because it looks like an obvious thing to add.
+   *
+   * A box intersection test cannot tell a collision from a layered panel or
+   * from text an `overflow: hidden` ancestor has cropped away: both keep their
+   * full layout box. Written twice, it accused the drive twice, once at every
+   * viewport including a roomy desktop because `sr-only` keeps a box while
+   * clipped to nothing, and once on a landscape phone where a screenshot then
+   * showed the layout to be perfectly clean.
+   *
+   * `elementFromPoint` above is the sound primitive, because it hit tests what
+   * is actually painted. That is what caught the footwell shadow. Anything
+   * weaker than that belongs in a screenshot a person looks at, not in a suite.
+   */
+
   await page.close()
 }
 
