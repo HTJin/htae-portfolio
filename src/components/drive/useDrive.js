@@ -33,6 +33,8 @@ function createSim() {
     // highway" has always said it does. The canvas paints before the first
     // `step()` runs (the ignition splash), so a 0 here would draw one frame of
     // the car sitting on the mainline before it snapped onto the ramp.
+    // Latched by steering right beside a ramp; see the assignment in the tick.
+    exiting: true,
     ramp: rampAt(0),
     // Same reasoning for the ramp's vertical: MILE 0 sits at the bottom of the
     // entrance ramp, below the mainline grade.
@@ -210,8 +212,19 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       // metre integration and the snap onto the stop — so the ramp can never be
       // a frame behind the car sitting on it. The parked early-return skips it,
       // which is correct: `travel` did not move, so neither did the ramp.
-      sim.ramp = rampAt(sim.travel)
-      sim.drop = rampDropAt(sim.travel)
+      // Taking the exit is now a CHOICE.
+      //
+      // Owner: "no way to just keep driving without not taking the exit". This
+      // assignment used to be unconditional, so every exit dragged the car off the
+      // mainline whatever the driver did. `sim.exiting` latches when the driver
+      // steers right while a ramp is actually beside them, and clears once the ramp
+      // has gone. Hold right to leave, do nothing to stay on the highway.
+      const rampHere = rampAt(sim.travel)
+      const nearRamp = rampHere > 0.5
+      if (!nearRamp) sim.exiting = false
+      else if (sim.steer > 0.25) sim.exiting = true
+      sim.ramp = sim.exiting ? rampHere : 0
+      sim.drop = sim.exiting ? rampDropAt(sim.travel) : 0
     },
     [arriveAt, depart]
   )
