@@ -21,7 +21,8 @@
     "verify:fallback": "bun scripts/verify-webgl-fallback.mjs",
     "verify:phone": "bun scripts/verify-phone.mjs",
     "verify:keyboard": "bun scripts/verify-keyboard.mjs",
-    "verify:announcements": "bun scripts/verify-announcements.mjs"
+    "verify:announcements": "bun scripts/verify-announcements.mjs",
+    "verify:print": "bun scripts/verify-print.mjs"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
