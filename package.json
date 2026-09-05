@@ -16,7 +16,8 @@
     "verify:miles": "node scripts/verify-leg-miles.mjs",
     "verify:visits": "bun scripts/verify-visit-status.mjs",
     "verify:map": "bun scripts/verify-route-map.mjs",
-    "verify:motion": "bun scripts/verify-reduced-motion.mjs"
+    "verify:motion": "bun scripts/verify-reduced-motion.mjs",
+    "verify": "bun scripts/verify-all.mjs"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
