@@ -69,6 +69,35 @@ const seen = await page.evaluate(() => {
       .filter((e) => e.tagName.toLowerCase() !== 'svg').length,
   }
 })
+/**
+ * The map is a modal dialog, and st133 rewrote its DOM. Everything below was
+ * already built and could have been broken silently by that rewrite, so it is
+ * checked here rather than trusted.
+ */
+const focusOnOpen = await page.evaluate(() => {
+  const d = document.querySelector('[role="dialog"]')
+  return !!(d && d.contains(document.activeElement))
+})
+
+let focusEscaped = false
+for (let i = 0; i < 40; i += 1) {
+  await page.keyboard.press('Tab')
+  const inside = await page.evaluate(() => {
+    const d = document.querySelector('[role="dialog"]')
+    return !!(d && d.contains(document.activeElement))
+  })
+  if (!inside) { focusEscaped = true; break }
+}
+
+const currentMarkers = await page.evaluate(() =>
+  document.querySelectorAll('[role="dialog"] [aria-current]').length)
+
+await page.keyboard.press('Escape')
+await page.waitForTimeout(700)
+const closedOnEscape = await page.evaluate(() => !document.querySelector('[role="dialog"]'))
+const focusRestored = await page.evaluate(() =>
+  /route map/i.test(document.activeElement?.getAttribute('aria-label') || ''))
+
 await browser.close()
 
 let ok = true
@@ -116,6 +145,13 @@ for (const word of ['DRIVEN', 'PASSED', 'SKIPPED', 'JUMPED', 'UNREACHED']) {
 const labels = new Set(r.map((x) => x.label))
 check(labels.size === 4,
   `CONTROL a screen reader still hears all four outcomes (${[...labels].join(', ')})`)
+
+check(focusOnOpen, 'opening the map moves focus into it')
+check(!focusEscaped, 'Tab cycles inside the dialog for 40 presses and never escapes')
+check(closedOnEscape, 'Escape closes the map')
+check(focusRestored, 'focus returns to the button that opened it')
+check(currentMarkers === 1,
+  `exactly one row is marked as your current position (${currentMarkers})`)
 
 console.log(ok ? '\n  st133 verified' : '\n  st133 NOT verified')
 process.exit(ok ? 0 : 1)
