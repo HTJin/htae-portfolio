@@ -657,8 +657,15 @@ function TripComputer({ drive, stop }) {
         }
         if (nextRef.current) {
           const remaining = Math.max(0, stop.s - sim.travel)
+          // ARRIVED has to mean arrived. Distance alone said it for the whole
+          // stretch between reaching an exit and the pass committing twelve
+          // metres later, so the dash announced arrival at 80 mph while the
+          // driver was deliberately going past. Measured before the fix: nine
+          // frames of ARRIVED at 69 and 80 mph across two exits.
           nextRef.current.textContent =
-            remaining < 1 ? 'ARRIVED' : `${formatMiles(remaining)} MI`
+            sim.parked && remaining < 1
+              ? 'ARRIVED'
+              : `${formatMiles(remaining)} MI`
         }
         if (yearRef.current) {
           // Only the stops with a real date in the content have a year. Past
