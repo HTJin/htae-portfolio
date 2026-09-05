@@ -244,7 +244,31 @@ const mainline = (s, o) => { o.x = curveAt(s); o.y = hillAt(s); o.w = CARRIAGEWA
 const opposing = (s, o) => { o.x = curveAt(s) - OPPOSING_EDGE; o.y = hillAt(s); o.w = CARRIAGEWAY }
 const median = (s, o) => { o.x = curveAt(s) - MEDIAN_WIDTH; o.y = hillAt(s) - 0.06; o.w = MEDIAN_WIDTH }
 const verge = (s, o) => { o.x = curveAt(s) + CARRIAGEWAY; o.y = hillAt(s); o.w = VERGE_WIDTH }
-const bank = (s, o) => { o.x = curveAt(s) + BANK_TOP_OFFSET; o.y = hillAt(s) - 3.4; o.w = 46 }
+/**
+ * Ground either side, following the ramp down.
+ *
+ * These were flat planes at road level minus 3.4m. An exit drops the car 5.5m via
+ * rampDropAt, and the car's lateral position on a full ramp is x = 36.4, which sits
+ * inside this surface's own span of 10.6 to 56.6. So the eye ended up at y = -4.15
+ * underneath a plane at y = -3.40: a horizontal grey slab across the view, hiding
+ * the lamps and the highway until the ramp climbed back to level. Exactly what the
+ * owner described.
+ *
+ * Terrain now carries rampDropAt, so the ground beside a descending ramp descends
+ * with it and can never close over the driver. Away from an exit rampDropAt is 0,
+ * so the level road is unchanged.
+ */
+const GROUND_BELOW = 3.4
+const bank = (s, o) => {
+  o.x = curveAt(s) + BANK_TOP_OFFSET
+  o.y = hillAt(s) + rampDropAt(s) - GROUND_BELOW
+  o.w = 46
+}
+const farSide = (s, o) => {
+  o.x = curveAt(s) - OPPOSING_EDGE - 46
+  o.y = hillAt(s) + rampDropAt(s) - GROUND_BELOW
+  o.w = 46
+}
 // The ramp is the road the CAR is carried onto, not a strip beside it. cameraX adds
 // sim.ramp to the lane offset, so the eye moves sideways by rampAt; the ramp surface has
 // to move with it or the car ends up driving 2m to the left of its own road, which is
@@ -254,7 +278,6 @@ const ramp = (s, o) => {
   o.y = hillAt(s) + rampDropAt(s)
   o.w = RAMP_WIDTH
 }
-const farSide = (s, o) => { o.x = curveAt(s) - OPPOSING_EDGE - 46; o.y = hillAt(s) - 3.4; o.w = 46 }
 
 export function RoadScene({ drive, simRef, className }) {
   const ref = drive?.simRef ?? simRef
