@@ -36,7 +36,7 @@ function ExitShield({ stop }) {
 /**
  * Actions carry weight in proportion to what they are for. At the destination
  * the point is to start a conversation, so the email is the loud one and the
- * way back out is quiet — otherwise the goal and the exit door look identical
+ * way back out is quiet - otherwise the goal and the exit door look identical
  * and the eye has nothing to land on.
  */
 function linkClass(link) {
@@ -81,7 +81,7 @@ function StopLinks({ links }) {
 
 /**
  * The trip, in numbers, at the destination only. Every figure comes from
- * `route.js`, derived from the content itself — nothing here is written down.
+ * `route.js`, derived from the content itself - nothing here is written down.
  */
 function TripSummary() {
   return (
@@ -89,7 +89,7 @@ function TripSummary() {
     // and pushed the last row of actions 12px past the panel's scroll edge, so
     // the drive ended on a call to action sliced through the middle. Across, it
     // costs about half that. The labels are allowed to wrap onto two lines at
-    // the narrow end rather than being abbreviated — these figures are derived
+    // the narrow end rather than being abbreviated - these figures are derived
     // from the content and must stay legible and accurate (guardrail 72).
     <dl className="mt-3 grid grid-cols-4 gap-x-2 gap-y-3 border-y border-sky-400/15 py-2.5 sm:mt-4 sm:gap-x-4 sm:py-3">
       {tripSummary.map((item) => (
@@ -110,8 +110,8 @@ function TripSummary() {
  * A URL written inside a sentence, turned into something you can actually
  * click.
  *
- * One paragraph on the route ends with a bare URL — EXIT 12 cites the Colab
- * product page — and it rendered as dead text, so the only way to follow it was
+ * One paragraph on the route ends with a bare URL - EXIT 12 cites the Colab
+ * product page - and it rendered as dead text, so the only way to follow it was
  * to select 43 characters by hand, which on a phone is not a reasonable ask.
  *
  * The copy itself is not ours to edit (`src/lib/projects.js` is read-only), so
@@ -145,7 +145,7 @@ function linkify(text) {
   )
 }
 
-/** Everything except the media — the column that always has something in it. */
+/** Everything except the media - the column that always has something in it. */
 function StopProse({ stop }) {
   return (
     <>
@@ -233,12 +233,12 @@ export function StopCard({ stop, visible, position, total }) {
    *
    * Measured at 1440x900: a stop with screenshots widened to 925px while a
    * text-only one stayed at 704px, so the sabbatical hid 40.9% of itself, the
-   * toolbox 20.5% and the senior role 15.1% — with 736px of the band unused
+   * toolbox 20.5% and the senior role 15.1% - with 736px of the band unused
    * either side. Widening alone would have fixed the fold and pushed the lines
    * to ~135 characters; widening *and* columning fixes the fold and brings the
    * measure down to ~63 characters instead.
    *
-   * Deliberately not the project stops (they already split media from prose —
+   * Deliberately not the project stops (they already split media from prose -
    * a second column context inside that would be a layout nobody designed) and
    * deliberately not the destination, whose summary band and primary call to
    * action were composed on purpose and already fit.
@@ -254,7 +254,7 @@ export function StopCard({ stop, visible, position, total }) {
    * columns makes the reader track to the bottom and back to the top for every
    * few lines, and the taller the passage the worse it gets.
    *
-   * The sabbatical is the case that exposed it — the longest entry on the
+   * The sabbatical is the case that exposed it - the longest entry on the
    * résumé, all `drawer` paragraphs and no bullets, and the owner: "the passage
    * describing my time unemployed is not friendly to read with like 3 column
    * layout." It is also the most personal thing on the page, which is the worst
@@ -289,7 +289,7 @@ export function StopCard({ stop, visible, position, total }) {
           // mounted for the life of the page and does the announcing.
           // A text-only stop keeps widening past `lg`, where a picture stop
           // stops at 58rem. The card used to cap there at every width, so a
-          // 1920-wide monitor left 992px of the band — more than half — empty
+          // 1920-wide monitor left 992px of the band - more than half - empty
           // while the longest entry on the résumé was still cut off. The extra
           // width buys a third column rather than longer lines; see below.
           //
@@ -341,13 +341,13 @@ export function StopCard({ stop, visible, position, total }) {
               // The screenshot is the point of a project stop, so on a screen
               // with room it takes more of the split. Measured: 451x225 from a
               // 1899x970 source is 23.7% of native at every width, because the
-              // card used to cap at 58rem — a whole page rendered at a quarter
+              // card used to cap at 58rem - a whole page rendered at a quarter
               // size, where the layout reads and nothing else does.
               //
               // Gated on height as well as width, and that is not caution but
               // arithmetic: the frame is a fixed 2:1, so widening grows the
               // height too, and the band's height belongs to the cockpit.
-              // Trialled at 1216px — 1920x900 hid 83px and 1920x1000 hid 33px,
+              // Trialled at 1216px - 1920x900 hid 83px and 1920x1000 hid 33px,
               // while 1080 and above hid nothing. Below the gate the layout is
               // untouched, because the room genuinely is not there.
               <div className="gap-x-5 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] [@media(min-width:1536px)_and_(min-height:1120px)]:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
@@ -361,13 +361,13 @@ export function StopCard({ stop, visible, position, total }) {
                 </div>
               </div>
             ) : roomy ? (
-              // Balanced columns, and only from `lg` up — a phone stays one
+              // Balanced columns, and only from `lg` up - a phone stays one
               // column. The columns live on an inner wrapper rather than on
               // the scroll container itself, so the multi-column context is
               // never the thing that owns the scrollbar.
               // `break-inside-avoid` is scoped to list items and group cards
-              // on purpose. Putting it on every direct child — which the first
-              // build did — stops the big blocks (the whole bullet list, the
+              // on purpose. Putting it on every direct child - which the first
+              // build did - stops the big blocks (the whole bullet list, the
               // toolbox grid) from splitting at all, so the columns cannot
               // balance and the content gets *taller*: measured, the toolbox
               // went from 84px hidden to 261px. Only the small items are
@@ -381,7 +381,7 @@ export function StopCard({ stop, visible, position, total }) {
               // over a plain widening in the first place.
               //
               // Both this and the card width sat at `2xl` (1536px), which left
-              // 1280-1535 — an ordinary laptop — on the narrow layout. The
+              // 1280-1535 - an ordinary laptop - on the narrow layout. The
               // sabbatical hid 94px (22% of itself) at 1440x900 and 144px
               // (34%) at 1280x800, and it is the longest entry on the résumé,
               // so it was the one stop you could not read without scrolling.
@@ -389,7 +389,7 @@ export function StopCard({ stop, visible, position, total }) {
               // columns move together on purpose: widening alone would stretch
               // the measure to ~590px per column, which is worse than the
               // problem being fixed.
-              // Continuous prose does not go in columns — see `proseOnly`. It
+              // Continuous prose does not go in columns - see `proseOnly`. It
               // gets one column with the measure bounded in `ch`, so the line
               // length is set by the type rather than by however wide the panel
               // happens to be. The panel still scrolls, which is the right
@@ -401,7 +401,7 @@ export function StopCard({ stop, visible, position, total }) {
                 </div>
               ) : (
                 // Two columns, never three. Cycle 49 added a third at xl and
-                // measured it as a win on both axes — nothing hidden, and a
+                // measured it as a win on both axes - nothing hidden, and a
                 // narrower measure. It was measuring the wrong thing: a 1216px
                 // panel three columns wide is a broadsheet, and the owner reads
                 // it as "too wide and hard to read". The card is narrower now

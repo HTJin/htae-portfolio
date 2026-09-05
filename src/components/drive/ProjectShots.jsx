@@ -34,7 +34,7 @@ export function ProjectShots({ images, title, site }) {
   const count = images?.length ?? 0
   const host = hostOf(site)
 
-  // A stop change swaps the whole array — always restart from the first frame.
+  // A stop change swaps the whole array - always restart from the first frame.
   const key = images?.[0]
   useEffect(() => {
     setIndex(0)
@@ -84,18 +84,18 @@ export function ProjectShots({ images, title, site }) {
           {images.map((source, position) => (
             // Through the optimiser rather than straight off disk. Measured:
             // arriving here requested all five of Matrimoni's frames as raw
-            // PNG — 5,306 KB — because `loading="lazy"` cannot help when every
+            // PNG - 5,306 KB - because `loading="lazy"` cannot help when every
             // frame is stacked inside the visible panel. The same first frame
             // is 11 KB of WebP at the width it is actually drawn at. The
             // originals in `public/images/projects/` are only ever read.
             <Image
               key={source}
               src={source}
-              alt={`${title} — screenshot ${position + 1} of ${count}`}
+              alt={`${title} screenshot ${position + 1} of ${count}`}
               fill
               sizes={SHOT_SIZES}
               // The frames are stacked and cross-faded with opacity, which
-              // does *not* take an element out of the accessibility tree — so
+              // does *not* take an element out of the accessibility tree - so
               // all of them used to be announced and a screen-reader user met
               // four screenshots where a sighted one sees a single picture.
               // Only the frame actually on screen is exposed.
@@ -110,7 +110,7 @@ export function ProjectShots({ images, title, site }) {
         </div>
       </div>
 
-      {/* The dots stay small — that is the design — but the *targets* do not.
+      {/* The dots stay small - that is the design - but the *targets* do not.
           Each button is a 24x24 box with the pill centred inside, which is the
           WCAG 2.5.8 minimum; at the previous 6x6 they were close to unusable on
           the phone layout, where this carousel sits inside the arrival panel.

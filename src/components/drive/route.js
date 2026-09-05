@@ -8,7 +8,7 @@ import { CARRIAGEWAY, LANE_OFFSET, clamp } from './world'
  * to be long enough to read as a real interchange rather than a kink, and the
  * two ramps either side of a stop still have to leave a stretch of open
  * mainline between them. At 420 with ramps at 0.4 of a leg, that stretch is
- * 84m — 80% of the leg is ramp, and you still get back on the highway.
+ * 84m - 80% of the leg is ramp, and you still get back on the highway.
  */
 export const LEG_LENGTH = 420
 export const METERS_PER_MILE = 1609.34
@@ -26,14 +26,14 @@ export const METERS_PER_MILE = 1609.34
  * out of one exit must finish before the exit ramp into the next one starts, or
  * the road never returns to the mainline and the "highway" is just a slalom. At
  * 0.4 of a leg each, the middle 20% of every leg is mainline. (Same lesson as
- * `MARKER_SPACING` in cycle 32 — a constant that must match another constant
+ * `MARKER_SPACING` in cycle 32 - a constant that must match another constant
  * gets computed from it.)
  */
 export const RAMP_LENGTH = LEG_LENGTH * 0.4
 /**
  * How far right of the mainline lane the ramp has carried you at the stop.
  *
- * Was `CARRIAGEWAY + 2.7`, which cleared the highway by a couple of metres —
+ * Was `CARRIAGEWAY + 2.7`, which cleared the highway by a couple of metres -
  * enough to be a separate ribbon of tarmac, not enough to feel like you had
  * left. At `CARRIAGEWAY + 22` the stop sits well clear
  * of the running lanes, with the gore opening into real verge between them.
@@ -52,7 +52,7 @@ export const RAMP_WIDTH = 4.4
  * This was capped at `CAM_HEIGHT * 0.85` for one cycle, because the renderer
  * could not cope with more: screen height is `CAM_HEIGHT + drop − hillAt(s)`,
  * so once `drop` passed eye height the whole mainline lifted above the horizon
- * and painted as a wedge of tarmac across the sky. Measured at 6.5m — the
+ * and painted as a wedge of tarmac across the sky. Measured at 6.5m - the
  * highway hung over the windscreen.
  *
  * That is fixed properly now rather than avoided. `RoadCanvas` clips **flat
@@ -63,7 +63,7 @@ export const RAMP_WIDTH = 4.4
 export const RAMP_DROP = 5.5
 
 /**
- * The offset at which the ramp is clear of the mainline entirely — its inner
+ * The offset at which the ramp is clear of the mainline entirely - its inner
  * edge is past the carriageway's outer edge. Before this the ramp is still a
  * deceleration lane *inside* the carriageway and carries no markings of its
  * own; after it, it is a separate road and gets its own edge lines.
@@ -76,7 +76,7 @@ export const RAMP_SEPARATES = CARRIAGEWAY - LANE_OFFSET + RAMP_WIDTH / 2
  *
  * `RoadCanvas` draws that edge and `route` has to know where it is, because the
  * ramp may not start descending until it has cleared it. Defined once, here,
- * and imported there — the two were independent numbers for four cycles and the
+ * and imported there - the two were independent numbers for four cycles and the
  * disagreement is exactly what kept producing malformed banks.
  */
 export const VERGE_WIDTH = 2.4
@@ -102,7 +102,7 @@ export function rampAt(s) {
  * How far the ramp has fallen below the mainline grade at `s`. Negative, since
  * the exit runs downhill. Shares `rampProgress` with the lateral offset, so the
  * ramp cannot start turning before it starts descending, or level out while
- * still curving — the two are the same ramp.
+ * still curving - the two are the same ramp.
  */
 export function rampDropAt(s) {
   return -RAMP_DROP * dropProgress(s)
@@ -112,18 +112,18 @@ export function rampDropAt(s) {
  * The descent **lags the divergence**, and that is load-bearing geometry.
  *
  * Sharing one progress with `rampAt` meant the ramp began falling while it was
- * still laterally *inside* the carriageway — which no real interchange does; a
+ * still laterally *inside* the carriageway - which no real interchange does; a
  * ramp pulls away first and drops afterwards. It also made the embankment
  * between them undrawable: the bank is the ground from the mainline's verge
  * down to the ramp, and when the ramp is below *and* inboard there is no such
  * ground. Four separate attempts to clamp `bankFoot` into sense all failed on
- * that same impossibility — a foot inboard of its own top, a vertical floor, a
+ * that same impossibility - a foot inboard of its own top, a vertical floor, a
  * doc contradicting the code, then a 3.7m discontinuity.
  *
  * Holding the drop until the ramp has cleared `RAMP_SEPARATES` removes the
  * impossible region entirely rather than clamping around it: wherever there is
  * a height difference, there is now real ground to slope. The stop is still
- * `RAMP_DROP` below the mainline — only the shape of getting there changed.
+ * `RAMP_DROP` below the mainline - only the shape of getting there changed.
  */
 function dropProgress(s) {
   const lateral = rampProgress(s)
@@ -221,7 +221,7 @@ const byDateAscending = (a, b) => new Date(a.date) - new Date(b.date)
  *
  * Deliberately not `new Date(date).getFullYear()`. The content dates are plain
  * `YYYY-MM-DD` strings, which `Date` parses as UTC midnight and `getFullYear`
- * then reads back in local time — so in any timezone behind UTC a January 1st
+ * then reads back in local time - so in any timezone behind UTC a January 1st
  * date reports the *previous* year. That silently moved the StarPlus UI/UX role
  * ('2024-01-01', whose own label reads "Jan 2024 - Oct 2024") to 2023. Putting
  * a wrong year on someone's résumé is the worst bug this page could ship, so
@@ -271,7 +271,7 @@ function educationStop() {
     subtitle: education.degree,
     meta: [education.location, yearOf(education.date)]
       .filter(Boolean)
-      .join(' · '),
+      .join(' / '),
     paragraphs: ['Where the whole route started.'],
     links: education.certifications.map((certification) => ({
       label: `${certification.label} certificate`,
@@ -293,7 +293,7 @@ function experienceStops() {
     subtitle: entry.company,
     meta: [entry.lead, entry.location, entry.workMode]
       .filter(Boolean)
-      .join(' · '),
+      .join(' / '),
     bullets: entry.bullets ?? [],
     paragraphs: entry.drawer ?? [],
   }))
@@ -301,7 +301,7 @@ function experienceStops() {
 
 function projectStops() {
   return projects.map((project) => {
-    // Every capture the project ships, in order — the stop card cycles them.
+    // Every capture the project ships, in order - the stop card cycles them.
     const images = (project.screenshots ?? []).map(
       (shot) => `/images/projects/${project.name}${shot}`
     )
@@ -311,7 +311,7 @@ function projectStops() {
       kind: 'project',
       leg: 'Scenic overlook',
       signTitle: project.title.split(' - ')[0],
-      signSub: project.technologies.slice(0, 2).join(' · '),
+      signSub: project.technologies.slice(0, 2).join(' / '),
       title: project.title,
       subtitle: 'Side build',
       paragraphs: [project.description],
@@ -338,7 +338,7 @@ function skillsStop() {
     leg: 'Pit stop',
     signTitle: 'Toolbox',
     signSub: `${skills.length} bays`,
-    title: 'Pit stop — the toolbox',
+    title: 'Pit stop - the toolbox',
     subtitle: 'What is in the trunk',
     groups: skills,
   }
@@ -476,7 +476,7 @@ const DATED = route
 const LAST_DATED_S = DATED.length ? DATED[DATED.length - 1].s : 0
 
 /**
- * The trip you just drove, in numbers — shown only at the destination.
+ * The trip you just drove, in numbers - shown only at the destination.
  *
  * Every figure is derived from the content, never written down: the counts come
  * from the arrays themselves and the distance from the route's own length. Add
@@ -486,7 +486,7 @@ const LAST_DATED_S = DATED.length ? DATED[DATED.length - 1].s : 0
 export const tripSummary = [
   {
     label: 'Driving since',
-    value: DATED.length ? String(DATED[0].year) : '—',
+    value: DATED.length ? String(DATED[0].year) : '-',
   },
   {
     label: 'Roles',
@@ -501,7 +501,7 @@ export const tripSummary = [
 
 /**
  * What year you are driving through. Interpolates between dated stops so the
- * readout ticks over as you travel, and returns null past the last dated stop —
+ * readout ticks over as you travel, and returns null past the last dated stop -
  * the caller shows "NOW" there rather than a fabricated year.
  */
 export function yearAt(travel) {

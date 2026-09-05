@@ -21,7 +21,7 @@ const ANCHOR_Y = 90
  * The sign stands on the far verge of the ramp it names.
  *
  * It is anchored at the stop's own `s`, which is the end of the off-ramp, so
- * the ramp has carried the road to `RAMP_OFFSET` by the time you reach it —
+ * the ramp has carried the road to `RAMP_OFFSET` by the time you reach it -
  * leaving this at `CARRIAGEWAY + 4.6` would have planted the sign in the middle
  * of the ramp's tarmac. Derived from the ramp's own geometry so it stays put if
  * either changes.
@@ -31,7 +31,7 @@ const OFFSET_X = LANE_OFFSET + RAMP_OFFSET + RAMP_WIDTH / 2 + 2
 /**
  * The sign's whole approach is scaled to the leg you actually drive.
  *
- * This was a literal 420m, against a `LEG_LENGTH` of 220 — a window nearly
+ * This was a literal 420m, against a `LEG_LENGTH` of 220 - a window nearly
  * twice the furthest you can ever be from the sign. Two things fell out of
  * that, both measured: the fade-in was dead code, because `min(1, (420 - z) /
  * 160)` is already **1.0** at z = 220 and would only have finished at z = 260;
@@ -75,7 +75,7 @@ export function ExitSign({ drive, stop }) {
       // Same projection the canvas uses, so the sign always stands exactly
       // where the roadside furniture around it does.
       // The sign stands on the ramp's verge, so it stands at the ramp's
-      // *grade* too — anchored at the stop, which is the bottom of the exit.
+      // *grade* too - anchored at the stop, which is the bottom of the exit.
       // Without the drop it would float at the height the highway used to be.
       const { x, y, scale } = project(
         camera,
@@ -119,7 +119,7 @@ export function ExitSign({ drive, stop }) {
 
       if (distanceRef.current) {
         // Feet, all the way down. This used to read miles above 0.1 and then
-        // switch to *metres* — two units in one readout, the second metric,
+        // switch to *metres* - two units in one readout, the second metric,
         // on an American guide sign in a cockpit whose speedometer says mph
         // and whose odometer says MI.
         //
@@ -127,11 +127,11 @@ export function ExitSign({ drive, stop }) {
         // leg is 220m = 0.137 miles and the sign is only ever visible below
         // that, so the 1 MILE / 1/2 / 1/4 ladder can never apply here." The leg
         // has been **420m** since cycle 58, so the sign is now visible at
-        // 0.261 miles — measured: it reads `1380 FT` at 420m out, which is
+        // 0.261 miles - measured: it reads `1380 FT` at 420m out, which is
         // above a quarter mile, exactly where real signage switches to the
         // ladder. Feet are still correct for most of the approach and the
         // readout is accurate throughout (1380/1150/820/490/260 FT against a
-        // true 1378/1148/817/486/259), so this is a realism gap, not a bug —
+        // true 1378/1148/817/486/259), so this is a realism gap, not a bug -
         // filed as S140 rather than changed on the way past.
         //
         // Derived from METERS_PER_MILE rather than a typed 3.28084: this run
@@ -165,7 +165,7 @@ export function ExitSign({ drive, stop }) {
     >
       <div className="relative">
         {/* Exit-number plaque, bolted above the right corner like the real
-            thing — the first part of a guide sign you can actually read. */}
+            thing - the first part of a guide sign you can actually read. */}
         <div
           ref={plaqueRef}
           className="absolute -top-[30px] right-0 rounded-t-md border-[5px] border-b-0 border-white/90 px-3 pb-0.5 pt-1 text-center font-display leading-none text-white"
@@ -186,7 +186,7 @@ export function ExitSign({ drive, stop }) {
         >
           <div className="flex items-baseline justify-between font-display text-[15px] font-semibold uppercase tracking-[0.18em] text-white/80">
             <span>{stop.leg}</span>
-            <span ref={distanceRef}>—</span>
+            <span ref={distanceRef}>-</span>
           </div>
           <div className="mt-1 truncate font-display text-[30px] font-semibold leading-tight">
             {stop.signTitle}
@@ -204,7 +204,7 @@ export function ExitSign({ drive, stop }) {
         </div>
       </div>
 
-      {/* Twin supports — a guide sign this size never stands on one post. */}
+      {/* Twin supports - a guide sign this size never stands on one post. */}
       <div className="relative mx-auto h-[180px] w-[150px]">
         <div className="absolute left-[26px] top-0 h-full w-[11px] bg-gradient-to-b from-[#6b7787] to-[#2b333f]" />
         <div className="absolute right-[26px] top-0 h-full w-[11px] bg-gradient-to-b from-[#6b7787] to-[#2b333f]" />

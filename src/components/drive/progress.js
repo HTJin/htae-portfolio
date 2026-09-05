@@ -6,7 +6,7 @@ import { UNREACHED, isStopStatus, strongerStatus } from './stopStatus'
  *
  * The route is 21 exits long, so someone who reads a few and comes back later
  * would otherwise be dropped at MILE 0 with no way back except driving the
- * whole thing again. This remembers the furthest exit — but nothing here ever
+ * whole thing again. This remembers the furthest exit - but nothing here ever
  * *applies* it. The ignition screen offers it and the visitor chooses, so no
  * one is ever trapped mid-route by state they did not ask for.
  *
@@ -40,7 +40,7 @@ function storage() {
 /**
  * The furthest exit reached, or null. Returns null rather than throwing for
  * anything unparseable, out of range, or pointing at a stop that has since
- * moved — an index alone is not enough to trust once the content can change.
+ * moved - an index alone is not enough to trust once the content can change.
  */
 export function readProgress() {
   const store = storage()
@@ -80,7 +80,7 @@ export function writeProgress(index) {
     if (previous && previous.index >= index) return
     store.setItem(KEY, JSON.stringify({ index, id: stop.id }))
   } catch {
-    // Storage full or unavailable — losing progress is not worth an error.
+    // Storage full or unavailable - losing progress is not worth an error.
   }
 }
 

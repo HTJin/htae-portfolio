@@ -40,7 +40,7 @@ function glowGradient(colors) {
 
 /**
  * The sky, lit for wherever you are on the route. It repaints through refs on
- * the sim's subscription — the same trick the gauges use — so the 60fps loop
+ * the sim's subscription - the same trick the gauges use - so the 60fps loop
  * never touches React state.
  *
  * The server renders the palette at progress 0, which is exactly what the
@@ -152,7 +152,7 @@ export function Sky({ drive }) {
         />
       </svg>
 
-      {/* Glow where the road vanishes — the destination, always ahead. */}
+      {/* Glow where the road vanishes - the destination, always ahead. */}
       <div
         ref={glowRef}
         className="absolute left-1/2 h-40 w-[70%] -translate-x-1/2 -translate-y-1/2"

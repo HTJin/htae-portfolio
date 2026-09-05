@@ -125,7 +125,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
    *
    * Saved progress only ever advances **on arrival** and only **forwards**, so
    * a stored index is proof the visitor arrived at every exit before it. Used
-   * by the resume path alone — a `?exit=` deep link must not claim its holder
+   * by the resume path alone - a `?exit=` deep link must not claim its holder
    * drove the road, because they followed a link instead.
    */
   const markVisitedThrough = useCallback((stopIndex) => {
@@ -288,8 +288,8 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         arriveAt(sim.target)
       }
 
-      // One assignment covers both places `travel` moves above — the metre-by-
-      // metre integration and the snap onto the stop — so the ramp can never be
+      // One assignment covers both places `travel` moves above - the metre-by-
+      // metre integration and the snap onto the stop - so the ramp can never be
       // a frame behind the car sitting on it. The parked early-return skips it,
       // which is correct: `travel` did not move, so neither did the ramp.
       // Taking the exit is now a CHOICE.

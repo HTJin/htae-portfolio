@@ -2,7 +2,7 @@ import styles from '@/styles/drive.module.css'
 
 /**
  * Everything between the driver and the road: glass, pillars, headliner,
- * mirror and the car's own bonnet. Purely decorative — it never swallows
+ * mirror and the car's own bonnet. Purely decorative - it never swallows
  * pointer events.
  */
 export function CarInterior({ passedStop }) {
@@ -47,7 +47,7 @@ export function CarInterior({ passedStop }) {
       {/* The dash top, smeared back at the driver by the windshield. Sits
           directly on the dash, so it reads from the same quantity. Positioned
           against `--dash` (the dashboard's height, defined once in DriveScene)
-          rather than a viewport percentage — the dash is
+          rather than a viewport percentage - the dash is
           `clamp(190px, 36%, 48%)`, so a fixed % drifts when the floor wins. */}
       <div
         className={`absolute inset-x-[12%] bottom-[var(--dash)] h-[9%] ${styles.dashReflection}`}

@@ -19,7 +19,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
    * Open the list at the exit you are actually at.
    *
    * The map highlights the current exit, which is its own admission that
-   * "where you are" is the useful thing — and then it opened at MILE 0 every
+   * "where you are" is the useful thing - and then it opened at MILE 0 every
    * time. On a landscape phone that means three visible rows out of
    * twenty-one, with the current one 800px down.
    *
@@ -27,11 +27,11 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
    * `scrollIntoView`, which walks up the tree and can move ancestors it was
    * never asked to. It is instant on purpose: a smooth scroll would be motion
    * nobody requested, and would need a reduced-motion branch to be honest.
-   * Deliberately does not touch focus — the effect below owns that.
+   * Deliberately does not touch focus - the effect below owns that.
    *
    * The measurement is a rect delta rather than `offsetTop`: the scroll
    * container is not positioned, so a row's `offsetParent` is the dialog
-   * backdrop and its `offsetTop` is measured from there — 111px out, which
+   * backdrop and its `offsetTop` is measured from there - 111px out, which
    * scrolled the current row clean past the top of the window.
    */
   useEffect(() => {
@@ -56,7 +56,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
 
   /**
    * This dialog says `aria-modal`, which promises assistive technology that
-   * everything behind it is inert — so it has to actually behave that way.
+   * everything behind it is inert - so it has to actually behave that way.
    * Focus moves in on open, cycles inside on Tab, and goes back to whatever
    * opened it on close. Escape is deliberately left alone: `DriveScene` binds
    * it globally along with the driving keys, and swallowing it here would stop
@@ -149,8 +149,8 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                           type="button"
                           ref={stop.index === currentIndex ? currentRef : null}
                           onClick={() => onSelect(stop.index)}
-                          // Where you are was said in colour alone — a border
-                          // and a tint — so a screen reader met twenty-one
+                          // Where you are was said in colour alone - a border
+                          // and a tint - so a screen reader met twenty-one
                           // near-identical buttons with nothing to separate
                           // them. "driven" below is real text and always did
                           // announce; only the current position was silent.

@@ -153,7 +153,7 @@ function Gauge({
 }
 
 /* --------------------------------------------------------------------- */
-/* Tell-tales — the little lamps along the bottom of the cluster. They all
+/* Tell-tales - the little lamps along the bottom of the cluster. They all
    mean something real here: the turn arrows follow steering input, CRUISE
    follows autopilot, BRAKE follows the brake. The amber braces are the one
    lamp that is not from a car: it is the driver's signature, and it stays
@@ -408,7 +408,7 @@ function SteeringWheel({ drive }) {
 
   return (
     // The wrapper owns the centring; the SVG owns the rotation. Keep them on
-    // separate elements — the per-frame `style.transform` would otherwise
+    // separate elements - the per-frame `style.transform` would otherwise
     // overwrite the translate that centres the wheel on the driver's axis.
     <div className="pointer-events-none absolute left-1/2 top-[40%] aspect-square h-full -translate-x-1/2">
       <svg
@@ -494,7 +494,7 @@ function SteeringWheel({ drive }) {
           strokeLinecap="round"
         />
 
-        {/* Horn boss — the maker's mark. */}
+        {/* Horn boss - the maker's mark. */}
         <circle cx="100" cy="112" r="27" fill="#0d1117" />
         <circle
           cx="100"
@@ -544,7 +544,7 @@ function ConsoleButton({ children, onClick, disabled, title, label, accent }) {
         // the four console controls overflowed their row by ~11px and the audio
         // toggle wrapped onto a line of its own in the corner. Nothing here
         // changes the visible words (guardrail 22) or drops a target below the
-        // 24px floor — the room comes from spacing.
+        // 24px floor - the room comes from spacing.
         'rounded-md border px-2 py-1.5 text-[0.6875rem] font-medium uppercase tracking-[0.1em] transition sm:px-3 sm:tracking-[0.14em]',
         'disabled:cursor-not-allowed disabled:opacity-30',
         accent
@@ -561,8 +561,8 @@ function Pedal({ label, hint, name, onPress, onRelease, tone, disabled }) {
   const handlers = {
     onPointerDown: (event) => {
       // `disabled` is not self-enforcing here. Chrome **does** dispatch
-      // pointer events to a disabled <button> — verified with a real click
-      // against an enabled control beside it, not assumed — so at the
+      // pointer events to a disabled <button> - verified with a real click
+      // against an enabled control beside it, not assumed - so at the
       // destination, where GO is disabled, pressing it still ran this handler
       // and set the throttle. The car could not move (cycle 45 sees to that),
       // but a greyed-out control was quietly mutating the sim, which is the
@@ -574,7 +574,7 @@ function Pedal({ label, hint, name, onPress, onRelease, tone, disabled }) {
       // NotFoundError if the pointer is no longer active, and the `?.` here
       // only ever guarded a *missing method*, never a throw. Measured with a
       // synthetic pointer, whose id is not active: it threw, and `onPress()`
-      // below never ran — the pedal did nothing at all. The press is the
+      // below never ran - the pedal did nothing at all. The press is the
       // point; the capture is a nicety, so it must not be able to eat it.
       try {
         event.currentTarget.setPointerCapture?.(event.pointerId)
@@ -606,7 +606,7 @@ function Pedal({ label, hint, name, onPress, onRelease, tone, disabled }) {
       disabled={disabled}
       aria-label={name}
       className={clsx(
-        // `border-transparent` is not decoration — it is the whole pedal's
+        // `border-transparent` is not decoration - it is the whole pedal's
         // survival in forced-colors mode. Audited: of 35 on-screen controls,
         // 27 are plain text links (which forced colors handles fine) and 6
         // carry a real border. These two pedals were the only painted boxes
@@ -618,7 +618,7 @@ function Pedal({ label, hint, name, onPress, onRelease, tone, disabled }) {
         // here (border-box sizing, so the outer rect is unchanged) and gets
         // painted in a system colour when forced colors is on.
         'flex h-full w-full touch-none select-none flex-col items-center justify-center rounded-md border border-transparent text-[0.5625rem] uppercase tracking-[0.16em] transition',
-        // The pedal travels under the press — but only when pressing it does
+        // The pedal travels under the press - but only when pressing it does
         // something. At the end of the route it used to depress and brighten
         // with the car going nowhere, which reads as a broken control rather
         // than a finished journey.
@@ -662,7 +662,7 @@ function TripComputer({ drive, stop }) {
         }
         if (yearRef.current) {
           // Only the stops with a real date in the content have a year. Past
-          // the last of them this reads NOW — it never invents one.
+          // the last of them this reads NOW - it never invents one.
           const year = yearAt(sim.travel)
           yearRef.current.textContent = year === null ? 'NOW' : String(year)
         }
@@ -671,8 +671,8 @@ function TripComputer({ drive, stop }) {
   )
 
   return (
-    // Decorative too: every value on this screen — the exit, the distance, the
-    // year — is already announced by the arrival panel and the itinerary, and
+    // Decorative too: every value on this screen - the exit, the distance, the
+    // year - is already announced by the arrival panel and the itinerary, and
     // the terminal chrome around it is pure styling.
     <div
       className={`flex h-full flex-col justify-between ${styles.screen}`}
@@ -680,7 +680,7 @@ function TripComputer({ drive, stop }) {
     >
       {/* The shell prompt is chrome. On a landscape phone the whole dash is
           190px and this row is the one thing here that carries nothing the
-          exit line, the bar and the year do not already say — so it stands
+          exit line, the bar and the year do not already say - so it stands
           down there rather than squeezing them to zero height. */}
       <div className="flex items-baseline justify-between gap-2 font-mono text-[0.5625rem] [@media(max-height:430px)]:hidden">
         <span className="truncate text-emerald-300/50">
@@ -690,12 +690,12 @@ function TripComputer({ drive, stop }) {
           ref={nextRef}
           className="shrink-0 font-semibold tabular-nums text-emerald-200"
         >
-          —
+          -
         </span>
       </div>
 
       <div className="mt-1 truncate font-mono text-[0.6875rem] text-sky-100/90">
-        {stop.exitLabel} · {stop.signTitle}
+        {stop.exitLabel} / {stop.signTitle}
       </div>
 
       <div className="relative mt-1.5 h-1.5 rounded-full bg-emerald-950/80">
@@ -713,7 +713,7 @@ function TripComputer({ drive, stop }) {
         ))}
       </div>
 
-      {/* The road is the résumé, so the hero number is the year — not the
+      {/* The road is the résumé, so the hero number is the year - not the
           mileage. It counts the career out and then simply says NOW. */}
       <div className="mt-1.5 flex items-baseline justify-between gap-2 font-mono text-[0.5625rem] uppercase tracking-[0.14em] text-emerald-300/40">
         <span className="flex items-baseline gap-1.5">
@@ -735,8 +735,8 @@ function TripComputer({ drive, stop }) {
 
 /**
  * The one control that makes noise, so it is the one control that is off until
- * you press it. The AudioContext is built *inside this handler* — never on
- * mount, never from a stored preference — so sound can only ever be the result
+ * you press it. The AudioContext is built *inside this handler* - never on
+ * mount, never from a stored preference - so sound can only ever be the result
  * of a deliberate gesture.
  */
 function AudioToggle({ drive }) {
@@ -761,7 +761,7 @@ function AudioToggle({ drive }) {
    * Leave the tab and the engine goes quiet with it.
    *
    * Nothing here used to watch visibility, and the failure is not that the
-   * sound carries on as normal — it is that `update()` rides on
+   * sound carries on as normal - it is that `update()` rides on
    * `requestAnimationFrame`, which pauses on a hidden tab, so the oscillators
    * hold the revs you left at while the master gain is still up.
    *
@@ -780,7 +780,7 @@ function AudioToggle({ drive }) {
       // `unpause()` answers whether the context actually came back, and the
       // answer has to be honoured: a browser can refuse to resume, and the
       // first version of this handler dropped the result on the floor, so a
-      // refused resume left the toggle lit over silence — the exact lie
+      // refused resume left the toggle lit over silence - the exact lie
       // `enable()` is written to avoid. Only `false` means it really failed;
       // `undefined` is "there is no engine", which is not a reason to change
       // what the visitor chose.
@@ -803,7 +803,7 @@ function AudioToggle({ drive }) {
       setOn(false)
       return
     }
-    // Only claim it is on if the context really started — the browser can
+    // Only claim it is on if the context really started - the browser can
     // refuse, and a lit toggle over silence is a lie.
     setOn(await engineRef.current.enable())
   }, [on])
@@ -828,7 +828,7 @@ function AudioToggle({ drive }) {
 }
 
 /**
- * Ask the scene to hold still — S141.
+ * Ask the scene to hold still - S141.
  *
  * Shaped after `AudioToggle` on purpose: same size, same two-tone treatment,
  * same `aria-pressed` contract, so the control row reads as one row of
@@ -858,9 +858,9 @@ function MotionToggle({ reducedMotion, onToggle }) {
   )
 }
 
-/** Slatted air vents — the cheapest, most convincing "this is a car" cue. */
+/** Slatted air vents - the cheapest, most convincing "this is a car" cue. */
 function Vent({ className }) {
-  // Display lives in the utility classes, not the module — a module rule of
+  // Display lives in the utility classes, not the module - a module rule of
   // `display: flex` would out-order Tailwind's `hidden` and leak the vent onto
   // breakpoints that meant to hide it.
   return (
@@ -897,7 +897,7 @@ export function Dashboard({
 
   // Remember what the keyboard was on. Disabling the focused control drops
   // focus to `<body>`, and afterwards there is no way to tell that apart from
-  // "nothing was focused anyway" — which is why this is recorded up front
+  // "nothing was focused anyway" - which is why this is recorded up front
   // rather than reconstructed in the effect below.
   useEffect(() => {
     const dash = dashRef.current
@@ -913,7 +913,7 @@ export function Dashboard({
     if (!routeEnded) return
 
     // A pedal disabled mid-press never receives its `pointerup`/`keyup`, so
-    // the throttle would still read 1 — and `Back` would then pull straight
+    // the throttle would still read 1 - and `Back` would then pull straight
     // out of the destination the moment it was pressed.
     drive.setThrottle(0)
 
@@ -935,12 +935,12 @@ export function Dashboard({
     <div
       ref={dashRef}
       // The skip link's target. `tabIndex={-1}` is what makes an in-page
-      // anchor actually move focus here rather than only scrolling — from
+      // anchor actually move focus here rather than only scrolling - from
       // here the next Tab lands on the first real control.
       id="drive-controls"
       tabIndex={-1}
       className={clsx(
-        // Height comes from `--dash` on the scene root — see DriveScene.
+        // Height comes from `--dash` on the scene root - see DriveScene.
         'absolute inset-x-0 bottom-0 z-30 h-[var(--dash)] outline-none',
         styles.dash
       )}
@@ -995,7 +995,7 @@ export function Dashboard({
               onToggle={onToggleMotion}
             />
           </div>
-          {/* Shorter on a landscape phone — still 42/48px tall, well clear of
+          {/* Shorter on a landscape phone - still 42/48px tall, well clear of
               the 24px target floor this run set in cycle 22. */}
           <div className="h-[52px] w-[54px] shrink-0 [@media(max-height:430px)]:h-[42px]">
             <Pedal
@@ -1012,8 +1012,8 @@ export function Dashboard({
               label="GO"
               name={
                 routeEnded
-                  ? 'Go — unavailable, this is the end of the route'
-                  : 'Go — hold to accelerate'
+                  ? 'Go, unavailable, this is the end of the route'
+                  : 'Go, hold to accelerate'
               }
               hint="↑"
               tone="go"
@@ -1028,16 +1028,16 @@ export function Dashboard({
       {/* Desktop: the real driver's seat.
 
           The middle grid column is the steering column, and it is a fixed
-          width between two `1fr` columns — so the wheel is centred on the
+          width between two `1fr` columns - so the wheel is centred on the
           viewport by construction, at every width. That is not decoration:
           `project()` puts the camera (the driver's eye) at the middle of the
           image, so the middle of the viewport *is* the driver's eyeline, and
           the wheel is the one thing that must sit directly in front of it.
           The road was previously drawn from an eye at 50% while the cockpit
-          was laid out around one at 32% — a 345px disagreement at 1920.
+          was laid out around one at 32% - a 345px disagreement at 1920.
           To the driver's left is the door; the console lives to their right. */}
       <div className="hidden h-full grid-cols-[0.42fr_clamp(260px,24vw,400px)_1fr] items-stretch gap-5 px-6 pb-2 pt-3 lg:grid xl:grid-cols-[0.5fr_clamp(260px,24vw,400px)_1.5fr]">
-        {/* The door side — short, because the driver sits near it.
+        {/* The door side - short, because the driver sits near it.
 
             This used to be `1fr` at xl, equal to the console column, which put
             the wheel exactly on the horizontal centre of the screen. That was
@@ -1046,7 +1046,7 @@ export function Dashboard({
             the driver lands in the middle of the image) but it read wrong, and
             the owner said so: *"the driving wheel is supposed to be the left
             side of the vehicle but it's centered to the screen"*, and before
-            that, *"the left side of the dash is unrealistically long"* — the
+            that, *"the left side of the dash is unrealistically long"* - the
             two are the same fault seen from either end. A symmetric dash is a
             car with the driver sitting in the middle of it.
 
@@ -1055,7 +1055,7 @@ export function Dashboard({
             stack and footwell to their right, which is where a left-hand-drive
             car actually puts them. The console column keeps the room it needs
             for its button row on one line (~310px, measured at 1100px: Back 78
-            + Next 77 + Route map 105 + the audio toggle and gaps) — it only
+            + Next 77 + Route map 105 + the audio toggle and gaps) - it only
             gained space in this change, never lost it. Below xl the split was
             already lopsided at 0.42fr and is left alone. */}
         <div className={`h-full ${styles.doorCard}`} aria-hidden="true" />
@@ -1073,11 +1073,11 @@ export function Dashboard({
             is written down rather than left to be rediscovered:
 
             1. They started at the *far* right, past the centre stack, against
-               the passenger door — "I don't think it makes much sense to have
+               the passenger door - "I don't think it makes much sense to have
                th brake and gas on the right side".
             2. Making them a flow child at the head of this column put them in
                the right place but cost the console ~330px, shoving the trip
-               computer and the button row toward the passenger door — "that
+               computer and the button row toward the passenger door - "that
                doesn't mean to push the hud for the back next route map and all
                that to be pushed to the right".
             3. So they are a `shrink-0` flow child at the head of this column,
@@ -1085,12 +1085,12 @@ export function Dashboard({
                stretch. That is what makes (2) survivable: the footwell takes
                only its own width, and the cap stops the console spreading into
                what is left. They sit immediately right of the wheel, clear of
-               the trip computer vertically and the button row horizontally —
+               the trip computer vertically and the button row horizontally -
                both asserted by measurement, not by eye.
 
             (An earlier attempt pinned the pedals out of the flow with
             `absolute` instead. That is gone; do not reintroduce it on the
-            strength of a stale comment — this one described it for two cycles
+            strength of a stale comment - this one described it for two cycles
             after the markup had changed.) */}
         <div className="flex h-full min-w-0 items-stretch gap-4">
           {/* `.footwell` keeps its own `position: relative` because the well's
@@ -1115,8 +1115,8 @@ export function Dashboard({
                   label="GO"
                   name={
                     routeEnded
-                      ? 'Go — unavailable, this is the end of the route'
-                      : 'Go — hold to accelerate'
+                      ? 'Go, unavailable, this is the end of the route'
+                      : 'Go, hold to accelerate'
                   }
                   hint="↑ / W"
                   tone="go"
@@ -1130,7 +1130,7 @@ export function Dashboard({
 
           {/* Capped, and left-aligned in its column. Moving the driver to the
               left made this column 1.5fr, and an uncapped centre stack simply
-              stretched into it — a 1074px terminal at 1920 with the button row
+              stretched into it - a 1074px terminal at 1920 with the button row
               centred under it, which is the HUD drifting toward the passenger
               door. The cap keeps the console at roughly the width it had when
               it sat beside a centred wheel, so it stays within reach of the
@@ -1141,7 +1141,7 @@ export function Dashboard({
               display shape rather than a letterbox, and the stack should not
               be wider than the thing it houses. The footwell above it is back
               in the normal flow: it can be, now that this column cannot
-              stretch to the passenger door — which is what made an in-flow
+              stretch to the passenger door - which is what made an in-flow
               footwell push the console across the cabin last time. */}
           <div className="flex h-full min-w-0 max-w-[24rem] flex-1 flex-col justify-center gap-2 py-1">
             <div className="flex justify-between gap-3">
@@ -1151,7 +1151,7 @@ export function Dashboard({
             {/* A real centre display, not a letterbox.
 
                 This was `h-[clamp(84px,13vh,116px)]` filling whatever width
-                the column had, which measured **720 x 116 — an aspect ratio of
+                the column had, which measured **720 x 116 - an aspect ratio of
                 6.2:1**. Nothing in a car looks like that. Production centre
                 displays run about 10-12.3 inches on a **16:9** panel (~1.78:1);
                 even the pillar-to-pillar outliers like the Hyperscreen are
@@ -1164,7 +1164,7 @@ export function Dashboard({
               <TripComputer drive={drive} stop={stop} />
             </div>
             {/* The padding that used to reserve space here is gone with the
-                absolute footwell that made it necessary — the pedals are in
+                absolute footwell that made it necessary - the pedals are in
                 the flow again, so they take their own room. */}
             <div className="flex flex-wrap items-center justify-center gap-1.5">
               <ConsoleButton

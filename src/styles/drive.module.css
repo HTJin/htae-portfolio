@@ -116,7 +116,7 @@
 }
 
 /* Dash surface: a soft cowl that curves away from the driver. The grain is a
-   moulded-plastic texture, not a flat fill — it is what stops it reading as a
+   moulded-plastic texture, not a flat fill - it is what stops it reading as a
    black rectangle with widgets on it. */
 .dash {
   background: repeating-linear-gradient(
@@ -192,7 +192,7 @@
     inset 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 22px -14px rgba(52, 211, 153, 0.9);
 }
 
-/* Slatted air vent. Deliberately no `display` here — see the Vent component. */
+/* Slatted air vent. Deliberately no `display` here - see the Vent component. */
 .vent {
   height: 20px;
   padding: 3px 5px;
@@ -221,7 +221,7 @@
   justify-content: flex-end;
 }
 
-/* Not a box — just the dash shadowing the well the pedals sit in. */
+/* Not a box - just the dash shadowing the well the pedals sit in. */
 .footwell::before {
   content: '';
   position: absolute;
@@ -334,7 +334,7 @@
 
 /* The door side.
    Centring the wheel on the driver's eyeline leaves the space to their left
-   open — which is correct, because that is where the door is, not more dash.
+   open - which is correct, because that is where the door is, not more dash.
    This gives that space the anatomy it should have: a card face angling away,
    the armrest edge catching the same light as the cowl, and a door pull. It is
    deliberately quiet; nothing here is a control. */
@@ -399,7 +399,7 @@
  *     printed document is clipped to a single viewport. That is an *inline*
  *     style, which is why every rule here has to be `!important` to beat it.
  *   - the canvas, the cockpit and the arrival panel are absolutely positioned
- *     decoration — on paper they are a large dark rectangle.
+ *     decoration - on paper they are a large dark rectangle.
  *   - the actual content is already in the DOM: a 9,854-character `.sr-only`
  *     itinerary carrying the whole résumé, clipped to `rect(0,0,0,0)`.
  *
@@ -408,7 +408,7 @@
  */
 @media print {
   /* `html`/`body` are deliberately NOT styled from here. CSS Modules rejects
-     any top-level selector with no local class in it — both `:global(html)`
+     any top-level selector with no local class in it - both `:global(html)`
      and the `:global { html, body }` block form are build errors, which is how
      this was found rather than guessed. And `body`'s `overflow: hidden` is an
      *inline* style written at runtime anyway, so a stylesheet could not beat it
@@ -426,7 +426,7 @@
 
   /* Hide every direct child of the scene except the one holding the résumé.
    *
-   * This used to name what to hide — `canvas` and `[aria-hidden='true']` —
+   * This used to name what to hide - `canvas` and `[aria-hidden='true']` -
    * which caught the sky, the interior and the road, and missed everything
    * else: the **dashboard** (`#drive-controls`, no `aria-hidden`), the arrival
    * panel's wrapper, the exit link and the ignition splash. Worse, forcing
@@ -436,7 +436,7 @@
    * panel; printing mid-drive, a dashboard band across the résumé.
    *
    * Naming what to *keep* is one rule instead of a list, and it cannot rot when
-   * new cockpit chrome is added — a new absolutely-positioned overlay is hidden
+   * new cockpit chrome is added - a new absolutely-positioned overlay is hidden
    * automatically rather than silently joining the page.
    */
   .printable > *:not(.printKeep) {
@@ -446,7 +446,7 @@
   /* The one thing the rule above cannot reach.
    *
    * `> *` only sees direct children, and the `<noscript>` panel is a
-   * *grandchild* — it sits inside the kept wrapper. With scripting disabled the
+   * *grandchild* - it sits inside the kept wrapper. With scripting disabled the
    * server-rendered markup includes a `position: fixed; inset: 0` overlay, and
    * once `.printable` is forced to `position: static` that overlay lands on
    * page one over the résumé: exactly the failure the keep-list was supposed to
@@ -456,7 +456,7 @@
     display: none !important;
   }
 
-  /* The résumé is right there — it is only hidden because sighted users are
+  /* The résumé is right there - it is only hidden because sighted users are
      looking at the drive instead. On paper the drive is the part to drop. */
   .printable :global(.sr-only) {
     position: static !important;
@@ -479,7 +479,7 @@
 
 /* On a landscape phone the whole dashboard is 190px tall and the terminal has
    to share it with the instrument strip and the controls. Its own padding is
-   the cheapest thing to give back — the content stays, it just sits closer to
+   the cheapest thing to give back - the content stays, it just sits closer to
    the bezel. */
 @media (max-height: 430px) {
   .screen {
