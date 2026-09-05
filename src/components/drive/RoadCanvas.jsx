@@ -3,7 +3,7 @@ import { paletteAt, withAlpha } from './daylight'
 import {
   BANK_TOP_OFFSET,
   LEG_LENGTH,
-  RAMP_OFFSET,
+  RAMP_OFFSET_MAX,
   RAMP_SEPARATES,
   RAMP_WIDTH,
   rampAt,
@@ -411,7 +411,7 @@ export function RoadCanvas({ drive, className }) {
         return shoulder < inner || shoulder > outer
       }
 
-      // Profile + interchange as one face: deck shoulder → ramp inner edge.
+      // Profile + interchange as one face: deck shoulder -> ramp inner edge.
       // Chunked out where the ramp crosses the shoulder (point of entry).
       const spans = (point) =>
         clearOfIntersection(point) && rampInnerOf(point) - shoulder > 0.15
@@ -938,7 +938,7 @@ export function RoadCanvas({ drive, className }) {
           ? [
               {
                 from: -(OPPOSING_EDGE + 22),
-                to: CARRIAGEWAY + RAMP_OFFSET + 22,
+                to: CARRIAGEWAY + RAMP_OFFSET_MAX + 22,
                 fill: GROUND,
                 follow: false,
               },
