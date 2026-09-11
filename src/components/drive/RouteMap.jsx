@@ -49,6 +49,40 @@ function statusOf(statusByIndex, index) {
   return token in STROKE ? token : 'unreached'
 }
 
+/**
+ * One row's rail. Absolutely positioned inside the `relative` button so the
+ * flex row keeps `items-baseline`. The SVG is a replaced element, so
+ * `bottom: 0` alone leaves it at its 150px intrinsic height; the explicit
+ * height covers the button's border box, which also closes the gap between
+ * neighbouring segments to the list's own 4px.
+ */
+function Rail({ status, pulse }) {
+  return (
+    <svg
+      role="img"
+      aria-label={LABEL[status]}
+      focusable="false"
+      className="pointer-events-none absolute -inset-y-px left-1 h-[calc(100%+2px)] w-3 text-sky-300"
+    >
+      <line
+        x1="50%"
+        y1="0"
+        x2="50%"
+        y2="100%"
+        stroke="currentColor"
+        {...STROKE[status]}
+      />
+      <circle
+        cx="50%"
+        cy="50%"
+        r="3"
+        fill="currentColor"
+        className={clsx(pulse && 'animate-pulse')}
+      />
+    </svg>
+  )
+}
+
 export function RouteMap({
   open,
   onClose,
@@ -226,34 +260,12 @@ export function RouteMap({
                               {stop.subtitle ?? stop.signSub}
                             </span>
                           </span>
-                          <svg
-                            role="img"
-                            aria-label={
-                              LABEL[statusOf(statusByIndex, stop.index)]
+                          <Rail
+                            status={statusOf(statusByIndex, stop.index)}
+                            pulse={
+                              stop.index === currentIndex && !reducedMotion
                             }
-                            focusable="false"
-                            className="pointer-events-none absolute inset-y-0 left-1 h-full w-3 text-sky-300"
-                          >
-                            <line
-                              x1="50%"
-                              y1="0"
-                              x2="50%"
-                              y2="100%"
-                              stroke="currentColor"
-                              {...STROKE[statusOf(statusByIndex, stop.index)]}
-                            />
-                            <circle
-                              cx="50%"
-                              cy="50%"
-                              r="3"
-                              fill="currentColor"
-                              className={clsx(
-                                stop.index === currentIndex &&
-                                  !reducedMotion &&
-                                  'animate-pulse'
-                              )}
-                            />
-                          </svg>
+                          />
                         </button>
                       </li>
                     ))}
