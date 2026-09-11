@@ -8,7 +8,44 @@ const LEGS = legsOf(route)
 
 const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])'
 
-export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
+/**
+ * Four rail states, one look each. The token comes from `statusByIndex`;
+ * anything not in this table paints as `unreached`. `visited` is still
+ * accepted so the call site keeps working, but it is never read: it marks
+ * every index at or before a jump target, so it cannot tell a leapfrogged
+ * exit from a taken one.
+ */
+const STROKE = {
+  taken: { strokeWidth: 2 },
+  skipped: { strokeWidth: 2, strokeDasharray: '0 5', strokeLinecap: 'round' },
+  jumped: { strokeWidth: 2, strokeDasharray: '5 3' },
+  unreached: { strokeWidth: 1, opacity: 0.3 },
+}
+
+const LABEL = {
+  taken: 'driven',
+  skipped: 'driven past',
+  jumped: 'not taken',
+  unreached: 'road ahead',
+}
+
+const EMPTY = Object.freeze({})
+
+function statusOf(statusByIndex, index) {
+  const source = statusByIndex ?? EMPTY
+  const token = source instanceof Map ? source.get(index) : source[index]
+  return Object.hasOwn(STROKE, token) ? token : 'unreached'
+}
+
+export function RouteMap({
+  open,
+  onClose,
+  onSelect,
+  currentIndex,
+  visited,
+  statusByIndex = EMPTY,
+  reducedMotion = false,
+}) {
   const panelRef = useRef(null)
   const returnFocusRef = useRef(null)
   const currentRef = useRef(null)
@@ -142,50 +179,77 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                     {leg.name}
                   </div>
                   <ul className="space-y-1">
-                    {leg.stops.map((stop) => (
-                      <li key={stop.id}>
-                        <button
-                          type="button"
-                          ref={stop.index === currentIndex ? currentRef : null}
-                          onClick={() => onSelect(stop.index)}
-                          // Where you are was said in colour alone — a border
-                          // and a tint — so a screen reader met twenty-one
-                          // near-identical buttons with nothing to separate
-                          // them. "driven" below is real text and always did
-                          // announce; only the current position was silent.
-                          // `location` is the ARIA token for the current place
-                          // within an environment, which is exactly what a
-                          // route map is; anything a reader does not know
-                          // degrades to "true" per spec.
-                          aria-current={
-                            stop.index === currentIndex ? 'location' : undefined
-                          }
-                          className={clsx(
-                            'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
-                            stop.index === currentIndex
-                              ? 'border-sky-400/50 bg-sky-400/10'
-                              : 'border-transparent hover:border-white/15 hover:bg-white/5'
-                          )}
-                        >
-                          <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">
-                            {stop.exitLabel}
-                          </span>
-                          <span className="min-w-0 flex-auto">
-                            <span className="block truncate text-sm text-white">
-                              {stop.title}
+                    {leg.stops.map((stop) => {
+                      const status = statusOf(statusByIndex, stop.index)
+                      const isCurrent = stop.index === currentIndex
+                      return (
+                        <li key={stop.id}>
+                          <button
+                            type="button"
+                            ref={isCurrent ? currentRef : null}
+                            onClick={() => onSelect(stop.index)}
+                            // Where you are was said in colour alone — a border
+                            // and a tint — so a screen reader met twenty-one
+                            // near-identical buttons with nothing to separate
+                            // them. `location` is the ARIA token for the current
+                            // place within an environment, which is exactly what
+                            // a route map is; anything a reader does not know
+                            // degrades to "true" per spec.
+                            aria-current={isCurrent ? 'location' : undefined}
+                            className={clsx(
+                              'relative flex w-full items-baseline gap-3 rounded-md border py-2 pl-7 pr-3 text-left transition',
+                              isCurrent
+                                ? 'border-sky-400/50 bg-sky-400/10'
+                                : 'border-transparent hover:border-white/15 hover:bg-white/5'
+                            )}
+                          >
+                            <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">
+                              {stop.exitLabel}
                             </span>
-                            <span className="block truncate text-[0.75rem] text-white/40">
-                              {stop.subtitle ?? stop.signSub}
+                            <span className="min-w-0 flex-auto">
+                              <span className="block truncate text-sm text-white">
+                                {stop.title}
+                              </span>
+                              <span className="block truncate text-[0.75rem] text-white/40">
+                                {stop.subtitle ?? stop.signSub}
+                              </span>
                             </span>
-                          </span>
-                          {visited.has(stop.index) ? (
-                            <span className="shrink-0 text-[0.625rem] uppercase tracking-[0.14em] text-emerald-300/70">
-                              driven
-                            </span>
-                          ) : null}
-                        </button>
-                      </li>
-                    ))}
+                            {/*
+                              The rail sits on the button so its label joins the
+                              button's name. An svg is a replaced element, so
+                              top and bottom alone leave it at its 150px
+                              intrinsic height; the explicit height spans the
+                              border box, which also closes the gap between
+                              neighbouring segments to the list's own 4px.
+                            */}
+                            <svg
+                              role="img"
+                              aria-label={LABEL[status]}
+                              focusable="false"
+                              className="pointer-events-none absolute -inset-y-px left-1 h-[calc(100%+2px)] w-3 text-sky-300"
+                            >
+                              <line
+                                x1="50%"
+                                y1="0"
+                                x2="50%"
+                                y2="100%"
+                                stroke="currentColor"
+                                {...STROKE[status]}
+                              />
+                              <circle
+                                cx="50%"
+                                cy="50%"
+                                r="3"
+                                fill="currentColor"
+                                className={clsx(
+                                  isCurrent && !reducedMotion && 'animate-pulse'
+                                )}
+                              />
+                            </svg>
+                          </button>
+                        </li>
+                      )
+                    })}
                   </ul>
                 </div>
               ))}
