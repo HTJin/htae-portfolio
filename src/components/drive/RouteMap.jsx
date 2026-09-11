@@ -8,7 +8,89 @@ const LEGS = legsOf(route)
 
 const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])'
 
-export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
+/**
+ * The rail beside each exit says what happened there in line style alone, so
+ * the words never appear on screen (Q050). Each row's SVG carries the spoken
+ * equivalent as its `aria-label`; the button's accessible name picks it up by
+ * name-from-content, so there is one text channel per row, not two.
+ *
+ * `skipped` is dotted because the owner asked for "dotted where you drove
+ * past" (Q169). `unreached` is faint by opacity and a thinner stroke, not a
+ * fourth dash pattern, so the road ahead reads as absent rather than as a
+ * different outcome.
+ */
+const STROKE = {
+  taken: { strokeWidth: 2 },
+  skipped: { strokeWidth: 2, strokeDasharray: '0 5', strokeLinecap: 'round' },
+  jumped: { strokeWidth: 2, strokeDasharray: '5 3' },
+  unreached: { strokeWidth: 1, opacity: 0.3 },
+}
+
+const LABEL = {
+  taken: 'driven',
+  skipped: 'driven past',
+  jumped: 'not taken',
+  unreached: 'road ahead',
+}
+
+// Frozen so the default prop is the same object on every render.
+const EMPTY = Object.freeze({})
+
+/**
+ * Anything that is not one of the four tokens is the road ahead. `visited`
+ * is deliberately not consulted: `useDrive` marks every index at or before a
+ * jump target as visited, so reading it would paint a leapfrogged exit solid.
+ */
+function statusOf(statusByIndex, index) {
+  const source = statusByIndex ?? EMPTY
+  const token = source instanceof Map ? source.get(index) : source[index]
+  return Object.hasOwn(STROKE, token) ? token : 'unreached'
+}
+
+/**
+ * One row's rail. Absolutely positioned inside the `relative` button so the
+ * flex row keeps `items-baseline`. The SVG is a replaced element, so
+ * `bottom: 0` alone leaves it at its 150px intrinsic height; the explicit
+ * height covers the button's border box, which also closes the gap between
+ * neighbouring segments to the list's own 4px.
+ */
+function Rail({ status, pulse }) {
+  return (
+    <svg
+      role="img"
+      aria-label={LABEL[status]}
+      focusable="false"
+      className="pointer-events-none absolute -inset-y-px left-1 h-[calc(100%+2px)] w-3 text-sky-300"
+    >
+      <line
+        x1="50%"
+        y1="0"
+        x2="50%"
+        y2="100%"
+        stroke="currentColor"
+        {...STROKE[status]}
+      />
+      <circle
+        cx="50%"
+        cy="50%"
+        r="3"
+        fill="currentColor"
+        className={clsx(pulse && 'animate-pulse')}
+      />
+    </svg>
+  )
+}
+
+export function RouteMap({
+  open,
+  onClose,
+  onSelect,
+  currentIndex,
+  // Accepted so the call site keeps compiling until it is rewired; never read.
+  visited,
+  statusByIndex = EMPTY,
+  reducedMotion = false,
+}) {
   const panelRef = useRef(null)
   const returnFocusRef = useRef(null)
   const currentRef = useRef(null)
@@ -151,9 +233,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                           // Where you are was said in colour alone — a border
                           // and a tint — so a screen reader met twenty-one
                           // near-identical buttons with nothing to separate
-                          // them. "driven" below is real text and always did
-                          // announce; only the current position was silent.
-                          // `location` is the ARIA token for the current place
+                          // them. `location` is the ARIA token for the current place
                           // within an environment, which is exactly what a
                           // route map is; anything a reader does not know
                           // degrades to "true" per spec.
@@ -161,7 +241,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                             stop.index === currentIndex ? 'location' : undefined
                           }
                           className={clsx(
-                            'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
+                            'relative flex w-full items-baseline gap-3 rounded-md border py-2 pl-7 pr-3 text-left transition',
                             stop.index === currentIndex
                               ? 'border-sky-400/50 bg-sky-400/10'
                               : 'border-transparent hover:border-white/15 hover:bg-white/5'
@@ -178,11 +258,12 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                               {stop.subtitle ?? stop.signSub}
                             </span>
                           </span>
-                          {visited.has(stop.index) ? (
-                            <span className="shrink-0 text-[0.625rem] uppercase tracking-[0.14em] text-emerald-300/70">
-                              driven
-                            </span>
-                          ) : null}
+                          <Rail
+                            status={statusOf(statusByIndex, stop.index)}
+                            pulse={
+                              stop.index === currentIndex && !reducedMotion
+                            }
+                          />
                         </button>
                       </li>
                     ))}
