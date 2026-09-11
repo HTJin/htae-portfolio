@@ -32,10 +32,8 @@ const LABEL = {
 const EMPTY = Object.freeze({})
 
 function statusOf(statusByIndex, index) {
-  const token =
-    statusByIndex instanceof Map
-      ? statusByIndex.get(index)
-      : statusByIndex[index]
+  const source = statusByIndex ?? EMPTY
+  const token = source instanceof Map ? source.get(index) : source[index]
   return Object.hasOwn(STROKE, token) ? token : 'unreached'
 }
 
