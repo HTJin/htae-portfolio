@@ -42,11 +42,9 @@ const EMPTY = Object.freeze({})
  * jump target as visited, so reading it would paint a leapfrogged exit solid.
  */
 function statusOf(statusByIndex, index) {
-  const token =
-    statusByIndex instanceof Map
-      ? statusByIndex.get(index)
-      : statusByIndex[index]
-  return token in STROKE ? token : 'unreached'
+  const source = statusByIndex ?? EMPTY
+  const token = source instanceof Map ? source.get(index) : source[index]
+  return Object.hasOwn(STROKE, token) ? token : 'unreached'
 }
 
 /**
