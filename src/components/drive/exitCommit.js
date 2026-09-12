@@ -5,6 +5,8 @@
  * them next to ARRIVAL_WINDOW; do not invent a second gesture scheme.
  */
 
+import { rampLengthAt } from './route'
+
 export const PASS_LATERAL_MAX = 0.55
 
 /** @typedef {'open' | 'take' | 'pass'} ExitCommit */
@@ -15,7 +17,7 @@ export const PASS_LATERAL_MAX = 0.55
  * @param {{
  *   commit: ExitCommit,
  *   remaining: number,
- *   rampLength: number,
+ *   targetIndex: number,
  *   arrivalWindow: number,
  *   brake: number,
  *   throttle: number,
@@ -28,7 +30,7 @@ export const PASS_LATERAL_MAX = 0.55
 export function resolveExitCommit({
   commit,
   remaining,
-  rampLength,
+  targetIndex,
   arrivalWindow,
   brake,
   throttle,
@@ -38,8 +40,10 @@ export function resolveExitCommit({
 }) {
   if (commit !== 'open') return commit
 
-  // Decision is only open inside the approach ramp band.
-  if (!(remaining > 0 && remaining <= rampLength)) return 'open'
+  // Decision is only open inside the approach ramp band. The band is this
+  // stop's own painted ramp length (Q778), not the scalar ceiling: on a 107 m
+  // stop the ceiling would lock a PASS 61 m before the ramp is visible.
+  if (!(remaining > 0 && remaining <= rampLengthAt(targetIndex))) return 'open'
 
   // TAKE: any peel cue or autopilot / Drive-on.
   if (autopilot || brake > 0 || x > PASS_LATERAL_MAX) return 'take'
