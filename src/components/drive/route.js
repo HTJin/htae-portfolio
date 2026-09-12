@@ -579,10 +579,10 @@ const LAST_DATED_S = DATED.length ? DATED[DATED.length - 1].s : 0
  * The trip you just drove, in numbers — shown only at the destination.
  *
  * Every figure is derived from the content, never written down: the counts come
- * from the arrays themselves and the distance from the seeded itinerary miles
- * (st026), not world metres. Add a role or a build and these follow
- * automatically, which is the only way a number on someone's résumé is safe to
- * display (guardrail 13).
+ * from the arrays themselves and the distance from the route's own length in
+ * world metres (`formatMiles(routeLength)`). Add a role or a build and these
+ * follow automatically, which is the only way a number on someone's résumé is
+ * safe to display (guardrail 13).
  */
 export const tripSummary = [
   {
@@ -597,7 +597,7 @@ export const tripSummary = [
     label: 'Side builds',
     value: String(route.filter((stop) => stop.kind === 'project').length),
   },
-  { label: 'Miles driven', value: String(tripMiles) },
+  { label: 'Miles driven', value: formatMiles(routeLength) },
 ]
 
 /**
