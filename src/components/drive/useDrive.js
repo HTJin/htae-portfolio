@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { resolveExitCommit } from './exitCommit'
-import { RAMP_LENGTH, rampAt, rampDropAt } from './route'
+import { rampAt, rampDropAt } from './route'
 import { LANE_DRIFT, clamp, curveAt } from './world'
 
 const MAX_SPEED = 42 // m/s, about 94 mph
@@ -93,13 +93,13 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   }, [])
 
   const markPassed = useCallback((stopIndex) => {
-    setPassed((previous) => {
-      if (previous.has(stopIndex)) return previous
-      const next = new Set(previous)
-      next.add(stopIndex)
-      passedRef.current = next
-      return next
-    })
+    // Write the ref first, then publish state from it. React 18 defers the
+    // updater, and the same frame reads `passedRef` right after the mark.
+    const next = new Set(passedRef.current)
+    if (next.has(stopIndex)) return
+    next.add(stopIndex)
+    passedRef.current = next
+    setPassed(next)
   }, [])
 
   /**
@@ -198,7 +198,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.commit = resolveExitCommit({
         commit: sim.commit,
         remaining,
-        rampLength: RAMP_LENGTH,
+        targetIndex: sim.target,
         arrivalWindow: ARRIVAL_WINDOW,
         brake: sim.brake,
         throttle: sim.throttle,
