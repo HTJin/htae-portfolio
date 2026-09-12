@@ -1,5 +1,5 @@
 /**
- * stopStatus.verify.mjs — Node stdlib harness for st132 status vocabulary.
+ * stopStatus.verify.mjs - Node stdlib harness for st132 status vocabulary.
  *
  * Zero new deps. No Storage shim required (R0m). Run:
  *   node ./src/components/drive/stopStatus.verify.mjs

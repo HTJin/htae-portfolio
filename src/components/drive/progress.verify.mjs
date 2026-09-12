@@ -1,63 +1,19 @@
 /**
- * progress.verify.mjs — Node stdlib harness for st132 progress v2 (R0–R0w + R0x).
+ * progress.verify.mjs - Node stdlib harness for st132 progress v2 (R0-R0w + R0x).
  *
  * Zero new deps. Run:
- *   node ./src/components/drive/progress.verify.mjs
+ *   node --import ./scripts/load-route.mjs ./src/components/drive/progress.verify.mjs
  *
  * R0x: Map-backed Storage is bound on globalThis.window.localStorage BEFORE
- * progress is imported. Bare host Storage / Node built-in Web Storage is not
- * trusted. Alias + .js extension resolve is inlined (no fifth file).
+ * progress is imported. Do not trust bare host Storage or Node built-in Web Storage.
+ * Alias resolution for `@/content` comes from scripts/load-route.mjs (base tip).
  */
-import { register } from 'node:module'
-import { pathToFileURL, fileURLToPath } from 'node:url'
-import path from 'node:path'
 import assert from 'node:assert/strict'
+import { pathToFileURL } from 'node:url'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const ROOT = path.resolve(fileURLToPath(new URL('../../..', import.meta.url)))
-
-register(
-  `data:text/javascript,${encodeURIComponent(`
-    import path from 'node:path';
-    import { pathToFileURL } from 'node:url';
-    const ROOT = ${JSON.stringify(ROOT)};
-    async function tryNext(nextResolve, spec, context) {
-      try { return await nextResolve(spec, context); }
-      catch (err) {
-        if (
-          err &&
-          (err.code === 'ERR_MODULE_NOT_FOUND' ||
-            err.code === 'ERR_UNSUPPORTED_DIR_IMPORT')
-        ) {
-          return null;
-        }
-        throw err;
-      }
-    }
-    export async function resolve(specifier, context, nextResolve) {
-      let base = specifier;
-      if (specifier.startsWith('@/')) {
-        base = pathToFileURL(path.join(ROOT, 'src', specifier.slice(2))).href;
-      } else if (
-        context.parentURL &&
-        (specifier.startsWith('./') || specifier.startsWith('../'))
-      ) {
-        base = new URL(specifier, context.parentURL).href;
-      } else {
-        return nextResolve(specifier, context);
-      }
-      const candidates = [
-        base,
-        base.endsWith('.js') ? null : base + '.js',
-        base.replace(/\\/$/, '') + '/index.js',
-      ].filter(Boolean);
-      for (const candidate of candidates) {
-        const hit = await tryNext(nextResolve, candidate, context);
-        if (hit) return hit;
-      }
-      return nextResolve(specifier, context);
-    }
-  `)}`
-)
+const here = path.dirname(fileURLToPath(import.meta.url))
 
 /** Minimal Map-backed Storage (R0x). */
 function makeStorage() {
@@ -86,14 +42,13 @@ const OTHER = 'htae.drive.unrelated'
 const store = makeStorage()
 globalThis.window = { localStorage: store }
 
-const { readProgress, writeProgress, clearProgress, normalizeOutcomes } =
-  await import('./progress.js')
-const { route } = await import('./route.js')
-
-function fail(msg) {
-  console.error('FAIL:', msg)
-  process.exitCode = 1
-}
+const { route } = await import(pathToFileURL(path.join(here, 'route.js')).href)
+const {
+  readProgress,
+  writeProgress,
+  clearProgress,
+  normalizeOutcomes,
+} = await import(pathToFileURL(path.join(here, 'progress.js')).href)
 
 function pass(msg) {
   console.log('PASS:', msg)
@@ -133,16 +88,12 @@ seedV1(3)
   pass('1b corrupt v2 → null, no v1 fall-through (R0c)')
 }
 store.clear()
-seedV2(3)
-{
-  // id mismatch
-  store.setItem(
-    KEY_V2,
-    JSON.stringify({ index: 3, id: 'not-a-real-stop', outcomes: {} })
-  )
-  assert.equal(readProgress(), null)
-  pass('1c id-mismatched v2 → null (R0c)')
-}
+store.setItem(
+  KEY_V2,
+  JSON.stringify({ index: 3, id: 'not-a-real-stop', outcomes: {} })
+)
+assert.equal(readProgress(), null)
+pass('1c id-mismatched v2 → null (R0c)')
 
 // --- 2. Index-only writeProgress preserves seeded outcomes (R0) ---
 store.clear()
@@ -166,11 +117,8 @@ writeProgress(4, { [route[3].id]: 'jumped' })
   assert.equal(r.id, route[10].id)
   assert.equal(r.outcomes[route[2].id], 'taken')
   assert.equal(r.outcomes[route[3].id], 'jumped')
-  pass(
-    '3a lower-index patch keeps max index + id from route[storedIndex] (R0l/R0v)'
-  )
+  pass('3a lower-index patch keeps max index + id from route[storedIndex] (R0l/R0v)')
 }
-// Wrong-id blob nulls on next read (must differ)
 store.setItem(
   KEY_V2,
   JSON.stringify({
@@ -193,7 +141,6 @@ assert.equal(raw(KEY_V2), null)
 assert.equal(raw(OTHER), 'keep-me')
 pass('4a clearProgress removes v1+v2 only; unrelated survives (R0j/Q1699)')
 
-// Independent throw: wrap removeItem so first key throws, second still clears.
 store.clear()
 seedV1(2)
 seedV2(5)
@@ -251,7 +198,11 @@ store.setItem(
   JSON.stringify({
     index: 4,
     id: route[4].id,
-    outcomes: { [route[2].id]: 'taken', bad: 'taken', [route[3].id]: 'nope' },
+    outcomes: {
+      [route[2].id]: 'taken',
+      bad: 'taken',
+      [route[3].id]: 'nope',
+    },
   })
 )
 {
@@ -272,12 +223,11 @@ writeProgress(3, { [route[1].id]: 'taken' })
   assert.equal(r.index, 8)
   assert.equal(r.id, route[8].id)
   assert.equal(r.outcomes[route[1].id], 'taken')
-  const keys = Object.keys(r.outcomes)
-  assert.deepEqual(keys, [route[1].id])
+  assert.deepEqual(Object.keys(r.outcomes), [route[1].id])
   pass('6 heal corrupt v2 then merge; no pre-heal junk (R0k/R0t)')
 }
 
-// --- 7. R0w: v2 write leaves v1 bytes unchanged; heal resumes from v1 tip ---
+// --- 7. R0w: v2 write leaves v1 bytes unchanged; heal migrates from v1 tip ---
 store.clear()
 seedV1(15)
 const v1Before = raw(KEY_V1)
@@ -299,20 +249,19 @@ writeProgress(3)
   assert.equal(r.index, 15)
   assert.equal(r.id, route[15].id)
   assert.equal(raw(KEY_V1), v1Fixed)
-  // Post-heal write must migrate tip into v2 (not stay on v1-only fallback).
   const v2 = JSON.parse(raw(KEY_V2))
   assert.equal(v2.index, 15)
   assert.equal(v2.id, route[15].id)
-  pass('7b corrupt v2 + writeProgress(3) migrates tip 15 into v2; v1 untouched (R0w)')
+  pass(
+    '7b corrupt v2 + writeProgress(3) migrates tip 15 into v2; v1 untouched (R0w)'
+  )
 }
-// Mirrored-v1 tip 3 must differ (control)
 store.clear()
 seedV1(3)
 seedV2(3, {})
 writeProgress(3)
 {
-  // If someone dual-wrote v1 down to 3 after a heal-from-15 scenario, that
-  // would regress. Control: with only tip 3, read stays 3 — differs from 15.
+  // Mirrored-v1 tip 3 must differ from tip-15 resume (control).
   assert.equal(readProgress().index, 3)
   pass('7c mirrored tip-3 control differs from tip-15 resume')
 }
@@ -327,9 +276,7 @@ pass('8a with window.localStorage shim, write+read non-null (R0x)')
   delete globalThis.window
   assert.equal(readProgress(), null)
   writeProgress(2)
-  // restore then confirm still at prior tip (write was no-op without window)
   globalThis.window = savedWindow
-  // Without window the write was a no-op; tip still 1 from before.
   assert.equal(readProgress()?.index, 1)
   pass('8b without window, read null and write is no-op (R0x control)')
 }
@@ -351,8 +298,4 @@ assert.equal(
 )
 pass('normalizeOutcomes drops unreached/passed; keeps taken')
 
-if (process.exitCode) {
-  console.error('progress.verify.mjs: FAILED')
-  process.exit(1)
-}
 console.log('progress.verify.mjs: OK')

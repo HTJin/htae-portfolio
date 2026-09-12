@@ -156,7 +156,7 @@ function healCorruptV2(store) {
 
 /**
  * R0t: after heal, re-bind prior from storage. Never keep a pre-heal parse.
- * source: 'v2' | 'v1' | 'none' — early-return only applies to a live v2 tip so
+ * source: 'v2' | 'v1' | 'none' - early-return only applies to a live v2 tip so
  * a post-heal write still migrates v1 → v2 (R0w / H1).
  */
 function bindPrior(store) {
@@ -220,7 +220,7 @@ export function writeProgress(index, outcomesPatch) {
     const hasPatch = Object.keys(normalizedPatch).length > 0
 
     // Forward-only early-return only for an existing v2 tip (R0d / R0r).
-    // After heal the tip may live only in v1 — still write v2 so migration
+    // After heal the tip may live only in v1 - still write v2 so migration
     // does not depend on a missing key (R0w / H1).
     if (
       prior.source === 'v2' &&
