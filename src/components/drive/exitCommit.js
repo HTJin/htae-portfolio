@@ -76,15 +76,16 @@ export function resolveExitCommit({
  * }} sim
  * @param {{ s: number, index: number }[]} stops
  * @param {Set<number>} passed
- * @param {number} rampLength
  */
-export function egoFollowsRamp(sim, stops, passed, rampLength) {
+export function egoFollowsRamp(sim, stops, passed) {
   if (sim.commit === 'pass') return false
 
   for (let i = 0; i < stops.length; i += 1) {
     const stop = stops[i]
     if (!passed.has(stop.index ?? i)) continue
-    if (Math.abs(sim.travel - stop.s) <= rampLength) return false
+    if (Math.abs(sim.travel - stop.s) <= rampLengthAt(stop.index ?? i)) {
+      return false
+    }
   }
 
   return true
