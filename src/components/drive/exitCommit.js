@@ -69,7 +69,8 @@ export function resolveExitCommit({
  * Whether ego should inherit peel geometry at `travel` (st072).
  *
  * Painted exit ribbons stay on `follow:true` bands; this only gates the
- * camera/car `sim.ramp` / `sim.drop` assignment.
+ * camera/car `sim.ramp` / `sim.drop` assignment. Each passed stop uses its
+ * own `rampLengthAt` band (Q778), not the scalar ceiling.
  *
  * @param {{
  *   travel: number,
@@ -78,15 +79,16 @@ export function resolveExitCommit({
  * }} sim
  * @param {{ s: number, index: number }[]} stops
  * @param {Set<number>} passed
- * @param {number} rampLength
  */
-export function egoFollowsRamp(sim, stops, passed, rampLength) {
+export function egoFollowsRamp(sim, stops, passed) {
   if (sim.commit === 'pass') return false
 
   for (let i = 0; i < stops.length; i += 1) {
     const stop = stops[i]
     if (!passed.has(stop.index ?? i)) continue
-    if (Math.abs(sim.travel - stop.s) <= rampLength) return false
+    if (Math.abs(sim.travel - stop.s) <= rampLengthAt(stop.index ?? i)) {
+      return false
+    }
   }
 
   return true

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { resolveExitCommit } from './exitCommit'
+import { egoFollowsRamp, resolveExitCommit } from './exitCommit'
 import { rampAt, rampDropAt } from './route'
 import { LANE_DRIFT, clamp, curveAt } from './world'
 
@@ -271,9 +271,16 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       // metre integration and the snap onto the stop — so the ramp can never be
       // a frame behind the car sitting on it. The parked early-return skips it,
       // which is correct: `travel` did not move, so neither did the ramp.
-      // st072 will zero peel on PASS; disposition `passed` is already recorded.
-      sim.ramp = rampAt(sim.travel)
-      sim.drop = rampDropAt(sim.travel)
+      //
+      // st072: while PASS-committed (or still inside a passed stop's band),
+      // ego stays mainline grade/lateral; painted exit ribbons are unchanged.
+      if (egoFollowsRamp(sim, all, passedRef.current)) {
+        sim.ramp = rampAt(sim.travel)
+        sim.drop = rampDropAt(sim.travel)
+      } else {
+        sim.ramp = 0
+        sim.drop = 0
+      }
     },
     [advancePast, arriveAt, depart, markPassed]
   )
