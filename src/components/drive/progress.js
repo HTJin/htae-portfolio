@@ -1,28 +1,18 @@
 import { route } from './route'
-import {
-  isPlainObject,
-  normalizeOutcomes,
-  normalizeOutcomesPatch,
-} from './stopStatus'
+import { isStoredToken } from './stopStatus'
 
 /**
- * How far a visitor got last time, plus per-stop outcome tokens (v2).
+ * How far a visitor got last time, plus per-stop outcomes (v2).
  *
- * The route is 21 exits long, so someone who reads a few and comes back later
- * would otherwise be dropped at MILE 0 with no way back except driving the
- * whole thing again. This remembers the furthest exit - but nothing here ever
- * *applies* it. The ignition screen offers it and the visitor chooses, so no
- * one is ever trapped mid-route by state they did not ask for.
+ * v2 (`htae.drive.progress.v2`) holds `{ index, id, outcomes }` keyed by stop
+ * id. v1 is resume-only: read when v2 is absent, never rewritten after
+ * migration starts (R0w). clearProgress removes both keys (Q1699).
  *
  * Every access is wrapped: `localStorage` throws outright in Safari private
  * mode, with cookies blocked, and in some embedded webviews. A storage failure
  * must degrade to "no saved progress", never to a broken page.
- *
- * v2 key holds `{ index, id, outcomes: { [stopId]: taken|skipped|jumped } }`.
- * v1 key stays readable for resume until clearProgress; write never setItem(v1).
  */
 
-// Literal v1 string kept for resume fallback (R0w). Sibling v2 is the only write target.
 const KEY_V1 = 'htae.drive.progress.v1'
 const KEY_V2 = 'htae.drive.progress.v2'
 
@@ -35,90 +25,130 @@ function storage() {
   }
 }
 
+function isPlainObject(value) {
+  return value != null && typeof value === 'object' && !Array.isArray(value)
+}
+
+/** Soft-recover missing / null / array / non-plain outcomes to {} (R0p / R0q). */
+function softOutcomes(raw) {
+  if (!isPlainObject(raw)) return {}
+  return raw
+}
+
 /**
- * Parse a progress blob. Returns null when index/id are unusable (R0c corrupt).
- * Soft-recovers non-plain outcomes to {} when index/id still match (R0p).
- * @param {string|null} raw
- * @returns {{ index: number, id: string, outcomes: Record<string, string>, outcomesPlain: boolean }|null}
+ * Keep only current-route stop ids and stored tokens taken|skipped|jumped.
+ * Drops unreached, unknowns, and index keys (R0e / R0g / R0o).
+ */
+function normalizeOutcomes(raw) {
+  const src = softOutcomes(raw)
+  const out = {}
+  const validIds = new Set(route.map((s) => s.id))
+  for (const [key, token] of Object.entries(src)) {
+    if (!validIds.has(key)) continue
+    if (!isStoredToken(token)) continue
+    out[key] = token
+  }
+  return out
+}
+
+function normalizePatch(patch) {
+  if (patch == null || typeof patch !== 'object' || Array.isArray(patch)) {
+    return {}
+  }
+  return normalizeOutcomes(patch)
+}
+
+function isNoPatch(patch) {
+  // omit / undefined / null / {} / non-object = no-patch (R0d)
+  if (patch === undefined || patch === null) return true
+  if (typeof patch !== 'object' || Array.isArray(patch)) return true
+  return Object.keys(normalizePatch(patch)).length === 0
+}
+
+/**
+ * Parse a stored blob. Returns:
+ * - { kind: 'absent' }
+ * - { kind: 'corrupt' }  parse fail / bad root / bad index / id mismatch
+ * - { kind: 'ok', index, id, outcomes, outcomesDirty }
+ *   outcomesDirty true when raw outcomes were non-plain (R0s)
  */
 function parseBlob(raw) {
-  if (!raw) return null
+  if (raw == null || raw === '') return { kind: 'absent' }
   let saved
   try {
     saved = JSON.parse(raw)
   } catch {
-    return null
+    return { kind: 'corrupt' }
   }
-  if (!isPlainObject(saved)) return null
+  if (!isPlainObject(saved)) return { kind: 'corrupt' }
 
   const index = Number(saved.index)
   if (!Number.isInteger(index) || index <= 0 || index > route.length - 1) {
-    return null
+    return { kind: 'corrupt' }
   }
-
   const stop = route[index]
-  if (!stop || stop.id !== saved.id) return null
+  if (!stop || stop.id !== saved.id) return { kind: 'corrupt' }
 
-  const outcomesPlain = isPlainObject(saved.outcomes)
-  const outcomes = normalizeOutcomes(outcomesPlain ? saved.outcomes : {}, route)
-
-  return { index, id: stop.id, outcomes, outcomesPlain }
+  const outcomesDirty = !isPlainObject(saved.outcomes)
+  return {
+    kind: 'ok',
+    index,
+    id: stop.id,
+    outcomes: softOutcomes(saved.outcomes),
+    outcomesDirty,
+  }
 }
 
-function publicShape(parsed) {
-  const stop = route[parsed.index]
+function publicFromOk(ok) {
+  const stop = route[ok.index]
   return {
-    index: parsed.index,
-    id: stop.id,
+    index: ok.index,
+    id: ok.id,
     title: stop.title,
     label: stop.exitLabel,
-    outcomes: { ...parsed.outcomes },
+    outcomes: normalizeOutcomes(ok.outcomes),
   }
 }
 
-/**
- * Read raw v2 string only (for dirty-check R0s). Does not soft-recover.
- */
-function rawV2OutcomesField(store) {
+function readV1Raw(store) {
   try {
-    const raw = store.getItem(KEY_V2)
-    if (!raw) return { present: false, field: undefined }
-    const saved = JSON.parse(raw)
-    if (!isPlainObject(saved))
-      return { present: true, field: undefined, corrupt: true }
-    return { present: true, field: saved.outcomes, corrupt: false }
+    return store.getItem(KEY_V1)
   } catch {
-    return { present: true, field: undefined, corrupt: true }
+    return null
+  }
+}
+
+function readV2Raw(store) {
+  try {
+    return store.getItem(KEY_V2)
+  } catch {
+    return null
   }
 }
 
 /**
- * The furthest exit reached, or null. Prefer v2; fall back to v1 only when
- * the v2 key is absent. Corrupt / id-mismatched v2 returns null (R0c).
+ * Prefer v2. If v2 absent, resume from v1 with empty outcomes.
+ * Corrupt / id-mismatched v2 → null (no v1 fall-through) (R0c).
  */
 export function readProgress() {
   const store = storage()
   if (!store) return null
 
   try {
-    const rawV2 = store.getItem(KEY_V2)
-    if (rawV2 != null && rawV2 !== '') {
-      const parsed = parseBlob(rawV2)
-      // v2 key present: never fall through to v1 (R0c)
-      if (!parsed) return null
-      return publicShape(parsed)
+    const v2raw = readV2Raw(store)
+    if (v2raw != null && v2raw !== '') {
+      const parsed = parseBlob(v2raw)
+      if (parsed.kind === 'corrupt') return null
+      if (parsed.kind === 'ok') return publicFromOk(parsed)
+      return null
     }
 
-    const rawV1 = store.getItem(KEY_V1)
-    if (!rawV1) return null
-    const parsed = parseBlob(rawV1)
-    if (!parsed) return null
-    // v1 has no outcomes; never invent them from the index (A1)
+    const v1raw = readV1Raw(store)
+    if (v1raw == null || v1raw === '') return null
+    const parsed = parseBlob(v1raw)
+    if (parsed.kind !== 'ok') return null
     return {
-      index: parsed.index,
-      id: parsed.id,
-      title: route[parsed.index].title,
-      label: route[parsed.index].exitLabel,
+      ...publicFromOk(parsed),
       outcomes: {},
     }
   } catch {
@@ -127,31 +157,36 @@ export function readProgress() {
 }
 
 /**
- * Private read for write path: prefer healed v2, else v1 tip. Returns parsed
- * blob or null. Used after optional R0k heal.
+ * Private tip used by write: prefer valid v2; else valid v1.
+ * Does not apply R0c (write may heal corrupt v2 first).
  */
-function readForWrite(store) {
-  const rawV2 = store.getItem(KEY_V2)
-  if (rawV2 != null && rawV2 !== '') {
-    const parsed = parseBlob(rawV2)
-    if (parsed) return { source: 'v2', parsed }
-    return { source: 'v2-corrupt', parsed: null }
+function readTipForWrite(store) {
+  const v2raw = readV2Raw(store)
+  if (v2raw != null && v2raw !== '') {
+    const parsed = parseBlob(v2raw)
+    if (parsed.kind === 'ok') return { source: 'v2', ...parsed }
+    if (parsed.kind === 'corrupt') return { source: 'v2-corrupt' }
   }
-  const rawV1 = store.getItem(KEY_V1)
-  if (!rawV1) return { source: 'none', parsed: null }
-  const parsed = parseBlob(rawV1)
-  if (!parsed) return { source: 'none', parsed: null }
-  return {
-    source: 'v1',
-    parsed: { ...parsed, outcomes: {}, outcomesPlain: true },
+  const v1raw = readV1Raw(store)
+  if (v1raw != null && v1raw !== '') {
+    const parsed = parseBlob(v1raw)
+    if (parsed.kind === 'ok') {
+      return {
+        source: 'v1',
+        index: parsed.index,
+        id: parsed.id,
+        outcomes: {},
+        outcomesDirty: false,
+      }
+    }
   }
+  return { source: 'none' }
 }
 
 /**
- * Remember an exit (forward-only on stored index) and merge outcome patches.
- *
- * @param {number} index
- * @param {Record<string, string>|null|undefined} [outcomesPatch]
+ * Remember an exit (forward-only on index) and optionally merge outcomes.
+ * Index-only callers (DriveScene until st134) must preserve prior outcomes (R0).
+ * Never setItem v1 (R0w).
  */
 export function writeProgress(index, outcomesPatch) {
   const store = storage()
@@ -161,81 +196,59 @@ export function writeProgress(index, outcomesPatch) {
   if (!route[index]) return
 
   try {
-    // R0k: heal corrupt / id-mismatched v2 before forward-only floor
-    let prior = readForWrite(store)
-    if (prior.source === 'v2-corrupt') {
+    let tip = readTipForWrite(store)
+
+    // R0k / R0t: heal corrupt v2 before the forward-only floor; discard pre-heal.
+    if (tip.source === 'v2-corrupt') {
       try {
         store.removeItem(KEY_V2)
       } catch {
         // best-effort heal
       }
-      // R0t: discard pre-heal parse; re-read only
-      prior = readForWrite(store)
+      tip = readTipForWrite(store)
     }
 
-    const previous = prior.parsed
-    const normalizedPatch = normalizeOutcomesPatch(outcomesPatch, route)
-    const hasPatch = Object.keys(normalizedPatch).length > 0
+    const previousIndex = tip.source === 'none' ? 0 : tip.index
+    const priorOutcomes =
+      tip.source === 'none' ? {} : softOutcomes(tip.outcomes)
+    const outcomesDirty = tip.source === 'v2' && tip.outcomesDirty === true
 
-    // R0s: dirty-check inspects raw stored outcomes, not public soft-recover
-    const rawMeta = rawV2OutcomesField(store)
-    const rawOutcomesDirty =
-      prior.source === 'v2' &&
-      rawMeta.present &&
-      !rawMeta.corrupt &&
-      !isPlainObject(rawMeta.field)
+    const patch = normalizePatch(outcomesPatch)
+    const noPatch = isNoPatch(outcomesPatch)
 
-    // R0d / R0b: no-patch = omit / undefined / null / {} / non-object
-    const noPatch =
-      outcomesPatch === undefined ||
-      outcomesPatch === null ||
-      !isPlainObject(outcomesPatch) ||
-      Object.keys(normalizeOutcomesPatch(outcomesPatch, route)).length === 0
-
-    // Forward-only early-return only when a valid v2 tip already exists, no
-    // meaningful patch, and raw outcomes already plain (R0d / R0r / R0s).
-    // After R0k heal the tip may only live in v1 — still write v2 (migration /
-    // heal persist) so resume does not depend on a missing key.
+    // Forward-only early-return (R0 / R0b / R0d / R0r):
+    // Only when a valid v2 tip already exists. A v1 tip must still migrate to
+    // v2 (R0w / R0k heal persist) even when the caller index does not advance.
     if (
-      prior.source === 'v2' &&
-      previous &&
-      previous.index >= index &&
+      tip.source === 'v2' &&
+      previousIndex >= index &&
       noPatch &&
-      !hasPatch &&
-      !rawOutcomesDirty &&
-      previous.outcomesPlain
+      !outcomesDirty
     ) {
       return
     }
 
-    // Nonempty patch bypasses early-return; stored index still only advances (R0b / R0l)
-    const storedIndex = Math.max(previous?.index ?? 0, index)
+    const storedIndex = Math.max(previousIndex, index)
     const stop = route[storedIndex]
     if (!stop) return
 
-    // R0q: soft-recover prior outcomes before any spread-merge
-    const priorOutcomes =
-      previous && previous.outcomesPlain
-        ? normalizeOutcomes(previous.outcomes, route)
-        : {}
+    // R0n / R0o: normalize then shallow-merge; never erase prior valid with garbage.
+    const merged = { ...normalizeOutcomes(priorOutcomes), ...patch }
 
-    // R0n / R0o: shallow-merge normalized patch into prior; never replace whole map
-    const outcomes = { ...priorOutcomes, ...normalizedPatch }
+    const blob = {
+      index: storedIndex,
+      id: stop.id, // R0v: id from route[storedIndex], never caller index
+      outcomes: merged,
+    }
 
-    // R0w: setItem only v2; never setItem v1
-    store.setItem(
-      KEY_V2,
-      JSON.stringify({ index: storedIndex, id: stop.id, outcomes })
-    )
+    store.setItem(KEY_V2, JSON.stringify(blob))
+    // R0w: never setItem KEY_V1
   } catch {
-    // Storage full or unavailable — losing progress is not worth an error.
+    // Storage full or unavailable. Losing progress is not worth an error.
   }
 }
 
-/**
- * Forget both progress keys. Never Storage.clear() (R0j / Q1699).
- * Independent try/catch per key (R0u).
- */
+/** Forget both keys. Never Storage.clear(). Independent try per key (R0j / R0u / Q1699). */
 export function clearProgress() {
   const store = storage()
   if (!store) return
@@ -250,6 +263,3 @@ export function clearProgress() {
     // best-effort
   }
 }
-
-// Exported for verify harnesses only; not a public Drive API.
-export const __progressKeys = Object.freeze({ v1: KEY_V1, v2: KEY_V2 })

@@ -1,10 +1,9 @@
 /**
  * Per-stop status vocabulary for the drive route map.
  *
- * Stored / producer tokens that persist: taken | skipped | jumped.
- * Runtime-only: unreached (never written to progress outcomes).
- *
- * Pure module: no React, no Storage, no progress.js import.
+ * Pure module: no React, no Storage, no progress.js import (R0m).
+ * Tokens: taken | skipped | jumped | unreached.
+ * Only taken | skipped | jumped may be persisted (R0e).
  */
 
 export const TAKEN = 'taken'
@@ -12,104 +11,114 @@ export const SKIPPED = 'skipped'
 export const JUMPED = 'jumped'
 export const UNREACHED = 'unreached'
 
-/** Tokens allowed in progress.v2 outcomes. */
+/** Tokens allowed in the progress v2 outcomes map. */
 export const STORED_TOKENS = Object.freeze([TAKEN, SKIPPED, JUMPED])
 
-const CANONICAL = new Set(STORED_TOKENS)
+const STORED = new Set(STORED_TOKENS)
+const CANONICAL = new Set([TAKEN, SKIPPED, JUMPED])
 
 /**
- * True when value is a plain object (not null, array, or boxed primitive).
+ * True when `token` may be written into progress outcomes.
+ * @param {unknown} token
+ */
+export function isStoredToken(token) {
+  return STORED.has(token)
+}
+
+/**
+ * Map a producer value to a canonical short-circuit token, or null.
+ * `arrived` (#26) → taken. `unset` → null (R0h).
  * @param {unknown} value
- */
-export function isPlainObject(value) {
-  return value !== null && typeof value === 'object' && !Array.isArray(value)
-}
-
-/**
- * Keep only route stop-id keys with stored tokens.
- * @param {unknown} raw
- * @param {Iterable<{ id: string }>} routeStops
- * @returns {Record<string, 'taken'|'skipped'|'jumped'>}
- */
-export function normalizeOutcomes(raw, routeStops) {
-  const allowed = new Set()
-  for (const stop of routeStops) {
-    if (stop && typeof stop.id === 'string') allowed.add(stop.id)
-  }
-  if (!isPlainObject(raw)) return {}
-  /** @type {Record<string, 'taken'|'skipped'|'jumped'>} */
-  const out = {}
-  for (const [key, value] of Object.entries(raw)) {
-    if (!allowed.has(key)) continue
-    if (CANONICAL.has(value)) out[key] = value
-  }
-  return out
-}
-
-/**
- * Normalize an outcomes patch the same way as stored outcomes.
- * Empty / non-object patches yield {}.
- * @param {unknown} patch
- * @param {Iterable<{ id: string }>} routeStops
- */
-export function normalizeOutcomesPatch(patch, routeStops) {
-  if (patch === undefined || patch === null) return {}
-  if (!isPlainObject(patch)) return {}
-  return normalizeOutcomes(patch, routeStops)
-}
-
-/**
- * Map a producer value to a canonical stored token, or null if absent / unset.
- *
- * Tolerates:
- * - #20 Map / function dispositionOf → taken|skipped|jumped (unset stays absent)
- * - #26 object map with arrived → taken
- * - #25 passed Set → membership means skipped ([[Q064]])
- *
- * @param {number} index
- * @param {unknown} producer
  * @returns {'taken'|'skipped'|'jumped'|null}
  */
-export function adaptProducer(index, producer) {
-  if (producer == null) return null
-
-  // #25 / Q064: passed Set membership → skipped (never jumped, never store "passed")
-  if (producer instanceof Set) {
-    return producer.has(index) ? SKIPPED : null
-  }
-
-  let raw
-  if (typeof producer === 'function') {
-    raw = producer(index)
-  } else if (producer instanceof Map) {
-    raw = producer.get(index)
-  } else if (isPlainObject(producer)) {
-    raw = producer[index] ?? producer[String(index)]
-  } else {
-    return null
-  }
-
-  if (raw == null || raw === 'unset') return null
-  if (raw === 'arrived') return TAKEN
-  if (raw === TAKEN || raw === SKIPPED || raw === JUMPED) return raw
+export function normalizeProducerToken(value) {
+  if (value === 'arrived') return TAKEN
+  if (value === TAKEN || value === SKIPPED || value === JUMPED) return value
   return null
 }
 
+function lookupMapOrObject(source, index) {
+  if (source == null) return undefined
+  if (source instanceof Map) {
+    if (source.has(index)) return source.get(index)
+    if (source.has(String(index))) return source.get(String(index))
+    return undefined
+  }
+  if (typeof source === 'object' && !Array.isArray(source)) {
+    if (Object.prototype.hasOwnProperty.call(source, index))
+      return source[index]
+    if (Object.prototype.hasOwnProperty.call(source, String(index))) {
+      return source[String(index)]
+    }
+  }
+  return undefined
+}
+
 /**
- * Resolve display / map status for one stop index.
+ * Resolve a producer disposition for one stop index.
+ * Tolerates #20 Map (or function), #26 object (`arrived`→`taken`),
+ * and #25 `passed` Set (membership → `skipped`, never `jumped`) (R0i / Q064).
+ * @param {number} index
+ * @param {{
+ *   dispositionOf?: Map<number, unknown> | ((i: number) => unknown),
+ *   stopStatus?: Record<string|number, unknown> | Map<number, unknown>,
+ *   passed?: Set<number>,
+ * }} [producers]
+ * @returns {'taken'|'skipped'|'jumped'|null}
+ */
+export function dispositionFromProducers(index, producers = {}) {
+  const { dispositionOf, stopStatus, passed } = producers
+
+  if (typeof dispositionOf === 'function') {
+    const token = normalizeProducerToken(dispositionOf(index))
+    if (token) return token
+  } else {
+    const token = normalizeProducerToken(
+      lookupMapOrObject(dispositionOf, index)
+    )
+    if (token) return token
+  }
+
+  const fromObject = normalizeProducerToken(
+    lookupMapOrObject(stopStatus, index)
+  )
+  if (fromObject) return fromObject
+
+  if (
+    passed instanceof Set &&
+    (passed.has(index) || passed.has(String(index)))
+  ) {
+    return SKIPPED
+  }
+
+  return null
+}
+
+function isVisited(visited, index) {
+  if (!visited) return false
+  if (visited instanceof Set) {
+    return visited.has(index) || visited.has(String(index))
+  }
+  if (Array.isArray(visited)) return visited.includes(index)
+  if (typeof visited.has === 'function') return visited.has(index)
+  return Boolean(visited[index] || visited[String(index)])
+}
+
+/**
+ * Status of one stop for map / assistive labels.
  *
- * Precedence:
- * 1. Canonical producer token (R0h)
- * 2. visited → taken
- * 3. behind furthest, at/after entry, not visited → jumped ([[Q180]])
- * 4. else unreached
+ * Precedence (R0h):
+ * 1. Canonical producer token (taken | skipped | jumped) short-circuits.
+ * 2. Visited → taken.
+ * 3. Behind furthest, at/after entry, not visited → jumped (Q180).
+ * 4. Else unreached.
  *
  * @param {number} index
  * @param {{
- *   dispositionOf?: unknown,
- *   stopStatus?: unknown,
- *   passed?: unknown,
- *   visited?: Set<number>|Iterable<number>|null,
+ *   dispositionOf?: Map<number, unknown> | ((i: number) => unknown),
+ *   stopStatus?: Record<string|number, unknown> | Map<number, unknown>,
+ *   passed?: Set<number>,
+ *   visited?: Set<number> | number[] | { has?: Function, [k: number]: unknown },
  *   currentIndex?: number,
  *   entryIndex?: number,
  *   furthestIndex?: number,
@@ -117,28 +126,15 @@ export function adaptProducer(index, producer) {
  * @returns {'taken'|'skipped'|'jumped'|'unreached'}
  */
 export function statusOf(index, ctx = {}) {
-  const producers = [ctx.dispositionOf, ctx.stopStatus, ctx.passed]
-  for (const producer of producers) {
-    const adapted = adaptProducer(index, producer)
-    if (adapted && CANONICAL.has(adapted)) return adapted
-  }
+  const fromProducer = dispositionFromProducers(index, ctx)
+  if (fromProducer && CANONICAL.has(fromProducer)) return fromProducer
 
-  let visited = ctx.visited
-  if (visited && !(visited instanceof Set)) {
-    visited = new Set(visited)
-  }
-  if (visited && visited.has(index)) return TAKEN
+  if (isVisited(ctx.visited, index)) return TAKEN
 
-  const furthest =
-    typeof ctx.furthestIndex === 'number'
-      ? ctx.furthestIndex
-      : typeof ctx.currentIndex === 'number'
-      ? ctx.currentIndex
-      : 0
-  const entry = typeof ctx.entryIndex === 'number' ? ctx.entryIndex : 0
+  const furthest = Number(ctx.furthestIndex ?? ctx.currentIndex ?? 0)
+  const entry = Number(ctx.entryIndex ?? 0)
 
-  // Q180: leapfrog = not visited and i < furthest, and at/after entry (deep-link)
-  if (!visited?.has(index) && index < furthest && index >= entry) {
+  if (Number.isFinite(furthest) && index < furthest && index >= entry) {
     return JUMPED
   }
 
