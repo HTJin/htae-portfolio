@@ -58,10 +58,6 @@ function publicShape(index, stop, outcomes) {
   }
 }
 
-/**
- * Parse a stored tip. `kind: 'absent' | 'corrupt' | 'ok'`.
- * Bad outcomes alone still yields `ok` with soft-recovered `{}` (R0p).
- */
 function parseTip(raw) {
   if (raw == null || raw === '') return { kind: 'absent' }
   let saved
@@ -87,6 +83,7 @@ function parseTip(raw) {
     stop,
     outcomesRaw: saved.outcomes,
     outcomesPlain,
+    // R0p / R0q: soft-recover non-plain outcomes to {} before any spread.
     outcomes: outcomesPlain ? normalizeOutcomes(saved.outcomes) : {},
   }
 }
@@ -106,7 +103,7 @@ function readV1Tip(store) {
 /**
  * The furthest exit reached, or null. Returns null rather than throwing for
  * anything unparseable, out of range, or pointing at a stop that has since
- * moved — an index alone is not enough to trust once the content can change.
+ * moved: an index alone is not enough to trust once the content can change.
  *
  * When v2 is present but corrupt / id-mismatched, return null (R0c). Do not
  * fall through to v1. Soft-recover bad outcomes shapes to {} (R0p).
@@ -165,15 +162,16 @@ export function writeProgress(index, outcomesPatch) {
     let previousIndex = 0
     let priorOutcomes = {}
     let outcomesPlain = true
+    let v2Present = false
 
     const v2Raw = store.getItem(KEY_V2)
     if (v2Raw != null) {
       const tip = parseTip(v2Raw)
       if (tip.kind === 'ok') {
+        v2Present = true
         previousIndex = tip.index
         // R0s / R0r: dirty check uses raw outcomesPlain, not public soft-recover.
         outcomesPlain = tip.outcomesPlain
-        // R0q: soft-recover before any spread.
         priorOutcomes = tip.outcomes
       }
     } else {
@@ -192,7 +190,9 @@ export function writeProgress(index, outcomesPatch) {
 
     // Forward-only early-return when no patch and outcomes already plain (R0d).
     // Non-plain raw outcomes bypass and rewrite soft-recovered {} (R0r).
-    if (previousIndex >= index && !hasPatch && outcomesPlain) {
+    // Require v2Present so a post-heal v1 tip still materializes a clean v2
+    // tip at max(previous, caller) without regressing (R0k / R0t).
+    if (v2Present && previousIndex >= index && !hasPatch && outcomesPlain) {
       return
     }
 
@@ -212,7 +212,7 @@ export function writeProgress(index, outcomesPatch) {
       })
     )
   } catch {
-    // Storage full or unavailable — losing progress is not worth an error.
+    // Storage full or unavailable: losing progress is not worth an error.
   }
 }
 

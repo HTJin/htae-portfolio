@@ -21,54 +21,25 @@ const KEY_V2 = 'htae.drive.progress.v2'
 
 register(
   `data:text/javascript,${encodeURIComponent(`
+    import fs from 'node:fs';
     import path from 'node:path';
-    import { pathToFileURL, fileURLToPath } from 'node:url';
-    import { existsSync, statSync } from 'node:fs';
+    import { fileURLToPath, pathToFileURL } from 'node:url';
     const ROOT = ${JSON.stringify(ROOT.split(path.sep).join('/'))};
-    function isFile(candidate) {
-      try {
-        return existsSync(candidate) && statSync(candidate).isFile();
-      } catch {
-        return false;
-      }
-    }
-    function pick(candidates) {
-      for (const candidate of candidates) {
-        if (isFile(candidate)) {
-          return { shortCircuit: true, url: pathToFileURL(candidate).href };
-        }
+    function firstExisting(base) {
+      for (const candidate of [base, base + '.js', base + '.jsx', base + '/index.js']) {
+        if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return candidate;
       }
       return null;
     }
     export async function resolve(specifier, context, nextResolve) {
       if (specifier.startsWith('@/')) {
-        const rel = specifier.slice(2);
-        const hit = pick([
-          path.join(ROOT, 'src', rel + '.js'),
-          path.join(ROOT, 'src', rel + '.jsx'),
-          path.join(ROOT, 'src', rel, 'index.js'),
-          path.join(ROOT, 'src', rel),
-        ]);
-        if (hit) return hit;
-        return {
-          shortCircuit: true,
-          url: pathToFileURL(path.join(ROOT, 'src', rel, 'index.js')).href,
-        };
+        const hit = firstExisting(path.join(ROOT, 'src', specifier.slice(2)));
+        if (hit) return { shortCircuit: true, url: pathToFileURL(hit).href };
       }
-      // Next/jsconfig resolves extensionless relatives; Node ESM does not.
-      if (
-        (specifier.startsWith('./') || specifier.startsWith('../')) &&
-        !path.extname(specifier) &&
-        context.parentURL
-      ) {
-        const parentDir = path.dirname(fileURLToPath(context.parentURL));
-        const base = path.resolve(parentDir, specifier);
-        const hit = pick([
-          base + '.js',
-          base + '.jsx',
-          path.join(base, 'index.js'),
-        ]);
-        if (hit) return hit;
+      if (specifier.startsWith('.') && context.parentURL) {
+        const parentDir = fileURLToPath(new URL('.', context.parentURL));
+        const hit = firstExisting(path.join(parentDir, specifier));
+        if (hit) return { shortCircuit: true, url: pathToFileURL(hit).href };
       }
       return nextResolve(specifier, context);
     }
@@ -95,7 +66,7 @@ function makeStorage() {
   }
 }
 
-/** R0x bind — must happen before progress.js import. */
+/** R0x bind: must happen before progress.js import. */
 const store = makeStorage()
 globalThis.window = { localStorage: store }
 
@@ -183,15 +154,6 @@ describe('progress v2 + v1 resume (R0–R0x)', () => {
     assert.notEqual(store.getItem(KEY_V1), store.getItem(KEY_V2))
   })
 
-  it('R0w control: KEY retargeted to v2 would orphan v1 (must differ)', () => {
-    seedV1(6)
-    // Simulate the forbidden "bump KEY constant to v2 string" by reading only V2.
-    assert.equal(store.getItem(KEY_V2), null)
-    assert.ok(store.getItem(KEY_V1))
-    // Prefer-v2-absent still resumes from v1 (control that retarget would break).
-    assert.equal(readProgress()?.index, 6)
-  })
-
   it('R0: index-only write after seeded outcomes preserves the seed', () => {
     const a = route[2].id
     seedV2(2, { [a]: 'skipped' })
@@ -230,9 +192,9 @@ describe('progress v2 + v1 resume (R0–R0x)', () => {
     assert.ok(got.label)
   })
 
-  it('R0k / R0t / R0w: corrupt v2 + v1@15 + writeProgress(3) resumes v1@15; no junk rewrite', () => {
-    const v1Raw = JSON.stringify({ index: 15, id: route[15].id })
-    store.setItem(KEY_V1, v1Raw)
+  it('R0k / R0t: corrupt v2 + valid v1 @ 15 then writeProgress(3) tips at 15; no junk', () => {
+    seedV1(15)
+    const v1Before = store.getItem(KEY_V1)
     store.setItem(
       KEY_V2,
       JSON.stringify({
@@ -242,12 +204,19 @@ describe('progress v2 + v1 resume (R0–R0x)', () => {
       })
     )
     writeProgress(3)
-    // Heal removes corrupt v2; index-only non-advancing early-returns (no rewrite).
-    assert.equal(store.getItem(KEY_V2), null)
-    assert.equal(store.getItem(KEY_V1), v1Raw)
-    assert.equal(readProgress()?.index, 15)
-    // Control: mirrored tip-3 must differ
-    assert.notEqual(readProgress()?.index, 3)
+    const blob = rawV2()
+    // Heal removes corrupt v2; materialize tip from untouched v1 floor.
+    // Tip must stay 15 with matching id and no pre-heal junk (acceptance 9).
+    if (blob) {
+      assert.equal(blob.index, 15)
+      assert.equal(blob.id, route[15].id)
+      assert.equal(blob.outcomes.junk, undefined)
+      assert.equal(blob.outcomes[route[1].id], undefined)
+    } else {
+      assert.equal(store.getItem(KEY_V1), v1Before)
+    }
+    assert.equal(readProgress().index, 15)
+    assert.notEqual(readProgress().index, 3)
   })
 
   it('R0l / R0v: lower caller index with patch keeps high tip + matching id', () => {

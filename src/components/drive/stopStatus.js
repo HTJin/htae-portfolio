@@ -40,10 +40,10 @@ function lookupMapOrObject(source, index) {
     if (source.has(String(index))) return source.get(String(index))
     return undefined
   }
-  if (typeof source === 'function') return source(index)
   if (typeof source === 'object' && !Array.isArray(source)) {
-    if (Object.prototype.hasOwnProperty.call(source, index))
+    if (Object.prototype.hasOwnProperty.call(source, index)) {
       return source[index]
+    }
     if (Object.prototype.hasOwnProperty.call(source, String(index))) {
       return source[String(index)]
     }
@@ -54,9 +54,8 @@ function lookupMapOrObject(source, index) {
 /**
  * Resolve a producer disposition for one stop index.
  *
- * Tolerates #20 dispositionOf Map (or function), #26 stopStatus object
- * (arrived→taken), and #25 passed Set (membership→skipped, never jumped;
- * R0i / Q064).
+ * Tolerates #20 dispositionOf Map, #26 stopStatus object (arrived→taken),
+ * and #25 passed Set (membership→skipped, never jumped; R0i / Q064).
  */
 export function dispositionOf(index, producers = {}) {
   const { dispositionOf: mapLike, stopStatus, passed } = producers
@@ -79,8 +78,9 @@ export function dispositionOf(index, producers = {}) {
 
 function isVisited(index, visited) {
   if (visited == null) return false
-  if (visited instanceof Set)
+  if (visited instanceof Set) {
     return visited.has(index) || visited.has(String(index))
+  }
   if (Array.isArray(visited)) return visited.includes(index)
   if (typeof visited === 'object') {
     return Boolean(visited[index] || visited[String(index)])

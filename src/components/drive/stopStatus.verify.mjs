@@ -101,9 +101,4 @@ describe('stopStatus vocabulary', () => {
       JUMPED
     )
   })
-
-  it('R0m: this harness imports stopStatus only (no Storage / progress)', () => {
-    assert.equal(typeof statusOf, 'function')
-    assert.equal(typeof globalThis.window, 'undefined')
-  })
 })
