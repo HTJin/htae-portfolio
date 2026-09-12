@@ -2,11 +2,11 @@
  * Option-lane TAKE/PASS commit (st071) - pure helpers.
  *
  * Commit string lives on `sim.commit` (`open`|`take`|`pass`). Durable
- * disposition tokens are `taken` | `skipped` | unset - never name decline
- * `passed` (st011 uses that for arrive). Zero new deps; tiny FSM inline
+ * disposition tokens are `taken` | `passed` | unset. Decline stores `passed`
+ * (Q064 / Q336); st011 remaps later. Zero new deps; tiny FSM inline
  * (https://stately.ai/blog/2021-01-20-you-dont-need-a-library-for-state-machines).
  *
- * Thresholds locked by cr049 architect-consensus / Q041 option-lane.
+ * Thresholds locked by cr100001 architect-consensus / Q041 option-lane.
  */
 
 /**
@@ -15,34 +15,28 @@
  */
 export const PASS_LATERAL_MAX = 0.55
 
-/**
- * Commit window metres. Must equal `RAMP_LENGTH` in route.js (`LEG_LENGTH * 0.4`).
- * Kept numeric here so this module stays free of the Next `@/` content import.
- */
-export const COMMIT_WINDOW = 168
-
 export const COMMIT_OPEN = 'open'
 export const COMMIT_TAKE = 'take'
 export const COMMIT_PASS = 'pass'
 
-/** Durable disposition tokens (Q065). Decline is never named `passed`. */
+/** Durable disposition tokens (Q064 / Q336). Decline is `passed`. */
 export const DISPOSITION_TAKEN = 'taken'
-export const DISPOSITION_SKIPPED = 'skipped'
+export const DISPOSITION_PASSED = 'passed'
 export const DISPOSITION_UNSET = 'unset'
 
 /**
  * Resolve option-lane commit while the decision window is open.
- * Window: `0 < remaining <= commitWindow` (caller passes route.RAMP_LENGTH).
- * Once locked, stays locked.
+ * Window: `0 < remaining <= commitWindow` (caller passes rampLengthAt(target)).
+ * Once locked, stays locked. Missing commitWindow throws (Q778).
  *
  * @param {{ commit: string, brake: number, throttle: number, x: number, autopilot: boolean }} sim
- * @param {{ remaining: number, lastStop: boolean, commitWindow?: number }} ctx
+ * @param {{ remaining: number, lastStop: boolean, commitWindow: number }} ctx
  * @returns {'open'|'take'|'pass'}
  */
-export function resolveCommit(
-  sim,
-  { remaining, lastStop, commitWindow = COMMIT_WINDOW }
-) {
+export function resolveCommit(sim, { remaining, lastStop, commitWindow }) {
+  if (!(commitWindow > 0)) {
+    throw new Error('resolveCommit requires commitWindow > 0')
+  }
   if (sim.commit !== COMMIT_OPEN) return sim.commit
   if (!(remaining > 0 && remaining <= commitWindow)) return COMMIT_OPEN
 

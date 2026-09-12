@@ -1,27 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   PASS_LATERAL_MAX,
-  COMMIT_WINDOW,
   COMMIT_OPEN,
   COMMIT_TAKE,
   COMMIT_PASS,
   DISPOSITION_TAKEN,
-  DISPOSITION_SKIPPED,
+  DISPOSITION_PASSED,
   DISPOSITION_UNSET,
   resolveCommit,
   assistAllowed,
   resolveGore,
 } from './optionLane'
-import { RAMP_LENGTH, rampAt, rampDropAt } from './route'
+import { rampAt, rampDropAt, rampLengthAt } from './route'
 import { LANE_DRIFT, clamp, curveAt } from './world'
-
-// Fail-loud if optionLane's verify default drifts from route.RAMP_LENGTH.
-// Runtime always passes commitWindow: RAMP_LENGTH; this guards the literal.
-if (COMMIT_WINDOW !== RAMP_LENGTH) {
-  throw new Error(
-    `optionLane COMMIT_WINDOW (${COMMIT_WINDOW}) !== route.RAMP_LENGTH (${RAMP_LENGTH})`,
-  )
-}
 
 const MAX_SPEED = 42 // m/s, about 94 mph
 const ACCELERATION = 8
@@ -69,8 +60,8 @@ function createSim() {
     parked: true,
     // Option-lane commit for the upcoming interchange: open until TAKE/PASS
     // locks (or defaults to take at the gore). Durable UI tokens live on the
-    // disposition map (`taken` / `skipped` / unset) - never overload cabin
-    // `passedStop`, and never name decline `passed` (st011 uses that for arrive).
+    // disposition map (`taken` / `passed` / unset) - never overload cabin
+    // `passedStop` (Q064 / Q336).
     commit: COMMIT_OPEN,
     gear: 1,
     rpm: 0,
@@ -206,10 +197,11 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       }
 
       // Option-lane commit (extracted helper - alternate to fully-inline FSM).
+      // Per-stop window from rampLengthAt (Q778).
       sim.commit = resolveCommit(sim, {
         remaining,
         lastStop,
-        commitWindow: RAMP_LENGTH,
+        commitWindow: rampLengthAt(sim.target),
       })
 
       // Brake assist: TAKE (and unresolved open) still roll to a halt.
@@ -257,11 +249,11 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
 
         if (gore === COMMIT_PASS) {
           // Pass-through: keep rolling, no park / arriveAt / visited-as-arrived.
-          // Disposition decline token is `skipped` (Q065). Ego peel stays on
-          // rampAt/rampDropAt this hop - st072 owns mainline zeroing later.
-          const skippedIndex = sim.target
-          markDisposition(skippedIndex, DISPOSITION_SKIPPED)
-          sim.target = skippedIndex + 1
+          // Disposition decline token is `passed` (Q064 / Q336). Ego peel stays
+          // on rampAt/rampDropAt this hop - st072 owns mainline zeroing later.
+          const passedIndex = sim.target
+          markDisposition(passedIndex, DISPOSITION_PASSED)
+          sim.target = passedIndex + 1
           sim.commit = COMMIT_OPEN
           sim.autopilot = false
           depart(sim.target)
@@ -414,7 +406,6 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       setSteer,
       maxSpeed: MAX_SPEED,
       passLateralMax: PASS_LATERAL_MAX,
-      rampLength: RAMP_LENGTH,
       arrivalWindow: ARRIVAL_WINDOW,
     }),
     [
@@ -440,8 +431,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
 
 export {
   PASS_LATERAL_MAX,
-  COMMIT_WINDOW,
   ARRIVAL_WINDOW,
   DISPOSITION_TAKEN,
-  DISPOSITION_SKIPPED,
+  DISPOSITION_PASSED,
 }
