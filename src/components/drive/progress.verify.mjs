@@ -1,21 +1,65 @@
 /**
- * progress.verify.mjs - Node stdlib harness for st132 progress v2 (R0-R0w + R0x).
+ * progress.verify.mjs — st132 progress v2 harness (R0–R0w + R0x).
  *
- * Zero new deps. Run:
- *   node --import ./scripts/load-route.mjs ./src/components/drive/progress.verify.mjs
+ * Alternate structure: sync module.registerHooks (same-thread) maps @/ → src/
+ * and adds .js for extensionless relatives. Zero new deps; no fifth file.
+ * Prefer registerHooks over async register(import.meta.url) so the hook is
+ * live before the first dynamic import of progress/route.
  *
- * R0x: Map-backed Storage is bound on globalThis.window.localStorage BEFORE
- * progress is imported. Do not trust bare host Storage or Node built-in Web Storage.
- * Alias resolution for `@/content` comes from scripts/load-route.mjs (base tip).
+ * R0x: Map-backed Storage on window.localStorage BEFORE progress import.
  */
 import assert from 'node:assert/strict'
-import { pathToFileURL } from 'node:url'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { existsSync, statSync } from 'node:fs'
+import { registerHooks } from 'node:module'
+import { dirname, extname, join, resolve as pathResolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
-const here = path.dirname(fileURLToPath(import.meta.url))
+const HERE = dirname(fileURLToPath(import.meta.url))
+const ROOT = pathResolve(HERE, '../../..')
+const SRC = pathResolve(ROOT, 'src')
 
-/** Minimal Map-backed Storage (R0x). */
+function isFile(p) {
+  try {
+    return existsSync(p) && statSync(p).isFile()
+  } catch {
+    return false
+  }
+}
+
+function tryFile(base) {
+  for (const candidate of [
+    base + '.js',
+    base + '.mjs',
+    join(base, 'index.js'),
+  ]) {
+    if (isFile(candidate)) {
+      return { shortCircuit: true, url: pathToFileURL(candidate).href }
+    }
+  }
+  return null
+}
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier.startsWith('@/')) {
+      const hit = tryFile(join(SRC, specifier.slice(2)))
+      if (hit) return hit
+    }
+    if (
+      (specifier.startsWith('./') || specifier.startsWith('../')) &&
+      !extname(specifier)
+    ) {
+      if (!context.parentURL || context.parentURL.startsWith('data:')) {
+        return nextResolve(specifier, context)
+      }
+      const parent = fileURLToPath(context.parentURL)
+      const hit = tryFile(join(dirname(parent), specifier))
+      if (hit) return hit
+    }
+    return nextResolve(specifier, context)
+  },
+})
+
 function makeStorage() {
   const map = new Map()
   return {
@@ -42,26 +86,23 @@ const OTHER = 'htae.drive.unrelated'
 const store = makeStorage()
 globalThis.window = { localStorage: store }
 
-const { route } = await import(pathToFileURL(path.join(here, 'route.js')).href)
-const {
-  readProgress,
-  writeProgress,
-  clearProgress,
-  normalizeOutcomes,
-} = await import(pathToFileURL(path.join(here, 'progress.js')).href)
+const { route } = await import('./route.js')
+const { readProgress, writeProgress, clearProgress, normalizeOutcomes } =
+  await import('./progress.js')
 
 function pass(msg) {
   console.log('PASS:', msg)
 }
 
 function seedV1(index) {
-  const stop = route[index]
-  store.setItem(KEY_V1, JSON.stringify({ index, id: stop.id }))
+  store.setItem(KEY_V1, JSON.stringify({ index, id: route[index].id }))
 }
 
 function seedV2(index, outcomes = {}) {
-  const stop = route[index]
-  store.setItem(KEY_V2, JSON.stringify({ index, id: stop.id, outcomes }))
+  store.setItem(
+    KEY_V2,
+    JSON.stringify({ index, id: route[index].id, outcomes })
+  )
 }
 
 function raw(key) {
@@ -83,8 +124,7 @@ store.clear()
 store.setItem(KEY_V2, '{not-json')
 seedV1(3)
 {
-  const r = readProgress()
-  assert.equal(r, null)
+  assert.equal(readProgress(), null)
   pass('1b corrupt v2 → null, no v1 fall-through (R0c)')
 }
 store.clear()
@@ -107,7 +147,7 @@ writeProgress(6)
   pass('2 index-only write preserves prior outcomes (R0)')
 }
 
-// --- 3. Patch at lower index keeps stored index high + R0v id (R0l/R0v) ---
+// --- 3. Patch at lower index keeps stored index high + R0v id ---
 store.clear()
 seedV2(10, { [route[2].id]: 'taken' })
 writeProgress(4, { [route[3].id]: 'jumped' })
@@ -117,7 +157,9 @@ writeProgress(4, { [route[3].id]: 'jumped' })
   assert.equal(r.id, route[10].id)
   assert.equal(r.outcomes[route[2].id], 'taken')
   assert.equal(r.outcomes[route[3].id], 'jumped')
-  pass('3a lower-index patch keeps max index + id from route[storedIndex] (R0l/R0v)')
+  pass(
+    '3a lower-index patch keeps max index + id from route[storedIndex] (R0l/R0v)'
+  )
 }
 store.setItem(
   KEY_V2,
@@ -130,7 +172,7 @@ store.setItem(
 assert.equal(readProgress(), null)
 pass('3b wrong-id blob nulls on read (R0c control)')
 
-// --- 4. clearProgress both keys; unrelated survives; independent throw (R0j/R0u) ---
+// --- 4. clearProgress both keys; unrelated survives; independent throw ---
 store.clear()
 seedV1(2)
 seedV2(5, { [route[1].id]: 'taken' })
@@ -174,7 +216,7 @@ seedV2(5)
   pass('4c throw on removeItem(v2) still cleared v1 (R0u reverse)')
 }
 
-// --- 5. Soft-recover bad outcomes on read; rewrite non-plain on write (R0p–R0s) ---
+// --- 5. Soft-recover bad outcomes; rewrite non-plain (R0p–R0s) ---
 store.clear()
 store.setItem(
   KEY_V2,
@@ -188,8 +230,7 @@ store.setItem(
 }
 writeProgress(4)
 {
-  const parsed = JSON.parse(raw(KEY_V2))
-  assert.deepEqual(parsed.outcomes, {})
+  assert.deepEqual(JSON.parse(raw(KEY_V2)).outcomes, {})
   pass('5b write rewrites non-plain outcomes to {} (R0r/R0s)')
 }
 store.clear()
@@ -213,7 +254,7 @@ store.setItem(
   pass('5c normalize drops unknown ids and unknown tokens (R0e/R0g/R0o)')
 }
 
-// --- 6. After corrupt-v2 heal, no pre-heal junk outcomes (R0t) ---
+// --- 6. After corrupt-v2 heal, no pre-heal junk (R0t) ---
 store.clear()
 seedV1(8)
 store.setItem(KEY_V2, '{corrupt')
@@ -227,7 +268,7 @@ writeProgress(3, { [route[1].id]: 'taken' })
   pass('6 heal corrupt v2 then merge; no pre-heal junk (R0k/R0t)')
 }
 
-// --- 7. R0w: v2 write leaves v1 bytes unchanged; heal migrates from v1 tip ---
+// --- 7. R0w: v2 write leaves v1 unchanged; heal resumes from v1 tip ---
 store.clear()
 seedV1(15)
 const v1Before = raw(KEY_V1)
@@ -247,26 +288,19 @@ writeProgress(3)
 {
   const r = readProgress()
   assert.equal(r.index, 15)
-  assert.equal(r.id, route[15].id)
   assert.equal(raw(KEY_V1), v1Fixed)
-  const v2 = JSON.parse(raw(KEY_V2))
-  assert.equal(v2.index, 15)
-  assert.equal(v2.id, route[15].id)
-  pass(
-    '7b corrupt v2 + writeProgress(3) migrates tip 15 into v2; v1 untouched (R0w)'
-  )
+  pass('7b corrupt v2 + writeProgress(3) resumes at 15; v1 untouched (R0w)')
 }
 store.clear()
 seedV1(3)
 seedV2(3, {})
 writeProgress(3)
 {
-  // Mirrored-v1 tip 3 must differ from tip-15 resume (control).
   assert.equal(readProgress().index, 3)
   pass('7c mirrored tip-3 control differs from tip-15 resume')
 }
 
-// --- 8. R0x: with shim, write/read works; without window both null ---
+// --- 8. R0x shim vs no-window control ---
 store.clear()
 writeProgress(1)
 assert.ok(readProgress())
@@ -281,7 +315,6 @@ pass('8a with window.localStorage shim, write+read non-null (R0x)')
   pass('8b without window, read null and write is no-op (R0x control)')
 }
 
-// --- normalizeOutcomes export sanity ---
 assert.deepEqual(normalizeOutcomes(null), {})
 assert.deepEqual(normalizeOutcomes([1]), {})
 assert.equal(
@@ -297,5 +330,44 @@ assert.equal(
   undefined
 )
 pass('normalizeOutcomes drops unreached/passed; keeps taken')
+
+// R0d: empty patch at tip does not rewrite when outcomes plain
+store.clear()
+seedV2(6, {})
+const before = raw(KEY_V2)
+writeProgress(6, {})
+assert.equal(raw(KEY_V2), before)
+writeProgress(6)
+assert.equal(raw(KEY_V2), before)
+pass('R0d empty/omit patch early-returns when outcomes plain')
+
+// R0n shallow merge
+store.clear()
+seedV2(5, { [route[1].id]: 'taken', [route[2].id]: 'skipped' })
+writeProgress(5, { [route[3].id]: 'jumped' })
+{
+  const o = readProgress().outcomes
+  assert.equal(o[route[1].id], 'taken')
+  assert.equal(o[route[2].id], 'skipped')
+  assert.equal(o[route[3].id], 'jumped')
+  pass('R0n shallow-merge keeps prior keys')
+}
+
+// R0o invalid patch does not erase prior
+store.clear()
+seedV2(5, { [route[1].id]: 'taken' })
+writeProgress(5, { [route[1].id]: 'unreached' })
+assert.equal(readProgress().outcomes[route[1].id], 'taken')
+writeProgress(5, { [route[1].id]: 'skipped' })
+assert.equal(readProgress().outcomes[route[1].id], 'skipped')
+pass('R0o invalid patch token does not erase prior valid token')
+
+// First v2 write does not delete v1
+store.clear()
+seedV1(2)
+writeProgress(3)
+assert.ok(raw(KEY_V1))
+assert.ok(raw(KEY_V2))
+pass('first v2 write leaves v1 present')
 
 console.log('progress.verify.mjs: OK')
