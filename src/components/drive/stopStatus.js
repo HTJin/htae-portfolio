@@ -1,10 +1,13 @@
 /**
  * Per-stop status vocabulary for the drive route map.
  *
- * Stored tokens: taken | skipped | jumped.
- * Derived-only: unreached (never persisted).
+ * Storage whitelist: taken | skipped | jumped.
+ * unreached is derived absence only and must never be persisted (R0e).
  *
- * Pure: no React, no Storage, no progress.js import (R0m).
+ * Pure module: no React, no Storage, no import of progress.js (R0m).
+ *
+ * Alternate structure vs peer if-ladders: ordered producer adapters +
+ * a frozen alias table so #20 / #26 / #25 stay one-line each.
  */
 
 export const TAKEN = 'taken'
@@ -12,78 +15,95 @@ export const SKIPPED = 'skipped'
 export const JUMPED = 'jumped'
 export const UNREACHED = 'unreached'
 
-const CANONICAL = new Set([TAKEN, SKIPPED, JUMPED])
+/** Tokens allowed inside a progress.v2 outcomes blob. */
+export const STORED_TOKENS = Object.freeze([TAKEN, SKIPPED, JUMPED])
 
-/** True when token may live in a progress.v2 outcomes blob (R0e). */
+const STORED = new Set(STORED_TOKENS)
+
+/** Producer string aliases → stored token. `passed` string is never stored. */
+const ALIASES = Object.freeze({
+  arrived: TAKEN,
+  [TAKEN]: TAKEN,
+  [SKIPPED]: SKIPPED,
+  [JUMPED]: JUMPED,
+})
+
 export function isStoredToken(token) {
-  return CANONICAL.has(token)
+  return STORED.has(token)
 }
 
 /**
- * Map raw producer values to a stored token.
- * #26 `arrived` → taken. `unset` / `passed` / unknown → absent (R0h).
+ * Map a raw producer value to a canonical stored token, or undefined when
+ * absent / unset / unknown (R0h). #26 `arrived` becomes `taken`.
  */
 export function adaptProducerToken(raw) {
-  if (raw === 'arrived' || raw === TAKEN) return TAKEN
-  if (raw === SKIPPED) return SKIPPED
-  if (raw === JUMPED) return JUMPED
-  return undefined
+  return ALIASES[raw]
 }
 
-function readAt(source, index) {
-  if (source == null) return undefined
+function readKeyed(source, index) {
+  if (source == null || typeof source !== 'object') return undefined
   if (typeof source.get === 'function' && typeof source.has === 'function') {
     if (source.has(index)) return source.get(index)
     if (source.has(String(index))) return source.get(String(index))
     return undefined
   }
-  if (typeof source === 'object' && !Array.isArray(source)) {
-    if (Object.prototype.hasOwnProperty.call(source, index))
-      return source[index]
-    const asString = String(index)
-    if (Object.prototype.hasOwnProperty.call(source, asString))
-      return source[asString]
+  if (Array.isArray(source)) return undefined
+  if (Object.prototype.hasOwnProperty.call(source, index)) return source[index]
+  if (Object.prototype.hasOwnProperty.call(source, String(index))) {
+    return source[String(index)]
   }
   return undefined
 }
 
-function hasMember(collection, index) {
-  if (collection == null) return false
-  if (collection instanceof Set) {
-    return collection.has(index) || collection.has(String(index))
+/**
+ * Ordered producer adapters. First hit wins.
+ * #20 Map / function, #26 object (`arrived`→`taken`),
+ * #25 passed Set (membership→`skipped`, never jumped; R0i / Q064).
+ */
+const PRODUCER_ADAPTERS = [
+  (index, { dispositionOf: mapOrFn }) => {
+    if (typeof mapOrFn === 'function') {
+      return adaptProducerToken(mapOrFn(index))
+    }
+    return adaptProducerToken(readKeyed(mapOrFn, index))
+  },
+  (index, { stopStatus }) => adaptProducerToken(readKeyed(stopStatus, index)),
+  (index, { passed }) => {
+    if (!(passed instanceof Set)) return undefined
+    if (passed.has(index) || passed.has(String(index))) return SKIPPED
+    return undefined
+  },
+]
+
+/**
+ * Resolve a producer disposition for one stop index.
+ */
+export function dispositionOf(index, producers = {}) {
+  for (const adapter of PRODUCER_ADAPTERS) {
+    const token = adapter(index, producers)
+    if (token) return token
   }
-  if (Array.isArray(collection)) {
-    return collection.includes(index) || collection.includes(String(index))
+  return undefined
+}
+
+function isVisited(index, visited) {
+  if (visited == null) return false
+  if (visited instanceof Set) {
+    return visited.has(index) || visited.has(String(index))
   }
-  if (typeof collection === 'object') {
-    return Boolean(collection[index] || collection[String(index)])
+  if (Array.isArray(visited)) return visited.includes(index)
+  if (typeof visited === 'object') {
+    return Boolean(visited[index] || visited[String(index)])
   }
   return false
 }
 
 /**
- * Producer adapter for st071 survivor shapes.
- * #20 dispositionOf Map, #26 stopStatus object, #25 passed Set → skipped (R0i / Q064).
- */
-export function dispositionOf(index, producers = {}) {
-  const fromMap = adaptProducerToken(readAt(producers.dispositionOf, index))
-  if (fromMap) return fromMap
-
-  const fromObject = adaptProducerToken(readAt(producers.stopStatus, index))
-  if (fromObject) return fromObject
-
-  if (producers.passed instanceof Set && hasMember(producers.passed, index)) {
-    return SKIPPED
-  }
-
-  return undefined
-}
-
-/**
- * Four-state status for one stop index.
+ * Derive the four-state status for one stop.
  *
- * Precedence: canonical producer (R0h) → visited→taken →
- * index in [entryIndex, furthest) → jumped → else unreached.
+ * Precedence: canonical producer token (R0h) → visited→taken →
+ * behind furthest and at/after entryIndex → jumped → else unreached.
+ * [[Q180]]: jumped = !visited && index < furthest && index >= entryIndex.
  */
 export function statusOf(index, opts = {}) {
   const {
@@ -105,7 +125,7 @@ export function statusOf(index, opts = {}) {
     return producer
   }
 
-  if (hasMember(visited, index)) return TAKEN
+  if (isVisited(index, visited)) return TAKEN
 
   const furthest =
     furthestIndex != null

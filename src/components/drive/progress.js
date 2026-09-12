@@ -147,6 +147,7 @@ function healCorruptV2(store) {
 /**
  * Load prior tip after heal (R0t). Prefer valid v2; else v1 for index floor only.
  * outcomesPlain reflects raw stored shape (R0s), never the public soft-recover.
+ * source: 'v2' | 'v1' | 'none' so early-return only gates a live v2 tip (R0w).
  */
 function loadPrior(store) {
   const v2Raw = readRaw(store, KEY_V2)
@@ -154,6 +155,7 @@ function loadPrior(store) {
     const tip = parseBlob(v2Raw)
     if (tip.ok) {
       return {
+        source: 'v2',
         index: tip.index,
         outcomes: tip.outcomes,
         outcomesPlain: tip.outcomesPlain,
@@ -165,11 +167,18 @@ function loadPrior(store) {
 
   const v1Raw = readRaw(store, KEY_V1)
   if (v1Raw == null) {
-    return { index: 0, outcomes: {}, outcomesPlain: true }
+    return { source: 'none', index: 0, outcomes: {}, outcomesPlain: true }
   }
   const tip = parseBlob(v1Raw)
-  if (!tip.ok) return { index: 0, outcomes: {}, outcomesPlain: true }
-  return { index: tip.index, outcomes: {}, outcomesPlain: true }
+  if (!tip.ok) {
+    return { source: 'none', index: 0, outcomes: {}, outcomesPlain: true }
+  }
+  return {
+    source: 'v1',
+    index: tip.index,
+    outcomes: {},
+    outcomesPlain: true,
+  }
 }
 
 /**
@@ -191,9 +200,15 @@ export function writeProgress(index, outcomesPatch) {
     const normalizedPatch = patchObject ? normalizeOutcomes(patchObject) : {}
     const hasPatch = Object.keys(normalizedPatch).length > 0
 
-    // R0d early-return only when outcomes already plain and no patch.
-    // R0r: non-plain raw outcomes bypass and rewrite soft-recovered {}.
-    if (prior.index >= index && !hasPatch && prior.outcomesPlain) {
+    // R0d early-return only for a live v2 tip with plain outcomes and no patch.
+    // After heal the tip may live only in v1; still write v2 so migration does
+    // not depend on a missing key (R0w). R0r: non-plain raw bypasses rewrite.
+    if (
+      prior.source === 'v2' &&
+      prior.index >= index &&
+      !hasPatch &&
+      prior.outcomesPlain
+    ) {
       return
     }
 
@@ -216,7 +231,7 @@ export function writeProgress(index, outcomesPatch) {
       })
     )
   } catch {
-    // Storage full or unavailable — losing progress is not worth an error.
+    // Storage full or unavailable. Losing progress is not worth an error.
   }
 }
 

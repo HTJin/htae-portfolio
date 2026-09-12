@@ -2,42 +2,47 @@
  * Node verify for progress.js (R0–R0x).
  *
  * Binds Map-backed Storage onto globalThis.window.localStorage BEFORE importing
- * progress.js (R0x). Alias-safe @/content resolution. No new deps.
+ * progress.js (R0x). Alias-safe @/content + extensionless relatives via
+ * registerHooks (sync). No new deps.
  */
 import assert from 'node:assert/strict'
-import { register } from 'node:module'
+import fs from 'node:fs'
+import { registerHooks } from 'node:module'
 import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { describe, it, before, beforeEach } from 'node:test'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const SRC_ROOT = join(HERE, '../..').replace(/\\/g, '/')
+const SRC_ROOT = join(HERE, '../..')
 
-register(
-  `data:text/javascript,${encodeURIComponent(`
-    import fs from 'node:fs';
-    import { pathToFileURL, fileURLToPath } from 'node:url';
-    const SRC = ${JSON.stringify(SRC_ROOT + '/')};
-    function firstExisting(base) {
-      for (const t of [base, base + '.js', base + '.jsx', base + '/index.js']) {
-        if (fs.existsSync(t) && fs.statSync(t).isFile()) return t;
-      }
-      return null;
+function firstExisting(base) {
+  for (const t of [base, base + '.js', base + '.jsx', join(base, 'index.js')]) {
+    try {
+      if (fs.existsSync(t) && fs.statSync(t).isFile()) return t
+    } catch {
+      // continue
     }
-    export async function resolve(specifier, context, next) {
-      if (specifier.startsWith('@/')) {
-        const hit = firstExisting(SRC + specifier.slice(2));
-        if (hit) return { url: pathToFileURL(hit).href, shortCircuit: true };
-      }
-      if ((specifier.startsWith('./') || specifier.startsWith('../')) && context.parentURL) {
-        const basePath = fileURLToPath(new URL(specifier, context.parentURL));
-        const hit = firstExisting(basePath);
-        if (hit) return { url: pathToFileURL(hit).href, shortCircuit: true };
-      }
-      return next(specifier, context);
+  }
+  return null
+}
+
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    if (specifier.startsWith('@/')) {
+      const hit = firstExisting(join(SRC_ROOT, specifier.slice(2)))
+      if (hit) return { url: pathToFileURL(hit).href, shortCircuit: true }
     }
-  `)}`
-)
+    if (
+      (specifier.startsWith('./') || specifier.startsWith('../')) &&
+      context.parentURL
+    ) {
+      const parentDir = dirname(fileURLToPath(context.parentURL))
+      const hit = firstExisting(join(parentDir, specifier))
+      if (hit) return { url: pathToFileURL(hit).href, shortCircuit: true }
+    }
+    return nextResolve(specifier, context)
+  },
+})
 
 const KEY_V1 = 'htae.drive.progress.v1'
 const KEY_V2 = 'htae.drive.progress.v2'
@@ -79,7 +84,6 @@ before(async () => {
 
 beforeEach(() => {
   store._map.clear()
-  // Re-bind in case a test replaced removeItem.
   globalThis.window = { localStorage: store }
 })
 
@@ -111,6 +115,18 @@ describe('progress v2', () => {
     delete globalThis.window
     assert.equal(readProgress(), null)
     globalThis.window = savedWindow
+  })
+
+  it('R0x control: host-only globalThis.localStorage without window fails', () => {
+    const hostStore = makeStorage()
+    globalThis.localStorage = hostStore
+    const savedWindow = globalThis.window
+    delete globalThis.window
+    assert.equal(readProgress(), null)
+    writeProgress(2, { [route[2].id]: 'taken' })
+    assert.equal(hostStore.getItem(KEY_V2), null)
+    globalThis.window = savedWindow
+    delete globalThis.localStorage
   })
 
   it('hand-written v2 outcomes round-trip by stop id', () => {
@@ -157,6 +173,15 @@ describe('progress v2', () => {
     const tip = JSON.parse(store.getItem(KEY_V2))
     assert.equal(tip.index, 6)
     assert.equal(tip.outcomes[route[6].id], 'taken')
+  })
+
+  it('R0w control: dual-write into v1 would differ from leave-v1-alone', () => {
+    seedV1(4)
+    const v1Before = store.getItem(KEY_V1)
+    writeProgress(6, { [route[6].id]: 'taken' })
+    const dualWouldBe = JSON.stringify({ index: 6, id: route[6].id })
+    assert.notEqual(store.getItem(KEY_V1), dualWouldBe)
+    assert.equal(store.getItem(KEY_V1), v1Before)
   })
 
   it('R0: index-only writeProgress preserves seeded outcomes', () => {

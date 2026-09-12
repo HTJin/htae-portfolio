@@ -86,6 +86,29 @@ describe('stopStatus', () => {
     assert.equal(dispositionOf(2, { stopStatus: { 2: 'arrived' } }), TAKEN)
   })
 
+  it('#20 function dispositionOf short-circuits', () => {
+    assert.equal(
+      statusOf(4, {
+        dispositionOf: (i) => (i === 4 ? 'skipped' : 'unset'),
+        furthestIndex: 9,
+      }),
+      SKIPPED
+    )
+  })
+
+  it('duck-typed Map (has/get) works without instanceof Map', () => {
+    const fake = {
+      _m: new Map([[3, 'taken']]),
+      has(k) {
+        return this._m.has(k)
+      },
+      get(k) {
+        return this._m.get(k)
+      },
+    }
+    assert.equal(statusOf(3, { dispositionOf: fake, furthestIndex: 9 }), TAKEN)
+  })
+
   it('canonical producer beats visited (R0h)', () => {
     assert.equal(
       statusOf(3, {
