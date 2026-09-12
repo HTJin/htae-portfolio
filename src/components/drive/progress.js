@@ -214,7 +214,7 @@ export function writeProgress(index, outcomesPatch) {
       })
     )
   } catch {
-    // Storage full or unavailable — losing progress is not worth an error.
+    // Storage full or unavailable: losing progress is not worth an error.
   }
 }
 

@@ -263,7 +263,7 @@ describe('progress v2 + v1 resume (R0–R0x)', () => {
 
   it('R0p: null / omit / [] outcomes resume with {}; id-mismatch still null', () => {
     seedV2(7, null)
-    // seedV2 always writes outcomes key — craft raw
+    // seedV2 always writes outcomes key; craft raw
     store.setItem(
       KEY_V2,
       JSON.stringify({ index: 7, id: route[7].id, outcomes: null })
@@ -361,7 +361,7 @@ describe('R0x control: host-only localStorage without window fails', () => {
     const saved = globalThis.window
     delete globalThis.window
     // Re-import would share module state; call through existing exports.
-    // Existing storage() closes over typeof window — must return null.
+    // Existing storage() closes over typeof window: must return null.
     assert.equal(readProgress(), null)
     globalThis.window = saved
     delete globalThis.localStorage
