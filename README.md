@@ -1,29 +1,36 @@
-Portfolio site for [htae.dev](https://htae.dev), built with Next.js and Tailwind CSS.
+# htae-portfolio
 
-## Updating content
+The source of [htae.dev](https://htae.dev), my portfolio site.
 
-Site copy lives in plain JavaScript files under `src/content/` — no MDX required.
+## What is on the page
 
-| File                        | What to edit                                        |
-| --------------------------- | --------------------------------------------------- |
-| `src/content/index.js`      | Name, tagline, email, links, page title/description |
-| `src/content/skills.js`     | Skills groups                                       |
-| `src/content/experience.js` | Work history                                        |
-| `src/content/education.js`  | Degree and certifications                           |
-| `src/lib/projects.js`       | Project showcase cards                              |
-| `public/resume.pdf`         | Downloadable resume                                 |
+One page, four sections, each driven by a content file rather than markup:
 
-See `src/content/README.md` for more detail.
+| Section | Content file | Component |
+|---|---|---|
+| Experience | `src/content/experience.js` | `src/components/sections/ExperienceSection.jsx` |
+| Projects | `src/content/projects.js` | `src/components/sections/ProjectsSection.jsx` |
+| Skills | `src/content/skills.js` | `src/components/sections/SkillsSection.jsx` |
+| Education | `src/content/education.js` | `src/components/sections/EducationSection.jsx` |
 
-## Development
+Longer pieces are MDX under `mdx/`, rendered through `ContentArticle.jsx` with the remark,
+rehype and recma plugins in the repo root. Light and dark themes come from `next-themes`.
+Section transitions use Framer Motion.
+
+## Stack
+
+Next.js 13 (pages router), React 18, Tailwind CSS, Framer Motion, MDX, `next-themes`.
+Deployed on Vercel.
+
+## Run it
 
 ```bash
-npm install
-npm run dev
+bun install
+bun run dev      # http://localhost:3000
+bun run build
 ```
 
-## References
+## SEO
 
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [Next.js](https://nextjs.org/docs)
-- [Motion One](https://motion.dev/)
+`b7ea4b5` added Open Graph and Twitter meta, a sitemap and JSON-LD structured data, so
+the page previews correctly when linked and is indexed with the right title.
