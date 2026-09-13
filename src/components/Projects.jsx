@@ -37,7 +37,7 @@ function Badge({ tech }) {
 
   return (
     <span
-      className={`${colorClass} mb-2 mr-2 inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset`}
+      className={`${colorClass} inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset`}
     >
       {tech}
     </span>
@@ -126,7 +126,7 @@ function Project({
         </div>
       </div>
       <div className="min-w-0 overflow-hidden">
-        <div data-aos="fade-left">
+        <div className="mt-4 flex flex-wrap gap-2" data-aos="fade-left">
           {technologies.map((tech) => (
             <Badge key={tech} tech={tech} />
           ))}
