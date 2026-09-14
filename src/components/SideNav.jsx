@@ -56,7 +56,7 @@ export default function SideNav() {
 
   return (
     <nav
-      className="fixed -right-[9.2rem] top-[50%] flex h-fit rotate-90 lg:-right-[9.8rem]"
+      className="fixed -right-[9.2rem] top-[50%] flex h-fit rotate-90 select-none lg:-right-[9.8rem]"
       aria-label="Sections"
     >
       <ol className="inline-flex items-center space-x-1 md:space-x-3">
