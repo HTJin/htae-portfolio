@@ -2,13 +2,14 @@ import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import clsx from 'clsx'
 import { AnimatePresence, motion } from 'framer-motion'
+import { badgeFor } from './disposition'
 import { legsOf, route } from './route'
 
 const LEGS = legsOf(route)
 
 const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])'
 
-export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
+export function RouteMap({ open, onClose, onSelect, currentIndex, outcomes }) {
   const panelRef = useRef(null)
   const returnFocusRef = useRef(null)
   const currentRef = useRef(null)
@@ -48,8 +49,8 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
       0,
       Math.min(
         scroller.scrollTop + delta,
-        scroller.scrollHeight - scroller.clientHeight
-      )
+        scroller.scrollHeight - scroller.clientHeight,
+      ),
     )
   }, [open, currentIndex])
 
@@ -78,7 +79,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
     const onKeyDown = (event) => {
       if (event.key !== 'Tab' || !panel) return
       const items = [...panel.querySelectorAll(TABBABLE)].filter(
-        (node) => node.offsetParent !== null || node === document.activeElement
+        (node) => node.offsetParent !== null || node === document.activeElement,
       )
       if (!items.length) return
 
@@ -142,50 +143,65 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                     {leg.name}
                   </div>
                   <ul className="space-y-1">
-                    {leg.stops.map((stop) => (
-                      <li key={stop.id}>
-                        <button
-                          type="button"
-                          ref={stop.index === currentIndex ? currentRef : null}
-                          onClick={() => onSelect(stop.index)}
-                          // Where you are was said in colour alone — a border
-                          // and a tint — so a screen reader met twenty-one
-                          // near-identical buttons with nothing to separate
-                          // them. "driven" below is real text and always did
-                          // announce; only the current position was silent.
-                          // `location` is the ARIA token for the current place
-                          // within an environment, which is exactly what a
-                          // route map is; anything a reader does not know
-                          // degrades to "true" per spec.
-                          aria-current={
-                            stop.index === currentIndex ? 'location' : undefined
-                          }
-                          className={clsx(
-                            'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
-                            stop.index === currentIndex
-                              ? 'border-sky-400/50 bg-sky-400/10'
-                              : 'border-transparent hover:border-white/15 hover:bg-white/5'
-                          )}
-                        >
-                          <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">
-                            {stop.exitLabel}
-                          </span>
-                          <span className="min-w-0 flex-auto">
-                            <span className="block truncate text-sm text-white">
-                              {stop.title}
+                    {leg.stops.map((stop) => {
+                      const statusBadge = badgeFor(outcomes?.[stop.index])
+                      return (
+                        <li key={stop.id}>
+                          <button
+                            type="button"
+                            ref={
+                              stop.index === currentIndex ? currentRef : null
+                            }
+                            onClick={() => onSelect(stop.index)}
+                            // Where you are was said in colour alone (border and
+                            // tint), so a screen reader met twenty-one near-
+                            // identical buttons with nothing to separate them.
+                            // Disposition badges below are real text (`passed` /
+                            // `skipped`); never colour-only (WCAG 1.4.1).
+                            // `location` is the ARIA token for the current place
+                            // within an environment; do not overload it for
+                            // disposition.
+                            // https://www.w3.org/WAI/WCAG21/Understanding/use-of-color
+                            // https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-current
+                            aria-current={
+                              stop.index === currentIndex
+                                ? 'location'
+                                : undefined
+                            }
+                            className={clsx(
+                              'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
+                              stop.index === currentIndex
+                                ? 'border-sky-400/50 bg-sky-400/10'
+                                : 'border-transparent hover:border-white/15 hover:bg-white/5',
+                            )}
+                          >
+                            <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">
+                              {stop.exitLabel}
                             </span>
-                            <span className="block truncate text-[0.75rem] text-white/40">
-                              {stop.subtitle ?? stop.signSub}
+                            <span className="min-w-0 flex-auto">
+                              <span className="block truncate text-sm text-white">
+                                {stop.title}
+                              </span>
+                              <span className="block truncate text-[0.75rem] text-white/40">
+                                {stop.subtitle ?? stop.signSub}
+                              </span>
                             </span>
-                          </span>
-                          {visited.has(stop.index) ? (
-                            <span className="shrink-0 text-[0.625rem] uppercase tracking-[0.14em] text-emerald-300/70">
-                              driven
-                            </span>
-                          ) : null}
-                        </button>
-                      </li>
-                    ))}
+                            {statusBadge ? (
+                              <span
+                                className={clsx(
+                                  'shrink-0 text-[0.625rem] uppercase tracking-[0.14em]',
+                                  statusBadge === 'skipped'
+                                    ? 'text-amber-300/70'
+                                    : 'text-emerald-300/70',
+                                )}
+                              >
+                                {statusBadge}
+                              </span>
+                            ) : null}
+                          </button>
+                        </li>
+                      )
+                    })}
                   </ul>
                 </div>
               ))}
