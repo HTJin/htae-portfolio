@@ -344,11 +344,15 @@ export function DriveScene() {
     setResume(readProgress())
   }, [router.isReady, router.query.exit])
 
-  /** Remember the furthest exit reached. Never from inside the frame loop. */
+  /**
+   * Remember the furthest exit reached. Never from inside the frame loop.
+   * Only on arrival (parked): PASS advances `index` without visiting, and must
+   * not claim progress for a stop the visitor drove past (st071 T3).
+   */
   useEffect(() => {
-    if (!started) return
+    if (!started || !parked) return
     writeProgress(index)
-  }, [started, index])
+  }, [started, index, parked])
 
   const resumeDrive = useCallback(() => {
     if (!resume) return
@@ -366,7 +370,7 @@ export function DriveScene() {
 
   /** Keep the URL on the exit you are parked at, so it can be copied. */
   useEffect(() => {
-    if (!router.isReady || !started) return
+    if (!router.isReady || !started || !parked) return
 
     const current = Array.isArray(router.query.exit)
       ? router.query.exit[0]
@@ -379,7 +383,7 @@ export function DriveScene() {
       undefined,
       { shallow: true }
     )
-  }, [router, index, started])
+  }, [router, index, started, parked])
 
   useEffect(() => {
     if (!started) return undefined
