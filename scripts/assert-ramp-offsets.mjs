@@ -2,7 +2,7 @@
  * st024 acceptance controls for per-stop peak lateral offsets.
  *   node --import ./scripts/load-route.mjs ./scripts/assert-ramp-offsets.mjs
  *
- * Band asserts use literal 12 and 28 plus imported CARRIAGEWAY, never the
+ * Band asserts use literal 12 and 35 plus imported CARRIAGEWAY, never the
  * constants under test. A ceiling of 99 must FAIL extraInBand.
  */
 import { readFileSync } from 'node:fs'
@@ -37,11 +37,11 @@ import {
 const here = dirname(fileURLToPath(import.meta.url))
 const routeSrc = readFileSync(
   join(here, '../src/components/drive/route.js'),
-  'utf8'
+  'utf8',
 )
 const exitSrc = readFileSync(
   join(here, '../src/components/drive/ExitSign.jsx'),
-  'utf8'
+  'utf8',
 )
 
 const extras = rampOffsets.map((off) => off - CARRIAGEWAY)
@@ -87,20 +87,20 @@ function signX(index) {
   return LANE_OFFSET + rampOffsetAt(index) + RAMP_WIDTH / 2 + 2
 }
 
-const extraInBand = extras.every((e) => e >= 12 - 1e-12 && e <= 28 + 1e-12)
+const extraInBand = extras.every((e) => e >= 12 - 1e-12 && e <= 35 + 1e-12)
 const distinct = new Set(extras.map((e) => e.toPrecision(12))).size
 const sd = sampleSd(extras)
 const constantExtras = route.map(() => RAMP_OFFSET - CARRIAGEWAY)
 const constantDistinct = new Set(constantExtras).size
 const constantSd = sampleSd(constantExtras)
-const constantInBand = constantExtras.every((e) => e >= 12 && e <= 28)
+const constantInBand = constantExtras.every((e) => e >= 12 && e <= 35)
 
 const ids = route.map((stop) => stop.id)
 const extrasIfCeiling99 = ids.map((id) => {
   const next = mulberry32(hashSeed('drive:ramp-offset:' + id))
   return 12 + next() * (99 - 12)
 })
-const ceiling99WouldFail = extrasIfCeiling99.some((e) => e > 28 + 1e-12)
+const ceiling99WouldFail = extrasIfCeiling99.some((e) => e > 35 + 1e-12)
 const insertedIds = [
   ...ids.slice(0, 3),
   'synthetic-insert-st024',
@@ -108,18 +108,18 @@ const insertedIds = [
 ]
 const keyedBefore = ids.map((id) => rampExtraForId(id))
 const keyedAfterById = Object.fromEntries(
-  insertedIds.map((id) => [id, rampExtraForId(id)])
+  insertedIds.map((id) => [id, rampExtraForId(id)]),
 )
 const keyedUnchanged = ids.filter(
-  (id, i) => keyedBefore[i] === keyedAfterById[id]
+  (id, i) => keyedBefore[i] === keyedAfterById[id],
 ).length
-const seqBefore = sequentialExtras(ids, 12, 28)
+const seqBefore = sequentialExtras(ids, 12, 35)
 const seqAfterById = (() => {
-  const table = sequentialExtras(insertedIds, 12, 28)
+  const table = sequentialExtras(insertedIds, 12, 35)
   return Object.fromEntries(insertedIds.map((id, i) => [id, table[i]]))
 })()
 const seqUnchanged = ids.filter(
-  (id, i) => seqBefore[i] === seqAfterById[id]
+  (id, i) => seqBefore[i] === seqAfterById[id],
 ).length
 
 const replay = ids.map((id) => rampExtraForId(id))
@@ -127,26 +127,26 @@ const replayMatch = keyedBefore.every((e, i) => e === replay[i]) ? n : 0
 const mutatedIds = ids.map((id) => `${id}~mut`)
 const mutatedTable = mutatedIds.map((id) => rampExtraForId(id))
 const mutatedDiffers = mutatedTable.filter(
-  (e, i) => e !== keyedBefore[i]
+  (e, i) => e !== keyedBefore[i],
 ).length
 const saltedTable = ids.map((id) => {
   const next = mulberry32(hashSeed('drive:ramp-offset-salt:' + id))
-  return 12 + next() * (28 - 12)
+  return 12 + next() * (35 - 12)
 })
 const saltedDiffers = saltedTable.filter((e, i) => e !== keyedBefore[i]).length
 
 const liveHolds = route.map((_, i) => dropHoldAt(i))
 const liveClearances = route.map((_, i) =>
-  bankClearance(rampOffsetAt(i), liveHolds[i])
+  bankClearance(rampOffsetAt(i), liveHolds[i]),
 )
 const liveClearanceOk = liveClearances.every((c) => Math.abs(c - 1.2) < 1e-9)
 
 const frozenHold = dropHoldFor(RAMP_OFFSET)
 const survivorSeqOffsets = sequentialExtras(ids, 12, 35).map(
-  (extra) => CARRIAGEWAY + extra
+  (extra) => CARRIAGEWAY + extra,
 )
 const frozenClearances = survivorSeqOffsets.map((peak) =>
-  bankClearance(peak, frozenHold)
+  bankClearance(peak, frozenHold),
 )
 const frozenBreaches = frozenClearances.filter((c) => c < 1.2 - 1e-6)
 const frozenWorst = Math.min(...frozenClearances)
@@ -160,11 +160,11 @@ const bandTail =
 
 const r = pearson(extras, rampLengths)
 const sameSaltU = ids.map((id) =>
-  mulberry32(hashSeed('drive:ramp-offset:' + id))()
+  mulberry32(hashSeed('drive:ramp-offset:' + id))(),
 )
-const sameSaltExtras = sameSaltU.map((u) => 12 + u * (28 - 12))
+const sameSaltExtras = sameSaltU.map((u) => 12 + u * (35 - 12))
 const sameSaltLens = sameSaltU.map(
-  (u) => LEG_LENGTH * (RAMP_FRAC_MIN + u * (RAMP_FRAC_MAX - RAMP_FRAC_MIN))
+  (u) => LEG_LENGTH * (RAMP_FRAC_MIN + u * (RAMP_FRAC_MAX - RAMP_FRAC_MIN)),
 )
 const rSameSalt = pearson(sameSaltExtras, sameSaltLens)
 
@@ -185,7 +185,7 @@ const noMathRandom = !routeSrc.includes('Math.random(')
 const keyedDraw = routeSrc.includes("'drive:ramp-offset:' + id")
 const noJoinedOffsetSeed = !routeSrc.includes('drive:ramp-offset:${')
 const noDropHoldConst = !/\b(?:export\s+)?const\s+DROP_HOLD\b/.test(routeSrc)
-const extraMaxNot35 = !routeSrc.includes('RAMP_EXTRA_MAX = 35')
+const extraMaxIs35 = routeSrc.includes('RAMP_EXTRA_MAX = 35')
 const signUsesIndex = exitSrc.includes('rampOffsetAt(stop.index)')
 const signNoFallback = !exitSrc.includes('??')
 
@@ -223,13 +223,13 @@ const checks = {
     Math.abs(rampAt(midIndex * LEG_LENGTH) - rampOffsetAt(midIndex)) < 1e-12,
   clearsSeparates: rampOffsets.every((off) => off >= RAMP_SEPARATES),
   holdMatchesFormula: liveHolds.every(
-    (h, i) => Math.abs(h - dropHoldFor(rampOffsetAt(i))) < 1e-12
+    (h, i) => Math.abs(h - dropHoldFor(rampOffsetAt(i))) < 1e-12,
   ),
   noMathRandom,
   keyedDraw,
   noJoinedOffsetSeed,
   noDropHoldConst,
-  extraMaxNot35,
+  extraMaxIs35,
   signUsesIndex,
   signNoFallback,
 }
@@ -262,14 +262,14 @@ console.log(
       checks,
     },
     null,
-    2
-  )
+    2,
+  ),
 )
 
 if (failed.length) {
   console.error(
     'FAIL',
-    failed.map(([k]) => k)
+    failed.map(([k]) => k),
   )
   process.exit(1)
 }

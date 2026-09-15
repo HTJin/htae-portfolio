@@ -105,11 +105,11 @@ export const RAMP_OFFSET = CARRIAGEWAY + 22
 /**
  * Extra metres past carriageway for the live peel band.
  *
- * 28 is Q023 and Q048 as board directives, not owner keystrokes. Locked by
- * cr10106 architect consensus. Not the survivor's provisional 35.
+ * 35 is owner Q231 ("about 43 m at the widest": CARRIAGEWAY + 35 = 43.2).
+ * Prior +28 (Q023/Q048 board directives) is obsolete after Q231.
  */
 export const RAMP_EXTRA_MIN = 12
-export const RAMP_EXTRA_MAX = 28
+export const RAMP_EXTRA_MAX = 35
 /** Band ceiling: canvas terrain extent uses this so the widest peel still fits. */
 export const RAMP_OFFSET_MAX = CARRIAGEWAY + RAMP_EXTRA_MAX
 /** The ramp is a single lane, centred on the car. */
@@ -164,7 +164,7 @@ export const BANK_TOP_OFFSET = CARRIAGEWAY + VERGE_WIDTH
 export function dropHoldFor(peak) {
   return Math.min(
     0.9,
-    (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / peak
+    (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / peak,
   )
 }
 
@@ -419,7 +419,7 @@ function projectStops() {
   return projects.map((project) => {
     // Every capture the project ships, in order — the stop card cycles them.
     const images = (project.screenshots ?? []).map(
-      (shot) => `/images/projects/${project.name}${shot}`
+      (shot) => `/images/projects/${project.name}${shot}`,
     )
 
     return {
@@ -526,19 +526,19 @@ const ROUTE_LAST = route.length - 1
  * Distinct salt from itinerary miles so axes stay independent.
  */
 export const RAMP_LENGTH_SEED = hashSeed(
-  `drive:ramp-length:${route.map((stop) => stop.id).join('|')}`
+  `drive:ramp-length:${route.map((stop) => stop.id).join('|')}`,
 )
 
 /** Per-stop along-s ramp lengths (world metres). Built once at module load. */
 export const rampLengths = attachRampLengths(
   route.length,
   LEG_LENGTH,
-  RAMP_LENGTH_SEED
+  RAMP_LENGTH_SEED,
 )
 
 /** Per-stop peak lateral offsets (world metres). Keyed per stop id, not one stream. */
 export const rampOffsets = route.map(
-  (stop) => CARRIAGEWAY + rampExtraForId(stop.id)
+  (stop) => CARRIAGEWAY + rampExtraForId(stop.id),
 )
 
 /**
