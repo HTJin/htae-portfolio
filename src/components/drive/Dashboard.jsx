@@ -385,7 +385,13 @@ function SteeringWheel({ drive }) {
         ref={wheelRef}
         viewBox="0 0 200 200"
         className="h-full w-full origin-center"
-        style={{ willChange: 'transform' }}
+        style={{
+          willChange: 'transform',
+          // SVG defaults transform-box to view-box; fill-box + center origin
+          // keep rotate() spinning about the rim, not the viewport corner.
+          transformBox: 'fill-box',
+          transformOrigin: 'center',
+        }}
         aria-hidden="true"
       >
         <defs>
