@@ -109,7 +109,7 @@ export const RAMP_OFFSET = CARRIAGEWAY + 22
  * cr10106 architect consensus. Not the survivor's provisional 35.
  */
 export const RAMP_EXTRA_MIN = 12
-export const RAMP_EXTRA_MAX = 28
+export const RAMP_EXTRA_MAX = 35
 /** Band ceiling: canvas terrain extent uses this so the widest peel still fits. */
 export const RAMP_OFFSET_MAX = CARRIAGEWAY + RAMP_EXTRA_MAX
 /** The ramp is a single lane, centred on the car. */

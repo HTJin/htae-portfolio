@@ -2,7 +2,7 @@
  * st024 acceptance controls for per-stop peak lateral offsets.
  *   node --import ./scripts/load-route.mjs ./scripts/assert-ramp-offsets.mjs
  *
- * Band asserts use literal 12 and 28 plus imported CARRIAGEWAY, never the
+ * Band asserts use literal 12 and 35 plus imported CARRIAGEWAY, never the
  * constants under test. A ceiling of 99 must FAIL extraInBand.
  */
 import { readFileSync } from 'node:fs'
@@ -87,20 +87,20 @@ function signX(index) {
   return LANE_OFFSET + rampOffsetAt(index) + RAMP_WIDTH / 2 + 2
 }
 
-const extraInBand = extras.every((e) => e >= 12 - 1e-12 && e <= 28 + 1e-12)
+const extraInBand = extras.every((e) => e >= 12 - 1e-12 && e <= 35 + 1e-12)
 const distinct = new Set(extras.map((e) => e.toPrecision(12))).size
 const sd = sampleSd(extras)
 const constantExtras = route.map(() => RAMP_OFFSET - CARRIAGEWAY)
 const constantDistinct = new Set(constantExtras).size
 const constantSd = sampleSd(constantExtras)
-const constantInBand = constantExtras.every((e) => e >= 12 && e <= 28)
+const constantInBand = constantExtras.every((e) => e >= 12 && e <= 35)
 
 const ids = route.map((stop) => stop.id)
 const extrasIfCeiling99 = ids.map((id) => {
   const next = mulberry32(hashSeed('drive:ramp-offset:' + id))
   return 12 + next() * (99 - 12)
 })
-const ceiling99WouldFail = extrasIfCeiling99.some((e) => e > 28 + 1e-12)
+const ceiling99WouldFail = extrasIfCeiling99.some((e) => e > 35 + 1e-12)
 const insertedIds = [
   ...ids.slice(0, 3),
   'synthetic-insert-st024',
@@ -113,9 +113,9 @@ const keyedAfterById = Object.fromEntries(
 const keyedUnchanged = ids.filter(
   (id, i) => keyedBefore[i] === keyedAfterById[id]
 ).length
-const seqBefore = sequentialExtras(ids, 12, 28)
+const seqBefore = sequentialExtras(ids, 12, 35)
 const seqAfterById = (() => {
-  const table = sequentialExtras(insertedIds, 12, 28)
+  const table = sequentialExtras(insertedIds, 12, 35)
   return Object.fromEntries(insertedIds.map((id, i) => [id, table[i]]))
 })()
 const seqUnchanged = ids.filter(
@@ -131,7 +131,7 @@ const mutatedDiffers = mutatedTable.filter(
 ).length
 const saltedTable = ids.map((id) => {
   const next = mulberry32(hashSeed('drive:ramp-offset-salt:' + id))
-  return 12 + next() * (28 - 12)
+  return 12 + next() * (35 - 12)
 })
 const saltedDiffers = saltedTable.filter((e, i) => e !== keyedBefore[i]).length
 
@@ -162,7 +162,7 @@ const r = pearson(extras, rampLengths)
 const sameSaltU = ids.map((id) =>
   mulberry32(hashSeed('drive:ramp-offset:' + id))()
 )
-const sameSaltExtras = sameSaltU.map((u) => 12 + u * (28 - 12))
+const sameSaltExtras = sameSaltU.map((u) => 12 + u * (35 - 12))
 const sameSaltLens = sameSaltU.map(
   (u) => LEG_LENGTH * (RAMP_FRAC_MIN + u * (RAMP_FRAC_MAX - RAMP_FRAC_MIN))
 )
@@ -185,7 +185,9 @@ const noMathRandom = !routeSrc.includes('Math.random(')
 const keyedDraw = routeSrc.includes("'drive:ramp-offset:' + id")
 const noJoinedOffsetSeed = !routeSrc.includes('drive:ramp-offset:${')
 const noDropHoldConst = !/\b(?:export\s+)?const\s+DROP_HOLD\b/.test(routeSrc)
-const extraMaxNot35 = !routeSrc.includes('RAMP_EXTRA_MAX = 35')
+const extraMaxIs35 = routeSrc.includes('RAMP_EXTRA_MAX = 35')
+const peakMaxNear43 = Math.abs(RAMP_OFFSET_MAX - (CARRIAGEWAY + 35)) < 0.5
+const ceiling28WouldBreach = extras.some((e) => e > 28 + 1e-12)
 const signUsesIndex = exitSrc.includes('rampOffsetAt(stop.index)')
 const signNoFallback = !exitSrc.includes('??')
 
@@ -193,6 +195,8 @@ const checks = {
   carriagewayPinned: CARRIAGEWAY === 8.2,
   extraInBand,
   ceiling99WouldFail,
+  ceiling28WouldBreach,
+  peakMaxNear43,
   tableSize: rampOffsets.length === route.length,
   distinctEnough: distinct >= 18,
   sdWideEnough: sd > 3,
@@ -229,7 +233,7 @@ const checks = {
   keyedDraw,
   noJoinedOffsetSeed,
   noDropHoldConst,
-  extraMaxNot35,
+  extraMaxIs35,
   signUsesIndex,
   signNoFallback,
 }
