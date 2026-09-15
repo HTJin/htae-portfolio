@@ -105,11 +105,11 @@ export const RAMP_OFFSET = CARRIAGEWAY + 22
 /**
  * Extra metres past carriageway for the live peel band.
  *
- * 28 is Q023 and Q048 as board directives, not owner keystrokes. Locked by
- * cr10106 architect consensus. Not the survivor's provisional 35.
+ * Owner Q231: allow the wider swing, about 43 m at the widest
+ * (CARRIAGEWAY + 35 = 43.2). Replaces the board-only +28 lock from Q023/Q048.
  */
 export const RAMP_EXTRA_MIN = 12
-export const RAMP_EXTRA_MAX = 28
+export const RAMP_EXTRA_MAX = 35
 /** Band ceiling: canvas terrain extent uses this so the widest peel still fits. */
 export const RAMP_OFFSET_MAX = CARRIAGEWAY + RAMP_EXTRA_MAX
 /** The ramp is a single lane, centred on the car. */
