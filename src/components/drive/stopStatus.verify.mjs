@@ -1,0 +1,122 @@
+/**
+ * Node verify for stopStatus.js.
+ * No Storage shim (R0m). Stdlib assert + node:test only.
+ */
+import assert from 'node:assert/strict'
+import { describe, it } from 'node:test'
+import {
+  JUMPED,
+  SKIPPED,
+  TAKEN,
+  UNREACHED,
+  adaptProducerToken,
+  dispositionOf,
+  statusOf,
+} from './stopStatus.js'
+
+describe('stopStatus', () => {
+  it('adaptProducerToken: arrived→taken; unset/passed/unknown absent (R0h)', () => {
+    assert.equal(adaptProducerToken('arrived'), TAKEN)
+    assert.equal(adaptProducerToken('taken'), TAKEN)
+    assert.equal(adaptProducerToken('skipped'), SKIPPED)
+    assert.equal(adaptProducerToken('jumped'), JUMPED)
+    assert.equal(adaptProducerToken('unset'), undefined)
+    assert.equal(adaptProducerToken('passed'), undefined)
+    assert.equal(adaptProducerToken('unreached'), undefined)
+    assert.equal(adaptProducerToken(null), undefined)
+  })
+
+  it('leapfrog ≠ never-reached; deep-link entryIndex leaves earlier unreached', () => {
+    const leapfrog = statusOf(3, { furthestIndex: 10, entryIndex: 0 })
+    const neverReached = statusOf(3, { furthestIndex: 2, entryIndex: 0 })
+    assert.equal(leapfrog, JUMPED)
+    assert.equal(neverReached, UNREACHED)
+    assert.notEqual(leapfrog, neverReached)
+
+    for (let i = 1; i <= 10; i += 1) {
+      assert.equal(
+        statusOf(i, { furthestIndex: 15, entryIndex: 11 }),
+        UNREACHED
+      )
+    }
+    assert.equal(statusOf(12, { furthestIndex: 15, entryIndex: 11 }), JUMPED)
+  })
+
+  it('visited → taken without producer', () => {
+    assert.equal(
+      statusOf(4, { visited: new Set([4]), furthestIndex: 10 }),
+      TAKEN
+    )
+  })
+
+  it('producer unset at leapfrog → jumped, not unset (R0h)', () => {
+    const got = statusOf(5, {
+      dispositionOf: new Map([[5, 'unset']]),
+      furthestIndex: 10,
+      entryIndex: 0,
+    })
+    assert.equal(got, JUMPED)
+    assert.notEqual(got, 'unset')
+  })
+
+  it('#25 Set → skipped ≠ leapfrog-without-Set → jumped (R0i)', () => {
+    const withSet = statusOf(7, {
+      passed: new Set([7]),
+      furthestIndex: 12,
+      entryIndex: 0,
+    })
+    const withoutSet = statusOf(7, { furthestIndex: 12, entryIndex: 0 })
+    assert.equal(withSet, SKIPPED)
+    assert.equal(withoutSet, JUMPED)
+    assert.notEqual(withSet, withoutSet)
+  })
+
+  it('#20 Map and #26 object (arrived→taken) short-circuit', () => {
+    assert.equal(
+      statusOf(2, {
+        dispositionOf: new Map([[2, 'skipped']]),
+        furthestIndex: 9,
+      }),
+      SKIPPED
+    )
+    assert.equal(
+      statusOf(2, { stopStatus: { 2: 'arrived' }, furthestIndex: 9 }),
+      TAKEN
+    )
+    assert.equal(dispositionOf(2, { stopStatus: { 2: 'arrived' } }), TAKEN)
+  })
+
+  it('#20 function dispositionOf short-circuits', () => {
+    assert.equal(
+      statusOf(4, {
+        dispositionOf: (i) => (i === 4 ? 'skipped' : 'unset'),
+        furthestIndex: 9,
+      }),
+      SKIPPED
+    )
+  })
+
+  it('duck-typed Map (has/get) works without instanceof Map', () => {
+    const fake = {
+      _m: new Map([[3, 'taken']]),
+      has(k) {
+        return this._m.has(k)
+      },
+      get(k) {
+        return this._m.get(k)
+      },
+    }
+    assert.equal(statusOf(3, { dispositionOf: fake, furthestIndex: 9 }), TAKEN)
+  })
+
+  it('canonical producer beats visited (R0h)', () => {
+    assert.equal(
+      statusOf(3, {
+        dispositionOf: new Map([[3, 'jumped']]),
+        visited: new Set([3]),
+        furthestIndex: 10,
+      }),
+      JUMPED
+    )
+  })
+})
