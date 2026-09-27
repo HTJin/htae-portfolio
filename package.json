@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prettier": "prettier --write ."
+    "prettier": "prettier --write .",
+    "test": "node --import ./scripts/load-route.mjs ./scripts/assert-ramp-lengths.mjs && node --import ./scripts/load-route.mjs ./scripts/assert-ramp-freeze.mjs && node --import ./scripts/load-route.mjs ./scripts/assert-leg-miles.mjs"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
