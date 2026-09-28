@@ -50,14 +50,14 @@ export function RoadCanvas({ drive, className }) {
     let camera = makeCamera(canvas.clientWidth || 1, canvas.clientHeight || 1)
 
     /**
-     * `?probe=barrier` — tint one element a colour no palette contains.
+     * `?probe=barrier` - tint one element a colour no palette contains.
      *
      * The shoulder barrier's gore opening is the one scene invariant that
      * **cannot** be measured from a composited frame: the barrier shares its
      * colour with the ramp's edge lines and the rumble strips, and those *grow*
      * as the ramp separates, so counting bright pixels near the shoulder reports
      * the barrier present while it is absent. The only method that works is to
-     * repaint it magenta — which until now meant editing this file, rebuilding,
+     * repaint it magenta - which until now meant editing this file, rebuilding,
      * measuring, reverting, and grepping to prove the revert. Five steps and a
      * build is why **that opening regressed once and nothing caught it**.
      *
@@ -69,8 +69,13 @@ export function RoadCanvas({ drive, className }) {
      * geometry would corrupt the very measurement it exists to enable, so the
      * void sweep must come out identical with the flag on and off.
      */
-    const probe = new URLSearchParams(window.location.search).get('probe')
+    const params = new URLSearchParams(window.location.search)
+    const probe = params.get('probe')
+    // R1a skip-layer ID: mutually exclusive plate | haze | body. Full scene
+    // (no skip) is the open-mainline / mid-exit control for the same instrument.
+    const skip = params.get('skip')
     const PROBE_TINT = '#ff00ff'
+    const GROUND_RGB = 'rgb(12, 14, 18)'
 
     const points = []
 
@@ -137,7 +142,7 @@ export function RoadCanvas({ drive, className }) {
      *
      * `follow` slides the ribbon sideways with the ramp at each point, which is
      * what makes an off-ramp peel away from a mainline that carries straight on
-     * — both are painted by this one function, one following and one not.
+     * - both are painted by this one function, one following and one not.
      *
      * **Surfaces above the eye are CLIPPED along the eye plane. Never CLAMPED to
      * it, and no longer dropped a whole segment at a time.**
@@ -286,8 +291,8 @@ export function RoadCanvas({ drive, className }) {
      * The gore: the wedge of no-man's-land between the mainline's outer edge
      * and the ramp's inner edge, once the ramp has pulled away.
      *
-     * Its two sides move differently — the left edge belongs to the highway and
-     * stays put, the right edge belongs to the ramp and slides — so none of the
+     * Its two sides move differently - the left edge belongs to the highway and
+     * stays put, the right edge belongs to the ramp and slides - so none of the
      * `ribbon` family can draw it: they take one `follow` flag for both edges.
      * `embankment` already had this shape (fixed top, computed foot) and this
      * borrows it.
@@ -363,7 +368,7 @@ export function RoadCanvas({ drive, className }) {
 
     /**
      * The top of the bank / highway-body shoulder. Imported rather than typed
-     * here — `route` needs the same number to know when the ramp has cleared
+     * here - `route` needs the same number to know when the ramp has cleared
      * the verge and may start descending.
      */
     const BANK_TOP = BANK_TOP_OFFSET
@@ -382,8 +387,8 @@ export function RoadCanvas({ drive, className }) {
      * The highway profile body when viewed from the exit ramp.
      *
      * One opaque face from the elevated deck shoulder down to the **ramp
-     * grade**, along the ramp's inner edge. The foot follows `point.yRamp` —
-     * the same curve as the white edge line of the road you are on — so the
+     * grade**, along the ramp's inner edge. The foot follows `point.yRamp` -
+     * the same curve as the white edge line of the road you are on - so the
      * body meets the entrance at the road, not at a flat screen-horizon cut.
      *
      * Never clamp the foot to `horizon`: that was the gray/violet halves split.
@@ -406,7 +411,7 @@ export function RoadCanvas({ drive, className }) {
         return shoulder < inner || shoulder > outer
       }
 
-      // Profile + interchange as one face: deck shoulder → ramp inner edge.
+      // Profile + interchange as one face: deck shoulder -> ramp inner edge.
       // Chunked out where the ramp crosses the shoulder (point of entry).
       const spans = (point) =>
         clearOfIntersection(point) && rampInnerOf(point) - shoulder > 0.15
@@ -422,13 +427,13 @@ export function RoadCanvas({ drive, className }) {
             for (let k = runStart; k <= i; k += 1) {
               const point = points[k]
               const x = point.cx + shoulder * point.scale
-              // Deck edge — real elevation, never flattened to the horizon.
+              // Deck edge - real elevation, never flattened to the horizon.
               if (k === runStart) ctx.moveTo(x, point.y)
               else ctx.lineTo(x, point.y)
             }
             for (let k = i; k >= runStart; k -= 1) {
               const point = points[k]
-              // Foot on the ramp road itself — aligned to the white stripe.
+              // Foot on the ramp road itself - aligned to the white stripe.
               ctx.lineTo(
                 point.cx + rampInnerOf(point) * point.scale,
                 point.yRamp
@@ -488,7 +493,7 @@ export function RoadCanvas({ drive, className }) {
      *
      * Deterministic, not random: the offsets come from the tuft's own index,
      * so the same plant is in the same place every frame and on every machine
-     * (guardrail 25 — `Math.random` in the paint loop makes the scene
+     * (guardrail 25 - `Math.random` in the paint loop makes the scene
      * non-reproducible and can differ between server and client). Nothing is
      * allocated per tuft beyond the two `project` results the rest of the
      * roadside furniture already costs.
@@ -503,20 +508,20 @@ export function RoadCanvas({ drive, className }) {
         const s = n * SPACING
         const drop = rampDropAt(s)
         if (drop > -0.35) continue // no slope here, nothing to plant on
-        // The same foot the face itself is drawn from — see `bankFoot`.
+        // The same foot the face itself is drawn from - see `bankFoot`.
         const top = BANK_TOP
         const foot = bankFoot(rampAt(s), drop)
 
         // One tuft, wherever it stands. Kept as a helper although only one face
         // plants now: the outboard face it also served was the trench wall, and
-        // that is gone — there is one bank in this scene, the highway's.
+        // that is gone - there is one bank in this scene, the highway's.
         const tuft = (x, ground, seed) => {
           const height = 0.34 + ((seed % 7) / 7) * 0.3
           const base = place(s, x, ground)
           const tip = place(s, x, ground + height)
           if (base.y < camera.horizon || base.scale <= 0) return
 
-          // `?probe=grass` — same trick as the barrier, for the same reason.
+          // `?probe=grass` - same trick as the barrier, for the same reason.
           // The planting invariant is the weakest one in the probe doc: flowers
           // are one tuft in five, so the honest signal is 0-12 pixels and cannot
           // separate "planting regressed" from "few tufts in this frame". Worse,
@@ -547,7 +552,7 @@ export function RoadCanvas({ drive, className }) {
         for (let k = 0; k < 4; k += 1) {
           // Spread across the face, biased away from both edges.
           const t = 0.12 + (((n * 7 + k * 23) % 76) / 76) * 0.76
-          // The bank between mainline and ramp — the one face there is.
+          // The bank between mainline and ramp - the one face there is.
           tuft(top + (foot - top) * t, drop * t, n + k * 5)
         }
       }
@@ -616,7 +621,7 @@ export function RoadCanvas({ drive, className }) {
      * This used to hand `rail()` a pair of integer segment indices, so a hole in
      * the barrier could only begin and end where a segment happened to end. With
      * log-spaced segments the far ones are long, so the gore opening was
-     * quantised: the owner, exactly — _"you're merely changing the polygon's
+     * quantised: the owner, exactly - _"you're merely changing the polygon's
      * colour instead of taking a chunk of the polygon out of the point of
      * intersection"_. Omitting whole segments is a colour decision dressed as
      * geometry; the barrier has to actually end where the ramp crosses it.
@@ -672,7 +677,7 @@ export function RoadCanvas({ drive, className }) {
        * Ground level for something standing on a given side, as a `y` offset.
        *
        * Right-hand furniture rides the ramp, so it also has to ride it
-       * *downhill* — otherwise the lamps and posts along the exit stay pegged
+       * *downhill* - otherwise the lamps and posts along the exit stay pegged
        * at the highway's grade while the road sinks away beneath them, and the
        * ramp appears to burrow underground. Left-hand furniture is on the far
        * carriageway, which never leaves the mainline grade.
@@ -792,14 +797,14 @@ export function RoadCanvas({ drive, className }) {
     let forcePaint = true
 
     // 1e-4 m of movement. At the nearest projected point the scale is roughly
-    // 335 px/m, so this is ~0.03 of a pixel — below anything that can be seen,
+    // 335 px/m, so this is ~0.03 of a pixel - below anything that can be seen,
     // and far below the rounding the canvas does anyway.
     const STILL = 1e-4
 
     function draw(sim) {
       // Parked, the picture cannot change: `draw` reads `sim.travel` and
       // `sim.x` (the latter only through `cameraX`) plus `camera`, and nothing
-      // else — no randomness, no clock. So repainting an identical image every
+      // else - no randomness, no clock. So repainting an identical image every
       // frame is pure cost on a page someone leaves open while reading a stop.
       //
       // Two details matter. The comparison is against the last *painted*
@@ -833,19 +838,19 @@ export function RoadCanvas({ drive, className }) {
       // `belowDeck` turns true.
       const { deckFall01, belowDeck, onMainline } = rideState(sim)
 
-      // Ground under the road. Neutral charcoal — night `vergeDark` / `groundNear`
+      // Ground under the road. Neutral charcoal - night `vergeDark` / `groundNear`
       // are blue-violet and read as a tinted lower half of the windshield.
       const GROUND = '#0c0e12'
       // The plate starts 6px *above* the horizon on the mainline, where the
       // overlap is buried under tarmac and haze and closes the seam against
       // the sky div. Below deck there is no tarmac up there to bury it, so
-      // those 6px are bare ground painted above the eye plane — which no
+      // those 6px are bare ground painted above the eye plane - which no
       // elevation can produce, since the true horizon is at eye level at every
       // grade. Measured mid-descent (drop -4.17) the topmost opaque pixel from
       // 52% of the width rightward was a dead-flat row 775 device px, and
       // `(horizon - 6) * dpr` predicts 775.6. That is the cut the owner sees.
-      // Starting at `horizon` when below deck does not remove the cut — the
-      // ground legitimately begins at the eye plane out there — but it stops
+      // Starting at `horizon` when below deck does not remove the cut - the
+      // ground legitimately begins at the eye plane out there - but it stops
       // the scene claiming ground where only sky can be.
       //
       // Those 6px used to be a `belowDeck ? horizon : horizon - 6` step, so a
@@ -854,13 +859,27 @@ export function RoadCanvas({ drive, className }) {
       // expression are kept exactly, and over exactly the same 0.15m of descent;
       // only the jump between them is gone.
       const groundTop = horizon - 6 * (1 - deckFall01)
-      ctx.fillStyle = GROUND
-      ctx.fillRect(0, groundTop, width, height - groundTop)
+      // R1a: ?skip=plate. R1b: when deckFall01 > 0 the hard top of the charcoal
+      // plate is a false full-width step; soft-alpha the top few CSS px and keep
+      // #0c0e12. Ribbon eye-plane clip stays untouched.
+      if (skip !== 'plate') {
+        const softPx = deckFall01 > 0 ? Math.min(5, 2 + 3 * deckFall01) : 0
+        const solidTop = groundTop + softPx
+        ctx.fillStyle = GROUND
+        ctx.fillRect(0, solidTop, width, height - solidTop)
+        if (softPx > 0) {
+          const fade = ctx.createLinearGradient(0, groundTop, 0, solidTop)
+          fade.addColorStop(0, withAlpha(GROUND_RGB, 0))
+          fade.addColorStop(1, withAlpha(GROUND_RGB, 1))
+          ctx.fillStyle = fade
+          ctx.fillRect(0, groundTop, width, softPx + 0.5)
+        }
+      }
 
       buildPoints(sim)
 
       // Flat mainline surfaces cull to the eye plane inside `ribbon()` itself.
-      // There used to be a full-canvas `rect(0, horizon, …)` clip here — a
+      // There used to be a full-canvas `rect(0, horizon, …)` clip here - a
       // screen-space horizontal cut that did not track highway elevation. The
       // ramp peel-off sat on that line until it dropped, so the exit was
       // invisible until the grade changed, and distant ramp tarmac painted
@@ -875,13 +894,13 @@ export function RoadCanvas({ drive, className }) {
        * The three surfaces that sit at **different heights**, painted
        * back-to-front one depth slice at a time.
        *
-       * Everything else here is coplanar — markings lie on the carriageway they
-       * belong to — so a single full-length polygon per surface is both correct
+       * Everything else here is coplanar - markings lie on the carriageway they
+       * belong to - so a single full-length polygon per surface is both correct
        * and cheaper. These three are not: the mainline's ground is at grade, the
        * ramp and the ground under it are up to 5.5m below it, and they were each
        * painted as one polygon spanning the whole 980m of `Z_FAR` in a fixed
-       * object order. Object order is not depth order, so the next exit's cut —
-       * 224m away and well below your eyeline — was painted *after* all the
+       * object order. Object order is not depth order, so the next exit's cut -
+       * 224m away and well below your eyeline - was painted *after* all the
        * grade-level ground in front of it and could never be occluded by it. It
        * read as the landscape being transparent. It was not; it was solid, and
        * simply in front of things it should have been behind.
@@ -893,7 +912,7 @@ export function RoadCanvas({ drive, className }) {
        * fix). Occlusion falls out of the geometry instead.
        *
        * **Cost:** three fills per segment rather than three per frame. That is
-       * the reason only these three moved — guardrail 2 — and the frame budget
+       * the reason only these three moved - guardrail 2 - and the frame budget
        * is measured, not assumed.
        *
        * **Seams:** each slice shares an edge with its neighbour and carries the
@@ -942,9 +961,9 @@ export function RoadCanvas({ drive, className }) {
       ]
       const FAR_EXIT_Z = 140
 
-      // Opaque highway profile — charcoal, not night vergeDark (blue).
+      // Opaque highway profile - charcoal, not night vergeDark (blue).
       // Genuinely binary: the embankment face either exists or it does not.
-      if (belowDeck) {
+      if (belowDeck && skip !== 'body') {
         highwayBody(GROUND, camDrop)
       }
 
@@ -967,7 +986,7 @@ export function RoadCanvas({ drive, className }) {
       }
 
       // (There is no second `highwayBody` pass here. It read as a companion to
-      // the one above, but both call sites are gated on `belowDeck` — so the
+      // the one above, but both call sites are gated on `belowDeck` - so the
       // call could never draw anything the first had not. The genuinely opaque
       // second pass that *did* draw, after `drawRoadside`, is what covered the
       // mainline from the ramp and was removed in d0931ae; keeping a dead
@@ -986,7 +1005,7 @@ export function RoadCanvas({ drive, className }) {
         stripes(CARRIAGEWAY, CARRIAGEWAY + 2.4, 9, colors.vergeLight, true)
 
         // Mainline tarmac. When the camera is below the deck, the elevated body
-        // already represents the highway — painting full-length tarmac here is
+        // already represents the highway - painting full-length tarmac here is
         // what left the asphalt bar on the horizon (clamped deck edge).
         band(-OPPOSING_EDGE, -MEDIAN_WIDTH, tarmac)
         band(0, CARRIAGEWAY, tarmac)
@@ -994,7 +1013,7 @@ export function RoadCanvas({ drive, className }) {
       }
 
       // Gore markings. Every real interchange paints this wedge, and it is the
-      // most recognisable marking an exit has — without it the road simply
+      // most recognisable marking an exit has - without it the road simply
       // forks. Inside the flat-surface pass with the other coplanar paints.
       //
       // Chevrons proper would need per-segment geometry; these are transverse
@@ -1009,7 +1028,7 @@ export function RoadCanvas({ drive, className }) {
       )
 
       const paint = withAlpha(colors.paint, 0.82)
-      // Median-side lines are yellow, outer edges white — the same convention
+      // Median-side lines are yellow, outer edges white - the same convention
       // that used to be carried by the centre line this replaces.
       const medianLine = withAlpha(colors.centreLine, 0.85)
 
@@ -1035,7 +1054,7 @@ export function RoadCanvas({ drive, className }) {
         ctx.globalAlpha = 1
       }
 
-      // The ramp you are on — painted last so it is the topmost plane and its
+      // The ramp you are on - painted last so it is the topmost plane and its
       // white edge lines meet the highway body at the entrance instead of
       // sitting under a separate gray/violet half. Binary paint-order gate: the
       // deferred pass only exists once the body is drawn under `belowDeck`.
@@ -1080,7 +1099,7 @@ export function RoadCanvas({ drive, className }) {
       // Baseline elevation is the main highway (drop = 0). The exit only lowers
       // from that. `belowDeck` alone is not enough for furniture: drop is held
       // until the ramp clears the verge, so the first half of every exit still
-      // has drop ≈ 0 while you are already off the mainline — and the shoulder
+      // has drop ≈ 0 while you are already off the mainline - and the shoulder
       // rail kept drawing as an endless line on the right. That is why
       // `onMainline` carries a lateral term as well as a grade one, and why it
       // is not simply `!belowDeck`.
@@ -1092,7 +1111,67 @@ export function RoadCanvas({ drive, className }) {
         return shoulder < inner || shoulder > outer
       }
 
-      drawRoadside(sim, colors)
+      // R1c: clip roadside furniture against the embankment / deck silhouette
+      // (MDN Path2D + evenodd clip) instead of a second opaque highwayBody.
+      // Control: ?skip=body leaves posts unoccluded / see-through.
+      if (belowDeck && skip !== 'body') {
+        const shoulder = BANK_TOP
+        const bodyPath = new Path2D()
+        const rampInnerOf = (point) => LANE_OFFSET + point.ramp - RAMP_WIDTH / 2
+        const clearOfIntersection = (point) => {
+          const centre = LANE_OFFSET + point.ramp
+          const inner = centre - RAMP_WIDTH / 2 - 0.7
+          const outer = centre + RAMP_WIDTH / 2 + 0.7
+          return shoulder < inner || shoulder > outer
+        }
+        const spans = (point) =>
+          clearOfIntersection(point) && rampInnerOf(point) - shoulder > 0.15
+        let runStart = -1
+        for (let i = 0; i <= SEGMENTS; i += 1) {
+          const on = spans(points[i])
+          if (on && runStart < 0) runStart = i
+          if (runStart >= 0 && (!on || i === SEGMENTS)) {
+            if (i > runStart) {
+              for (let k = runStart; k <= i; k += 1) {
+                const point = points[k]
+                const x = point.cx + shoulder * point.scale
+                if (k === runStart) bodyPath.moveTo(x, point.y)
+                else bodyPath.lineTo(x, point.y)
+              }
+              for (let k = i; k >= runStart; k -= 1) {
+                const point = points[k]
+                bodyPath.lineTo(
+                  point.cx + rampInnerOf(point) * point.scale,
+                  point.yRamp
+                )
+              }
+              bodyPath.closePath()
+            }
+            runStart = -1
+          }
+        }
+        for (let i = 0; i <= SEGMENTS; i += 1) {
+          const point = points[i]
+          const x = point.cx + shoulder * point.scale
+          if (i === 0) bodyPath.moveTo(x, point.y)
+          else bodyPath.lineTo(x, point.y)
+        }
+        for (let i = SEGMENTS; i >= 0; i -= 1) {
+          const point = points[i]
+          const footY = point.y - camDrop * point.scale
+          bodyPath.lineTo(point.cx + shoulder * point.scale, footY)
+        }
+        bodyPath.closePath()
+        ctx.save()
+        const outside = new Path2D()
+        outside.rect(0, 0, width, height)
+        outside.addPath(bodyPath)
+        ctx.clip(outside, 'evenodd')
+        drawRoadside(sim, colors)
+        ctx.restore()
+      } else {
+        drawRoadside(sim, colors)
+      }
 
       // A second `highwayBody(GROUND, camDrop)` pass used to run here, after the
       // furniture, to stop far-carriageway lamps showing through the body. It is
@@ -1177,7 +1256,7 @@ export function RoadCanvas({ drive, className }) {
       // Haze so the tarmac dissolves into the sky instead of ending abruptly.
       //
       // The gradient used to open at full `hazeAlpha` on its very first row, and
-      // the rect started on that same row — so the haze itself had a hard,
+      // the rect started on that same row - so the haze itself had a hard,
       // dead-flat alpha step across the full width of the canvas, from nothing
       // to as much as 0.95 (the palettes run 0.75/0.85/0.92/0.95/0.85) in one
       // pixel, at a fixed screen y that no elevation moves. A full-width step
@@ -1199,8 +1278,10 @@ export function RoadCanvas({ drive, className }) {
         withAlpha(colors.haze, colors.hazeAlpha)
       )
       haze.addColorStop(1, withAlpha(colors.haze, 0))
-      ctx.fillStyle = haze
-      ctx.fillRect(0, hazeTop, width, hazeDepth)
+      if (skip !== 'haze') {
+        ctx.fillStyle = haze
+        ctx.fillRect(0, hazeTop, width, hazeDepth)
+      }
     }
 
     function resize() {

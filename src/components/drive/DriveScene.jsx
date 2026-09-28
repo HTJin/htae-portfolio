@@ -7,6 +7,7 @@ import { CarInterior } from './CarInterior'
 import { Dashboard } from './Dashboard'
 import { ExitSign } from './ExitSign'
 import { RoadCanvas } from './RoadCanvas'
+import { RoadScene } from './RoadScene'
 import { RouteMap } from './RouteMap'
 import { Sky } from './Sky'
 import { StopCard } from './StopCard'
@@ -31,7 +32,7 @@ const LEGS = legsOf(route)
  * What the browser tab says while you drive.
  *
  * Every exit used to share one title, so twenty-one different pages produced
- * one bookmark name and one history entry — and, less obviously, one *spoken*
+ * one bookmark name and one history entry - and, less obviously, one *spoken*
  * string: Next's route announcer reads `document.title` aloud, assertively, on
  * every shallow URL change, which here is every departure. A screen-reader user
  * was therefore interrupted twenty times with the same sentence and never told
@@ -43,9 +44,9 @@ const LEGS = legsOf(route)
  */
 function titleFor(stop) {
   // MILE 0's own title *is* the name, so appending the brand would read
-  // "MILE 0 · Hyun-Tae Jin | Hyun-Tae Jin" on the tab and in the bookmark.
+  // "MILE 0 / Hyun-Tae Jin | Hyun-Tae Jin" on the tab and in the bookmark.
   const brand = stop.title === meta.name ? '' : ` | ${meta.name}`
-  return `${stop.exitLabel} · ${stop.title}${brand}`
+  return `${stop.exitLabel} / ${stop.title}${brand}`
 }
 
 /**
@@ -63,8 +64,8 @@ function ArrivalAnnouncer({ started, parked, stop }) {
   const text = !(started && parked)
     ? ''
     : stop.index === 0
-    ? `At the start line — ${stop.title}`
-    : `Arrived at ${stop.exitLabel} — ${stop.title}`
+    ? `At the start line, ${stop.title}`
+    : `Arrived at ${stop.exitLabel}, ${stop.title}`
 
   return (
     <p className="sr-only" role="status" aria-live="polite">
@@ -77,15 +78,28 @@ function ArrivalAnnouncer({ started, parked, stop }) {
  * Everything readable on the page, for screen readers and crawlers.
  *
  * This is the only version of the résumé a crawler or a screen reader can
- * actually consume — the rest of the page is a canvas and a cockpit. So it
+ * actually consume - the rest of the page is a canvas and a cockpit. So it
  * carries the full heading hierarchy (route -> leg -> stop) and the year of
  * every stop that has one in the content. Stops without a date get no year;
  * nothing here invents one.
  */
 function Itinerary() {
   return (
-    <div className="sr-only">
-      <h1>Drive mode — the résumé of Hyun-Tae Jin as a road trip</h1>
+    /*
+     * A `main` landmark, because this really is the main content.
+     *
+     * Measured: the home page carries a `main` and a `nav`, and /drive carried
+     * no landmark of any kind. So a screen reader on the drive had no way to
+     * jump to the one readable copy of the resume, ten kilobytes of it, and had
+     * to walk the whole tab order instead, which starts thirty stops from here.
+     * The rest of the site already answers this; the drive had simply never
+     * been given the same thing.
+     *
+     * `main` rather than a role: the element is the landmark, and there is only
+     * one on the page, which is what the role requires anyway.
+     */
+    <main className="sr-only">
+      <h1>Drive mode - the résumé of Hyun-Tae Jin as a road trip</h1>
       {LEGS.map((leg) => (
         <section key={leg.name} aria-label={leg.name}>
           <h2>{leg.name}</h2>
@@ -95,7 +109,7 @@ function Itinerary() {
               aria-label={`${stop.exitLabel}: ${stop.title}`}
             >
               <h3>
-                {stop.exitLabel} — {stop.title}
+                {stop.exitLabel} / {stop.title}
                 {stop.year ? (
                   <>
                     {' ('}
@@ -133,11 +147,31 @@ function Itinerary() {
           ))}
         </section>
       ))}
-    </div>
+    </main>
   )
 }
 
 function Ignition({ onStart, resume, onResume, onForget }) {
+  /**
+   * Put the keyboard on the one control this screen is asking for.
+   *
+   * Measured before this existed: Start engine was the THIRTY FOURTH thing in
+   * the tab order. Tab 1 is the skip link, and tabs 2 to 33 are the links inside
+   * the stop cards behind this overlay, LinkedIn, GitHub, certificates and a
+   * Live site and Source pair for every project. So a keyboard visitor met a
+   * screen saying "Start engine", pressed Tab, and spent thirty three presses
+   * inside content they could not see and could not use yet.
+   *
+   * Focusing the button is the smallest fix that answers that, and it is what
+   * the screen already implies. It runs after mount, so it cannot affect the
+   * server paint, and it happens before the visitor has expressed any intent of
+   * their own, so it steals nothing from them.
+   */
+  const startRef = useRef(null)
+  useEffect(() => {
+    startRef.current?.focus()
+  }, [])
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -146,7 +180,7 @@ function Ignition({ onStart, resume, onResume, onForget }) {
       transition={{ duration: 0.4 }}
       // Scrolls when it has to. A returning visitor gets two extra controls
       // here, which on a short landscape phone pushed the whole splash past
-      // the viewport — and the link out is the only way to leave drive mode
+      // the viewport - and the link out is the only way to leave drive mode
       // while this is up, since it sits over the scene's own exit link.
       // The centring lives on the inner wrapper rather than on this flex
       // container: a centred flex child that overflows cannot be scrolled
@@ -155,7 +189,7 @@ function Ignition({ onStart, resume, onResume, onForget }) {
     >
       <div className="m-auto flex w-full flex-col items-center">
         <p className="text-[0.6875rem] uppercase tracking-[0.3em] text-sky-300/70">
-          Hyun-Tae Jin · drive mode
+          Hyun-Tae Jin / drive mode
         </p>
         {/* An h2, not an h1: the itinerary's heading is the page's real title
           and this splash is transient. Two h1s would compete to describe the
@@ -171,6 +205,7 @@ function Ignition({ onStart, resume, onResume, onForget }) {
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row [@media(max-height:430px)]:mt-4 [@media(max-height:430px)]:flex-row">
           <button
             type="button"
+            ref={startRef}
             onClick={onStart}
             className={`rounded-full border border-yellow-300/60 bg-yellow-300/10 px-8 py-3 font-display text-sm font-semibold uppercase tracking-[0.2em] text-yellow-200 transition hover:bg-yellow-300/20 ${styles.ignition}`}
           >
@@ -186,7 +221,7 @@ function Ignition({ onStart, resume, onResume, onForget }) {
               className="max-w-[18rem] rounded-full border border-sky-400/50 bg-sky-400/10 px-6 py-3 text-left text-sm text-sky-200 transition hover:bg-sky-400/20"
             >
               <span className="block text-[0.625rem] font-semibold uppercase tracking-[0.2em] text-sky-300/70">
-                Resume · {resume.label}
+                Resume / {resume.label}
               </span>
               <span className="mt-0.5 block truncate font-display">
                 {resume.title}
@@ -219,7 +254,7 @@ function Ignition({ onStart, resume, onResume, onForget }) {
           ))}
         </dl>
 
-        {/* The only way out of drive mode while this splash is up — it covers
+        {/* The only way out of drive mode while this splash is up - it covers
           the scene's own exit link. It never gets tightened away. */}
         <Link
           href="/"
@@ -232,11 +267,43 @@ function Ignition({ onStart, resume, onResume, onForget }) {
   )
 }
 
+/**
+ * Can this browser draw with WebGL at all?
+ *
+ * Measured, because it is not hypothetical: with getContext returning null for
+ * every webgl type, three.js throws "Error creating WebGL context." from its own
+ * constructor, during a layout effect, and React unwinds the whole tree. The
+ * visitor gets a blank page, not a degraded one. That happens on machines with
+ * hardware acceleration switched off, on locked down corporate builds and on
+ * older devices, and none of them get an explanation.
+ *
+ * The fallback already existed. RoadCanvas has been kept behind ?renderer=2d so
+ * the two renderers could be compared, and it draws the same world without
+ * WebGL, so the honest thing is to reach for it automatically rather than to add
+ * anything new.
+ *
+ * The probe canvas is 1x1 and is never attached to the document. A browser that
+ * supports WebGL but refuses this context, having exhausted its context limit,
+ * for instance, also lands on the 2D path, which is the right answer for it too.
+ */
+function hasWebgl() {
+  try {
+    const canvas = document.createElement('canvas')
+    return Boolean(
+      canvas.getContext('webgl2') ||
+        canvas.getContext('webgl') ||
+        canvas.getContext('experimental-webgl')
+    )
+  } catch {
+    return false
+  }
+}
+
 export function DriveScene() {
   const router = useRouter()
   const systemReducedMotion = useReducedMotion()
   /**
-   * An in-page way to ask for stillness — S141.
+   * An in-page way to ask for stillness - S141.
    *
    * `prefers-reduced-motion` was already honoured in four places, but only the
    * *operating system* could ask. This is a first-person scene with continuous
@@ -254,7 +321,36 @@ export function DriveScene() {
    * of a gesture in this session; the same applies here.
    */
   const [motionOverride, setMotionOverride] = useState(null)
-  const reducedMotion = motionOverride ?? Boolean(systemReducedMotion)
+  /**
+   * Same lesson as `use2d` below, and it was missed here.
+   *
+   * There is no media query on the server, so `useReducedMotion` answers false
+   * there and true on a client that has asked for stillness. The motion toggle
+   * renders a different glyph for each, so a visitor with
+   * prefers-reduced-motion set met a hydration failure: 9 console errors, React
+   * throwing away the server HTML for that subtree and painting it again.
+   * Measured with a reduced-motion browser, which is the only way to see it.
+   *
+   * The preference is therefore read after mount, exactly like the renderer
+   * flag. It costs that visitor one paint with motion allowed, which is the
+   * same trade already accepted below.
+   */
+  const [motionPreferenceRead, setMotionPreferenceRead] = useState(false)
+  useEffect(() => setMotionPreferenceRead(true), [])
+  const reducedMotion =
+    motionOverride ?? (motionPreferenceRead && Boolean(systemReducedMotion))
+  // ?renderer=2d falls back to the Canvas 2D renderer.
+  //
+  // Read AFTER mount, not during render. Reading window.location during render made
+  // the server emit the 3D branch and the client emit the 2D branch, which is a
+  // hydration mismatch: it threw 11 "initial UI does not match" errors. The flag
+  // costs one extra paint on the 2D path and none on the default path.
+  const [use2d, setUse2d] = useState(false)
+  useEffect(() => {
+    const asked =
+      new URLSearchParams(window.location.search).get('renderer') === '2d'
+    setUse2d(asked || !hasWebgl())
+  }, [])
   const drive = useDrive(route, { reducedMotion })
   const [mapOpen, setMapOpen] = useState(false)
   const deepLinked = useRef(false)
@@ -264,7 +360,7 @@ export function DriveScene() {
   const [resume, setResume] = useState(null)
 
   // The label of whichever itinerary link currently has focus, or null. Drives
-  // the chip below — see the comment beside it.
+  // the chip below - see the comment beside it.
   const [outlineFocus, setOutlineFocus] = useState(null)
 
   const { started, start, index, parked, setThrottle, setBrake, setSteer } =
@@ -327,12 +423,15 @@ export function DriveScene() {
       return
     }
 
-    drive.goTo(target)
-    drive.start()
+    // 'none' on both: a visitor handed a URL has not driven here and has not
+    // navigated here either, so nothing about this stop is recorded. st134
+    // names this case, "?exit= writes no outcome".
+    drive.goTo(target, 'none')
+    drive.start('none')
   }, [router.isReady, router.query.exit, router, drive])
 
   /**
-   * Offer to pick up where they left off — but only where an explicit link has
+   * Offer to pick up where they left off - but only where an explicit link has
    * not already asked for an exit, and only once mounted (guardrail 28).
    */
   useEffect(() => {
@@ -352,11 +451,11 @@ export function DriveScene() {
 
   const resumeDrive = useCallback(() => {
     if (!resume) return
-    drive.goTo(resume.index)
-    // They really did drive every exit up to here — saved progress only
-    // advances on arrival, and only forwards — so the route map should say so.
-    drive.markVisitedThrough(resume.index)
-    drive.start()
+    // Also 'none'. Picking up where you left off is not a new outcome, and the
+    // old code claimed one for every stop before this index. `useDrive` restores
+    // the real history from what was recorded at the time instead.
+    drive.goTo(resume.index, 'none')
+    drive.start('none')
   }, [drive, resume])
 
   const forgetProgress = useCallback(() => {
@@ -394,7 +493,7 @@ export function DriveScene() {
 
       // The route map says `aria-modal`, which promises everything behind it
       // is inert. It was not: with the map open, ArrowUp pulled the car out of
-      // the stop — `parked` went false and the title advanced an exit — while
+      // the stop - `parked` went false and the title advanced an exit - while
       // the dialog stayed up, so the drive happened invisibly behind it. Arrow
       // keys are also the obvious way to scroll a twenty-one row list, so the
       // natural gesture for using the map was the one that left the exit you
@@ -502,7 +601,7 @@ export function DriveScene() {
   // Printing. The scene sets `body.style.overflow = 'hidden'` so the drive
   // cannot be scrolled; on paper that clips the document to a single page and
   // throws the résumé away. The print sheet in `drive.module.css` cannot undo
-  // it — it is an *inline* style, and CSS Modules refuses any selector there
+  // it - it is an *inline* style, and CSS Modules refuses any selector there
   // with no local class in it, so a stylesheet cannot target `body` at all.
   // Released here instead, beside the code that set it, and put back after so
   // the drive still cannot be scrolled.
@@ -513,7 +612,7 @@ export function DriveScene() {
       // Capture **once**. Chrome re-fires `beforeprint` when a preview is
       // reopened, and `window.print()` during a preview does the same. An
       // unconditional capture would store `'visible'` on the second fire, and
-      // the following `afterprint` would write that back — leaving the drive
+      // the following `afterprint` would write that back - leaving the drive
       // permanently scrollable, which is the exact thing the mount effect sets
       // out to prevent.
       if (beforePrintOverflow === null) {
@@ -525,13 +624,13 @@ export function DriveScene() {
       // Put back whatever was there, not a hardcoded `hidden`. The mount effect
       // above already saves and restores this way; writing the literal here
       // happens to be equivalent today only because nothing else touches
-      // `body.style.overflow`. The moment something does — a modal, a scroll
-      // lock — this would silently overwrite it. And a browser that fires
+      // `body.style.overflow`. The moment something does - a modal, a scroll
+      // lock - this would silently overwrite it. And a browser that fires
       // `beforeprint` without a matching `afterprint` leaves the value it
       // captured, rather than a guess.
       //
-      // And bail if no print started. `afterprint` can arrive alone — the
-      // scene can remount while a preview is open — in which case there is
+      // And bail if no print started. `afterprint` can arrive alone - the
+      // scene can remount while a preview is open - in which case there is
       // nothing captured, and writing the initial value would *clear* the
       // scroll lock. Doing nothing is right; the mount effect already owns it.
       if (beforePrintOverflow === null) return
@@ -548,7 +647,7 @@ export function DriveScene() {
 
   return (
     <div
-      // `printable` carries nothing on screen — it exists so the print rules
+      // `printable` carries nothing on screen - it exists so the print rules
       // in `drive.module.css` have something to anchor to. See the `@media
       // print` block there for why this page needs one at all.
       className={`fixed inset-0 overflow-hidden bg-[#03060c] text-white ${styles.printable}`}
@@ -556,7 +655,7 @@ export function DriveScene() {
       // to line up with it: the dash itself, the arrival panel's bottom edge,
       // and the bonnet / dash reflection in `CarInterior`. It used to
       // be written out three times, and the copies only agreed while `36%` was
-      // the winning branch of the clamp — below ~528px tall the floor wins and
+      // the winning branch of the clamp - below ~528px tall the floor wins and
       // the car's own bonnet ended up behind the dashboard (guardrail 43).
       style={{ '--dash': 'clamp(190px, 36%, 48%)' }}
     >
@@ -570,8 +669,8 @@ export function DriveScene() {
 
       {/* First in the tab order on purpose.
 
-          The itinerary below is `sr-only` — clipped to nothing, but still in
-          the tab order — and it carries a link for every stop. Measured, that
+          The itinerary below is `sr-only` - clipped to nothing, but still in
+          the tab order - and it carries a link for every stop. Measured, that
           is 25 of the 38 focusable elements on the page, so `Tab` from the top
           used to spend 25 presses with the focus ring painted on clipped-away
           content before reaching a control anyone could see. Taking those
@@ -590,7 +689,7 @@ export function DriveScene() {
           keyboard user who declines the skip link walks 25 stops with the
           focus ring painted where nobody can see it. Revealing the focused
           link in place is not available: tested, a `position: fixed`
-          descendant does not escape the container's `clip: rect(0,0,0,0)` —
+          descendant does not escape the container's `clip: rect(0,0,0,0)` -
           it keeps its layout box but `elementFromPoint` at its own centre
           returns the canvas. So instead of moving the link out, this reports
           where focus is, from outside the clip.
@@ -601,7 +700,7 @@ export function DriveScene() {
       <div
         // `printKeep` is what survives printing. The print sheet hides every
         // *other* direct child of the scene rather than naming the pieces to
-        // hide — naming them is how the dashboard ended up printed over the
+        // hide - naming them is how the dashboard ended up printed over the
         // résumé, since its root carries no `aria-hidden` and matched none of
         // the rules. This wrapper holds the crawlable itinerary, so keeping
         // exactly one thing is both simpler and impossible to get wrong when
@@ -616,7 +715,7 @@ export function DriveScene() {
         {/* What is left if the JavaScript never runs.
 
           Measured from the served HTML: the whole résumé is already in this
-          page — but inside `.sr-only`, which the stylesheet resolves to
+          page - but inside `.sr-only`, which the stylesheet resolves to
           `clip: rect(0,0,0,0)`. The ignition splash renders too, so without
           scripting a visitor met "The résumé, from the driver's seat" and a
           "Start engine" button that does nothing, with every word of the
@@ -657,14 +756,22 @@ export function DriveScene() {
       <ArrivalAnnouncer started={started} parked={parked} stop={stop} />
 
       <Sky drive={drive} />
-      <RoadCanvas drive={drive} className="absolute inset-0 h-full w-full" />
+      {/* Renderer swap. RoadScene draws the same world with a real depth buffer, so
+          the ramp cannot show through the ground and no bar smears along the horizon.
+          RoadCanvas is kept behind ?renderer=2d so the two can be compared on the same
+          sim, and so a regression has somewhere to fall back to. */}
+      {use2d ? (
+        <RoadCanvas drive={drive} className="absolute inset-0 h-full w-full" />
+      ) : (
+        <RoadScene drive={drive} className="absolute inset-0 h-full w-full" />
+      )}
       <ExitSign drive={drive} stop={stop} />
       <CarInterior passedStop={passedStop} />
 
       {/* Heads-up display floats on the glass: below the mirror, above the dash.
           "Below the mirror" was only true on a tall window. The mirror hangs
-          from the headliner by a fixed drop — a 12px stalk and a 38px chip, 50px
-          that does not shrink — while this band's top was a flat 14%. Percentage
+          from the headliner by a fixed drop - a 12px stalk and a 38px chip, 50px
+          that does not shrink - while this band's top was a flat 14%. Percentage
           against pixels: they cross below 769px tall, and the panel then drew
           its bright top border straight through the chip, putting the HUD in
           front of a mirror bolted to the roof. Measured gap before this: +9px at
@@ -695,7 +802,7 @@ export function DriveScene() {
               <span className={styles.blink} aria-hidden="true">
                 ▸
               </span>
-              Next exit — {stop.signTitle}
+              Next exit - {stop.signTitle}
             </div>
           </motion.div>
         ) : null}
@@ -726,7 +833,8 @@ export function DriveScene() {
         onClose={() => setMapOpen(false)}
         onSelect={selectStop}
         currentIndex={index}
-        visited={drive.visited}
+        statuses={drive.statuses}
+        reducedMotion={reducedMotion}
       />
 
       <AnimatePresence>

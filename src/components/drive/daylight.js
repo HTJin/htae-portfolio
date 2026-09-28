@@ -4,7 +4,7 @@
  *
  * Deliberately not a full day cycle: the art is night-tuned (stars, a moon,
  * sodium lamp glow, neon HUD) and a washed-out midday would wreck it. This is
- * a narrow, rich band instead — golden-hour dusk at MILE 0, deepening twilight
+ * a narrow, rich band instead - golden-hour dusk at MILE 0, deepening twilight
  * across the career highway, full night by the toolbox, and the first hint of
  * dawn at the destination. The dawn is the point: the last stop is the one
  * that asks about what comes next.
@@ -18,7 +18,7 @@ const rgb = (r, g, b) => [r, g, b]
  * Where a named stop falls along the route, as a fraction.
  *
  * The full-night keyframe used to be a hand-typed `0.92` labelled "the
- * toolbox" — but the toolbox is EXIT 19 of 20, which is **0.95**. `0.92` is
+ * toolbox" - but the toolbox is EXIT 19 of 20, which is **0.95**. `0.92` is
  * exit 18.4: mid-leg, where nobody parks. Measured, that left the toolbox
  * already 37.5% of the way into dawn (`starOpacity` 0.850 against a peak of
  * 1.0), so the darkest moment of the drive happened between two stops and the
@@ -41,7 +41,7 @@ function progressOfStop(id, fallback) {
  */
 const KEYFRAMES = [
   {
-    at: 0, // golden hour — pulling onto the highway
+    at: 0, // golden hour - pulling onto the highway
     skyTop: rgb(18, 32, 66),
     skyUpper: rgb(46, 58, 102),
     skyLower: rgb(140, 86, 92),
@@ -96,7 +96,7 @@ const KEYFRAMES = [
   },
   {
     // Deep twilight, in among the side builds. Also a judgement call rather
-    // than an anchor — the builds run EXIT 11 to EXIT 18, so this sits inside
+    // than an anchor - the builds run EXIT 11 to EXIT 18, so this sits inside
     // that stretch (near EXIT 14) without belonging to any one of them.
     at: 0.68,
     skyTop: rgb(4, 8, 20),
@@ -123,7 +123,7 @@ const KEYFRAMES = [
     signFace: rgb(18, 96, 60),
   },
   {
-    // Full night, at the toolbox — derived from that stop, not typed, so the
+    // Full night, at the toolbox - derived from that stop, not typed, so the
     // darkest point of the drive lands where you actually park. This is the
     // original palette.
     at: progressOfStop('skills', 0.92),
@@ -151,7 +151,7 @@ const KEYFRAMES = [
     signFace: rgb(18, 96, 60),
   },
   {
-    at: 1, // first light — "you have arrived", and what comes next
+    at: 1, // first light - "you have arrived", and what comes next
     skyTop: rgb(5, 10, 22),
     skyUpper: rgb(10, 26, 50),
     skyLower: rgb(26, 62, 96),
@@ -220,7 +220,7 @@ const SCALAR_KEYS = [
 ]
 
 /**
- * One palette object, mutated in place. The canvas paints 60 times a second —
+ * One palette object, mutated in place. The canvas paints 60 times a second -
  * allocating a fresh palette (and fresh colour strings) every frame would put
  * real pressure on the collector for no benefit.
  */
@@ -237,8 +237,8 @@ SCALAR_KEYS.forEach((key) => {
 /**
  * Exported because `Sky` needs the *same* number for its repaint guard. It used
  * to type its own `360`: make this finer and the sky would have kept repainting
- * on the old step, lagging and banding while the road — which reads this
- * palette every frame with no guard — kept up.
+ * on the old step, lagging and banding while the road - which reads this
+ * palette every frame with no guard - kept up.
  */
 export const STEPS = 360
 let builtStep = -1
@@ -258,7 +258,7 @@ export function clamp01(value) {
 }
 
 /**
- * The palette at a point along the route. Returns the shared object — read it,
+ * The palette at a point along the route. Returns the shared object - read it,
  * don't keep it.
  */
 export function paletteAt(progress) {
