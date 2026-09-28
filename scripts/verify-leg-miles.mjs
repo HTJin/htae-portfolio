@@ -3,10 +3,7 @@
  * Reconciled over drive-r3f legMiles.js duplicate (st1395 / cr1000218).
  * Zero-dep: imports rng.js only (no @/content alias).
  */
-import {
-  drawLegMiles,
-  seedFromStopIds,
-} from '../src/components/drive/rng.js'
+import { drawLegMiles, seedFromStopIds } from '../src/components/drive/rng.js'
 
 const ids = [
   'origin',
@@ -36,12 +33,24 @@ const check = (name, ok) => {
 console.log('  stretches:', miles.join(', '))
 
 check('leg count matches consecutive pairs', miles.length === legCount)
-check('every stretch is 1-99', miles.every((m) => m >= 1 && m <= 99))
-check('same seed replays', replay.every((m, i) => m === miles[i]))
-check('CONTROL different seed differs', salted.some((m, i) => m !== miles[i]))
+check(
+  'every stretch is 1-99',
+  miles.every((m) => m >= 1 && m <= 99),
+)
+check(
+  'same seed replays',
+  replay.every((m, i) => m === miles[i]),
+)
+check(
+  'CONTROL different seed differs',
+  salted.some((m, i) => m !== miles[i]),
+)
 check('seed is stable uint32', Number.isInteger(seed) && seed >= 0)
 check('stretches are not one constant', new Set(miles).size > 1)
-check('Q190 CONTROL tripMiles is not the real 5.2 card figure', Math.abs(tripMiles - cardMiles) > 1)
+check(
+  'Q190 CONTROL tripMiles is not the real 5.2 card figure',
+  Math.abs(tripMiles - cardMiles) > 1,
+)
 
 // Content key: renaming a later stop must not reshuffle earlier legs only if
 // seed is ordered-id based - mutating the last id changes the whole seed.
@@ -50,7 +59,7 @@ const otherIds = [...ids.slice(0, -1), 'destination-alt']
 const otherMiles = drawLegMiles(seedFromStopIds(otherIds), legCount)
 check(
   'CONTROL different stop ids change the sequence',
-  otherMiles.some((m, i) => m !== miles[i])
+  otherMiles.some((m, i) => m !== miles[i]),
 )
 
 console.log(`\n  ${pass} passed, ${fail} failed`)

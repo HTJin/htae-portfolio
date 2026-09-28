@@ -20,17 +20,53 @@ const PORT = Number(process.env.DRIVE_PORT || 3041)
 const URL = `http://localhost:${PORT}/drive`
 
 const SUITES = [
-  { name: 'stop status vocabulary', file: 'scripts/verify-stop-status.mjs', server: false },
-  { name: 'per leg miles', file: 'scripts/verify-leg-miles.mjs', server: false },
-  { name: 'ramp lateral offsets', file: 'scripts/assert-ramp-offsets.mjs', server: false },
-  { name: 'ramp lengths', file: 'scripts/assert-ramp-lengths.mjs', server: false },
-  { name: 'what each exit records', file: 'scripts/verify-visit-status.mjs', server: true },
+  {
+    name: 'stop status vocabulary',
+    file: 'scripts/verify-stop-status.mjs',
+    server: false,
+  },
+  {
+    name: 'per leg miles',
+    file: 'scripts/verify-leg-miles.mjs',
+    server: false,
+  },
+  {
+    name: 'ramp lateral offsets',
+    file: 'scripts/assert-ramp-offsets.mjs',
+    server: false,
+  },
+  {
+    name: 'ramp lengths',
+    file: 'scripts/assert-ramp-lengths.mjs',
+    server: false,
+  },
+  {
+    name: 'what each exit records',
+    file: 'scripts/verify-visit-status.mjs',
+    server: true,
+  },
   { name: 'the route map', file: 'scripts/verify-route-map.mjs', server: true },
-  { name: 'reduced motion', file: 'scripts/verify-reduced-motion.mjs', server: true },
-  { name: 'degraded browsers', file: 'scripts/verify-webgl-fallback.mjs', server: true },
+  {
+    name: 'reduced motion',
+    file: 'scripts/verify-reduced-motion.mjs',
+    server: true,
+  },
+  {
+    name: 'degraded browsers',
+    file: 'scripts/verify-webgl-fallback.mjs',
+    server: true,
+  },
   { name: 'the phone drive', file: 'scripts/verify-phone.mjs', server: true },
-  { name: 'the keyboard drive', file: 'scripts/verify-keyboard.mjs', server: true },
-  { name: 'what a screen reader hears', file: 'scripts/verify-announcements.mjs', server: true },
+  {
+    name: 'the keyboard drive',
+    file: 'scripts/verify-keyboard.mjs',
+    server: true,
+  },
+  {
+    name: 'what a screen reader hears',
+    file: 'scripts/verify-announcements.mjs',
+    server: true,
+  },
   { name: 'printing', file: 'scripts/verify-print.mjs', server: true },
 ]
 
@@ -78,8 +114,12 @@ function run(file) {
       windowsHide: true,
     })
     let out = ''
-    child.stdout.on('data', (d) => { out += d })
-    child.stderr.on('data', (d) => { out += d })
+    child.stdout.on('data', (d) => {
+      out += d
+    })
+    child.stderr.on('data', (d) => {
+      out += d
+    })
     child.on('close', (code) => resolve({ code, out }))
   })
 }
@@ -93,10 +133,14 @@ if (needsServer && !(await serving())) {
   // the vault's bun-first rule is explicit that a long running daemon starts on
   // node: bun only adds launch cost to a Next server that is a node program
   // either way, and a .cmd shim can surface a console window.
-  started = spawn('node', ['node_modules/next/dist/bin/next', 'dev', '--port', String(PORT)], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-    windowsHide: true,
-  })
+  started = spawn(
+    'node',
+    ['node_modules/next/dist/bin/next', 'dev', '--port', String(PORT)],
+    {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
+    },
+  )
   started.stdout.on('data', () => {})
   started.stderr.on('data', () => {})
   if (!(await waitForServer(90))) {
@@ -106,7 +150,9 @@ if (needsServer && !(await serving())) {
   }
   console.log('dev server is up')
 } else if (needsServer) {
-  console.log(`a dev server is already answering on ${PORT}, using it and leaving it running`)
+  console.log(
+    `a dev server is already answering on ${PORT}, using it and leaving it running`,
+  )
 }
 
 const results = []
@@ -118,9 +164,12 @@ for (const suite of SUITES) {
     // A failing browser suite prints Playwright's own stack, numbered source
     // lines and all, which buries the one line that says what went wrong. Keep
     // the suite's own FAIL lines and the error summary, drop the rest.
-    const lines = out.split('\n')
+    const lines = out
+      .split('\n')
       .map((l) => l.trim())
-      .filter((l) => l.startsWith('FAIL') || l.toLowerCase().startsWith('error:'))
+      .filter(
+        (l) => l.startsWith('FAIL') || l.toLowerCase().startsWith('error:'),
+      )
       .slice(0, 8)
     console.log(lines.map((l) => `        ${l}`).join('\n'))
   }
@@ -130,11 +179,15 @@ if (started) {
   started.kill()
   // Say so rather than escalating. A stray dev server is the owner's to see.
   const stillUp = await serving()
-  console.log(stillUp
-    ? `NOTE the dev server on ${PORT} is still answering; stop it yourself if you do not want it`
-    : 'dev server stopped')
+  console.log(
+    stillUp
+      ? `NOTE the dev server on ${PORT} is still answering; stop it yourself if you do not want it`
+      : 'dev server stopped',
+  )
 }
 
 const failed = results.filter((r) => r.code !== 0)
-console.log(`\n${results.length - failed.length} of ${results.length} suites passed`)
+console.log(
+  `\n${results.length - failed.length} of ${results.length} suites passed`,
+)
 process.exit(failed.length ? 1 : 0)

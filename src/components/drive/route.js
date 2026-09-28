@@ -164,7 +164,7 @@ export const BANK_TOP_OFFSET = CARRIAGEWAY + VERGE_WIDTH
 export function dropHoldFor(peak) {
   return Math.min(
     0.9,
-    (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / peak
+    (BANK_TOP_OFFSET - LANE_OFFSET + RAMP_WIDTH / 2 + 1.2) / peak,
   )
 }
 
@@ -419,7 +419,7 @@ function projectStops() {
   return projects.map((project) => {
     // Every capture the project ships, in order - the stop card cycles them.
     const images = (project.screenshots ?? []).map(
-      (shot) => `/images/projects/${project.name}${shot}`
+      (shot) => `/images/projects/${project.name}${shot}`,
     )
 
     return {
@@ -548,19 +548,19 @@ const ROUTE_LAST = route.length - 1
  * Distinct salt from itinerary miles so axes stay independent.
  */
 export const RAMP_LENGTH_SEED = hashSeed(
-  `drive:ramp-length:${route.map((stop) => stop.id).join('|')}`
+  `drive:ramp-length:${route.map((stop) => stop.id).join('|')}`,
 )
 
 /** Per-stop along-s ramp lengths (world metres). Built once at module load. */
 export const rampLengths = attachRampLengths(
   route.length,
   LEG_LENGTH,
-  RAMP_LENGTH_SEED
+  RAMP_LENGTH_SEED,
 )
 
 /** Per-stop peak lateral offsets (world metres). Keyed per stop id, not one stream. */
 export const rampOffsets = route.map(
-  (stop) => CARRIAGEWAY + rampExtraForId(stop.id)
+  (stop) => CARRIAGEWAY + rampExtraForId(stop.id),
 )
 
 /**

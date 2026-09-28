@@ -121,8 +121,8 @@ export function RouteMap({
       0,
       Math.min(
         scroller.scrollTop + delta,
-        scroller.scrollHeight - scroller.clientHeight
-      )
+        scroller.scrollHeight - scroller.clientHeight,
+      ),
     )
   }, [open, currentIndex])
 
@@ -151,7 +151,7 @@ export function RouteMap({
     const onKeyDown = (event) => {
       if (event.key !== 'Tab' || !panel) return
       const items = [...panel.querySelectorAll(TABBABLE)].filter(
-        (node) => node.offsetParent !== null || node === document.activeElement
+        (node) => node.offsetParent !== null || node === document.activeElement,
       )
       if (!items.length) return
 
@@ -239,7 +239,7 @@ export function RouteMap({
                             'relative flex w-full items-baseline gap-3 rounded-md border py-2 pl-9 pr-3 text-left transition',
                             stop.index === currentIndex
                               ? 'border-sky-400/50 bg-sky-400/10'
-                              : 'border-transparent hover:border-white/15 hover:bg-white/5'
+                              : 'border-transparent hover:border-white/15 hover:bg-white/5',
                           )}
                         >
                           <Rail
@@ -265,7 +265,7 @@ export function RouteMap({
                               has nothing before it, so it shows none. */}
                           {stop.index > 0 ? (
                             <span
-                              className="shrink-0 font-mono text-[0.625rem] tabular-nums tracking-[0.08em] text-white/45"
+                              className="text-white/45 shrink-0 font-mono text-[0.625rem] tabular-nums tracking-[0.08em]"
                               title={`${stop.milesFromPrev} miles from the previous exit`}
                             >
                               {stop.milesFromPrev} MI
