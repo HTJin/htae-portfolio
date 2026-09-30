@@ -12,10 +12,23 @@
     "start": "next start",
     "lint": "next lint",
     "prettier": "prettier --write .",
-    "test": "node --import ./scripts/load-route.mjs ./scripts/assert-ramp-lengths.mjs && node --import ./scripts/load-route.mjs ./scripts/assert-ramp-freeze.mjs && node --import ./scripts/load-route.mjs ./scripts/assert-leg-miles.mjs"
+    "test": "node --import ./scripts/load-route.mjs ./scripts/assert-ramp-lengths.mjs && node --import ./scripts/load-route.mjs ./scripts/assert-ramp-freeze.mjs && node --import ./scripts/load-route.mjs ./scripts/assert-leg-miles.mjs",
+    "verify:stops": "node scripts/verify-stop-status.mjs",
+    "verify:miles": "node scripts/verify-leg-miles.mjs",
+    "verify:visits": "bun scripts/verify-visit-status.mjs",
+    "verify:map": "bun scripts/verify-route-map.mjs",
+    "verify:motion": "bun scripts/verify-reduced-motion.mjs",
+    "verify": "bun scripts/verify-all.mjs",
+    "verify:fallback": "bun scripts/verify-webgl-fallback.mjs",
+    "verify:phone": "bun scripts/verify-phone.mjs",
+    "verify:keyboard": "bun scripts/verify-keyboard.mjs",
+    "verify:announcements": "bun scripts/verify-announcements.mjs",
+    "verify:print": "bun scripts/verify-print.mjs"
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
+    "@react-three/drei": "^9",
+    "@react-three/fiber": "^8",
     "aos": "^2.3.4",
     "autoprefixer": "^10.4.7",
     "clsx": "^1.2.0",
@@ -29,7 +42,8 @@
     "postcss-focus-visible": "^6.0.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "tailwindcss": "^3.3.0"
+    "tailwindcss": "^3.3.0",
+    "three": "^0.180"
   },
   "devDependencies": {
     "eslint": "8.26.0",
