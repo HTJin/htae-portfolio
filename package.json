@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "next lint",
     "prettier": "prettier --write .",
+    "test": "node --import ./scripts/load-route.mjs ./scripts/assert-ramp-lengths.mjs && node --import ./scripts/load-route.mjs ./scripts/assert-ramp-freeze.mjs && node --import ./scripts/load-route.mjs ./scripts/assert-leg-miles.mjs",
     "verify:stops": "node scripts/verify-stop-status.mjs",
     "verify:miles": "node scripts/verify-leg-miles.mjs",
     "verify:visits": "bun scripts/verify-visit-status.mjs",
