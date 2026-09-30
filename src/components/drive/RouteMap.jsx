@@ -3,12 +3,85 @@ import Link from 'next/link'
 import clsx from 'clsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import { legsOf, route } from './route'
+import {
+  JUMPED,
+  SKIPPED,
+  STOP_STATUS_LABEL,
+  TAKEN,
+  UNREACHED,
+} from './stopStatus'
 
 const LEGS = legsOf(route)
 
 const TABBABLE = 'button, a[href], [tabindex]:not([tabindex="-1"])'
 
-export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
+/**
+ * The rail: what happened at each exit, drawn rather than named.
+ *
+ * Q050, answered 2026-08-13, binding and verbatim: "could be more of a visual
+ * roadmap of the experiences that went over in a dotted line node to node for
+ * destinations and it will show which path I didn't take that way without
+ * having to ponder about menial terminology such as passed or skipped".
+ *
+ * So the outcome is carried by the LINE, and the word that used to sit in a
+ * green badge moves into the accessible name, where a screen reader needs it and
+ * nobody else has to read it. That is also why the four looks differ in SHAPE
+ * and not only in colour: a map that says "solid green against faint green" says
+ * nothing at all to a visitor who cannot separate the two.
+ */
+const RAIL = {
+  [TAKEN]: { dash: null, width: 2.2, opacity: 0.9, node: 'solid' },
+  [SKIPPED]: { dash: '7 5', width: 2, opacity: 0.55, node: 'ring' },
+  [JUMPED]: { dash: '1.5 4.5', width: 2, opacity: 0.55, node: 'ring' },
+  [UNREACHED]: { dash: '1.5 4.5', width: 1, opacity: 0.2, node: 'faint' },
+}
+
+function Rail({ status, first, last }) {
+  const look = RAIL[status] ?? RAIL[UNREACHED]
+  const line = {
+    stroke: 'currentColor',
+    strokeWidth: look.width,
+    strokeDasharray: look.dash ?? undefined,
+    opacity: look.opacity,
+    vectorEffect: 'non-scaling-stroke',
+  }
+  return (
+    <svg
+      // The rail is the only thing in this row that means something you can see
+      // and a reader cannot, so role="img" belongs here and nowhere else. Its
+      // name is the row's text equivalent.
+      role="img"
+      aria-label={STOP_STATUS_LABEL[status] ?? STOP_STATUS_LABEL[UNREACHED]}
+      viewBox="0 0 14 100"
+      preserveAspectRatio="none"
+      className="pointer-events-none absolute inset-y-0 left-2 w-[14px] text-emerald-300"
+    >
+      {/* Drawn as two half segments rather than one line, so the node sits in a
+          gap of its own and the stroke never runs through it. */}
+      {first ? null : <line x1="7" y1="0" x2="7" y2="41" {...line} />}
+      {last ? null : <line x1="7" y1="59" x2="7" y2="100" {...line} />}
+      <circle
+        cx="7"
+        cy="50"
+        r={look.node === 'faint' ? 2 : 3.2}
+        fill={look.node === 'solid' ? 'currentColor' : '#050b14'}
+        stroke="currentColor"
+        strokeWidth={look.node === 'faint' ? 1 : 1.6}
+        opacity={look.node === 'faint' ? 0.28 : 0.9}
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  )
+}
+
+export function RouteMap({
+  open,
+  onClose,
+  onSelect,
+  currentIndex,
+  statuses,
+  reducedMotion = false,
+}) {
   const panelRef = useRef(null)
   const returnFocusRef = useRef(null)
   const currentRef = useRef(null)
@@ -18,7 +91,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
    * Open the list at the exit you are actually at.
    *
    * The map highlights the current exit, which is its own admission that
-   * "where you are" is the useful thing — and then it opened at MILE 0 every
+   * "where you are" is the useful thing - and then it opened at MILE 0 every
    * time. On a landscape phone that means three visible rows out of
    * twenty-one, with the current one 800px down.
    *
@@ -26,11 +99,11 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
    * `scrollIntoView`, which walks up the tree and can move ancestors it was
    * never asked to. It is instant on purpose: a smooth scroll would be motion
    * nobody requested, and would need a reduced-motion branch to be honest.
-   * Deliberately does not touch focus — the effect below owns that.
+   * Deliberately does not touch focus - the effect below owns that.
    *
    * The measurement is a rect delta rather than `offsetTop`: the scroll
    * container is not positioned, so a row's `offsetParent` is the dialog
-   * backdrop and its `offsetTop` is measured from there — 111px out, which
+   * backdrop and its `offsetTop` is measured from there - 111px out, which
    * scrolled the current row clean past the top of the window.
    */
   useEffect(() => {
@@ -55,7 +128,7 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
 
   /**
    * This dialog says `aria-modal`, which promises assistive technology that
-   * everything behind it is inert — so it has to actually behave that way.
+   * everything behind it is inert - so it has to actually behave that way.
    * Focus moves in on open, cycles inside on Tab, and goes back to whatever
    * opened it on close. Escape is deliberately left alone: `DriveScene` binds
    * it globally along with the driving keys, and swallowing it here would stop
@@ -103,10 +176,10 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
     <AnimatePresence>
       {open ? (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={{ opacity: reducedMotion ? 1 : 0 }}
           animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: reducedMotion ? 1 : 0 }}
+          transition={{ duration: reducedMotion ? 0 : 0.2 }}
           className="bg-[#03070e]/92 absolute inset-0 z-40 flex items-start justify-center px-4 py-6 backdrop-blur-sm sm:py-10"
           role="dialog"
           aria-modal="true"
@@ -138,18 +211,20 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
             <div ref={scrollRef} className="overflow-y-auto px-5 py-4">
               {LEGS.map((leg) => (
                 <div key={leg.name} className="mb-5 last:mb-0">
-                  <div className="mb-2 text-[0.625rem] uppercase tracking-[0.24em] text-sky-300/70">
+                  {/* Same left inset as the rows, so the rail passes beside the
+                      leg name rather than through the letters of it. */}
+                  <div className="mb-2 pl-9 text-[0.625rem] uppercase tracking-[0.24em] text-sky-300/70">
                     {leg.name}
                   </div>
-                  <ul className="space-y-1">
+                  <ul>
                     {leg.stops.map((stop) => (
                       <li key={stop.id}>
                         <button
                           type="button"
                           ref={stop.index === currentIndex ? currentRef : null}
                           onClick={() => onSelect(stop.index)}
-                          // Where you are was said in colour alone — a border
-                          // and a tint — so a screen reader met twenty-one
+                          // Where you are was said in colour alone - a border
+                          // and a tint - so a screen reader met twenty-one
                           // near-identical buttons with nothing to separate
                           // them. "driven" below is real text and always did
                           // announce; only the current position was silent.
@@ -161,12 +236,17 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                             stop.index === currentIndex ? 'location' : undefined
                           }
                           className={clsx(
-                            'flex w-full items-baseline gap-3 rounded-md border px-3 py-2 text-left transition',
+                            'relative flex w-full items-baseline gap-3 rounded-md border py-2 pl-9 pr-3 text-left transition',
                             stop.index === currentIndex
                               ? 'border-sky-400/50 bg-sky-400/10'
                               : 'border-transparent hover:border-white/15 hover:bg-white/5'
                           )}
                         >
+                          <Rail
+                            status={statuses[stop.id] ?? UNREACHED}
+                            first={stop.index === 0}
+                            last={stop.index === route.length - 1}
+                          />
                           <span className="text-white/35 w-[4.5rem] shrink-0 text-[0.625rem] uppercase tracking-[0.14em]">
                             {stop.exitLabel}
                           </span>
@@ -178,9 +258,17 @@ export function RouteMap({ open, onClose, onSelect, currentIndex, visited }) {
                               {stop.subtitle ?? stop.signSub}
                             </span>
                           </span>
-                          {visited.has(stop.index) ? (
-                            <span className="shrink-0 text-[0.625rem] uppercase tracking-[0.14em] text-emerald-300/70">
-                              driven
+                          {/* Miles for the stretch that ENDS at this exit.
+                              Q182, binding: "Add mile numbers to the new route
+                              map picture". Q044, binding: display-only, so this
+                              never touches LEG_LENGTH or the geometry. MILE 0
+                              has nothing before it, so it shows none. */}
+                          {stop.index > 0 ? (
+                            <span
+                              className="text-white/45 shrink-0 font-mono text-[0.625rem] tabular-nums tracking-[0.08em]"
+                              title={`${stop.milesFromPrev} miles from the previous exit`}
+                            >
+                              {stop.milesFromPrev} MI
                             </span>
                           ) : null}
                         </button>

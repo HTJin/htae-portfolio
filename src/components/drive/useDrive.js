@@ -1,19 +1,52 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { rampAt, rampDropAt } from './route'
-import { LANE_DRIFT, clamp, curveAt } from './world'
+import { readStopStatuses, writeStopStatus } from './progress'
+import { JUMPED, SKIPPED, TAKEN, UNREACHED, strongerStatus } from './stopStatus'
+import { CARRIAGEWAY, LANE_OFFSET, clamp, curveAt } from './world'
 
-const MAX_SPEED = 42 // m/s, about 94 mph
-const ACCELERATION = 8
+/** Keeps the wheels off the outer paint when steering to the edge lanes. */
+const LANE_EDGE_MARGIN = 1.1
+
+/**
+ * Speed and gearing, rebuilt to behave like a car.
+ *
+ * Owner: "the car also accelerates at a very unrealistic way where gear is
+ * shifting whenever it just reaches the end and the app is suggesting to break
+ * the law by over speeding but it only goes up to 94."
+ *
+ * Both halves were true. ACCELERATION was a flat 8 m/s^2, which is 0-60mph in
+ * 3.4 seconds, so the car slammed into the ceiling and every upshift happened in
+ * the last moment before it got there. And the ceiling was 42 m/s, 94 mph, which
+ * is not a speed to invite anyone to hold on a public road.
+ *
+ * SPEED_LIMIT is the posted limit the car cruises at. MAX_SPEED leaves a little
+ * over it, because a car that physically cannot exceed the limit feels broken,
+ * but nothing encourages going there.
+ */
+const SPEED_LIMIT = 31.3 // m/s, 70 mph
+const MAX_SPEED = 35.8 // m/s, 80 mph, reachable but never suggested
+/**
+ * Peak acceleration, in m/s^2, near standstill. Real drive falls away with speed
+ * as drag and gearing bite, which is what makes an upshift feel like an upshift
+ * rather than a number changing at the top of the range.
+ */
+const ACCELERATION = 3.4
 const BRAKING = 16
 const ROLLING_DRAG = 1.1
 const AIR_DRAG = 0.018
 const CREEP_SPEED = 2.4
 const ARRIVAL_WINDOW = 0.6
+/**
+ * How far past an exit the car must be before the pass is committed, in metres.
+ * A margin rather than zero so a car creeping over the sign, or a frame that
+ * overshoots at speed, cannot flicker the target back and forth.
+ */
+const PASS_MARGIN = 12
 
 // Top gear ends at MAX_SPEED by construction. It used to be typed as `42`
 // beside a `MAX_SPEED` of 42: raise one alone and the tachometer pegs for the
 // whole of top gear, because `inGear` would run past 1 and clamp.
-const GEAR_RATIOS = [0, 7, 13, 20, 28, 36, MAX_SPEED]
+const GEAR_RATIOS = [0, 5.5, 10.5, 16, 22, 28.5, MAX_SPEED]
 
 function gearFor(speed) {
   for (let gear = 1; gear < GEAR_RATIOS.length; gear += 1) {
@@ -33,6 +66,11 @@ function createSim() {
     // highway" has always said it does. The canvas paints before the first
     // `step()` runs (the ignition splash), so a 0 here would draw one frame of
     // the car sitting on the mainline before it snapped onto the ramp.
+    // Latched by steering right beside a ramp; see the assignment in the tick.
+    exiting: true,
+    // Durable per-stop outcome, keyed by stop id. 'passed' is written by the
+    // pass-through commit; visiting a stop is still recorded through arriveAt.
+    dispositions: {},
     ramp: rampAt(0),
     // Same reasoning for the ramp's vertical: MILE 0 sits at the bottom of the
     // entrance ramp, below the mainline grade.
@@ -67,7 +105,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   const [started, setStarted] = useState(false)
   const [index, setIndex] = useState(0)
   const [parked, setParked] = useState(true)
-  const [visited, setVisited] = useState(() => new Set([0]))
+  const [statuses, setStatuses] = useState({})
 
   const subscribe = useCallback((listener) => {
     listeners.current.add(listener)
@@ -75,38 +113,74 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     return () => listeners.current.delete(listener)
   }, [])
 
-  const markVisited = useCallback((stopIndex) => {
-    setVisited((previous) => {
-      if (previous.has(stopIndex)) return previous
-      const next = new Set(previous)
-      next.add(stopIndex)
-      return next
+  /**
+   * Restore what actually happened, from what was actually recorded.
+   *
+   * This replaces `markVisitedThrough`, which marked EVERY stop up to a resumed
+   * index as visited on the argument that saved progress only advances on
+   * arrival. That argument stopped being true when st071 shipped: `index` now
+   * advances when the driver PASSES an exit as well, so a visitor who drove by
+   * ten exits and stopped at the eleventh came back to a map claiming they had
+   * read all eleven. progress.js says the same thing about its own v1 migration:
+   * guessing the prefix "would put words in the visitor's mouth".
+   *
+   * So nothing is inferred. Only stops with a recorded outcome come back, and
+   * only TAKEN or JUMPED put a mark on the map, because SKIPPED is precisely the
+   * stop they did not visit.
+   */
+  useEffect(() => {
+    const stored = readStopStatuses()
+    if (!Object.keys(stored).length) return
+    setStatuses((previous) => ({ ...stored, ...previous }))
+  }, [])
+
+  /**
+   * Durable record of what happened at one stop.
+   *
+   * Q053, answered 2026-08-09, binding: "persist_outcomes: bump progress key and
+   * store per-stop disposition". progress.js v2 has held that shape since st132,
+   * but nothing wrote to it, so every outcome died with the tab. This is the one
+   * place the drive layer reaches storage, and `writeStopStatus` never
+   * downgrades, so a second lap cannot erase what the first one earned.
+   */
+  const recordStatus = useCallback((stopIndex, status) => {
+    const stop = stopsRef.current[stopIndex]
+    if (!stop?.id) return
+    writeStopStatus(stop.id, status)
+    // Mirrored into state as well as storage, and by the same rule, so the map
+    // redraws this frame instead of waiting for the next mount. strongerStatus
+    // in both places means the two can never disagree about a second lap.
+    setStatuses((previous) => {
+      const next = strongerStatus(previous[stop.id] ?? UNREACHED, status)
+      if (next === previous[stop.id]) return previous
+      return { ...previous, [stop.id]: next }
     })
   }, [])
 
   /**
-   * Restore the history behind a resumed position.
+   * `how` is the whole point of st135.
    *
-   * Saved progress only ever advances **on arrival** and only **forwards**, so
-   * a stored index is proof the visitor arrived at every exit before it. Used
-   * by the resume path alone — a `?exit=` deep link must not claim its holder
-   * drove the road, because they followed a link instead.
+   * TAKEN is a claim that the visitor drove here and the car came to rest, so
+   * only the arrival snap in `step` may make it - and that snap already sets
+   * `speed = 0` and `parked` in the same frame, which is what "settles" means
+   * here. Every other way of landing on a stop is a JUMP: the route map, Back,
+   * reduced motion, and an `?exit=` deep link that starts the engine already
+   * parked on an exit. Those did not drive the road, and calling them visited
+   * would put words in the visitor's mouth.
+   *
+   * 'none' is the third case, and st134 asks for it by name: an `?exit=` deep
+   * link "writes no outcome". Someone handed a URL has not navigated anywhere,
+   * so the page must position the car and record nothing at all - not even a
+   * jump, which would still be a claim they had been here.
    */
-  const markVisitedThrough = useCallback((stopIndex) => {
-    setVisited((previous) => {
-      const next = new Set(previous)
-      for (let i = 0; i <= stopIndex; i += 1) next.add(i)
-      return next
-    })
-  }, [])
-
   const arriveAt = useCallback(
-    (stopIndex) => {
+    (stopIndex, how = 'drove') => {
       setIndex(stopIndex)
       setParked(true)
-      markVisited(stopIndex)
+      if (how === 'none') return
+      recordStatus(stopIndex, how === 'jumped' ? JUMPED : TAKEN)
     },
-    [markVisited]
+    [recordStatus]
   )
 
   const depart = useCallback((stopIndex) => {
@@ -129,10 +203,17 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       // Bounded by the lane, not by a typed number: the carriageway now has
       // two lanes, and a drift limit left at the old 2.3 would let the car
       // wander across the lane line the moment the lane got narrower.
+      // Steering now crosses the whole carriageway, not just one lane.
+      //
+      // Owner: "make sure we're also able to drive on the left lane of the road".
+      // The clamp was +/- LANE_DRIFT, which is half a lane, so the car could wander
+      // inside its own lane and nothing more. The bounds are the carriageway edges
+      // measured from the lane the camera starts in, less a margin so the wheels
+      // stay on tarmac rather than riding the paint.
       sim.x = clamp(
         sim.x + sim.steer * 5.5 * dt * (0.25 + Math.min(1, sim.speed / 26)),
-        -LANE_DRIFT,
-        LANE_DRIFT
+        -(LANE_OFFSET - LANE_EDGE_MARGIN),
+        CARRIAGEWAY - LANE_OFFSET - LANE_EDGE_MARGIN
       )
 
       const curveAhead = curveAt(sim.travel + 90) - curveAt(sim.travel)
@@ -153,8 +234,32 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         depart(sim.target)
       }
 
-      const current = all[sim.target]
-      const remaining = current.s - sim.travel
+      let current = all[sim.target]
+      let remaining = current.s - sim.travel
+
+      // PASS: the driver declined this exit and drove by it.
+      //
+      // st071 M3 and M4. Suppressing brake assist and auto-park was only half the
+      // leaf: without advancing the target, the nav kept pointing at an exit that
+      // was already behind the car, which is why the banner still read NEXT EXIT for
+      // a stop the driver had passed. `arriveAt` is deliberately NOT called, so the
+      // stop is never recorded as visited.
+      //
+      // The disposition is durable and keyed by stop id, so a later route map can
+      // draw passed differently from visited without re-deriving it from distance.
+      if (
+        !sim.parked &&
+        !sim.exiting &&
+        remaining < -PASS_MARGIN &&
+        sim.target < all.length - 1
+      ) {
+        sim.dispositions[current.id ?? sim.target] = 'passed'
+        recordStatus(sim.target, SKIPPED)
+        sim.target += 1
+        current = all[sim.target]
+        remaining = current.s - sim.travel
+        depart(sim.target)
+      }
 
       if (sim.parked) {
         sim.speed = 0
@@ -163,10 +268,16 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         return
       }
 
-      // Brake assist: the car always rolls to a halt at the next exit sign.
+      // Brake assist rolls the car to a halt at the next exit sign, but ONLY for a
+      // driver who is actually taking that exit.
+      //
+      // Owner: "you still come to a stop at the resume item". Gating sim.ramp alone
+      // was half a fix: the car stayed on the mainline laterally and then still
+      // braked to a stop beside an exit it was driving past. Staying on the highway
+      // has to mean not stopping either.
       const stoppingDistance = (sim.speed * sim.speed) / (2 * BRAKING) + 8
       const assist =
-        remaining < stoppingDistance
+        sim.exiting && remaining < stoppingDistance
           ? clamp((stoppingDistance - remaining) / stoppingDistance, 0, 1)
           : 0
 
@@ -177,7 +288,12 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         sim.speed -= BRAKING * brake * dt
       } else if (throttle > 0) {
         sim.speed +=
-          ACCELERATION * throttle * dt * (1 - (sim.speed / MAX_SPEED) * 0.8)
+          // Falloff is measured against SPEED_LIMIT, not MAX_SPEED, so the car
+          // settles at the posted limit on its own and only creeps past it under
+          // sustained throttle. Measured against MAX_SPEED it pinned to the
+          // ceiling every time, which is what made 94mph feel like the intended
+          // cruising speed.
+          ACCELERATION * throttle * dt * Math.max(0.12, 1 - (sim.speed / SPEED_LIMIT) * 0.88)
       } else {
         sim.speed -= (ROLLING_DRAG + AIR_DRAG * sim.speed) * dt
       }
@@ -197,7 +313,12 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.rpm +=
         (clamp(0.15 + inGear * 0.75, 0, 1) - sim.rpm) * Math.min(1, dt * 6)
 
-      if (current.s - sim.travel <= ARRIVAL_WINDOW) {
+      // Arrival snaps the car onto the stop and parks it. Like brake assist, this
+      // only applies to a driver who chose the exit. Without the gate a car that
+      // stayed on the mainline was still teleported onto the stop and halted, which
+      // is the third place the old unconditional behaviour was written down and the
+      // reason gating sim.ramp alone did not deliver "keep driving".
+      if (sim.exiting && current.s - sim.travel <= ARRIVAL_WINDOW) {
         sim.travel = current.s
         sim.speed = 0
         sim.parked = true
@@ -206,14 +327,25 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
         arriveAt(sim.target)
       }
 
-      // One assignment covers both places `travel` moves above — the metre-by-
-      // metre integration and the snap onto the stop — so the ramp can never be
+      // One assignment covers both places `travel` moves above - the metre-by-
+      // metre integration and the snap onto the stop - so the ramp can never be
       // a frame behind the car sitting on it. The parked early-return skips it,
       // which is correct: `travel` did not move, so neither did the ramp.
-      sim.ramp = rampAt(sim.travel)
-      sim.drop = rampDropAt(sim.travel)
+      // Taking the exit is now a CHOICE.
+      //
+      // Owner: "no way to just keep driving without not taking the exit". This
+      // assignment used to be unconditional, so every exit dragged the car off the
+      // mainline whatever the driver did. `sim.exiting` latches when the driver
+      // steers right while a ramp is actually beside them, and clears once the ramp
+      // has gone. Hold right to leave, do nothing to stay on the highway.
+      const rampHere = rampAt(sim.travel)
+      const nearRamp = rampHere > 0.5
+      if (!nearRamp) sim.exiting = false
+      else if (sim.steer > 0.25) sim.exiting = true
+      sim.ramp = sim.exiting ? rampHere : 0
+      sim.drop = sim.exiting ? rampDropAt(sim.travel) : 0
     },
-    [arriveAt, depart]
+    [arriveAt, depart, recordStatus]
   )
 
   useEffect(() => {
@@ -239,7 +371,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
   }, [])
 
   const goTo = useCallback(
-    (stopIndex) => {
+    (stopIndex, how = 'jumped') => {
       const all = stopsRef.current
       const next = clamp(stopIndex, 0, all.length - 1)
       const sim = simRef.current
@@ -253,7 +385,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       sim.parked = true
       sim.autopilot = false
       sim.throttleLock = sim.throttle > 0
-      arriveAt(next)
+      arriveAt(next, how)
       publish()
     },
     [arriveAt, publish]
@@ -269,7 +401,13 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       depart(sim.target)
     }
     if (reducedMotion) {
-      goTo(sim.target)
+      // 'drove', not the goTo default of 'jumped'. Reduced motion is how this
+      // visitor DRIVES: they press the same accelerator and the scene moves them
+      // without the motion they asked not to see. Recording that as a jump gave
+      // them a route map of dotted lines, a permanently second class record of
+      // using the site exactly as intended. My own regression, from making goTo
+      // default to 'jumped' for the route map's sake.
+      goTo(sim.target, 'drove')
       return
     }
     sim.autopilot = true
@@ -301,11 +439,14 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
     simRef.current.steerInput = clamp(value, -1, 1)
   }, [])
 
-  const start = useCallback(() => {
+  const start = useCallback((how) => {
     const sim = simRef.current
     sim.running = true
     setStarted(true)
-    arriveAt(sim.target)
+    // MILE 0 is the start line, so starting there is not a claim about driving.
+    // Anywhere else, the caller says: the deep link and the resume button both
+    // pass 'none', because neither drove here.
+    arriveAt(sim.target, how ?? (sim.target === 0 ? 'drove' : 'none'))
   }, [arriveAt])
 
   return useMemo(
@@ -316,8 +457,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       start,
       index,
       parked,
-      visited,
-      markVisitedThrough,
+      statuses,
       stop: stops[index],
       goTo,
       goBack,
@@ -333,8 +473,7 @@ export function useDrive(stops, { reducedMotion = false } = {}) {
       start,
       index,
       parked,
-      visited,
-      markVisitedThrough,
+      statuses,
       stops,
       goTo,
       goBack,
